@@ -131,7 +131,7 @@ def run_kfp_build(run: dict) -> dict:
         Execution results.
     """
 
-    def _kfp_build_execution(pipeline: Callable) -> dict:
+    def _kfp_build_execution(pipeline: Callable, function_args) -> dict:
         """
         Run KFP build.
 
@@ -151,16 +151,10 @@ def run_kfp_build(run: dict) -> dict:
         # workaround to pass the project implicitly
         workflow = run.get("spec", {}).get("workflow", None)
 
-        # workflow was not built locally, need to replicate the build
-        if workflow is None:
-            dhcore_run = dh.get_run(run.get("key"))
-            workflow = build_kfp_pipeline(run, pipeline)
-            dhcore_run.spec.workflow = workflow
+        # need to replicate the build
+        workflow = build_kfp_pipeline(run, pipeline)
 
-            # Check if this actually work in core
-            dhcore_run.save(update=True)
-
-        run_status = {"state": State.COMPLETED.value}
+        run_status = { "state": State.COMPLETED.value, "results": {"workflow":  workflow} }
         _update_status(run.get("key"), run_status)
 
         return run_status

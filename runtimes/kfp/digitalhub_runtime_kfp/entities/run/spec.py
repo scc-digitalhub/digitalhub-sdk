@@ -4,7 +4,7 @@ from digitalhub_data.entities.run.spec import RunParamsData, RunSpecData
 
 
 class RunSpecKFP(RunSpecData):
-    """Run Mlrun specification."""
+    """Run KFP Pipline specification."""
 
     def __init__(
         self,
@@ -31,7 +31,6 @@ class RunSpecKFP(RunSpecData):
 
         self.schedule = kwargs.get("schedule")
         self.replicas = kwargs.get("replicas")
-        self.workflow = kwargs.get("workflow")
 
         self.inputs = kwargs.get("inputs")
         self.outputs = kwargs.get("outputs")
@@ -60,7 +59,6 @@ class RunParamsKFP(RunParamsData):
     profile: str = None
 
     # Pipeline parameters
-    workflow: str = None
     schedule: str = None
 
     # Run parameters
