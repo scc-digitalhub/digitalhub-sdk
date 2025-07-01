@@ -74,13 +74,13 @@ class StoreBuilder:
             store_cls = store_info._store
             cfgrt_cls = store_info._configurator
 
-            if store_info._configurator is None:
+            if cfgrt_cls is None:
                 store = store_cls()
             else:
                 store = store_cls(cfgrt_cls())
             self._instances[env_profile][store_type] = store
 
-        return store
+        return self._instances[env_profile][store_type]
 
 
 store_builder = StoreBuilder()

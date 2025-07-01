@@ -135,7 +135,7 @@ class ContextEntityOperationsProcessor:
             msg = None
         except Exception as e:
             uploaded = False
-            msg = str(e)
+            msg = str(e.args)
 
         new_obj.status.message = msg
 
