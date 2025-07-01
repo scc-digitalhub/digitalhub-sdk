@@ -622,9 +622,7 @@ class S3Store(Store):
             A tuple containing the S3 client object and the name of the S3 bucket.
         """
         bucket = self._get_bucket(root)
-        import pdb
 
-        pdb.set_trace()
         # Try to get client from environment variables
         try:
             cfg = self._configurator.get_client_config(CredsOrigin.ENV.value)
