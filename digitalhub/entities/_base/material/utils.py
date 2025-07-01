@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from digitalhub.stores.data.utils import get_default_store
+from digitalhub.stores.data.api import get_default_store
 from digitalhub.utils.file_utils import eval_zip_type
 from digitalhub.utils.uri_utils import has_local_scheme
 

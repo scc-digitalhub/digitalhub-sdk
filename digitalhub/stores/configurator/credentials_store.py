@@ -67,3 +67,45 @@ class CredentialsStore:
             The credentials.
         """
         return self._credentials.get(profile, {})
+
+    def set_dict(self, profile: str, origin: str, credentials: dict) -> None:
+        """
+        Set all credentials.
+
+        Parameters
+        ----------
+        profile : str
+            The profile of the credentials.
+        origin : str
+            The origin of the credentials.
+        credentials : dict
+            The credentials.
+
+        Returns
+        -------
+        None
+        """
+        for key, value in credentials.items():
+            if profile not in self._credentials:
+                self._credentials[profile] = {}
+            if origin not in self._credentials[profile]:
+                self._credentials[profile][origin] = {}
+            self._credentials[profile][origin][key] = value
+
+    def get_dict(self, profile: str, origin: str) -> dict[str, str]:
+        """
+        Get all credentials.
+
+        Parameters
+        ----------
+        profile : str
+            The profile of the credentials.
+        origin : str
+            The origin of the credentials.
+
+        Returns
+        -------
+        dict[str, str]
+            The credentials.
+        """
+        return self._credentials.get(profile, {}).get(origin, {})

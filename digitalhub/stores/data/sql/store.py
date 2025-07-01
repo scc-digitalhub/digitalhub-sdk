@@ -16,13 +16,15 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from digitalhub.stores.configurator.enums import CredsOrigin
 from digitalhub.stores.data._base.store import Store
-from digitalhub.stores.data.sql.configurator import SqlStoreConfigurator
 from digitalhub.stores.readers.data.api import get_reader_by_object
 from digitalhub.utils.exceptions import StoreError
 from digitalhub.utils.types import SourcesOrListOfSources
 
 if typing.TYPE_CHECKING:
     from sqlalchemy.engine.row import Row
+
+    from digitalhub.stores.data._base.configurator import StoreConfigurator
+    from digitalhub.stores.data.sql.configurator import SqlStoreConfigurator
 
 
 class SqlStore(Store):
@@ -31,8 +33,9 @@ class SqlStore(Store):
     artifacts on SQL based storage.
     """
 
-    def __init__(self) -> None:
-        self._configurator = SqlStoreConfigurator()
+    def __init__(self, configurator: StoreConfigurator | None = None) -> None:
+        super().__init__(configurator)
+        self._configurator: SqlStoreConfigurator
 
     ##############################
     # I/O methods

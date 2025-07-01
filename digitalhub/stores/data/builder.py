@@ -9,37 +9,22 @@ import typing
 from digitalhub.stores.configurator.api import get_current_env
 from digitalhub.stores.data.local.store import LocalStore
 from digitalhub.stores.data.remote.store import RemoteStore
+from digitalhub.stores.data.s3.configurator import S3StoreConfigurator
 from digitalhub.stores.data.s3.store import S3Store
+from digitalhub.stores.data.sql.configurator import SqlStoreConfigurator
 from digitalhub.stores.data.sql.store import SqlStore
 from digitalhub.utils.uri_utils import SchemeCategory, map_uri_scheme
 
 if typing.TYPE_CHECKING:
+    from digitalhub.stores.data._base.configurator import StoreConfigurator
     from digitalhub.stores.data._base.store import Store
+    from digitalhub.utils.exceptions import StoreError
 
 
-def _get_class_from_type(type: str) -> Store:
-    """
-    Get a store class from its type.
-
-    Parameters
-    ----------
-    type : str
-        Store type.
-
-    Returns
-    -------
-    Store
-        The store class.
-    """
-    if type == SchemeCategory.LOCAL.value:
-        return LocalStore
-    if type == SchemeCategory.S3.value:
-        return S3Store
-    if type == SchemeCategory.REMOTE.value:
-        return RemoteStore
-    if type == SchemeCategory.SQL.value:
-        return SqlStore
-    raise ValueError(f"Unknown store type: {type}")
+class StoreInfo:
+    def __init__(self, store: Store, configurator: StoreConfigurator | None = None) -> None:
+        self._store = store
+        self._configurator = configurator
 
 
 class StoreBuilder:
@@ -48,50 +33,58 @@ class StoreBuilder:
     """
 
     def __init__(self) -> None:
+        self._builders: dict[str, StoreInfo] = {}
         self._instances: dict[str, dict[str, Store]] = {}
 
-    def build(self, project: str, store_type: str) -> None:
-        """
-        Build a store instance and register it.
+    def register(
+        self,
+        store_type: str,
+        store: Store,
+        configurator: StoreConfigurator | None = None,
+    ) -> None:
+        if store_type not in self._builders:
+            self._builders[store_type] = StoreInfo(store, configurator)
+        else:
+            raise StoreError(f"Store type {store_type} already registered")
 
-        Parameters
-        ----------
-        store_type : str
-            Store type.
-        config : dict
-
-        Returns
-        -------
-        None
+    def get(self, uri: str) -> Store:
         """
-        env = get_current_env()
-        if env not in self._instances:
-            self._instances[env] = {}
-        self._instances[env][store_type] = _get_class_from_type(store_type)()
-
-    def get(self, project: str, uri: str) -> Store:
-        """
-        Get a store instance by URI.
+        Get a store instance by URI, building it if necessary.
 
         Parameters
         ----------
         uri : str
             URI to parse.
-        config : dict
-            Store configuration.
 
         Returns
         -------
         Store
             The store instance.
         """
-        env = get_current_env()
+        env_profile = get_current_env()
         store_type = map_uri_scheme(uri)
-        try:
-            return self._instances[env][store_type]
-        except KeyError:
-            self.build(project, store_type)
-            return self._instances[env][store_type]
+
+        # Ensure env exists in _instances
+        if env_profile not in self._instances:
+            self._instances[env_profile] = {}
+
+        # Build the store instance if not already present
+        if store_type not in self._instances[env_profile]:
+            store_info = self._builders[store_type]
+            store_cls = store_info._store
+            cfgrt_cls = store_info._configurator
+
+            if store_info._configurator is None:
+                store = store_cls()
+            else:
+                store = store_cls(cfgrt_cls())
+            self._instances[env_profile][store_type] = store
+
+        return store
 
 
 store_builder = StoreBuilder()
+store_builder.register(SchemeCategory.S3.value, S3Store, S3StoreConfigurator)
+store_builder.register(SchemeCategory.SQL.value, SqlStore, SqlStoreConfigurator)
+store_builder.register(SchemeCategory.LOCAL.value, LocalStore)
+store_builder.register(SchemeCategory.REMOTE.value, RemoteStore)

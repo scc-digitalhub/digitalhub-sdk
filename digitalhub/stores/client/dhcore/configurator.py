@@ -27,7 +27,7 @@ AUTH_KEY = "_auth"
 # API levels that are supported
 MAX_API_LEVEL = 20
 MIN_API_LEVEL = 11
-LIB_VERSION = 11
+LIB_VERSION = 13
 
 
 class ClientDHCoreConfigurator:

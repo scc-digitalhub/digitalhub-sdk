@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import typing
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Type
@@ -15,12 +16,16 @@ from botocore.exceptions import ClientError, NoCredentialsError
 
 from digitalhub.stores.configurator.enums import CredsOrigin
 from digitalhub.stores.data._base.store import Store
-from digitalhub.stores.data.s3.configurator import S3StoreConfigurator
 from digitalhub.stores.data.s3.utils import get_bucket_name
 from digitalhub.stores.readers.data.api import get_reader_by_object
 from digitalhub.utils.exceptions import StoreError
 from digitalhub.utils.file_utils import get_file_info_from_s3, get_file_mime_type
 from digitalhub.utils.types import SourcesOrListOfSources
+
+if typing.TYPE_CHECKING:
+    from digitalhub.stores.data._base.configurator import StoreConfigurator
+    from digitalhub.stores.data.s3.configurator import S3StoreConfigurator
+
 
 # Type aliases
 S3Client = Type["botocore.client.S3"]
@@ -32,8 +37,9 @@ class S3Store(Store):
     artifacts on S3 based storage.
     """
 
-    def __init__(self) -> None:
-        self._configurator = S3StoreConfigurator()
+    def __init__(self, configurator: StoreConfigurator | None = None) -> None:
+        super().__init__(configurator)
+        self._configurator: S3StoreConfigurator
 
     ##############################
     # I/O methods
@@ -616,16 +622,18 @@ class S3Store(Store):
             A tuple containing the S3 client object and the name of the S3 bucket.
         """
         bucket = self._get_bucket(root)
+        import pdb
 
+        pdb.set_trace()
         # Try to get client from environment variables
         try:
-            cfg = self._configurator.get_boto3_client_config(CredsOrigin.ENV.value)
+            cfg = self._configurator.get_client_config(CredsOrigin.ENV.value)
             client = self._get_client(cfg)
             self._check_access_to_storage(client, bucket)
 
         # Fallback to file
         except StoreError:
-            cfg = self._configurator.get_boto3_client_config(CredsOrigin.FILE.value)
+            cfg = self._configurator.get_client_config(CredsOrigin.FILE.value)
             client = self._get_client(cfg)
             self._check_access_to_storage(client, bucket)
 

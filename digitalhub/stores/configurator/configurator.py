@@ -197,6 +197,39 @@ class EnvConfigurator:
         """
         return {k: v for k, v in self.get_all_credentials().items() if k in keys}
 
+    def set_credentials(self, origin: str, creds: dict) -> None:
+        """
+        Set credentials.
+
+        Parameters
+        ----------
+        origin : str
+            The origin of the credentials.
+        creds : dict
+            The credentials.
+
+        Returns
+        -------
+        None
+        """
+        self._creds_store.set_dict(self._environment, origin, creds)
+
+    def get_credentials(self, origin: str) -> dict:
+        """
+        Get credentials from origin.
+
+        Parameters
+        ----------
+        origin : str
+            The origin of the credentials.
+
+        Returns
+        -------
+        dict
+            The credentials.
+        """
+        return self._creds_store.get_dict(self._environment, origin)
+
 
 # Define global configurator
 configurator = EnvConfigurator()
