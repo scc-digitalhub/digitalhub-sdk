@@ -8,7 +8,7 @@ import os
 import typing
 
 from digitalhub.stores.client.api import get_client
-from digitalhub.stores.client.dhcore.enums import DhcoreEnvVar
+from digitalhub.stores.credentials.enums import CredsEnvVar
 
 if typing.TYPE_CHECKING:
     from digitalhub.stores.client.dhcore.client import ClientDHCore
@@ -47,20 +47,20 @@ def set_dhcore_env(
     None
     """
     if endpoint is not None:
-        os.environ[DhcoreEnvVar.ENDPOINT.value] = endpoint
+        os.environ[CredsEnvVar.DHCORE_ENDPOINT.value] = endpoint
     if user is not None:
-        os.environ[DhcoreEnvVar.USER.value] = user
+        os.environ[CredsEnvVar.DHCORE_USER.value] = user
     if password is not None:
-        os.environ[DhcoreEnvVar.PASSWORD.value] = password
+        os.environ[CredsEnvVar.DHCORE_PASSWORD.value] = password
     if access_token is not None:
-        os.environ[DhcoreEnvVar.ACCESS_TOKEN.value] = access_token
+        os.environ[CredsEnvVar.DHCORE_ACCESS_TOKEN.value] = access_token
     if refresh_token is not None:
-        os.environ[DhcoreEnvVar.REFRESH_TOKEN.value] = refresh_token
+        os.environ[CredsEnvVar.DHCORE_REFRESH_TOKEN.value] = refresh_token
     if client_id is not None:
-        os.environ[DhcoreEnvVar.CLIENT_ID.value] = client_id
+        os.environ[CredsEnvVar.DHCORE_CLIENT_ID.value] = client_id
 
     client: ClientDHCore = get_client(local=False)
-    client._configurator.configure()
+    client._configurator.load_env_vars()
 
 
 def refresh_token() -> None:

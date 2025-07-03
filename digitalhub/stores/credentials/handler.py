@@ -6,12 +6,12 @@ from __future__ import annotations
 
 import os
 
-from digitalhub.stores.configurator.credentials_store import CredentialsStore
-from digitalhub.stores.configurator.enums import SetCreds
-from digitalhub.stores.configurator.ini_module import load_from_file, read_env_from_file, set_current_env, write_config
+from digitalhub.stores.credentials.enums import SetCreds
+from digitalhub.stores.credentials.ini_module import load_from_file, read_env_from_file, set_current_env, write_config
+from digitalhub.stores.credentials.store import CredentialsStore
 
 
-class EnvConfigurator:
+class CredentialHandler:
     """
     Configurator object used to configure clients and store credentials.
     """
@@ -54,31 +54,6 @@ class EnvConfigurator:
         """
         return self._environment
 
-    ##############################
-    # Private methods
-    ##############################
-
-    def load_var(self, var_name: str) -> str | None:
-        """
-        Get env variable from credentials store, env or file (in order).
-
-        Parameters
-        ----------
-        var_name : str
-            Environment variable name.
-
-        Returns
-        -------
-        str | None
-            Environment variable value.
-        """
-        var = self.get_credential(var_name)
-        if var is None:
-            var = self.load_from_env(var_name)
-        if var is None:
-            var = self.load_from_file(var_name)
-        return var
-
     def load_from_env(self, var: str) -> str | None:
         """
         Load variable from env.
@@ -114,88 +89,24 @@ class EnvConfigurator:
         self._environment = read_env_from_file()
         return load_from_file(var)
 
-    def write_env(self, key_to_include: list[str] | None = None) -> None:
+    def write_env(self, creds: dict) -> None:
         """
         Write the env variables to the .dhcore file.
-        It will overwrite any existing env variables.
 
         Parameters
         ----------
-        key_to_include : list[str]
-            List of keys to include.
+        creds : dict
+            Credentials.
 
         Returns
         -------
         None
         """
-        if key_to_include is None:
-            key_to_include = []
-        creds = self.get_credential_list(key_to_include)
         write_config(creds, self._environment)
 
     ##############################
     # Credentials store methods
     ##############################
-
-    def set_credential(self, key: str, value: str) -> None:
-        """
-        Register a credential value.
-
-        Parameters
-        ----------
-        key : str
-            The key.
-        value : str
-            The value.
-
-        Returns
-        -------
-        None
-        """
-        self._creds_store.set(self._environment, key, value)
-
-    def get_credential(self, key: str) -> dict:
-        """
-        Get single credential value from key.
-
-        Parameters
-        ----------
-        key : str
-            The key.
-
-        Returns
-        -------
-        dict
-            The credential.
-        """
-        return self._creds_store.get(self._environment, key)
-
-    def get_all_credentials(self) -> dict:
-        """
-        Get all the credentials from the current credentials set.
-
-        Returns
-        -------
-        dict
-            The credentials.
-        """
-        return self._creds_store.get_all(self._environment)
-
-    def get_credential_list(self, keys: list[str]) -> list[str]:
-        """
-        Get the list of credentials.
-
-        Parameters
-        ----------
-        keys : list[str]
-            The list of keys.
-
-        Returns
-        -------
-        list[str]
-            The list of credentials.
-        """
-        return {k: v for k, v in self.get_all_credentials().items() if k in keys}
 
     def set_credentials(self, origin: str, creds: dict) -> None:
         """
@@ -212,7 +123,7 @@ class EnvConfigurator:
         -------
         None
         """
-        self._creds_store.set_dict(self._environment, origin, creds)
+        self._creds_store.set_credentials(self._environment, origin, creds)
 
     def get_credentials(self, origin: str) -> dict:
         """
@@ -228,8 +139,8 @@ class EnvConfigurator:
         dict
             The credentials.
         """
-        return self._creds_store.get_dict(self._environment, origin)
+        return self._creds_store.get_credentials(self._environment, origin)
 
 
 # Define global configurator
-configurator = EnvConfigurator()
+creds_handler = CredentialHandler()

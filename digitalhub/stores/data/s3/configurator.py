@@ -6,32 +6,44 @@ from __future__ import annotations
 
 from botocore.config import Config
 
-from digitalhub.stores.configurator.configurator import configurator
-from digitalhub.stores.data._base.configurator import StoreConfigurator
-from digitalhub.stores.data.s3.enums import S3StoreEnv
+from digitalhub.stores.credentials.configurator import Configurator
+from digitalhub.stores.credentials.enums import CredsEnvVar
 
 
-class S3StoreConfigurator(StoreConfigurator):
+class S3StoreConfigurator(Configurator):
     """
     Configure the store by getting the credentials from user
     provided config or from environment.
     """
 
     keys = [
-        S3StoreEnv.ENDPOINT_URL,
-        S3StoreEnv.ACCESS_KEY_ID,
-        S3StoreEnv.SECRET_ACCESS_KEY,
-        S3StoreEnv.REGION,
-        S3StoreEnv.SIGNATURE_VERSION,
-        S3StoreEnv.SESSION_TOKEN,
+        CredsEnvVar.S3_ENDPOINT_URL,
+        CredsEnvVar.S3_ACCESS_KEY_ID,
+        CredsEnvVar.S3_SECRET_ACCESS_KEY,
+        CredsEnvVar.S3_REGION,
+        CredsEnvVar.S3_SIGNATURE_VERSION,
+        CredsEnvVar.S3_SESSION_TOKEN,
+    ]
+    required_keys = [
+        CredsEnvVar.S3_ENDPOINT_URL,
+        CredsEnvVar.S3_ACCESS_KEY_ID,
+        CredsEnvVar.S3_SECRET_ACCESS_KEY,
     ]
 
     ##############################
     # Configuration methods
     ##############################
 
-    @staticmethod
-    def get_client_config(origin: str) -> dict:
+    def load_configs(self) -> None:
+        # Load from env
+        env_creds = {var.value: self._creds_handler.load_from_env(var.value) for var in self.keys}
+        self._creds_handler.set_credentials(self._env, env_creds)
+
+        # Load from file
+        file_creds = {var.value: self._creds_handler.load_from_file(var.value) for var in self.keys}
+        self._creds_handler.set_credentials(self._file, file_creds)
+
+    def get_client_config(self, origin: str) -> dict:
         """
         Get S3 credentials (access key, secret key, session token and other config).
 
@@ -45,14 +57,14 @@ class S3StoreConfigurator(StoreConfigurator):
         dict
             The credentials.
         """
-        creds = configurator.get_credentials(origin)
+        creds = self.get_credentials(origin)
         return {
-            "endpoint_url": creds[S3StoreEnv.ENDPOINT_URL.value],
-            "aws_access_key_id": creds[S3StoreEnv.ACCESS_KEY_ID.value],
-            "aws_secret_access_key": creds[S3StoreEnv.SECRET_ACCESS_KEY.value],
-            "aws_session_token": creds[S3StoreEnv.SESSION_TOKEN.value],
+            "endpoint_url": creds[CredsEnvVar.S3_ENDPOINT_URL.value],
+            "aws_access_key_id": creds[CredsEnvVar.S3_ACCESS_KEY_ID.value],
+            "aws_secret_access_key": creds[CredsEnvVar.S3_SECRET_ACCESS_KEY.value],
+            "aws_session_token": creds[CredsEnvVar.S3_SESSION_TOKEN.value],
             "config": Config(
-                region_name=creds[S3StoreEnv.REGION.value],
-                signature_version=creds[S3StoreEnv.SIGNATURE_VERSION.value],
+                region_name=creds[CredsEnvVar.S3_REGION.value],
+                signature_version=creds[CredsEnvVar.S3_SIGNATURE_VERSION.value],
             ),
         }

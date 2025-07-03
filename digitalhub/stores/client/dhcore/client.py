@@ -56,7 +56,6 @@ class ClientDHCore(Client):
 
         # Client Configurator
         self._configurator = ClientDHCoreConfigurator()
-        self._configurator.configure(config)
 
     ##############################
     # CRUD methods
@@ -312,8 +311,8 @@ class ClientDHCore(Client):
         self._configurator.check_core_version(response)
 
         # Handle token refresh
-        if response.status_code in [401] and refresh_token and self._configurator.oauth2_auth():
-            self._configurator.get_new_access_token()
+        if (response.status_code in [401]) and (refresh_token) and ("Authorization" in kwargs.get("headers", {})):
+            self._configurator.get_new_access_token(change_origin=True)
             kwargs = self._configurator.set_request_auth(kwargs)
             return self._make_call(call_type, url, refresh_token=False, **kwargs)
 

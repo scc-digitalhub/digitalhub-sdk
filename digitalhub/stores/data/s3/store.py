@@ -14,7 +14,7 @@ import boto3
 import botocore.client  # pylint: disable=unused-import
 from botocore.exceptions import ClientError, NoCredentialsError
 
-from digitalhub.stores.configurator.enums import CredsOrigin
+from digitalhub.stores.credentials.enums import CredsOrigin
 from digitalhub.stores.data._base.store import Store
 from digitalhub.stores.data.s3.utils import get_bucket_name
 from digitalhub.stores.readers.data.api import get_reader_by_object
@@ -23,7 +23,7 @@ from digitalhub.utils.file_utils import get_file_info_from_s3, get_file_mime_typ
 from digitalhub.utils.types import SourcesOrListOfSources
 
 if typing.TYPE_CHECKING:
-    from digitalhub.stores.data._base.configurator import StoreConfigurator
+    from digitalhub.stores.credentials.configurator import Configurator
     from digitalhub.stores.data.s3.configurator import S3StoreConfigurator
 
 
@@ -37,7 +37,7 @@ class S3Store(Store):
     artifacts on S3 based storage.
     """
 
-    def __init__(self, configurator: StoreConfigurator | None = None) -> None:
+    def __init__(self, configurator: Configurator | None = None) -> None:
         super().__init__(configurator)
         self._configurator: S3StoreConfigurator
 

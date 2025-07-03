@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 
 from boto3 import client as boto3_client
 
-from digitalhub.stores.configurator.enums import CredsOrigin
+from digitalhub.stores.credentials.enums import CredsOrigin
 from digitalhub.stores.data.s3.configurator import S3StoreConfigurator
 from digitalhub.utils.exceptions import StoreError
 

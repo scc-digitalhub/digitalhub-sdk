@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.stores.configurator.api import get_current_env
+from digitalhub.stores.credentials.api import get_current_env
 from digitalhub.stores.data.local.store import LocalStore
 from digitalhub.stores.data.remote.store import RemoteStore
 from digitalhub.stores.data.s3.configurator import S3StoreConfigurator
@@ -16,13 +16,13 @@ from digitalhub.stores.data.sql.store import SqlStore
 from digitalhub.utils.uri_utils import SchemeCategory, map_uri_scheme
 
 if typing.TYPE_CHECKING:
-    from digitalhub.stores.data._base.configurator import StoreConfigurator
+    from digitalhub.stores.credentials.configurator import Configurator
     from digitalhub.stores.data._base.store import Store
     from digitalhub.utils.exceptions import StoreError
 
 
 class StoreInfo:
-    def __init__(self, store: Store, configurator: StoreConfigurator | None = None) -> None:
+    def __init__(self, store: Store, configurator: Configurator | None = None) -> None:
         self._store = store
         self._configurator = configurator
 
@@ -40,7 +40,7 @@ class StoreBuilder:
         self,
         store_type: str,
         store: Store,
-        configurator: StoreConfigurator | None = None,
+        configurator: Configurator | None = None,
     ) -> None:
         if store_type not in self._builders:
             self._builders[store_type] = StoreInfo(store, configurator)
