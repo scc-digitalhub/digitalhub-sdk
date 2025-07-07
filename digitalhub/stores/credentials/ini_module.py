@@ -83,7 +83,7 @@ def write_config(creds: dict, environment: str) -> None:
 
         cfg["DEFAULT"]["current_environment"] = environment
         for k, v in creds.items():
-            cfg[environment][k] = v
+            cfg[environment][k] = str(v)
 
         ENV_FILE.touch(exist_ok=True)
         with open(ENV_FILE, "w") as inifile:
