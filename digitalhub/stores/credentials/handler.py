@@ -21,7 +21,11 @@ class CredentialHandler:
         self._creds_store = CredentialsStore()
 
         # Current credentials set (__default by default)
-        self._environment = os.getenv(SetCreds.DH_ENV.value, SetCreds.DEFAULT.value)
+        env = os.getenv(SetCreds.DH_ENV.value)
+        if env is None or env == "":
+            self._environment = SetCreds.DEFAULT.value
+        else:
+            self._environment = env
 
     ##############################
     # Public methods
