@@ -21,11 +21,7 @@ class CredentialHandler:
         self._creds_store = CredentialsStore()
 
         # Current credentials set (__default by default)
-        env = os.getenv(SetCreds.DH_ENV.value)
-        if env is None or env == "":
-            self._environment = SetCreds.DEFAULT.value
-        else:
-            self._environment = env
+        self._environment = os.getenv(SetCreds.DH_ENV.value, SetCreds.DEFAULT.value)
 
     ##############################
     # Public methods
@@ -90,7 +86,9 @@ class CredentialHandler:
         str | None
             Environment variable value.
         """
-        self._environment = read_env_from_file()
+        env_from_file = read_env_from_file()
+        if env_from_file is not None:
+            self._environment = env_from_file
         return load_from_file(var)
 
     def write_env(self, creds: dict) -> None:
