@@ -38,7 +38,6 @@ def get_default_store(project: str) -> str:
     if store is None:
         store = creds_handler.load_from_file(StoreEnv.DEFAULT_FILES_STORE.value)
 
-
     if store is None or store == "":
         raise ValueError(
             "No default store found. "

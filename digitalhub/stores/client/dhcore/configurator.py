@@ -79,6 +79,13 @@ class ClientDHCoreConfigurator(Configurator):
     def load_file_vars(self) -> None:
         keys = [*self._remove_prefix_dhcore()]
         file_creds = {var: self._creds_handler.load_from_file(var) for var in keys}
+
+        # Because in the response there is no endpoint
+        if file_creds[CredsEnvVar.DHCORE_ENDPOINT.value] is None:
+            file_creds[CredsEnvVar.DHCORE_ENDPOINT.value] = self._creds_handler.load_from_env(
+                CredsEnvVar.DHCORE_ENDPOINT.value
+            )
+
         file_creds = self._sanitize_file_vars(file_creds)
         self._creds_handler.set_credentials(self._file, file_creds)
 
@@ -101,8 +108,9 @@ class ClientDHCoreConfigurator(Configurator):
         -------
         None
         """
-        if creds_handler.get_current_env() != self._current_env:
+        if (current := creds_handler.get_current_env()) != self._current_env:
             self.load_file_vars()
+            self._current_env = current
 
     def check_core_version(self, response: Response) -> None:
         """
@@ -310,6 +318,9 @@ class ClientDHCoreConfigurator(Configurator):
         """
         creds_handler.write_env(response)
         self.load_file_vars()
+
+        # Change current origin to file because of refresh
+        self._origin = CredsOrigin.FILE.value
 
     def _remove_prefix_dhcore(self) -> list[str]:
         """
