@@ -61,15 +61,14 @@ class ClientDHCoreConfigurator(Configurator):
         file_creds = self._creds_handler.get_credentials(self._file)
         missing_file = self._check_credentials(file_creds)
 
-        raise_error = False
+        msg = ""
         if missing_env:
             msg = f"Missing credentials in env: {', '.join(missing_env)}"
             self.change_origin()
-        if missing_file:
+        elif missing_file:
             msg += f"Missing credentials in file: {', '.join(missing_file)}"
-            raise_error = True
 
-        if raise_error:
+        if missing_env and missing_file:
             raise ClientError(msg)
 
     def load_env_vars(self) -> None:
