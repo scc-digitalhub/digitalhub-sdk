@@ -43,9 +43,8 @@ class SqlStore(Store):
 
     def download(
         self,
-        root: str,
+        src: str,
         dst: Path,
-        src: list[str],
         overwrite: bool = False,
     ) -> str:
         """
@@ -53,21 +52,19 @@ class SqlStore(Store):
 
         Parameters
         ----------
-        root : str
-            The root path of the artifact.
+        src : str
+            Path of the material entity.
         dst : str
-            The destination of the artifact on local filesystem.
-        src : list[str]
-            List of sources.
+            The destination of the material entity on local filesystem.
         overwrite : bool
             Specify if overwrite existing file(s).
 
         Returns
         -------
         str
-            Destination path of the downloaded artifact.
+            Destination path of the downloaded files.
         """
-        table_name = self._get_table_name(root) + ".parquet"
+        table_name = self._get_table_name(src) + ".parquet"
         # Case where dst is not provided
         if dst is None:
             dst = Path(self._build_temp("sql")) / table_name
@@ -86,8 +83,8 @@ class SqlStore(Store):
             self._check_overwrite(dst, overwrite)
             self._build_path(dst)
 
-        schema = self._get_schema(root)
-        table = self._get_table_name(root)
+        schema = self._get_schema(src)
+        table = self._get_table_name(src)
         return self._download_table(schema, table, str(dst))
 
     def upload(

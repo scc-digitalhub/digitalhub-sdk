@@ -29,7 +29,6 @@ class LocalStore(Store):
         self,
         root: str,
         dst: Path,
-        src: list[str],
         overwrite: bool = False,
     ) -> str:
         """
@@ -37,19 +36,17 @@ class LocalStore(Store):
 
         Parameters
         ----------
-        root : str
-            The root path of the artifact.
+        src : str
+            Path of the material entity.
         dst : str
-            The destination of the artifact on local filesystem.
-        src : list[str]
-            List of sources.
+            The destination of the material entity on local filesystem.
         overwrite : bool
             Specify if overwrite existing file(s).
 
         Returns
         -------
         str
-            Destination path of the downloaded artifact.
+            Destination path of the downloaded files.
         """
         raise StoreError("Local store does not support download.")
 

@@ -47,9 +47,8 @@ class S3Store(Store):
 
     def download(
         self,
-        root: str,
+        src: str,
         dst: Path,
-        src: list[str],
         overwrite: bool = False,
     ) -> str:
         """
@@ -57,21 +56,19 @@ class S3Store(Store):
 
         Parameters
         ----------
-        root : str
-            The root path of the artifact.
+        src : str
+            Path of the material entity.
         dst : str
-            The destination of the artifact on local filesystem.
-        src : list[str]
-            List of sources.
+            The destination of the material entity on local filesystem.
         overwrite : bool
             Specify if overwrite existing file(s).
 
         Returns
         -------
         str
-            Destination path of the downloaded artifact.
+            Destination path of the downloaded files.
         """
-        client, bucket = self._check_factory(root)
+        client, bucket = self._check_factory(src)
 
         # Build destination directory
         if dst.suffix == "":
@@ -80,20 +77,13 @@ class S3Store(Store):
             dst.parent.mkdir(parents=True, exist_ok=True)
 
         # Handle src and tree destination
-        if self.is_partition(root):
-            if not src:
-                keys = self._list_objects(client, bucket, root)
-                strip_root = self._get_key(root)
-                trees = [k.removeprefix(strip_root) for k in keys]
-            else:
-                keys = self._build_key_from_root(root, src)
-                trees = [s for s in src]
+        if self.is_partition(src):
+            keys = self._list_objects(client, bucket, src)
+            strip_root = self._get_key(src)
+            trees = [k.removeprefix(strip_root) for k in keys]
         else:
-            keys = [self._get_key(root)]
-            if not src:
-                trees = [Path(self._get_key(root)).name]
-            else:
-                trees = [s for s in src]
+            keys = [self._get_key(src)]
+            trees = [Path(self._get_key(src)).name]
 
         if len(keys) != len(trees):
             raise StoreError("Keys and trees must have the same length.")
@@ -134,7 +124,7 @@ class S3Store(Store):
         src : SourcesOrListOfSources
             Source(s).
         dst : str
-            The destination of the artifact on storage.
+            The destination of the material entity on storage.
 
         Returns
         -------
@@ -420,7 +410,7 @@ class S3Store(Store):
         src : str
             List of sources.
         dst : str
-            The destination of the artifact on storage.
+            The destination of the material entity on storage.
         client : S3Client
             The S3 client object.
         bucket : str
@@ -463,7 +453,7 @@ class S3Store(Store):
         src : list
             List of sources.
         dst : str
-            The destination of the artifact on storage.
+            The destination of the material entity on storage.
         client : S3Client
             The S3 client object.
         bucket : str
@@ -503,7 +493,7 @@ class S3Store(Store):
         src : str
             List of sources.
         dst : str
-            The destination of the artifact on storage.
+            The destination of the material entity on storage.
         client : S3Client
             The S3 client object.
         bucket : str
@@ -681,29 +671,6 @@ class S3Store(Store):
         if key.startswith("/"):
             key = key[1:]
         return key
-
-    def _build_key_from_root(self, root: str, paths: list[str]) -> list[str]:
-        """
-        Method to build object path.
-
-        Parameters
-        ----------
-        root : str
-            The root of the object path.
-        paths : list[str]
-            The path to build.
-
-        Returns
-        -------
-        list[str]
-            List of keys.
-        """
-        keys = []
-        for path in paths:
-            clean_path = self._get_key(path)
-            key = self._get_key(f"{root}{clean_path}")
-            keys.append(key)
-        return keys
 
     def _list_objects(self, client: S3Client, bucket: str, partition: str) -> list[str]:
         """

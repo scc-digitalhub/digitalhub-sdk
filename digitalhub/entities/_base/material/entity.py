@@ -83,9 +83,8 @@ class MaterialEntity(VersionedEntity):
             List of file paths.
         """
         store = get_store(self.project, self.spec.path)
-        paths = self.get_file_paths()
         dst = store._build_temp()
-        return store.download(self.spec.path, dst=dst, src=paths)
+        return store.download(self.spec.path, dst=dst)
 
     def download(
         self,
@@ -94,10 +93,7 @@ class MaterialEntity(VersionedEntity):
     ) -> str:
         """
         This function downloads one or more file from storage on local
-        machine.
-        It looks inside the object's status for the file(s) path under
-        files attribute. If it does not find it, it will try to download
-        what it can from spec.path.
+        machine from spec.path.
         The files are downloaded into a destination folder. If the destination
         is not specified, it will set by default under the context path
         as '<ctx-root>/<entity_type>', e.g. './dataitem'.
@@ -115,31 +111,24 @@ class MaterialEntity(VersionedEntity):
         Returns
         -------
         str
-            Downloaded path.
+            Download path.
 
         Examples
         --------
         Download a single file:
 
-        >>> entity.status.files[0]
-        {
-            "path ": "data.csv",
-            "name ": "data.csv",
-            "content_type ": "text/csv;charset=utf-8 "
-        }
         >>> path = entity.download()
         >>> print(path)
         dataitem/data.csv
         """
         store = get_store(self.project, self.spec.path)
-        paths = self.get_file_paths()
 
         if destination is None:
             dst = self._context().root / self.ENTITY_TYPE
         else:
             dst = Path(destination)
 
-        return store.download(self.spec.path, dst=dst, src=paths, overwrite=overwrite)
+        return store.download(self.spec.path, dst, overwrite=overwrite)
 
     def upload(self, source: SourcesOrListOfSources) -> None:
         """

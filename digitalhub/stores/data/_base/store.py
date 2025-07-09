@@ -35,19 +35,18 @@ class Store:
     @abstractmethod
     def download(
         self,
-        root: str,
+        src: str,
         dst: Path,
-        src: list[str],
         overwrite: bool = False,
     ) -> str:
         """
-        Method to download artifact from storage.
+        Method to download material entity from storage.
         """
 
     @abstractmethod
-    def upload(self, src: SourcesOrListOfSources, dst: str) -> list[tuple[str, str]]:
+    def upload(self, src: SourcesOrListOfSources, dst: str,) -> list[tuple[str, str]]:
         """
-        Method to upload artifact to storage.
+        Method to upload material entity to storage.
         """
 
     @abstractmethod
@@ -87,7 +86,7 @@ class Store:
         """
 
     @abstractmethod
-    def write_df(self, df: Any, dst: str, extension: str | None = None, **kwargs) -> str:
+    def write_df(self, df: Any, dst: str, extension: str | None = None, **kwargs,) -> str:
         """
         Write DataFrame as parquet or csv.
         """
