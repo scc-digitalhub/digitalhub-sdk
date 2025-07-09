@@ -182,6 +182,10 @@ class MaterialEntity(VersionedEntity):
         -------
         None
         """
+        available = 100 - len(self.status.files)
+        if len(files) > available:
+            files = files[:available]
+
         path_list = self.get_file_paths()
         for f in files:
             if f.get("path") not in path_list:
