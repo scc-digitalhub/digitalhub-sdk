@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import typing
+from abc import abstractmethod
 
 from digitalhub.entities._base.versioned.entity import VersionedEntity
 from digitalhub.entities._commons.enums import EntityTypes
@@ -318,6 +319,12 @@ class ExecutableEntity(VersionedEntity):
     ##############################
     #  Runs
     ##############################
+
+    @abstractmethod
+    def run(self, *args, **kwargs) -> Run:
+        """
+        Create and execute a new run.
+        """
 
     def get_run(
         self,

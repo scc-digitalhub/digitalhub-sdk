@@ -44,7 +44,11 @@ class Store:
         """
 
     @abstractmethod
-    def upload(self, src: SourcesOrListOfSources, dst: str,) -> list[tuple[str, str]]:
+    def upload(
+        self,
+        src: SourcesOrListOfSources,
+        dst: str,
+    ) -> list[tuple[str, str]]:
         """
         Method to upload material entity to storage.
         """
@@ -86,7 +90,13 @@ class Store:
         """
 
     @abstractmethod
-    def write_df(self, df: Any, dst: str, extension: str | None = None, **kwargs,) -> str:
+    def write_df(
+        self,
+        df: Any,
+        dst: str,
+        extension: str | None = None,
+        **kwargs,
+    ) -> str:
         """
         Write DataFrame as parquet or csv.
         """
