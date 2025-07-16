@@ -30,6 +30,10 @@ class S3StoreConfigurator(Configurator):
         CredsEnvVar.S3_SECRET_ACCESS_KEY,
     ]
 
+    def __init__(self):
+        super().__init__()
+        self.load_configs()
+
     ##############################
     # Configuration methods
     ##############################

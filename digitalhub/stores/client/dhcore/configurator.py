@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import typing
-from warnings import warn
 
 from requests import request
 
@@ -21,15 +20,35 @@ if typing.TYPE_CHECKING:
     from requests import Response
 
 
-# API levels that are supported
-MAX_API_LEVEL = 20
-MIN_API_LEVEL = 11
-LIB_VERSION = 13
-
-
 class ClientDHCoreConfigurator(Configurator):
     """
     Configurator object used to configure the client.
+
+    The configurator starts reading the credentials from the
+    environment and from the ini file and stores them into the
+    creds_handler object.
+
+    While reading the credentials from the two sources (environment and file),
+    the configurator evaluate if the required keys are present in both sources.
+    If the required keys are not present in both sources, the configurator
+    will rise an error, otherwise decide which source to use.
+
+    Once the credentials are read, the configurator check the current profile
+    name from the ini file, and set it. The default one is __default. The
+    profile is used to discriminate a set of credentials inside the ini file.
+
+    The configurator finally set the authentication type based on the credentials.
+    The logic is the following:
+
+        1. Check for a personal access token. Use it immediately to
+           require a timed access token in an exchange endpoint.
+           Switche then the origin to file and .
+           Set the auth type to EXCHANGE.
+        2. Check for an access token and a refresh token.
+           Set the auth type to OAUTH2.
+        3. Check for username and password.
+           Set the auth type to BASIC.
+        4. If none of the above is true, leave the auth type to None.
     """
 
     keys = [*list_enum(CredsEnvVar)]
@@ -43,112 +62,29 @@ class ClientDHCoreConfigurator(Configurator):
 
     def __init__(self) -> None:
         super().__init__()
-        self._current_env = creds_handler.get_current_env()
-        self._origin = CredsOrigin.ENV.value
         self.load_configs()
+        self._origin = self.set_origin()
+        self._current_profile = creds_handler.get_current_env()
+        self._auth_type = self.set_auth_type()
 
     ##############################
-    # Configuration methods
+    # Credentials methods
     ##############################
 
-    def load_configs(self) -> None:
+    def load_configs(self) -> str:
+        """
+        Load the configuration from the environment and from the file.
+        """
         self.load_env_vars()
         self.load_file_vars()
 
-        env_creds = self._creds_handler.get_credentials(self._env)
-        missing_env = self._check_credentials(env_creds)
-
-        file_creds = self._creds_handler.get_credentials(self._file)
-        missing_file = self._check_credentials(file_creds)
-
-        msg = ""
-        if missing_env:
-            msg = f"Missing credentials in env: {', '.join(missing_env)}"
-            self.change_origin()
-        elif missing_file:
-            msg += f"Missing credentials in file: {', '.join(missing_file)}"
-
-        if missing_env and missing_file:
-            raise ClientError(msg)
-
     def load_env_vars(self) -> None:
+        """
+        Load the credentials from the environment.
+        """
         env_creds = {var: self._creds_handler.load_from_env(var) for var in self.keys}
         env_creds = self._sanitize_env_vars(env_creds)
         self._creds_handler.set_credentials(self._env, env_creds)
-
-    def load_file_vars(self) -> None:
-        keys = [*self._remove_prefix_dhcore()]
-        file_creds = {var: self._creds_handler.load_from_file(var) for var in keys}
-
-        # Because in the response there is no endpoint
-        if file_creds[CredsEnvVar.DHCORE_ENDPOINT.value] is None:
-            file_creds[CredsEnvVar.DHCORE_ENDPOINT.value] = self._creds_handler.load_from_env(
-                CredsEnvVar.DHCORE_ENDPOINT.value
-            )
-
-        file_creds = self._sanitize_file_vars(file_creds)
-        self._creds_handler.set_credentials(self._file, file_creds)
-
-    def change_origin(self) -> None:
-        if self._origin == CredsOrigin.ENV.value:
-            self._origin = CredsOrigin.FILE.value
-        else:
-            self._origin = CredsOrigin.ENV.value
-
-    def check_config(self) -> None:
-        """
-        Check if the config is valid.
-
-        Parameters
-        ----------
-        config : dict
-            Configuration dictionary.
-
-        Returns
-        -------
-        None
-        """
-        if (current := creds_handler.get_current_env()) != self._current_env:
-            self.load_file_vars()
-            self._current_env = current
-
-    def check_core_version(self, response: Response) -> None:
-        """
-        Raise an exception if DHCore API version is not supported.
-
-        Parameters
-        ----------
-        response : Response
-            The response object.
-
-        Returns
-        -------
-        None
-        """
-        if "X-Api-Level" in response.headers:
-            core_api_level = int(response.headers["X-Api-Level"])
-            if not (MIN_API_LEVEL <= core_api_level <= MAX_API_LEVEL):
-                raise ClientError("Backend API level not supported.")
-            if LIB_VERSION < core_api_level:
-                warn("Backend API level is higher than library version. You should consider updating the library.")
-
-    def build_url(self, api: str) -> str:
-        """
-        Build the url.
-
-        Parameters
-        ----------
-        api : str
-            The api to call.
-
-        Returns
-        -------
-        str
-            The url.
-        """
-        creds = self._creds_handler.get_credentials(self._origin)
-        endpoint = creds[CredsEnvVar.DHCORE_ENDPOINT.value]
-        return f"{endpoint}/{api.removeprefix('/')}"
 
     def _sanitize_env_vars(self, creds: dict) -> dict:
         """
@@ -167,6 +103,28 @@ class ClientDHCoreConfigurator(Configurator):
         creds[CredsEnvVar.DHCORE_ENDPOINT.value] = self._sanitize_endpoint(creds[CredsEnvVar.DHCORE_ENDPOINT.value])
         creds[CredsEnvVar.DHCORE_ISSUER.value] = self._sanitize_endpoint(creds[CredsEnvVar.DHCORE_ISSUER.value])
         return creds
+
+    def load_file_vars(self) -> None:
+        """
+        Load the credentials from the file.
+        """
+        keys = [*self._remove_prefix_dhcore()]
+        file_creds = {var: self._creds_handler.load_from_file(var) for var in keys}
+
+        # Because in the response there is no endpoint
+        if file_creds[CredsEnvVar.DHCORE_ENDPOINT.value] is None:
+            file_creds[CredsEnvVar.DHCORE_ENDPOINT.value] = self._creds_handler.load_from_env(
+                CredsEnvVar.DHCORE_ENDPOINT.value
+            )
+
+        # Because in the response there is no personal access token
+        if file_creds[CredsEnvVar.DHCORE_PERSONAL_ACCESS_TOKEN.value] is None:
+            file_creds[CredsEnvVar.DHCORE_PERSONAL_ACCESS_TOKEN.value] = self._creds_handler.load_from_env(
+                CredsEnvVar.DHCORE_PERSONAL_ACCESS_TOKEN.value
+            )
+
+        file_creds = self._sanitize_file_vars(file_creds)
+        self._creds_handler.set_credentials(self._file, file_creds)
 
     def _sanitize_file_vars(self, creds: dict) -> dict:
         """
@@ -213,11 +171,95 @@ class ClientDHCoreConfigurator(Configurator):
         endpoint = endpoint.strip()
         return endpoint.removesuffix("/")
 
+    def check_config(self) -> None:
+        """
+        Check if the config is valid.
+
+        Parameters
+        ----------
+        config : dict
+            Configuration dictionary.
+
+        Returns
+        -------
+        None
+        """
+        if (current := creds_handler.get_current_env()) != self._current_profile:
+            self.load_file_vars()
+            self._current_profile = current
+
+    def get_endpoint(self) -> str:
+        """
+        Get the DHCore endpoint.
+
+        Returns
+        -------
+        str
+            The endpoint.
+        """
+        creds = self._creds_handler.get_credentials(self._origin)
+        return creds[CredsEnvVar.DHCORE_ENDPOINT.value]
+
+    ##############################
+    # Origin methods
+    ##############################
+
+    def set_origin(self) -> str:
+        """
+        Evaluate the default origin from the credentials.
+
+        Returns
+        -------
+        str
+            The origin.
+        """
+        origin = CredsOrigin.ENV.value
+
+        env_creds = self._creds_handler.get_credentials(self._env)
+        missing_env = self._check_credentials(env_creds)
+
+        file_creds = self._creds_handler.get_credentials(self._file)
+        missing_file = self._check_credentials(file_creds)
+
+        msg = ""
+        if missing_env:
+            msg = f"Missing required vars in env: {', '.join(missing_env)}"
+            origin = CredsOrigin.FILE.value
+        elif missing_file:
+            msg += f"Missing required vars in .dhcore.ini file: {', '.join(missing_file)}"
+
+        if missing_env and missing_file:
+            raise ClientError(msg)
+
+        return origin
+
+    def change_origin(self) -> None:
+        """
+        Change the origin of the credentials.
+        """
+        if self._origin == CredsOrigin.ENV.value:
+            return self.change_to_file()
+        self.change_to_env()
+
+    def change_to_file(self) -> None:
+        """
+        Change the origin to file. Re-evaluate the auth type.
+        """
+        self._origin = CredsOrigin.FILE.value
+        self._auth_type = self.set_auth_type()
+
+    def change_to_env(self) -> None:
+        """
+        Change the origin to env. Re-evaluate the auth type.
+        """
+        self._origin = CredsOrigin.ENV.value
+        self._auth_type = self.set_auth_type()
+
     ##############################
     # Auth methods
     ##############################
 
-    def get_auth_type(self) -> str:
+    def set_auth_type(self) -> str:
         """
         Evaluate the auth type from the credentials.
 
@@ -227,38 +269,47 @@ class ClientDHCoreConfigurator(Configurator):
             The auth type.
         """
         creds = creds_handler.get_credentials(self._origin)
-        return self._eval_auth_type(creds)
+        auth_type = self._eval_auth_type(creds)
+        # If we have an exchange token, we need to get a new access token.
+        # Therefore, we change the origin to file, where the refresh token is written.
+        # We also try to fetch the PAT from both env and file
+        if auth_type == AuthType.EXCHANGE.value:
+            self.get_new_access_token(change_origin=True)
+            # Just to ensure we get the right source from file
+            self.change_to_file()
+        return auth_type
 
-    def set_request_auth(self, kwargs: dict) -> dict:
+    def refreshable_auth_types(self) -> bool:
         """
-        Get the authentication header.
+        Check if the auth type is refreshable.
 
-        Parameters
-        ----------
-        kwargs : dict
-            Keyword arguments to pass to the request.
+        Returns
+        -------
+        bool
+            True if the auth type is refreshable, False otherwise.
+        """
+        return self.auth_type in [AuthType.OAUTH2.value, AuthType.EXCHANGE.value]
+
+    def get_auth_parameters(self) -> dict:
+        """
+        Get the authentication header for the request.
+        It is given for granted that the auth type is set and that,
+        if the auth type is EXCHANGE, the refresh token is set.
 
         Returns
         -------
         dict
-            Authentication header.
+            Authentication parameters.
         """
         creds = creds_handler.get_credentials(self._origin)
-        auth_type = self.get_auth_type()
-
-        if auth_type is None:
-            return kwargs
-        if auth_type == AuthType.EXCHANGE.value:
-            return kwargs
-        if auth_type == AuthType.BASIC.value:
+        kwargs = {}
+        if self._auth_type in (AuthType.EXCHANGE.value, AuthType.OAUTH2.value):
+            access_token = creds[CredsEnvVar.DHCORE_ACCESS_TOKEN.value]
+            kwargs["headers"] = {"Authorization": f"Bearer {access_token}"}
+        elif self._auth_type == AuthType.BASIC.value:
             user = creds[CredsEnvVar.DHCORE_USER.value]
             password = creds[CredsEnvVar.DHCORE_PASSWORD.value]
             kwargs["auth"] = (user, password)
-        elif auth_type == AuthType.OAUTH2.value:
-            if "headers" not in kwargs:
-                kwargs["headers"] = {}
-            access_token = creds[CredsEnvVar.DHCORE_ACCESS_TOKEN.value]
-            kwargs["headers"]["Authorization"] = f"Bearer {access_token}"
         return kwargs
 
     def get_new_access_token(self, change_origin: bool = False) -> None:
@@ -268,33 +319,48 @@ class ClientDHCoreConfigurator(Configurator):
         Parameters
         ----------
         change_origin : bool, optional
-            Whether to change the origin, by default False
+            Whether to change the origin of the credentials, by default False
 
         Returns
         -------
         None
         """
-        # Call issuer and get endpoint for
-        # refreshing access token
+        if not self.refreshable_auth_types():
+            raise ClientError(f"Auth type {self._auth_type} does not support refresh.")
+
+        # Get refresh endpoint
         url = self._get_refresh_endpoint()
 
+        # Get credentials
         creds = self._creds_handler.get_credentials(self._origin)
-        auth_type = self._eval_auth_type(creds)
 
-        # Here should go the handling of token exchange or refresh
-        if auth_type == AuthType.OAUTH2.value:
-            refresh_token = creds.get(CredsEnvVar.DHCORE_REFRESH_TOKEN.value)
-        else:
-            raise NotImplementedError("Token exchange not implemented yet.")
+        # Get client id
+        if (client_id := creds.get(CredsEnvVar.DHCORE_CLIENT_ID.value)) is None:
+            raise ClientError("Client id not set.")
 
-        # Call refresh token endpoint
-        response = self._call_refresh_token_endpoint(url, refresh_token)
+        # Handling of token exchange or refresh
+        if self._auth_type == AuthType.OAUTH2.value:
+            response = self._call_refresh_token_endpoint(
+                url,
+                client_id=client_id,
+                refresh_token=creds.get(CredsEnvVar.DHCORE_REFRESH_TOKEN.value),
+                grant_type="refresh_token",
+                scope="credentials",
+            )
+        elif self._auth_type == AuthType.EXCHANGE.value:
+            response = self._call_refresh_token_endpoint(
+                url,
+                client_id=client_id,
+                subject_token=creds.get(CredsEnvVar.DHCORE_PERSONAL_ACCESS_TOKEN.value),
+                subject_token_type="urn:ietf:params:oauth:token-type:pat",
+                grant_type="urn:ietf:params:oauth:grant-type:token-exchange",
+                scope="credentials",
+            )
 
         # Change origin of creds if needed
         if response.status_code in (400, 401, 403):
             if not change_origin:
                 raise ClientError("Unable to refresh token. Please check your credentials.")
-
             self.change_origin()
             self.get_new_access_token(change_origin=False)
 
@@ -367,7 +433,11 @@ class ClientDHCoreConfigurator(Configurator):
         r.raise_for_status()
         return r.json().get("token_endpoint")
 
-    def _call_refresh_token_endpoint(self, url: str, refresh_token: str) -> Response:
+    def _call_refresh_token_endpoint(
+        self,
+        url: str,
+        **kwargs,
+    ) -> Response:
         """
         Call the refresh token endpoint.
 
@@ -375,27 +445,16 @@ class ClientDHCoreConfigurator(Configurator):
         ----------
         url : str
             Refresh token endpoint.
-        refresh_token : str
-            Refresh token.
+        kwargs : dict
+            Keyword arguments to pass to the request.
 
         Returns
         -------
         Response
             Response object.
         """
-        # Get client id
-        creds = self._creds_handler.get_credentials(self._origin)
-        client_id = creds.get(CredsEnvVar.DHCORE_CLIENT_ID.value)
-        if client_id is None:
-            raise ClientError("Client id not set.")
-
         # Send request to get new access token
-        payload = {
-            "grant_type": "refresh_token",
-            "client_id": client_id,
-            "refresh_token": refresh_token,
-            "scope": "openid credentials offline_access",
-        }
+        payload = {**kwargs}
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
         return request("POST", url, data=payload, headers=headers, timeout=60)
 

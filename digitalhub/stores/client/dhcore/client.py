@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import typing
 from typing import Any
+from warnings import warn
 
 from requests import request
 from requests.exceptions import JSONDecodeError
@@ -16,11 +17,17 @@ from digitalhub.stores.client.dhcore.configurator import ClientDHCoreConfigurato
 from digitalhub.stores.client.dhcore.error_parser import ErrorParser
 from digitalhub.stores.client.dhcore.key_builder import ClientDHCoreKeyBuilder
 from digitalhub.stores.client.dhcore.params_builder import ClientDHCoreParametersBuilder
-from digitalhub.utils.exceptions import BackendError
+from digitalhub.utils.exceptions import BackendError, ClientError
 from digitalhub.utils.generic_utils import dump_json
 
 if typing.TYPE_CHECKING:
     from requests import Response
+
+
+# API levels that are supported
+MAX_API_LEVEL = 20
+MIN_API_LEVEL = 11
+LIB_VERSION = 13
 
 
 class ClientDHCore(Client):
@@ -280,13 +287,31 @@ class ClientDHCore(Client):
             Response object.
         """
         self._configurator.check_config()
+        url = self._build_url(api)
+        auth_params = self._configurator.get_auth_parameters()
         if kwargs is None:
             kwargs = {}
-        url = self._configurator.build_url(api)
-        kwargs = self._configurator.set_request_auth(kwargs)
+        kwargs.update(auth_params)
         return self._make_call(call_type, url, **kwargs)
 
-    def _make_call(self, call_type: str, url: str, refresh_token: bool = True, **kwargs) -> dict:
+    def _build_url(self, api: str) -> str:
+        """
+        Build the url.
+
+        Parameters
+        ----------
+        api : str
+            The api to call.
+
+        Returns
+        -------
+        str
+            The url.
+        """
+        endpoint = self._configurator.get_endpoint()
+        return f"{endpoint}/{api.removeprefix('/')}"
+
+    def _make_call(self, call_type: str, url: str, refresh: bool = True, **kwargs) -> dict:
         """
         Make a call to the DHCore API.
 
@@ -296,6 +321,8 @@ class ClientDHCore(Client):
             The type of call to make.
         url : str
             The URL to call.
+        refresh : bool
+            Whether to refresh the access token.
         **kwargs : dict
             Keyword arguments to pass to the request.
 
@@ -308,16 +335,36 @@ class ClientDHCore(Client):
         response = request(call_type, url, timeout=60, **kwargs)
 
         # Evaluate DHCore API version
-        self._configurator.check_core_version(response)
+        self._check_core_version(response)
 
-        # Handle token refresh
-        if (response.status_code in [401]) and (refresh_token) and ("Authorization" in kwargs.get("headers", {})):
+        # Handle token refresh (redo call)
+        if (response.status_code in [401]) and (refresh) and self._configurator.refreshable_auth_types():
             self._configurator.get_new_access_token(change_origin=True)
             kwargs = self._configurator.set_request_auth(kwargs)
-            return self._make_call(call_type, url, refresh_token=False, **kwargs)
+            return self._make_call(call_type, url, refresh=False, **kwargs)
 
         self._error_parser.parse(response)
         return self._dictify_response(response)
+
+    def _check_core_version(self, response: Response) -> None:
+        """
+        Raise an exception if DHCore API version is not supported.
+
+        Parameters
+        ----------
+        response : Response
+            The response object.
+
+        Returns
+        -------
+        None
+        """
+        if "X-Api-Level" in response.headers:
+            core_api_level = int(response.headers["X-Api-Level"])
+            if not (MIN_API_LEVEL <= core_api_level <= MAX_API_LEVEL):
+                raise ClientError("Backend API level not supported.")
+            if LIB_VERSION < core_api_level:
+                warn("Backend API level is higher than library version. You should consider updating the library.")
 
     def _dictify_response(self, response: Response) -> dict:
         """
