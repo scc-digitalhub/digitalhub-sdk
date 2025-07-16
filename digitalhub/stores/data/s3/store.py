@@ -12,6 +12,7 @@ from urllib.parse import urlparse
 
 import boto3
 import botocore.client  # pylint: disable=unused-import
+from boto3.s3.transfer import TransferConfig
 from botocore.exceptions import ClientError, NoCredentialsError
 
 from digitalhub.stores.credentials.enums import CredsOrigin
@@ -542,7 +543,13 @@ class S3Store(Store):
         mime_type = get_file_mime_type(src)
         if mime_type is not None:
             extra_args["ContentType"] = mime_type
-        client.upload_file(Filename=src, Bucket=bucket, Key=key, ExtraArgs=extra_args)
+        client.upload_file(
+            Filename=src,
+            Bucket=bucket,
+            Key=key,
+            ExtraArgs=extra_args,
+            Config=TransferConfig(multipart_threshold=100 * 1024 * 1024),
+        )
 
     @staticmethod
     def _upload_fileobject(
@@ -569,7 +576,12 @@ class S3Store(Store):
         -------
         None
         """
-        client.put_object(Bucket=bucket, Key=key, Body=fileobj.getvalue())
+        client.upload_fileobj(
+            Fileobj=fileobj,
+            Bucket=bucket,
+            Key=key,
+            Config=TransferConfig(multipart_threshold=100 * 1024 * 1024),
+        )
 
     ##############################
     # Helper methods
