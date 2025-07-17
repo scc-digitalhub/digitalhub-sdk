@@ -171,9 +171,6 @@ class ClientDHCore(Client):
         list[dict]
             Response objects.
         """
-        if kwargs is None:
-            kwargs = {}
-
         if "params" not in kwargs:
             kwargs["params"] = {}
 
@@ -230,9 +227,6 @@ class ClientDHCore(Client):
         list[dict]
             Response objects.
         """
-        if kwargs is None:
-            kwargs = {}
-
         if "params" not in kwargs:
             kwargs["params"] = {}
 
@@ -288,11 +282,8 @@ class ClientDHCore(Client):
         """
         self._configurator.check_config()
         url = self._build_url(api)
-        auth_params = self._configurator.get_auth_parameters()
-        if kwargs is None:
-            kwargs = {}
-        kwargs.update(auth_params)
-        return self._make_call(call_type, url, **kwargs)
+        full_kwargs = self._configurator.get_auth_parameters(kwargs)
+        return self._make_call(call_type, url, **full_kwargs)
 
     def _build_url(self, api: str) -> str:
         """

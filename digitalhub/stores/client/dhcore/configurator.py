@@ -65,7 +65,8 @@ class ClientDHCoreConfigurator(Configurator):
         self.load_configs()
         self._origin = self.set_origin()
         self._current_profile = creds_handler.get_current_env()
-        self._auth_type = self.set_auth_type()
+        self._auth_type: str | None = None
+        self.set_auth_type()
 
     ##############################
     # Credentials methods
@@ -238,46 +239,46 @@ class ClientDHCoreConfigurator(Configurator):
         Change the origin of the credentials.
         """
         if self._origin == CredsOrigin.ENV.value:
-            return self.change_to_file()
-        self.change_to_env()
+            self.change_to_file()
+        else:
+            self.change_to_env()
+
+        # Re-evaluate the auth type
+        self.set_auth_type()
 
     def change_to_file(self) -> None:
         """
         Change the origin to file. Re-evaluate the auth type.
         """
         self._origin = CredsOrigin.FILE.value
-        self._auth_type = self.set_auth_type()
 
     def change_to_env(self) -> None:
         """
         Change the origin to env. Re-evaluate the auth type.
         """
         self._origin = CredsOrigin.ENV.value
-        self._auth_type = self.set_auth_type()
 
     ##############################
     # Auth methods
     ##############################
 
-    def set_auth_type(self) -> str:
+    def set_auth_type(self) -> None:
         """
         Evaluate the auth type from the credentials.
 
         Returns
         -------
-        str
-            The auth type.
+        None
         """
         creds = creds_handler.get_credentials(self._origin)
-        auth_type = self._eval_auth_type(creds)
+        self._auth_type = self._eval_auth_type(creds)
         # If we have an exchange token, we need to get a new access token.
         # Therefore, we change the origin to file, where the refresh token is written.
         # We also try to fetch the PAT from both env and file
-        if auth_type == AuthType.EXCHANGE.value:
+        if self._auth_type == AuthType.EXCHANGE.value:
             self.get_new_access_token(change_origin=True)
             # Just to ensure we get the right source from file
             self.change_to_file()
-        return auth_type
 
     def refreshable_auth_types(self) -> bool:
         """
@@ -288,13 +289,18 @@ class ClientDHCoreConfigurator(Configurator):
         bool
             True if the auth type is refreshable, False otherwise.
         """
-        return self.auth_type in [AuthType.OAUTH2.value, AuthType.EXCHANGE.value]
+        return self._auth_type in [AuthType.OAUTH2.value, AuthType.EXCHANGE.value]
 
-    def get_auth_parameters(self) -> dict:
+    def get_auth_parameters(self, kwargs: dict) -> dict:
         """
         Get the authentication header for the request.
         It is given for granted that the auth type is set and that,
         if the auth type is EXCHANGE, the refresh token is set.
+
+        Parameters
+        ----------
+        kwargs : dict
+            Keyword arguments to pass to the request.
 
         Returns
         -------
@@ -302,10 +308,11 @@ class ClientDHCoreConfigurator(Configurator):
             Authentication parameters.
         """
         creds = creds_handler.get_credentials(self._origin)
-        kwargs = {}
         if self._auth_type in (AuthType.EXCHANGE.value, AuthType.OAUTH2.value):
             access_token = creds[CredsEnvVar.DHCORE_ACCESS_TOKEN.value]
-            kwargs["headers"] = {"Authorization": f"Bearer {access_token}"}
+            if "headers" not in kwargs:
+                kwargs["headers"] = {}
+            kwargs["headers"]["Authorization"] = f"Bearer {access_token}"
         elif self._auth_type == AuthType.BASIC.value:
             user = creds[CredsEnvVar.DHCORE_USER.value]
             password = creds[CredsEnvVar.DHCORE_PASSWORD.value]
