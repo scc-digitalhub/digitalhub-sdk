@@ -308,7 +308,7 @@ class ClientDHCoreConfigurator(Configurator):
             Authentication parameters.
         """
         creds = creds_handler.get_credentials(self._origin)
-        if self._auth_type in (AuthType.EXCHANGE.value, AuthType.OAUTH2.value):
+        if self._auth_type in (AuthType.EXCHANGE.value, AuthType.OAUTH2.value, AuthType.ACCESS_TOKEN.value):
             access_token = creds[CredsEnvVar.DHCORE_ACCESS_TOKEN.value]
             if "headers" not in kwargs:
                 kwargs["headers"] = {}
