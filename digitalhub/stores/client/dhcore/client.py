@@ -331,7 +331,7 @@ class ClientDHCore(Client):
         # Handle token refresh (redo call)
         if (response.status_code in [401]) and (refresh) and self._configurator.refreshable_auth_types():
             self._configurator.get_new_access_token(change_origin=True)
-            kwargs = self._configurator.set_request_auth(kwargs)
+            kwargs = self._configurator.get_auth_parameters(kwargs)
             return self._make_call(call_type, url, refresh=False, **kwargs)
 
         self._error_parser.parse(response)

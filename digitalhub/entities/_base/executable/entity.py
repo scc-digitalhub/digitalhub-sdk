@@ -10,8 +10,9 @@ from abc import abstractmethod
 from digitalhub.entities._base.versioned.entity import VersionedEntity
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._processors.context import context_processor
-from digitalhub.entities.run.crud import delete_run, get_run, list_runs
-from digitalhub.entities.task.crud import delete_task
+from digitalhub.entities.run.crud import list_runs
+from digitalhub.entities.task.crud import delete_task, list_tasks
+from digitalhub.entities.trigger.crud import list_triggers
 from digitalhub.factory.factory import factory
 from digitalhub.utils.exceptions import EntityAlreadyExistsError, EntityError
 
@@ -124,13 +125,13 @@ class ExecutableEntity(VersionedEntity):
             if task_obj.spec.function == self._get_executable_string():
                 self._tasks[task_obj.kind] = task_obj
 
-    def new_task(self, task_kind: str, **kwargs) -> Task:
+    def new_task(self, kind: str, **kwargs) -> Task:
         """
         Create new task. If the task already exists, update it.
 
         Parameters
         ----------
-        task_kind : str
+        kind : str
             Kind the object.
         **kwargs : dict
             Keyword arguments.
@@ -140,21 +141,18 @@ class ExecutableEntity(VersionedEntity):
         Task
             New task.
         """
-        self._raise_if_exists(task_kind)
-
-        if kwargs is None:
-            kwargs = {}
+        self._raise_if_exists(kind)
 
         # Override kwargs
         kwargs["project"] = self.project
         kwargs[self.ENTITY_TYPE] = self._get_executable_string()
-        kwargs["kind"] = task_kind
+        kwargs["kind"] = kind
 
         # Create object instance
         task: Task = factory.build_entity_from_params(**kwargs)
         task.save()
 
-        self._tasks[task_kind] = task
+        self._tasks[kind] = task
         return task
 
     def get_task(self, kind: str) -> Task:
@@ -185,6 +183,23 @@ class ExecutableEntity(VersionedEntity):
             self._tasks[kind] = resp[0]
             return self._tasks[kind]
 
+    def list_task(self, **kwargs) -> list[Task]:
+        """
+        List tasks.
+
+        Parameters
+        ----------
+        **kwargs : dict
+            Keyword arguments.
+
+        Returns
+        -------
+        list
+            List of tasks.
+        """
+        kwargs["params"] = {self.ENTITY_TYPE: self._get_executable_string()}
+        return list_tasks(self.project, **kwargs)
+
     def update_task(self, kind: str, **kwargs) -> Task:
         """
         Update task.
@@ -202,9 +217,6 @@ class ExecutableEntity(VersionedEntity):
             Task.
         """
         self._raise_if_not_exists(kind)
-
-        if kwargs is None:
-            kwargs = {}
 
         # Update kwargs
         kwargs["project"] = self.project
@@ -354,13 +366,14 @@ class ExecutableEntity(VersionedEntity):
         Using entity ID:
         >>> obj = executable.get_run("123")
         """
-        obj = get_run(
-            identifier=identifier,
-            project=self.project,
-            **kwargs,
-        )
-        self.refresh()
-        return obj
+        entities = self.list_runs(**kwargs)
+        for entity in entities:
+            if getattr(entity.spec, self.ENTITY_TYPE) == self._get_executable_string():
+                if entity.id == identifier:
+                    return entity
+                if entity.key == identifier:
+                    return entity
+        raise EntityError(f"Run '{identifier}' does not exist or does not belong to this executable.")
 
     def list_runs(self, **kwargs) -> list[Run]:
         """
@@ -380,47 +393,20 @@ class ExecutableEntity(VersionedEntity):
         --------
         >>> objs = executable.list_runs()
         """
-        if kwargs is None:
-            kwargs = {}
         kwargs["params"] = {self.ENTITY_TYPE: self._get_executable_string()}
         return list_runs(self.project, **kwargs)
-
-    def delete_run(
-        self,
-        identifier: str,
-        **kwargs,
-    ) -> None:
-        """
-        Delete run from backend.
-
-        Parameters
-        ----------
-        identifier : str
-            Entity key (store://...) or entity ID.
-        **kwargs : dict
-            Parameters to pass to the API call.
-
-        Returns
-        -------
-        dict
-            Response from backend.
-
-        Examples
-        --------
-        >>> executable.delete_run("store://my-run-key")
-
-        """
-        delete_run(
-            identifier=identifier,
-            project=self.project,
-            **kwargs,
-        )
 
     ##############################
     #  Trigger
     ##############################
 
-    def trigger(self, action: str, trigger_kind: str, trigger_name: str, **kwargs) -> Trigger:
+    def trigger(
+        self,
+        action: str,
+        trigger_kind: str,
+        trigger_name: str,
+        **kwargs,
+    ) -> Trigger:
         """
         Trigger function.
 
@@ -446,9 +432,6 @@ class ExecutableEntity(VersionedEntity):
         # Get run validator for building trigger template
         run_kind = factory.get_run_kind(self.kind)
         run_validator: SpecValidator = factory.get_spec_validator(run_kind)
-        if kwargs is None:
-            kwargs = {}
-
         # Override kwargs
         kwargs["project"] = self.project
         kwargs["kind"] = trigger_kind
@@ -461,3 +444,61 @@ class ExecutableEntity(VersionedEntity):
         trigger: Trigger = factory.build_entity_from_params(**kwargs)
         trigger.save()
         return trigger
+
+    def get_trigger(
+        self,
+        identifier: str,
+        **kwargs,
+    ) -> Trigger:
+        """
+        Get object from backend.
+
+        Parameters
+        ----------
+        identifier : str
+            Entity key (store://...) or entity ID.
+        **kwargs : dict
+            Parameters to pass to the API call.
+
+        Returns
+        -------
+        Trigger
+            Object instance.
+
+        Examples
+        --------
+        Using entity key:
+        >>> obj = executable.get_trigger("store://my-trigger-key")
+
+        Using entity ID:
+        >>> obj = executable.get_trigger("123")
+        """
+        entities = self.list_triggers(**kwargs)
+        for entity in entities:
+            if getattr(entity.spec, self.ENTITY_TYPE) == self._get_executable_string():
+                if entity.id == identifier:
+                    return entity
+                if entity.key == identifier:
+                    return entity
+        raise EntityError(f"Trigger '{identifier}' does not exist or does not belong to this executable.")
+
+    def list_triggers(self, **kwargs) -> list[Trigger]:
+        """
+        List all triggers from backend.
+
+        Parameters
+        ----------
+        **kwargs : dict
+            Parameters to pass to the API call.
+
+        Returns
+        -------
+        list[Trigger]
+            List of object instances.
+
+        Examples
+        --------
+        >>> objs = executable.list_triggers()
+        """
+        kwargs["params"] = {self.ENTITY_TYPE: self._get_executable_string()}
+        return list_triggers(self.project, **kwargs)

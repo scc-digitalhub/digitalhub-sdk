@@ -2092,8 +2092,6 @@ class Project(Entity):
         --------
         >>> objs = project.list_runs()
         """
-        if kwargs is None:
-            kwargs = {}
         return list_runs(self.name, **kwargs)
 
     def delete_run(

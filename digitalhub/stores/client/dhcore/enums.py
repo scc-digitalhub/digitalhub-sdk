@@ -31,3 +31,4 @@ class AuthType(Enum):
     BASIC = "basic"
     OAUTH2 = "oauth2"
     EXCHANGE = "exchange"
+    ACCESS_TOKEN = "access_token_only"

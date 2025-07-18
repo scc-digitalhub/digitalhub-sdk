@@ -984,7 +984,7 @@ class ContextEntityOperationsProcessor:
         )
         return context.client.read_object(api, **kwargs)
 
-    def stop_run(
+    def stop_entity(
         self,
         project: str,
         entity_type: str,
@@ -1019,7 +1019,7 @@ class ContextEntityOperationsProcessor:
         )
         context.client.create_object(api, **kwargs)
 
-    def resume_run(
+    def resume_entity(
         self,
         project: str,
         entity_type: str,

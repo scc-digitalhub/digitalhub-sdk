@@ -473,6 +473,8 @@ class ClientDHCoreConfigurator(Configurator):
             and creds[CredsEnvVar.DHCORE_REFRESH_TOKEN.value] is not None
         ):
             return AuthType.OAUTH2.value
+        if creds[CredsEnvVar.DHCORE_ACCESS_TOKEN.value] is not None:
+            return AuthType.ACCESS_TOKEN.value
         if creds[CredsEnvVar.DHCORE_USER.value] is not None and creds[CredsEnvVar.DHCORE_PASSWORD.value] is not None:
             return AuthType.BASIC.value
         return None

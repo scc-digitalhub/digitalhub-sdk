@@ -147,7 +147,7 @@ class Run(UnversionedEntity):
         None
         """
         if not self.spec.local_execution:
-            return context_processor.stop_run(self.project, self.ENTITY_TYPE, self.id)
+            return context_processor.stop_entity(self.project, self.ENTITY_TYPE, self.id)
 
     def resume(self) -> None:
         """
@@ -158,7 +158,7 @@ class Run(UnversionedEntity):
         None
         """
         if not self.spec.local_execution:
-            return context_processor.resume_run(self.project, self.ENTITY_TYPE, self.id)
+            return context_processor.resume_entity(self.project, self.ENTITY_TYPE, self.id)
 
     def log_metric(
         self,
