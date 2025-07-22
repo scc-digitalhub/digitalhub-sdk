@@ -186,9 +186,14 @@ class Store:
         """
         if not isinstance(path, Path):
             path = Path(path)
-        if path.suffix != "":
-            path = path.parent
-        path.mkdir(parents=True, exist_ok=True)
+        # If the path does not exist, we need to infer if it's a file or directory
+        if path.suffix and not path.name.startswith('.'):
+            # Looks like a file, use parent
+            dir_path = path.parent
+        else:
+            # Looks like a directory (even if it contains dots)
+            dir_path = path
+        dir_path.mkdir(parents=True, exist_ok=True)
 
     @staticmethod
     def _build_temp() -> Path:
