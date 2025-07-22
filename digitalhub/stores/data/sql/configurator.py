@@ -20,6 +20,7 @@ class SqlStoreConfigurator(Configurator):
         CredsEnvVar.DB_HOST,
         CredsEnvVar.DB_PORT,
         CredsEnvVar.DB_DATABASE,
+        CredsEnvVar.DB_PLATFORM,
     ]
     required_keys = [
         CredsEnvVar.DB_USERNAME,

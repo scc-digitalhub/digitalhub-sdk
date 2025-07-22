@@ -1,14 +1,11 @@
 # SPDX-FileCopyrightText: © 2025 DSLab - Fondazione Bruno Kessler
 #
 # SPDX-License-Identifier: Apache-2.0
-
 from __future__ import annotations
 
 from pathlib import Path
 from urllib.parse import urlparse
-
 from boto3 import client as boto3_client
-
 from digitalhub.stores.credentials.enums import CredsOrigin
 from digitalhub.stores.data.s3.configurator import S3StoreConfigurator
 from digitalhub.utils.exceptions import StoreError
