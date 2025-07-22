@@ -17,6 +17,7 @@ class VolumeType(Enum):
 
     PERSISTENT_VOLUME_CLAIM = "persistent_volume_claim"
     EMPTY_DIR = "empty_dir"
+    EPHEMERAL = "ephemeral"
 
 
 class SpecEmptyDir(BaseModel):
@@ -24,7 +25,7 @@ class SpecEmptyDir(BaseModel):
     Spec empty dir model.
     """
 
-    size_limit: str
+    size_limit: Optional[str] = None
 
     medium: Optional[str] = None
 
@@ -34,7 +35,15 @@ class SpecPVC(BaseModel):
     Spec PVC model.
     """
 
-    size: str
+    size: Optional[str] = None
+
+
+class SpecEphemeral(BaseModel):
+    """
+    Ephemeral volume model.
+    """
+
+    size: Optional[str] = None
 
 
 class Volume(BaseModel):
@@ -53,7 +62,7 @@ class Volume(BaseModel):
     mount_path: str
     """Volume mount path inside the container."""
 
-    spec: Optional[Union[SpecEmptyDir, SpecPVC]] = None
+    spec: Optional[Union[SpecEmptyDir, SpecPVC, SpecEphemeral]] = None
     """Volume spec."""
 
 
