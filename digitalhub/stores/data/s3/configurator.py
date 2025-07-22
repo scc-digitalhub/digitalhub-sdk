@@ -115,5 +115,5 @@ class S3StoreConfigurator(Configurator):
             return False
         dt = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%SZ")
         dt = dt.replace(tzinfo=timezone.utc)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(timezone.utc) + datetime.timedelta(seconds=120)
         return dt < now
