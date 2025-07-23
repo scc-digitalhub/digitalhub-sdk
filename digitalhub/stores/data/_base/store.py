@@ -187,7 +187,7 @@ class Store:
         if not isinstance(path, Path):
             path = Path(path)
         # If the path does not exist, we need to infer if it's a file or directory
-        if path.suffix and not path.name.startswith('.'):
+        if path.suffix and not path.name.startswith("."):
             # Looks like a file, use parent
             dir_path = path.parent
         else:
