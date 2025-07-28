@@ -7,7 +7,13 @@ from __future__ import annotations
 import os
 
 from digitalhub.stores.credentials.enums import SetCreds
-from digitalhub.stores.credentials.ini_module import load_from_file, read_env_from_file, set_current_env, write_config
+from digitalhub.stores.credentials.ini_module import (
+    load_file,
+    load_key,
+    load_profile,
+    set_current_profile,
+    write_config,
+)
 from digitalhub.stores.credentials.store import CredentialsStore
 
 
@@ -17,17 +23,32 @@ class CredentialHandler:
     """
 
     def __init__(self) -> None:
-        # Store
         self._creds_store = CredentialsStore()
-
-        # Current credentials set (__default by default)
-        self._environment = os.getenv(SetCreds.DH_ENV.value, SetCreds.DEFAULT.value)
+        self._profile = self._read_current_profile()
 
     ##############################
     # Public methods
     ##############################
 
-    def set_current_env(self, creds_set: str) -> None:
+    def _read_current_profile(self) -> str:
+        """
+        Read the current credentials set.
+
+        Returns
+        -------
+        str
+            Credentials set name.
+        """
+        profile = os.getenv(SetCreds.DH_PROFILE.value)
+        if profile is not None:
+            return profile
+        file = load_file()
+        profile = load_profile(file)
+        if profile is not None:
+            return profile
+        return SetCreds.DEFAULT.value
+
+    def set_current_profile(self, creds_set: str) -> None:
         """
         Set the current credentials set.
 
@@ -40,10 +61,10 @@ class CredentialHandler:
         -------
         None
         """
-        self._environment = creds_set
-        set_current_env(creds_set)
+        self._profile = creds_set
+        set_current_profile(creds_set)
 
-    def get_current_env(self) -> str:
+    def get_current_profile(self) -> str:
         """
         Get the current credentials set.
 
@@ -52,44 +73,43 @@ class CredentialHandler:
         str
             Credentials set name.
         """
-        return self._environment
+        return self._profile
 
-    def load_from_env(self, var: str) -> str | None:
+    def load_from_env(self, vars: list[str]) -> dict:
         """
         Load variable from env.
 
         Parameters
         ----------
-        var : str
-            Environment variable name.
+        vars : str
+            List of environment variable names.
 
         Returns
         -------
-        str | None
-            Environment variable value.
+        dict
+            Environment variable values.
         """
-        env_var = os.getenv(var)
-        if env_var != "":
-            return env_var
+        return {var: os.getenv(var) for var in vars}
 
-    def load_from_file(self, var: str) -> str | None:
+    def load_from_file(self, vars: list[str]) -> dict:
         """
-        Load variable from config file.
+        Load variables from config file.
 
         Parameters
         ----------
-        var : str
-            Environment variable name.
+        vars : str
+            List of environment variable names.
 
         Returns
         -------
-        str | None
-            Environment variable value.
+        dict
+            Environment variable values.
         """
-        env_from_file = read_env_from_file()
-        if env_from_file is not None:
-            self._environment = env_from_file
-        return load_from_file(var)
+        file = load_file()
+        profile = load_profile(file)
+        if profile is not None:
+            self._profile = profile
+        return {var: load_key(file, self._profile, var) for var in vars}
 
     def write_env(self, creds: dict) -> None:
         """
@@ -104,7 +124,7 @@ class CredentialHandler:
         -------
         None
         """
-        write_config(creds, self._environment)
+        write_config(creds, self._profile)
 
     ##############################
     # Credentials store methods
@@ -125,7 +145,7 @@ class CredentialHandler:
         -------
         None
         """
-        self._creds_store.set_credentials(self._environment, origin, creds)
+        self._creds_store.set_credentials(self._profile, origin, creds)
 
     def get_credentials(self, origin: str) -> dict:
         """
@@ -141,8 +161,8 @@ class CredentialHandler:
         dict
             The credentials.
         """
-        return self._creds_store.get_credentials(self._environment, origin)
+        return self._creds_store.get_credentials(self._profile, origin)
 
 
-# Define global configurator
+# Define global credential handler
 creds_handler = CredentialHandler()

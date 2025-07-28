@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.stores.credentials.api import get_current_env
 from digitalhub.stores.data.local.store import LocalStore
 from digitalhub.stores.data.remote.store import RemoteStore
 from digitalhub.stores.data.s3.configurator import S3StoreConfigurator
@@ -61,15 +60,10 @@ class StoreBuilder:
         Store
             The store instance.
         """
-        env_profile = get_current_env()
         store_type = map_uri_scheme(uri)
 
-        # Ensure env exists in _instances
-        if env_profile not in self._instances:
-            self._instances[env_profile] = {}
-
         # Build the store instance if not already present
-        if store_type not in self._instances[env_profile]:
+        if store_type not in self._instances:
             store_info = self._builders[store_type]
             store_cls = store_info._store
             cfgrt_cls = store_info._configurator
@@ -78,9 +72,9 @@ class StoreBuilder:
                 store = store_cls()
             else:
                 store = store_cls(cfgrt_cls())
-            self._instances[env_profile][store_type] = store
+            self._instances[store_type] = store
 
-        return self._instances[env_profile][store_type]
+        return self._instances[store_type]
 
 
 store_builder = StoreBuilder()

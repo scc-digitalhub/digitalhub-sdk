@@ -93,14 +93,14 @@ class DataitemTable(Dataitem):
             DataFrame.
         """
         if self._query is not None:
-            df = get_store(self.project, self.spec.path).query(
+            df = get_store(self.spec.path).query(
                 self._query,
                 self.spec.path,
                 engine,
             )
             self._query = None
             return df
-        return get_store(self.project, self.spec.path).read_df(
+        return get_store(self.spec.path).read_df(
             self.spec.path,
             file_format,
             engine,
@@ -132,7 +132,7 @@ class DataitemTable(Dataitem):
         str
             Path to the written dataframe.
         """
-        return get_store(self.project, self.spec.path).write_df(
+        return get_store(self.spec.path).write_df(
             df,
             self.spec.path,
             extension=extension,

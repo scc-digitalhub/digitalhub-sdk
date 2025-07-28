@@ -14,10 +14,9 @@ from sqlalchemy import MetaData, Table, create_engine, select
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
 
-from digitalhub.stores.credentials.enums import CredsOrigin
 from digitalhub.stores.data._base.store import Store
 from digitalhub.stores.readers.data.api import get_reader_by_object
-from digitalhub.utils.exceptions import StoreError
+from digitalhub.utils.exceptions import ConfigError, StoreError
 from digitalhub.utils.types import SourcesOrListOfSources
 
 if typing.TYPE_CHECKING:
@@ -287,21 +286,16 @@ class SqlStore(Store):
     # Helper methods
     ##############################
 
-    def _get_connection_string(self, origin: str) -> str:
+    def _get_connection_string(self) -> str:
         """
         Get the connection string.
-
-        Parameters
-        ----------
-        origin : str
-            The origin of the credentials.
 
         Returns
         -------
         str
             The connection string.
         """
-        return self._configurator.get_sql_conn_string(origin)
+        return self._configurator.get_sql_conn_string()
 
     def _get_engine(self, origin: str, schema: str | None = None) -> Engine:
         """
@@ -330,12 +324,14 @@ class SqlStore(Store):
         except Exception as ex:
             raise StoreError(f"Something wrong with connection string. Arguments: {str(ex.args)}")
 
-    def _check_factory(self, schema: str | None = None) -> Engine:
+    def _check_factory(self, retry: bool = True, schema: str | None = None) -> Engine:
         """
         Check if the database is accessible and return the engine.
 
         Parameters
         ----------
+        retry : bool
+            Whether to retry if the database is not accessible.
         schema : str
             The schema.
 
@@ -345,12 +341,14 @@ class SqlStore(Store):
             The database engine.
         """
         try:
-            engine = self._get_engine(CredsOrigin.ENV.value, schema)
+            engine = self._get_engine(schema)
             self._check_access_to_storage(engine)
-        except StoreError:
-            engine = self._get_engine(CredsOrigin.FILE.value, schema)
-            self._check_access_to_storage(engine)
-        return engine
+            return engine
+        except ConfigError as e:
+            if retry:
+                self._configurator.eval_change_origin()
+                return self._check_factory(retry=False, schema=schema)
+            raise e
 
     @staticmethod
     def _parse_path(path: str) -> dict:
@@ -435,4 +433,4 @@ class SqlStore(Store):
             engine.connect()
         except SQLAlchemyError:
             engine.dispose()
-            raise StoreError("No access to db!")
+            raise ConfigError("No access to db!")

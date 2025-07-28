@@ -22,7 +22,7 @@ class SetCreds(Enum):
     """
 
     DEFAULT = "__default"
-    DH_ENV = "DH_NAME"
+    DH_PROFILE = "DH_NAME"
 
 
 class CredsEnvVar(Enum):

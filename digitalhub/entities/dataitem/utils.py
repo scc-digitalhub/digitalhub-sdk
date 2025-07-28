@@ -62,7 +62,6 @@ def eval_source(
 
 
 def eval_data(
-    project: str,
     kind: str,
     source: SourcesOrListOfSources,
     data: Any | None = None,
@@ -91,7 +90,7 @@ def eval_data(
     """
     if kind == EntityKinds.DATAITEM_TABLE.value:
         if data is None:
-            return get_store(project, source).read_df(
+            return get_store(source).read_df(
                 source,
                 file_format=file_format,
                 engine=engine,

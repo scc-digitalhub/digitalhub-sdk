@@ -20,19 +20,19 @@ class S3StoreConfigurator(Configurator):
     """
 
     keys = [
-        CredsEnvVar.S3_ENDPOINT_URL,
-        CredsEnvVar.S3_ACCESS_KEY_ID,
-        CredsEnvVar.S3_SECRET_ACCESS_KEY,
-        CredsEnvVar.S3_REGION,
-        CredsEnvVar.S3_SIGNATURE_VERSION,
-        CredsEnvVar.S3_SESSION_TOKEN,
-        CredsEnvVar.S3_PATH_STYLE,
-        CredsEnvVar.S3_CREDENTIALS_EXPIRATION,
+        CredsEnvVar.S3_ENDPOINT_URL.value,
+        CredsEnvVar.S3_ACCESS_KEY_ID.value,
+        CredsEnvVar.S3_SECRET_ACCESS_KEY.value,
+        CredsEnvVar.S3_REGION.value,
+        CredsEnvVar.S3_SIGNATURE_VERSION.value,
+        CredsEnvVar.S3_SESSION_TOKEN.value,
+        CredsEnvVar.S3_PATH_STYLE.value,
+        CredsEnvVar.S3_CREDENTIALS_EXPIRATION.value,
     ]
     required_keys = [
-        CredsEnvVar.S3_ENDPOINT_URL,
-        CredsEnvVar.S3_ACCESS_KEY_ID,
-        CredsEnvVar.S3_SECRET_ACCESS_KEY,
+        CredsEnvVar.S3_ENDPOINT_URL.value,
+        CredsEnvVar.S3_ACCESS_KEY_ID.value,
+        CredsEnvVar.S3_SECRET_ACCESS_KEY.value,
     ]
 
     def __init__(self):
@@ -43,46 +43,35 @@ class S3StoreConfigurator(Configurator):
     # Configuration methods
     ##############################
 
-    def load_configs(self) -> None:
-        """
-        Load the configuration from the environment and from the file.
-        """
-        self.load_env_vars()
-        self.load_file_vars()
-
     def load_env_vars(self) -> None:
         """
         Load the credentials from the environment.
         """
-        env_creds = {var.value: self._creds_handler.load_from_env(var.value) for var in self.keys}
+        env_creds = self._creds_handler.load_from_env(self.keys)
         self._creds_handler.set_credentials(self._env, env_creds)
 
     def load_file_vars(self) -> None:
         """
         Load the credentials from the file.
         """
-        file_creds = {var.value: self._creds_handler.load_from_file(var.value) for var in self.keys}
+        file_creds = self._creds_handler.load_from_file(self.keys)
         self._creds_handler.set_credentials(self._file, file_creds)
 
-    def get_client_config(self, origin: str) -> dict:
+    def get_client_config(self) -> dict:
         """
         Get S3 credentials (access key, secret key, session token and other config).
-
-        Parameters
-        ----------
-        origin : str
-            The origin of the credentials.
 
         Returns
         -------
         dict
             The credentials.
         """
-        creds = self.get_credentials(origin)
-        if self._is_expired(creds[CredsEnvVar.S3_CREDENTIALS_EXPIRATION.value]) and origin == self._file:
+        creds = self.get_credentials(self._origin)
+        expired = creds[CredsEnvVar.S3_CREDENTIALS_EXPIRATION.value]
+        if self._is_expired(expired) and self._origin == self._file:
             refresh_token()
             self.load_file_vars()
-            creds = self.get_credentials(origin)
+            creds = self.get_credentials(self._origin)
         return {
             "endpoint_url": creds[CredsEnvVar.S3_ENDPOINT_URL.value],
             "aws_access_key_id": creds[CredsEnvVar.S3_ACCESS_KEY_ID.value],

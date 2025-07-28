@@ -17,53 +17,57 @@ if typing.TYPE_CHECKING:
 
 def get_default_store(project: str) -> str:
     """
-    Get default store URI.
+    Returns the default store URI for a given project.
 
     Parameters
     ----------
     project : str
-        Project name.
+        The name of the project.
 
     Returns
     -------
     str
-        Default store URI.
+        The default store URI.
+
+    Raises
+    ------
+    ValueError
+        If no default store is found.
     """
+    var = StoreEnv.DEFAULT_FILES_STORE.value
+
     context = get_context(project)
-    store = context.config.get(StoreEnv.DEFAULT_FILES_STORE.value.lower())
+    store = context.config.get(var.lower())
     if store is not None:
         return store
 
-    store = creds_handler.load_from_env(StoreEnv.DEFAULT_FILES_STORE.value)
+    store = creds_handler.load_from_env([var]).get(var)
     if store is None:
-        store = creds_handler.load_from_file(StoreEnv.DEFAULT_FILES_STORE.value)
+        store = creds_handler.load_from_file([var]).get(var)
 
     if store is None or store == "":
         raise ValueError(
             "No default store found. "
             "Please set a default store "
-            f"in your environment (e.g. export {StoreEnv.DEFAULT_FILES_STORE.value}=) "
+            f"in your environment (e.g. export {var}=) "
+            " in the .dhcore.ini file "
             "or set it in project config."
         )
     return store
 
 
-def get_store(project: str, uri: str) -> Store:
+def get_store(uri: str) -> Store:
     """
-    Get store instance by URI.
+    Returns a store instance for the given URI.
 
     Parameters
-    ---------
-    project : str
-        Project name.
+    ----------
     uri : str
-        URI to parse.
-    config : dict
-        Store configuration.
+        The URI to parse.
 
     Returns
     -------
     Store
-        Store instance.
+        The store instance corresponding to the URI.
     """
     return store_builder.get(uri)

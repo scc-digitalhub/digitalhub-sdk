@@ -7,7 +7,7 @@ from __future__ import annotations
 from digitalhub.stores.credentials.handler import creds_handler
 
 
-def set_current_env(environment: str) -> None:
+def set_current_profile(environment: str) -> None:
     """
     Set the current credentials set.
 
@@ -20,10 +20,10 @@ def set_current_env(environment: str) -> None:
     -------
     None
     """
-    creds_handler.set_current_env(environment)
+    creds_handler.set_current_profile(environment)
 
 
-def get_current_env() -> str:
+def get_current_profile() -> str:
     """
     Get the current credentials set.
 
@@ -32,4 +32,4 @@ def get_current_env() -> str:
     str
         Credentials set name.
     """
-    return creds_handler.get_current_env()
+    return creds_handler.get_current_profile()

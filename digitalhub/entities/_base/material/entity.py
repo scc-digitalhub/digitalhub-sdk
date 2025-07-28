@@ -82,7 +82,7 @@ class MaterialEntity(VersionedEntity):
         list[str]
             List of file paths.
         """
-        store = get_store(self.project, self.spec.path)
+        store = get_store(self.spec.path)
         dst = store._build_temp()
         return store.download(self.spec.path, dst=dst)
 
@@ -121,7 +121,7 @@ class MaterialEntity(VersionedEntity):
         >>> print(path)
         dataitem/data.csv
         """
-        store = get_store(self.project, self.spec.path)
+        store = get_store(self.spec.path)
 
         if destination is None:
             dst = self._context().root / self.ENTITY_TYPE
@@ -158,7 +158,7 @@ class MaterialEntity(VersionedEntity):
         >>> entity.upload('./data')
         """
         # Get store and upload object
-        store = get_store(self.project, self.spec.path)
+        store = get_store(self.spec.path)
         paths = store.upload(source, self.spec.path)
 
         # Update files info

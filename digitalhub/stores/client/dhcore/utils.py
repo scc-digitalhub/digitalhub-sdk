@@ -73,4 +73,4 @@ def refresh_token() -> None:
     """
     client: ClientDHCore = get_client(local=False)
     client._configurator.check_config()
-    client._configurator.get_new_access_token()
+    client._configurator.refresh_credentials()

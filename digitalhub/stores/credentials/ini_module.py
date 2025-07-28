@@ -34,6 +34,45 @@ def load_file() -> ConfigParser:
         raise ClientError(f"Failed to read env file: {e}")
 
 
+def load_profile(file: ConfigParser) -> str | None:
+    """
+    Load current credentials set from the .dhcore.ini file.
+
+    Returns
+    -------
+    str
+        Credentials set name.
+    """
+    try:
+        return file["DEFAULT"]["current_environment"]
+    except KeyError:
+        return
+
+
+def load_key(file: ConfigParser, profile: str, key: str) -> str | None:
+    """
+    Load key from current credentials set from the .dhcore.ini file.
+
+    Parameters
+    ----------
+    file : ConfigParser
+        Opened .dhcore.ini file.
+    profile : str
+        Credentials set name.
+    key : str
+        Key name.
+
+    Returns
+    -------
+    str
+        Key value.
+    """
+    try:
+        return file[profile][key]
+    except KeyError:
+        return
+
+
 def load_from_file(var: str) -> str | None:
     """
     Load variable from config file.
@@ -93,7 +132,7 @@ def write_config(creds: dict, environment: str) -> None:
         raise ClientError(f"Failed to write env file: {e}")
 
 
-def set_current_env(environment: str) -> None:
+def set_current_profile(environment: str) -> None:
     """
     Set the current credentials set.
 

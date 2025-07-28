@@ -15,19 +15,19 @@ class SqlStoreConfigurator(Configurator):
     """
 
     keys = [
-        CredsEnvVar.DB_USERNAME,
-        CredsEnvVar.DB_PASSWORD,
-        CredsEnvVar.DB_HOST,
-        CredsEnvVar.DB_PORT,
-        CredsEnvVar.DB_DATABASE,
-        CredsEnvVar.DB_PLATFORM,
+        CredsEnvVar.DB_USERNAME.value,
+        CredsEnvVar.DB_PASSWORD.value,
+        CredsEnvVar.DB_HOST.value,
+        CredsEnvVar.DB_PORT.value,
+        CredsEnvVar.DB_DATABASE.value,
+        CredsEnvVar.DB_PLATFORM.value,
     ]
     required_keys = [
-        CredsEnvVar.DB_USERNAME,
-        CredsEnvVar.DB_PASSWORD,
-        CredsEnvVar.DB_HOST,
-        CredsEnvVar.DB_PORT,
-        CredsEnvVar.DB_DATABASE,
+        CredsEnvVar.DB_USERNAME.value,
+        CredsEnvVar.DB_PASSWORD.value,
+        CredsEnvVar.DB_HOST.value,
+        CredsEnvVar.DB_PORT.value,
+        CredsEnvVar.DB_DATABASE.value,
     ]
 
     def __init__(self):
@@ -38,30 +38,30 @@ class SqlStoreConfigurator(Configurator):
     # Configuration methods
     ##############################
 
-    def load_configs(self) -> None:
-        # Load from env
-        env_creds = {var.value: self._creds_handler.load_from_env(var.value) for var in self.keys}
+    def load_env_vars(self) -> None:
+        """
+        Load the credentials from the environment.
+        """
+        env_creds = self._creds_handler.load_from_env(self.keys)
         self._creds_handler.set_credentials(self._env, env_creds)
 
-        # Load from file
-        file_creds = {var.value: self._creds_handler.load_from_file(var.value) for var in self.keys}
+    def load_file_vars(self) -> None:
+        """
+        Load the credentials from the file.
+        """
+        file_creds = self._creds_handler.load_from_file(self.keys)
         self._creds_handler.set_credentials(self._file, file_creds)
 
-    def get_sql_conn_string(self, origin: str) -> str:
+    def get_sql_conn_string(self) -> str:
         """
         Get the connection string from environment variables.
-
-        Parameters
-        ----------
-        origin : str
-            The origin of the credentials.
 
         Returns
         -------
         str
             The connection string.
         """
-        creds = self.get_credentials(origin)
+        creds = self.get_credentials(self._origin)
         user = creds[CredsEnvVar.DB_USERNAME.value]
         password = creds[CredsEnvVar.DB_PASSWORD.value]
         host = creds[CredsEnvVar.DB_HOST.value]

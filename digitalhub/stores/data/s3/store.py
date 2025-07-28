@@ -15,11 +15,10 @@ import botocore.client  # pylint: disable=unused-import
 from boto3.s3.transfer import TransferConfig
 from botocore.exceptions import ClientError, NoCredentialsError
 
-from digitalhub.stores.credentials.enums import CredsOrigin
 from digitalhub.stores.data._base.store import Store
 from digitalhub.stores.data.s3.utils import get_bucket_name
 from digitalhub.stores.readers.data.api import get_reader_by_object
-from digitalhub.utils.exceptions import StoreError
+from digitalhub.utils.exceptions import ConfigError, StoreError
 from digitalhub.utils.file_utils import get_file_info_from_s3, get_file_mime_type
 from digitalhub.utils.types import SourcesOrListOfSources
 
@@ -614,30 +613,36 @@ class S3Store(Store):
         """
         return boto3.client("s3", **cfg)
 
-    def _check_factory(self, root: str) -> tuple[S3Client, str]:
+    def _check_factory(self, s3_path: str, retry: bool = True) -> tuple[S3Client, str]:
         """
-        Check if the S3 bucket is accessible by sending a head_bucket request.
+        Function to check if the S3 bucket collected from the URI
+        is accessible.
+        It returns a tuple containing the S3 client object and the
+        name of the S3 bucket.
+
+        Parameters
+        ----------
+        s3_path : str
+            The path to the S3 bucket.
+        retry : bool, optional
+            Whether to retry the operation, by default True
 
         Returns
         -------
         tuple[S3Client, str]
             A tuple containing the S3 client object and the name of the S3 bucket.
         """
-        bucket = self._get_bucket(root)
-
-        # Try to get client from environment variables
+        bucket = self._get_bucket(s3_path)
         try:
-            cfg = self._configurator.get_client_config(CredsOrigin.ENV.value)
+            cfg = self._configurator.get_client_config()
             client = self._get_client(cfg)
             self._check_access_to_storage(client, bucket)
-
-        # Fallback to file
-        except StoreError:
-            cfg = self._configurator.get_client_config(CredsOrigin.FILE.value)
-            client = self._get_client(cfg)
-            self._check_access_to_storage(client, bucket)
-
-        return client, bucket
+            return client, bucket
+        except ConfigError as e:
+            if retry:
+                self._configurator.eval_change_origin()
+                return self._check_factory(s3_path, False)
+            raise e
 
     def _check_access_to_storage(self, client: S3Client, bucket: str) -> None:
         """
@@ -656,13 +661,13 @@ class S3Store(Store):
 
         Raises
         ------
-        ClientError:
+        ConfigError
             If access to the specified bucket is not available.
         """
         try:
             client.head_bucket(Bucket=bucket)
         except (ClientError, NoCredentialsError) as err:
-            raise StoreError(f"No access to s3 bucket! Error: {err}")
+            raise ConfigError(f"No access to s3 bucket! Error: {err}")
 
     @staticmethod
     def _get_key(path: str) -> str:

@@ -131,8 +131,16 @@ def log_dataitem(
         cleanup = True
 
     source = eval_source(source, data, kind, name, project)
-    data = eval_data(project, kind, source, data, file_format, engine)
-    kwargs = process_kwargs(project, name, kind, source=source, data=data, path=path, **kwargs)
+    data = eval_data(kind, source, data, file_format, engine)
+    kwargs = process_kwargs(
+        project,
+        name,
+        kind,
+        source=source,
+        data=data,
+        path=path,
+        **kwargs,
+    )
     obj = context_processor.log_material_entity(
         source=source,
         project=project,
