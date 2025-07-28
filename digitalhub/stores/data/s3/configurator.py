@@ -45,30 +45,38 @@ class S3StoreConfigurator(Configurator):
 
     def load_env_vars(self) -> None:
         """
-        Load the credentials from the environment.
+        Loads the credentials from the environment variables.
+
+        Returns
+        -------
+        None
         """
         env_creds = self._creds_handler.load_from_env(self.keys)
         self._creds_handler.set_credentials(self._env, env_creds)
 
     def load_file_vars(self) -> None:
         """
-        Load the credentials from the file.
+        Loads the credentials from a file.
+
+        Returns
+        -------
+        None
         """
         file_creds = self._creds_handler.load_from_file(self.keys)
         self._creds_handler.set_credentials(self._file, file_creds)
 
     def get_client_config(self) -> dict:
         """
-        Get S3 credentials (access key, secret key, session token and other config).
+        Gets S3 credentials (access key, secret key, session token, and other config).
 
         Returns
         -------
         dict
-            The credentials.
+            Dictionary containing S3 credentials and configuration.
         """
         creds = self.get_credentials(self._origin)
         expired = creds[CredsEnvVar.S3_CREDENTIALS_EXPIRATION.value]
-        if self._is_expired(expired) and self._origin == self._file:
+        if self._origin == self._file and self._is_expired(expired):
             refresh_token()
             self.load_file_vars()
             creds = self.get_credentials(self._origin)
@@ -86,21 +94,18 @@ class S3StoreConfigurator(Configurator):
     @staticmethod
     def _is_expired(timestamp: str | None) -> bool:
         """
-        Determine whether a given timestamp is after the current UTC time.
-
-        This function compares the provided timestamp, which should be in ISO 8601
-        format with a 'Z' suffix indicating UTC time, to the current time in UTC.
+        Determines whether a given timestamp is after the current UTC time.
 
         Parameters
         ----------
-        timestamp : str
-            A timestamp string in the format 'YYYY-MM-DDTHH:MM:SSZ'.
+        timestamp : str or None
+            Timestamp string in the format 'YYYY-MM-DDTHH:MM:SSZ'.
 
         Returns
         -------
         bool
-            Returns True if the given timestamp is later than the current UTC time,
-            otherwise returns False.
+            True if the given timestamp is later than the current UTC time,
+            otherwise False.
         """
         if timestamp is None:
             return False

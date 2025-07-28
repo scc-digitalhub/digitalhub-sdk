@@ -56,6 +56,10 @@ class Context:
         ----------
         run_ctx : str
             The run key to set.
+
+        Returns
+        -------
+        None
         """
         self.is_running = True
         self._run_ctx = run_ctx
@@ -63,6 +67,10 @@ class Context:
     def unset_run(self) -> None:
         """
         Clear the current run key and reset running state.
+
+        Returns
+        -------
+        None
         """
         self.is_running = False
         self._run_ctx = None
@@ -73,7 +81,7 @@ class Context:
 
         Returns
         -------
-        str | None
+        str or None
             The current run key if set, None otherwise.
         """
         return self._run_ctx

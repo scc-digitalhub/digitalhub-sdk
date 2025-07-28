@@ -9,22 +9,23 @@ from pathlib import Path
 
 from digitalhub.utils.exceptions import ClientError
 
-# File where to write DHCORE_ACCESS_TOKEN and DHCORE_REFRESH_TOKEN
-# It's used because we inject the variables in jupyter env,
-# but refresh token is only available once. Is it's used, we cannot
-# overwrite it with coder, so we need to store the new one in a file,
-# preserved for jupyter restart
+# File where to write credementials
 ENV_FILE = Path.home() / ".dhcore.ini"
 
 
 def load_file() -> ConfigParser:
     """
-    Load current credentials set from the .dhcore.ini file.
+    Load the credentials configuration from the .dhcore.ini file.
 
     Returns
     -------
     ConfigParser
-        Credentials set name.
+        Parsed configuration file object.
+
+    Raises
+    ------
+    ClientError
+        If the file cannot be read.
     """
     try:
         file = ConfigParser()
@@ -36,12 +37,17 @@ def load_file() -> ConfigParser:
 
 def load_profile(file: ConfigParser) -> str | None:
     """
-    Load current credentials set from the .dhcore.ini file.
+    Load the current credentials profile name from the .dhcore.ini file.
+
+    Parameters
+    ----------
+    file : ConfigParser
+        Parsed configuration file object.
 
     Returns
     -------
-    str
-        Credentials set name.
+    str or None
+        Name of the credentials profile, or None if not found.
     """
     try:
         return file["DEFAULT"]["current_environment"]
@@ -51,21 +57,22 @@ def load_profile(file: ConfigParser) -> str | None:
 
 def load_key(file: ConfigParser, profile: str, key: str) -> str | None:
     """
-    Load key from current credentials set from the .dhcore.ini file.
+    Load a specific key value from the credentials profile in the
+    .dhcore.ini file.
 
     Parameters
     ----------
     file : ConfigParser
-        Opened .dhcore.ini file.
+        Parsed configuration file object.
     profile : str
-        Credentials set name.
+        Name of the credentials profile.
     key : str
-        Key name.
+        Name of the key to retrieve.
 
     Returns
     -------
-    str
-        Key value.
+    str or None
+        Value of the key, or None if not found.
     """
     try:
         return file[profile][key]
@@ -73,45 +80,26 @@ def load_key(file: ConfigParser, profile: str, key: str) -> str | None:
         return
 
 
-def load_from_file(var: str) -> str | None:
-    """
-    Load variable from config file.
-
-    Parameters
-    ----------
-    profile : str
-        Credentials set name.
-    var : str
-        Environment variable name.
-
-    Returns
-    -------
-    str | None
-        Environment variable value.
-    """
-    try:
-        cfg = load_file()
-        profile = cfg["DEFAULT"]["current_environment"]
-        return cfg[profile].get(var)
-    except KeyError:
-        return
-
-
 def write_config(creds: dict, environment: str) -> None:
     """
-    Write the env variables to the .dhcore.ini file.
-    It will overwrite any existing env variables.
+    Write credentials to the .dhcore.ini file for the specified environment.
+    Overwrites any existing values for that environment.
 
     Parameters
     ----------
     creds : dict
-        Credentials.
+        Dictionary of credentials to write.
     environment : str
-        Credentials set name.
+        Name of the credentials profile/environment.
 
     Returns
     -------
     None
+
+    Raises
+    ------
+    ClientError
+        If the file cannot be written.
     """
     try:
         cfg = load_file()
@@ -134,16 +122,21 @@ def write_config(creds: dict, environment: str) -> None:
 
 def set_current_profile(environment: str) -> None:
     """
-    Set the current credentials set.
+    Set the current credentials profile in the .dhcore.ini file.
 
     Parameters
     ----------
     environment : str
-        Credentials set name.
+        Name of the credentials profile to set as current.
 
     Returns
     -------
     None
+
+    Raises
+    ------
+    ClientError
+        If the file cannot be written.
     """
     try:
         cfg = load_file()
@@ -157,12 +150,12 @@ def set_current_profile(environment: str) -> None:
 
 def read_env_from_file() -> str | None:
     """
-    Read the current credentials set from the .dhcore.ini file.
+    Read the current credentials profile name from the .dhcore.ini file.
 
     Returns
     -------
-    str
-        Credentials set name.
+    str or None
+        Name of the current credentials profile, or None if not found.
     """
     try:
         cfg = load_file()

@@ -11,7 +11,14 @@ from digitalhub.stores.credentials.enums import CredsOrigin
 
 class CredentialsStore:
     """
-    Credentials store to store and retrieve credentials.
+    Store and retrieve credentials for different profiles and origins.
+
+    Attributes
+    ----------
+    _file_creds : dict of str to dict
+        Credentials stored by profile from file origin.
+    _env_creds : dict of str to Any
+        Credentials stored from environment origin.
     """
 
     def __init__(self) -> None:
@@ -26,6 +33,19 @@ class CredentialsStore:
     ) -> None:
         """
         Set all credentials for a given profile and origin.
+
+        Parameters
+        ----------
+        profile : str
+            Name of the credentials profile.
+        origin : str
+            Origin of the credentials ('env' or 'file').
+        credentials : dict of str to Any
+            Dictionary of credentials to set.
+
+        Returns
+        -------
+        None
         """
         if origin == CredsOrigin.ENV.value:
             for key, value in credentials.items():
@@ -43,6 +63,18 @@ class CredentialsStore:
     ) -> dict[str, Any]:
         """
         Get all credentials for a given profile and origin.
+
+        Parameters
+        ----------
+        profile : str
+            Name of the credentials profile.
+        origin : str
+            Origin of the credentials ('env' or 'file').
+
+        Returns
+        -------
+        dict of str to Any
+            Dictionary of credentials for the profile and origin.
         """
         if origin == CredsOrigin.ENV.value:
             return self._env_creds

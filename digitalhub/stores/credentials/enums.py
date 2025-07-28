@@ -9,7 +9,14 @@ from enum import Enum
 
 class CredsOrigin(Enum):
     """
-    List credential origins.
+    Credential origins for configuration.
+
+    Attributes
+    ----------
+    ENV : str
+        Credentials from environment variables.
+    FILE : str
+        Credentials from configuration file.
     """
 
     ENV = "env"
@@ -18,7 +25,7 @@ class CredsOrigin(Enum):
 
 class SetCreds(Enum):
     """
-    List supported environments.
+    Supported credential environments.
     """
 
     DEFAULT = "__default"
@@ -26,6 +33,9 @@ class SetCreds(Enum):
 
 
 class CredsEnvVar(Enum):
+    """
+    Supported credential environment variables.
+    """
     # S3
     S3_ENDPOINT_URL = "AWS_ENDPOINT_URL"
     S3_ACCESS_KEY_ID = "AWS_ACCESS_KEY_ID"

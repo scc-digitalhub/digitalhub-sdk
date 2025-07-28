@@ -615,22 +615,24 @@ class S3Store(Store):
 
     def _check_factory(self, s3_path: str, retry: bool = True) -> tuple[S3Client, str]:
         """
-        Function to check if the S3 bucket collected from the URI
-        is accessible.
-        It returns a tuple containing the S3 client object and the
-        name of the S3 bucket.
+        Checks if the S3 bucket collected from the URI is accessible.
 
         Parameters
         ----------
         s3_path : str
-            The path to the S3 bucket.
+            Path to the S3 bucket (e.g., 's3://bucket/path').
         retry : bool, optional
-            Whether to retry the operation, by default True
+            Whether to retry the operation if a ConfigError is raised. Default is True.
 
         Returns
         -------
-        tuple[S3Client, str]
-            A tuple containing the S3 client object and the name of the S3 bucket.
+        tuple of S3Client and str
+            Tuple containing the S3 client object and the name of the S3 bucket.
+
+        Raises
+        ------
+        ConfigError
+            If access to the specified bucket is not available and retry is False.
         """
         bucket = self._get_bucket(s3_path)
         try:
@@ -646,18 +648,14 @@ class S3Store(Store):
 
     def _check_access_to_storage(self, client: S3Client, bucket: str) -> None:
         """
-        Check if the S3 bucket is accessible by sending a head_bucket request.
+        Checks if the S3 bucket is accessible by sending a head_bucket request.
 
         Parameters
         ----------
         client : S3Client
-            The S3 client object.
+            S3 client object.
         bucket : str
-            The name of the S3 bucket.
-
-        Returns
-        -------
-        None
+            Name of the S3 bucket.
 
         Raises
         ------

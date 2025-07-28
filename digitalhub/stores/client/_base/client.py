@@ -36,42 +36,130 @@ class Client:
     def create_object(self, api: str, obj: Any, **kwargs) -> dict:
         """
         Create object method.
+
+        Parameters
+        ----------
+        api : str
+            The API endpoint to create the object.
+        obj : Any
+            The object to create.
+        **kwargs : dict
+            Additional keyword arguments.
+
+        Returns
+        -------
+        dict
+            The created object.
         """
 
     @abstractmethod
     def read_object(self, api: str, **kwargs) -> dict:
         """
         Read object method.
+
+        Parameters
+        ----------
+        api : str
+            The API endpoint to read the object.
+        **kwargs : dict
+            Additional keyword arguments.
+
+        Returns
+        -------
+        dict
+            The retrieved object.
         """
 
     @abstractmethod
     def update_object(self, api: str, obj: Any, **kwargs) -> dict:
         """
         Update object method.
+
+        Parameters
+        ----------
+        api : str
+            The API endpoint to update the object.
+        obj : Any
+            The object to update.
+        **kwargs : dict
+            Additional keyword arguments.
+
+        Returns
+        -------
+        dict
+            The updated object.
         """
 
     @abstractmethod
     def delete_object(self, api: str, **kwargs) -> dict:
         """
         Delete object method.
+
+        Parameters
+        ----------
+        api : str
+            The API endpoint to delete the object.
+        **kwargs : dict
+            Additional keyword arguments.
+
+        Returns
+        -------
+        dict
+            The deletion result.
         """
 
     @abstractmethod
     def list_objects(self, api: str, **kwargs) -> dict:
         """
         List objects method.
+
+        Parameters
+        ----------
+        api : str
+            The API endpoint to list objects.
+        **kwargs : dict
+            Additional keyword arguments.
+
+        Returns
+        -------
+        dict
+            The list of objects.
         """
 
     @abstractmethod
     def list_first_object(self, api: str, **kwargs) -> dict:
         """
         Read first object method.
+
+        Parameters
+        ----------
+        api : str
+            The API endpoint to read the first object.
+        **kwargs : dict
+            Additional keyword arguments.
+
+        Returns
+        -------
+        dict
+            The first object in the list.
         """
 
     @abstractmethod
     def search_objects(self, api: str, **kwargs) -> dict:
         """
         Search objects method.
+
+        Parameters
+        ----------
+        api : str
+            The API endpoint to search objects.
+        **kwargs : dict
+            Additional keyword arguments containing search parameters.
+
+        Returns
+        -------
+        dict
+            The search results.
         """
 
     ##############################
@@ -147,4 +235,9 @@ class Client:
     def is_local() -> bool:
         """
         Flag to check if client is local.
+
+        Returns
+        -------
+        bool
+            True if the client operates locally, False otherwise.
         """

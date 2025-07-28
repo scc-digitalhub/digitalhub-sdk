@@ -33,8 +33,10 @@ class ClientBuilder:
 
         Parameters
         ----------
-        local : bool
+        local : bool, default False
             Whether to create a local client or not.
+        config : dict, optional
+            DHCore environment configuration.
 
         Returns
         -------

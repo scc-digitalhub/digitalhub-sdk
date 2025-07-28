@@ -55,8 +55,12 @@ class Factory:
         ----------
         name : str
             The unique identifier for the builder.
-        builder : EntityBuilder | RuntimeEntityBuilder
+        builder : EntityBuilder or RuntimeEntityBuilder
             The builder instance to register.
+
+        Returns
+        -------
+        None
 
         Raises
         ------
@@ -77,6 +81,10 @@ class Factory:
             The unique identifier for the builder.
         builder : RuntimeBuilder
             The builder instance to register.
+
+        Returns
+        -------
+        None
 
         Raises
         ------
@@ -137,6 +145,8 @@ class Factory:
         ----------
         kind_to_build_from : str
             Entity type.
+        **kwargs
+            Additional spec parameters.
 
         Returns
         -------
@@ -154,6 +164,8 @@ class Factory:
         ----------
         kind_to_build_from : str
             Entity type.
+        **kwargs
+            Additional metadata parameters.
 
         Returns
         -------
@@ -171,6 +183,8 @@ class Factory:
         ----------
         kind_to_build_from : str
             Entity type.
+        **kwargs
+            Additional status parameters.
 
         Returns
         -------
@@ -265,7 +279,7 @@ class Factory:
 
         Returns
         -------
-        list[str]
+        list of str
             Task kinds.
         """
         self._raise_if_entity_builder_not_found(kind)
@@ -299,7 +313,7 @@ class Factory:
 
         Returns
         -------
-        list[str]
+        list of str
             All kinds.
         """
         return self._entity_builders[kind].get_all_kinds()
@@ -330,6 +344,10 @@ class Factory:
         kind : str
             The entity kind to verify.
 
+        Returns
+        -------
+        None
+
         Raises
         ------
         BuilderError
@@ -346,6 +364,10 @@ class Factory:
         ----------
         kind : str
             The runtime kind to verify.
+
+        Returns
+        -------
+        None
 
         Raises
         ------

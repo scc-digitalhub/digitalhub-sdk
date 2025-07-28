@@ -73,6 +73,23 @@ class ClientLocalApiBuilder(ClientApiBuilder):
     def build_api_context(self, operation: str, **kwargs) -> str:
         """
         Build the context API for the client.
+
+        Parameters
+        ----------
+        operation : str
+            The API operation.
+        **kwargs : dict
+            Additional parameters including project, entity_type, entity_id, etc.
+
+        Returns
+        -------
+        str
+            The formatted context API endpoint.
+
+        Raises
+        ------
+        BackendError
+            If the operation is not supported for the entity type.
         """
         try:
             entity_type = kwargs["entity_type"] + "s"

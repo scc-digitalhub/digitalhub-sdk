@@ -32,21 +32,76 @@ LIB_VERSION = 13
 
 class ClientDHCore(Client):
     """
-    DHCore client.
+    DHCore client for remote DigitalHub Core backend communication.
 
-    The DHCore client is used to communicate with the Digitalhub Core
-    backendAPI via REST. The client supports basic authentication and
-    OAuth2 token authentication with token refresh.
-    At creation, the client tries to get the endpoint and authentication
-    parameters from the .dhcore file and the environment variables. In
-    case the user incours into an authentication/endpoint error during
-    the client creation, the user has the possibility to update the
-    correct parameters using the `set_dhcore_env` function. If the DHCore
-    client is already initialized, this function will override the
-    configuration, otherwise it simply set the environment variables.
+    The DHCore client is used to communicate with the DigitalHub Core
+    backend API via REST. The client supports multiple authentication methods:
+    - Basic authentication (username/password)
+    - OAuth2 token authentication with automatic token refresh
+    - Personal access token exchange
+
+    At initialization, the client attempts to load endpoint and authentication
+    parameters from environment variables and the .dhcore configuration file.
+    If authentication or endpoint errors occur during client creation, users
+    can update the configuration using the `set_dhcore_env` function from
+    the utils module.
+
+    The client automatically handles:
+    - API version compatibility checking
+    - Pagination for list operations
+    - Token refresh on authentication errors
+    - Error parsing and exception mapping
+    - JSON serialization/deserialization
+
+    Parameters
+    ----------
+    config : dict, optional
+        DHCore environment configuration. If None, configuration will
+        be loaded from environment variables and configuration files.
+
+    Attributes
+    ----------
+    _api_builder : ClientDHCoreApiBuilder
+        Builds API endpoint URLs for different operations.
+    _key_builder : ClientDHCoreKeyBuilder
+        Builds storage keys for entities.
+    _params_builder : ClientDHCoreParametersBuilder
+        Builds request parameters for API calls.
+    _error_parser : ErrorParser
+        Parses backend responses and raises appropriate exceptions.
+    _configurator : ClientDHCoreConfigurator
+        Manages client configuration and authentication.
+
+    Notes
+    -----
+    Supported DHCore API versions: {MIN_API_LEVEL} to {MAX_API_LEVEL}
+    Current library API version: {LIB_VERSION}
+
+    Examples
+    --------
+    >>> from digitalhub.stores.client.api import get_client
+    >>> client = get_client(local=False)
+    >>> # Client is now ready for API operations
     """
 
     def __init__(self, config: dict | None = None) -> None:
+        """
+        Initialize DHCore client.
+
+        Creates a new DHCore client instance with all necessary components
+        for communicating with the DigitalHub Core backend. Sets up API
+        builders, configurators, and error handling.
+
+        Parameters
+        ----------
+        config : dict, optional
+            DHCore environment configuration. If None, configuration will
+            be loaded from environment variables and configuration files.
+
+        Returns
+        -------
+        None
+        """
         super().__init__()
 
         # API builder
@@ -72,19 +127,31 @@ class ClientDHCore(Client):
         """
         Create an object in DHCore.
 
+        Sends a POST request to the DHCore backend to create a new object.
+        Automatically sets the appropriate Content-Type header and serializes
+        the object to JSON format.
+
         Parameters
         ----------
         api : str
-            Create API.
+            The API endpoint path for creating the object.
         obj : Any
-            Object to create.
+            The object to create. Will be serialized to JSON.
         **kwargs : dict
-            Keyword arguments to pass to the request.
+            Additional keyword arguments to pass to the HTTP request,
+            such as headers, params, etc.
 
         Returns
         -------
         dict
-            Response object.
+            The created object as returned by the backend.
+
+        Raises
+        ------
+        BackendError
+            If the backend returns an error response.
+        ClientError
+            If there are client-side configuration issues.
         """
         if "headers" not in kwargs:
             kwargs["headers"] = {}
@@ -96,17 +163,27 @@ class ClientDHCore(Client):
         """
         Get an object from DHCore.
 
+        Sends a GET request to the DHCore backend to retrieve an existing object.
+
         Parameters
         ----------
         api : str
-            Read API.
+            The API endpoint path for reading the object.
         **kwargs : dict
-            Keyword arguments to pass to the request.
+            Additional keyword arguments to pass to the HTTP request,
+            such as headers, params, etc.
 
         Returns
         -------
         dict
-            Response object.
+            The retrieved object as returned by the backend.
+
+        Raises
+        ------
+        BackendError
+            If the backend returns an error response.
+        EntityNotExistsError
+            If the requested object does not exist.
         """
         return self._prepare_call("GET", api, **kwargs)
 
@@ -114,19 +191,31 @@ class ClientDHCore(Client):
         """
         Update an object in DHCore.
 
+        Sends a PUT request to the DHCore backend to update an existing object.
+        Automatically sets the appropriate Content-Type header and serializes
+        the object to JSON format.
+
         Parameters
         ----------
         api : str
-            Update API.
-        obj : dict
-            Object to update.
+            The API endpoint path for updating the object.
+        obj : Any
+            The updated object data. Will be serialized to JSON.
         **kwargs : dict
-            Keyword arguments to pass to the request.
+            Additional keyword arguments to pass to the HTTP request,
+            such as headers, params, etc.
 
         Returns
         -------
         dict
-            Response object.
+            The updated object as returned by the backend.
+
+        Raises
+        ------
+        BackendError
+            If the backend returns an error response.
+        EntityNotExistsError
+            If the object to update does not exist.
         """
         if "headers" not in kwargs:
             kwargs["headers"] = {}
@@ -138,17 +227,30 @@ class ClientDHCore(Client):
         """
         Delete an object from DHCore.
 
+        Sends a DELETE request to the DHCore backend to remove an object.
+        If the backend returns a boolean response, it will be wrapped in
+        a dictionary with a "deleted" key.
+
         Parameters
         ----------
         api : str
-            Delete API.
+            The API endpoint path for deleting the object.
         **kwargs : dict
-            Keyword arguments to pass to the request.
+            Additional keyword arguments to pass to the HTTP request,
+            such as headers, params, cascade options, etc.
 
         Returns
         -------
         dict
-            Response object.
+            The deletion result. Either the backend response or
+            {"deleted": True/False} if backend returns a boolean.
+
+        Raises
+        ------
+        BackendError
+            If the backend returns an error response.
+        EntityNotExistsError
+            If the object to delete does not exist.
         """
         resp = self._prepare_call("DELETE", api, **kwargs)
         if isinstance(resp, bool):
@@ -159,17 +261,32 @@ class ClientDHCore(Client):
         """
         List objects from DHCore.
 
+        Sends GET requests to the DHCore backend to retrieve a paginated list
+        of objects. Automatically handles pagination by making multiple requests
+        until all objects are retrieved.
+
         Parameters
         ----------
         api : str
-            List API.
+            The API endpoint path for listing objects.
         **kwargs : dict
-            Keyword arguments to pass to the request.
+            Additional keyword arguments to pass to the HTTP request.
+            Can include 'params' dict with pagination parameters.
 
         Returns
         -------
         list[dict]
-            Response objects.
+            A list containing all objects from all pages.
+
+        Raises
+        ------
+        BackendError
+            If the backend returns an error response.
+
+        Notes
+        -----
+        This method automatically handles pagination starting from page 0
+        and continues until all pages are retrieved.
         """
         if "params" not in kwargs:
             kwargs["params"] = {}
@@ -192,19 +309,27 @@ class ClientDHCore(Client):
 
     def list_first_object(self, api: str, **kwargs) -> dict:
         """
-        List first objects.
+        Get the first object from a list in DHCore.
+
+        Retrieves the first object from a paginated list by calling
+        list_objects and returning the first item.
 
         Parameters
         ----------
         api : str
-            The api to list the objects with.
+            The API endpoint path for listing objects.
         **kwargs : dict
-            Keyword arguments passed to the request.
+            Additional keyword arguments to pass to the HTTP request.
 
         Returns
         -------
         dict
-            The list of objects.
+            The first object from the list.
+
+        Raises
+        ------
+        BackendError
+            If no objects are found or if the backend returns an error.
         """
         try:
             return self.list_objects(api, **kwargs)[0]
@@ -215,17 +340,34 @@ class ClientDHCore(Client):
         """
         Search objects from DHCore.
 
+        Performs a search query against the DHCore backend using Solr search
+        capabilities. Handles pagination and removes search highlights from
+        the returned objects.
+
         Parameters
         ----------
         api : str
-            Search API.
+            The API endpoint path for searching objects (usually Solr search).
         **kwargs : dict
-            Keyword arguments to pass to the request.
+            Additional keyword arguments to pass to the HTTP request.
+            Can include search parameters, filters, pagination options, etc.
 
         Returns
         -------
         list[dict]
-            Response objects.
+            A list of objects matching the search criteria, with search
+            highlights removed.
+
+        Raises
+        ------
+        BackendError
+            If the backend returns an error response.
+
+        Notes
+        -----
+        This method sets default values for pagination (page=0, size=10)
+        and sorting (by metadata.updated descending) if not provided.
+        Search highlights are automatically removed from results.
         """
         if "params" not in kwargs:
             kwargs["params"] = {}
@@ -266,19 +408,29 @@ class ClientDHCore(Client):
         """
         Prepare a call to the DHCore API.
 
+        Handles the preparation of an API call by checking configuration,
+        building the URL, and adding authentication parameters.
+
         Parameters
         ----------
         call_type : str
-            The type of call to prepare.
+            The HTTP method type (GET, POST, PUT, DELETE, etc.).
         api : str
-            The api to call.
+            The API endpoint path to call.
         **kwargs : dict
-            Keyword arguments to pass to the request.
+            Additional keyword arguments to pass to the HTTP request.
 
         Returns
         -------
         dict
-            Response object.
+            The response from the API call.
+
+        Raises
+        ------
+        ClientError
+            If the client configuration is invalid.
+        BackendError
+            If the backend returns an error response.
         """
         self._configurator.check_config()
         url = self._build_url(api)
@@ -287,17 +439,25 @@ class ClientDHCore(Client):
 
     def _build_url(self, api: str) -> str:
         """
-        Build the url.
+        Build the complete URL for an API call.
+
+        Combines the configured endpoint with the API path to create
+        the full URL for the HTTP request.
 
         Parameters
         ----------
         api : str
-            The api to call.
+            The API endpoint path. Leading slashes are automatically handled.
 
         Returns
         -------
         str
-            The url.
+            The complete URL for the API call.
+
+        Notes
+        -----
+        This method automatically removes leading slashes from the API path
+        to ensure proper URL construction.
         """
         endpoint = self._configurator.get_endpoint()
         return f"{endpoint}/{api.removeprefix('/')}"
@@ -306,21 +466,43 @@ class ClientDHCore(Client):
         """
         Make a call to the DHCore API.
 
+        Executes the actual HTTP request to the DHCore backend, handles
+        API version checking, automatic token refresh on 401 errors,
+        and error parsing.
+
         Parameters
         ----------
         call_type : str
-            The type of call to make.
+            The HTTP method type (GET, POST, PUT, DELETE, etc.).
         url : str
-            The URL to call.
-        refresh : bool
-            Whether to refresh the access token.
+            The complete URL to call.
+        refresh : bool, default True
+            Whether to attempt token refresh on authentication errors.
+            Set to False to prevent infinite recursion during refresh.
         **kwargs : dict
-            Keyword arguments to pass to the request.
+            Additional keyword arguments to pass to the HTTP request.
 
         Returns
         -------
         dict
-            Response object.
+            The parsed response from the backend as a dictionary.
+
+        Raises
+        ------
+        ClientError
+            If the backend API version is not supported.
+        BackendError
+            If the backend returns an error response or response parsing fails.
+        UnauthorizedError
+            If authentication fails and token refresh is not possible.
+
+        Notes
+        -----
+        This method automatically handles:
+        - API version compatibility checking
+        - OAuth2 token refresh on 401 errors
+        - Response parsing and error handling
+        - 60-second timeout for all requests
         """
         # Call the API
         response = request(call_type, url, timeout=60, **kwargs)
@@ -339,16 +521,30 @@ class ClientDHCore(Client):
 
     def _check_core_version(self, response: Response) -> None:
         """
-        Raise an exception if DHCore API version is not supported.
+        Check DHCore API version compatibility.
+
+        Validates that the DHCore backend API version is compatible with
+        this client library. Issues warnings if the backend version is
+        newer than the library version.
 
         Parameters
         ----------
         response : Response
-            The response object.
+            The HTTP response object containing the X-Api-Level header.
 
         Returns
         -------
         None
+
+        Raises
+        ------
+        ClientError
+            If the backend API level is not supported by this client.
+
+        Notes
+        -----
+        Supported API levels: {MIN_API_LEVEL} to {MAX_API_LEVEL}
+        Current library version: {LIB_VERSION}
         """
         if "X-Api-Level" in response.headers:
             core_api_level = int(response.headers["X-Api-Level"])
@@ -359,17 +555,30 @@ class ClientDHCore(Client):
 
     def _dictify_response(self, response: Response) -> dict:
         """
-        Return dict from response.
+        Parse HTTP response to dictionary.
+
+        Converts the HTTP response body from JSON to a Python dictionary.
+        Handles empty responses gracefully.
 
         Parameters
         ----------
         response : Response
-            The response object.
+            The HTTP response object to parse.
 
         Returns
         -------
         dict
-            The parsed response object.
+            The parsed response body as a dictionary. Returns empty dict
+            if response body is empty.
+
+        Raises
+        ------
+        BackendError
+            If the response cannot be parsed as JSON.
+
+        Notes
+        -----
+        Empty response bodies are treated as valid and return an empty dict.
         """
         try:
             return response.json()
@@ -385,11 +594,20 @@ class ClientDHCore(Client):
     @staticmethod
     def is_local() -> bool:
         """
-        Declare if Client is local.
+        Check if this client operates locally.
+
+        Returns a flag indicating whether this client instance operates
+        on local data or communicates with a remote backend.
 
         Returns
         -------
         bool
-            False
+            False, indicating this client communicates with a remote
+            DHCore backend, not local storage.
+
+        Notes
+        -----
+        This method is used to distinguish between ClientDHCore (returns False)
+        and ClientLocal (returns True) implementations.
         """
         return False

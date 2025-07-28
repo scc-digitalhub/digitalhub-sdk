@@ -9,12 +9,12 @@ from digitalhub.stores.credentials.handler import creds_handler
 
 def set_current_profile(environment: str) -> None:
     """
-    Set the current credentials set.
+    Set the current credentials profile.
 
     Parameters
     ----------
     environment : str
-        Credentials set name.
+        Name of the credentials profile to set.
 
     Returns
     -------
@@ -25,11 +25,11 @@ def set_current_profile(environment: str) -> None:
 
 def get_current_profile() -> str:
     """
-    Get the current credentials set.
+    Get the name of the current credentials profile.
 
     Returns
     -------
     str
-        Credentials set name.
+        Name of the current credentials profile.
     """
     return creds_handler.get_current_profile()

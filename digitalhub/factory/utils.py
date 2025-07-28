@@ -50,7 +50,7 @@ def list_runtimes() -> list[str]:
 
     Returns
     -------
-    list[str]
+    list of str
         List of runtime package names.
 
     Raises
@@ -75,6 +75,10 @@ def register_runtimes_entities() -> None:
 
     Imports each runtime package and registers its entity and runtime
     builders with the global factory instance.
+
+    Returns
+    -------
+    None
     """
     for package in list_runtimes():
         module = import_module(package)
@@ -93,8 +97,12 @@ def register_entities() -> None:
     """
     Register core entity builders into the factory.
 
-    Imports the core entities module and registers all entity builders
-    with the global factory instance.
+    Imports the core entities module and registers all entity
+    builders with the global factory instance.
+
+    Returns
+    -------
+    None
 
     Raises
     ------

@@ -39,8 +39,7 @@ class ContextBuilder:
         project : Project
             The project instance to create a context for.
         overwrite : bool, optional
-            If True, overwrites existing context if project name already exists,
-            by default False.
+            If True, overwrites existing context if project name already exists. Default is False.
 
         Returns
         -------
@@ -87,12 +86,11 @@ class ContextBuilder:
         Returns
         -------
         None
-            This method doesn't return anything.
+            This method does not return anything.
 
         Notes
         -----
-        If the project doesn't exist in the registry, this method
-        silently does nothing.
+        If the project does not exist in the registry, this method silently does nothing.
         """
         self._instances.pop(project, None)
 

@@ -17,4 +17,18 @@ class ClientParametersBuilder:
     def build_parameters(self, category: str, operation: str, **kwargs) -> dict:
         """
         Build the parameters for the client call.
+
+        Parameters
+        ----------
+        category : str
+            The API category.
+        operation : str
+            The API operation.
+        **kwargs : dict
+            Additional keyword arguments to build parameters from.
+
+        Returns
+        -------
+        dict
+            The formatted parameters for the client call.
         """

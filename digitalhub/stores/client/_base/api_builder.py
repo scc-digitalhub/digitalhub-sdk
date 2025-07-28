@@ -17,4 +17,18 @@ class ClientApiBuilder:
     def build_api(self, category: str, operation: str, **kwargs) -> str:
         """
         Build the API for the client.
+
+        Parameters
+        ----------
+        category : str
+            The API category.
+        operation : str
+            The API operation.
+        **kwargs : dict
+            Additional keyword arguments.
+
+        Returns
+        -------
+        str
+            The formatted API endpoint.
         """

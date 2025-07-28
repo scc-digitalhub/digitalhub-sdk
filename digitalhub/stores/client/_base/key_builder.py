@@ -40,6 +40,16 @@ class ClientKeyBuilder:
     def base_entity_key(self, entity_id: str) -> str:
         """
         Build for base entity key.
+
+        Parameters
+        ----------
+        entity_id : str
+            The entity identifier.
+
+        Returns
+        -------
+        str
+            The formatted base entity key.
         """
 
     @abstractmethod
@@ -53,4 +63,22 @@ class ClientKeyBuilder:
     ) -> str:
         """
         Build for context entity key.
+
+        Parameters
+        ----------
+        project : str
+            The project name.
+        entity_type : str
+            The entity type.
+        entity_kind : str
+            The entity kind.
+        entity_name : str
+            The entity name.
+        entity_id : str, optional
+            The entity identifier. If None, key will not include version.
+
+        Returns
+        -------
+        str
+            The formatted context entity key.
         """

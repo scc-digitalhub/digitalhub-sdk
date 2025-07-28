@@ -23,19 +23,53 @@ if typing.TYPE_CHECKING:
 
 
 class ErrorParser:
+    """
+    Parser for DHCore API errors.
+
+    This class handles the parsing and translation of HTTP responses
+    from the DHCore backend into appropriate Python exceptions.
+    """
+
     @staticmethod
     def parse(response: Response) -> None:
         """
         Handle DHCore API errors.
 
+        Parses the HTTP response and raises appropriate exceptions based on
+        the status code and response content. Maps backend errors to specific
+        exception types for better error handling in the client code.
+
         Parameters
         ----------
         response : Response
-            The response object.
+            The HTTP response object from requests.
 
         Returns
         -------
         None
+
+        Raises
+        ------
+        TimeoutError
+            If the request timed out.
+        ConnectionError
+            If unable to connect to the backend.
+        MissingSpecError
+            If the backend reports a missing spec (400 status).
+        EntityAlreadyExistsError
+            If the entity already exists (400 status with specific message).
+        BadRequestError
+            For other 400 status codes.
+        UnauthorizedError
+            For 401 status codes.
+        ForbiddenError
+            For 403 status codes.
+        EntityNotExistsError
+            For 404 status codes with specific message.
+        BackendError
+            For other 404 status codes and general backend errors.
+        RuntimeError
+            For unexpected exceptions.
         """
         try:
             response.raise_for_status()

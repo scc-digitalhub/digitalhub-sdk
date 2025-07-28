@@ -12,6 +12,23 @@ from digitalhub.utils.exceptions import ConfigError
 
 
 class Configurator:
+    """
+    Base configurator for credentials management.
+
+    Attributes
+    ----------
+    keys : list of str
+        List of credential keys to manage.
+    required_keys : list of str
+        List of required credential keys.
+    _env : str
+        Environment origin identifier.
+    _file : str
+        File origin identifier.
+    _creds_handler : object
+        Credentials handler instance.
+    """
+
     # Must be set in implementing class
     keys: list[str] = []
     required_keys: list[str] = []
@@ -35,7 +52,11 @@ class Configurator:
 
     def load_configs(self) -> None:
         """
-        Load the configuration from the environment and from the file.
+        Load the configuration from both environment and file sources.
+
+        Returns
+        -------
+        None
         """
         self.load_env_vars()
         self.load_file_vars()
@@ -50,12 +71,8 @@ class Configurator:
 
     def check_config(self) -> None:
         """
-        Check if the config is valid.
-
-        Parameters
-        ----------
-        config : dict
-            Configuration dictionary.
+        Check if the current profile has changed and reload
+        the file credentials if needed.
 
         Returns
         -------
@@ -67,12 +84,17 @@ class Configurator:
 
     def set_origin(self) -> str:
         """
-        Evaluate the default origin from the credentials.
+        Determine the default origin for credentials (env or file).
 
         Returns
         -------
         str
-            The origin.
+            The selected origin ('env' or 'file').
+
+        Raises
+        ------
+        ConfigError
+            If required credentials are missing in both sources.
         """
         origin = self._env
 
@@ -97,8 +119,8 @@ class Configurator:
 
     def eval_change_origin(self) -> None:
         """
-        Try to change the origin of the credentials.
-        If the origin has already been evaluated, raise an error.
+        Attempt to change the origin of credentials.
+        Raise error if already evaluated.
 
         Returns
         -------
@@ -111,7 +133,11 @@ class Configurator:
 
     def change_origin(self) -> None:
         """
-        Change the origin of the credentials.
+        Change the origin of credentials from env to file or vice versa.
+
+        Returns
+        -------
+        None
         """
         if self._changed_origin:
             raise ConfigError("Origin has already been changed.")
@@ -121,7 +147,11 @@ class Configurator:
 
     def change_to_file(self) -> None:
         """
-        Change the origin to file.
+        Set the credentials origin to file.
+
+        Returns
+        -------
+        None
         """
         if self._origin == self._env:
             self._changed_origin = True
@@ -129,7 +159,11 @@ class Configurator:
 
     def change_to_env(self) -> None:
         """
-        Change the origin to env.
+        Set the credentials origin to environment.
+
+        Returns
+        -------
+        None
         """
         if self._origin == self._file:
             self._changed_origin = True
@@ -140,9 +174,35 @@ class Configurator:
     ##############################
 
     def get_credentials(self, origin: str) -> dict:
+        """
+        Retrieve credentials for the specified origin.
+
+        Parameters
+        ----------
+        origin : str
+            The origin to retrieve credentials from ('env' or 'file').
+
+        Returns
+        -------
+        dict
+            Dictionary of credentials.
+        """
         return self._creds_handler.get_credentials(origin)
 
     def _check_credentials(self, creds: dict) -> list[str]:
+        """
+        Check for missing required credentials in a dictionary.
+
+        Parameters
+        ----------
+        creds : dict
+            Dictionary of credentials to check.
+
+        Returns
+        -------
+        list of str
+            List of missing required credential keys.
+        """
         missing_keys = []
         for k, v in creds.items():
             if v is None and k in self.required_keys:

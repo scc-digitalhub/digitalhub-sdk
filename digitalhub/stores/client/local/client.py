@@ -537,18 +537,16 @@ class ClientLocal(Client):
         Parameters
         ----------
         error_code : int
-            Error code.
-        project : str
-            Project name.
-        entity_type : str
-            Entity type.
-        entity_id : str
-            Entity ID.
+            Error code identifying the type of error.
+        entity_type : str, optional
+            Entity type that caused the error.
+        entity_id : str, optional
+            Entity ID that caused the error.
 
         Returns
         -------
         str
-            The formatted message.
+            The formatted error message.
         """
         msg = {
             1: f"Object '{entity_type}' to create is not valid",

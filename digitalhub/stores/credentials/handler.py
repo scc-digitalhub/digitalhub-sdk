@@ -19,25 +19,29 @@ from digitalhub.stores.credentials.store import CredentialsStore
 
 class CredentialHandler:
     """
-    Configurator object used to configure clients and store credentials.
+    Handler for configuring clients and managing credentials.
+
+    Attributes
+    ----------
+    _creds_store : CredentialsStore
+        Store for credentials.
+    _profile : str
+        Current credentials profile name.
     """
 
     def __init__(self) -> None:
         self._creds_store = CredentialsStore()
         self._profile = self._read_current_profile()
 
-    ##############################
-    # Public methods
-    ##############################
-
-    def _read_current_profile(self) -> str:
+    @staticmethod
+    def _read_current_profile() -> str:
         """
-        Read the current credentials set.
+        Read the current credentials profile name.
 
         Returns
         -------
         str
-            Credentials set name.
+            Name of the credentials profile.
         """
         profile = os.getenv(SetCreds.DH_PROFILE.value)
         if profile is not None:
@@ -48,14 +52,18 @@ class CredentialHandler:
             return profile
         return SetCreds.DEFAULT.value
 
+    ##############################
+    # Public methods
+    ##############################
+
     def set_current_profile(self, creds_set: str) -> None:
         """
-        Set the current credentials set.
+        Set the current credentials profile name.
 
         Parameters
         ----------
         creds_set : str
-            Credentials set name.
+            Name of the credentials profile to set.
 
         Returns
         -------
@@ -66,44 +74,44 @@ class CredentialHandler:
 
     def get_current_profile(self) -> str:
         """
-        Get the current credentials set.
+        Get the current credentials profile name.
 
         Returns
         -------
         str
-            Credentials set name.
+            Name of the current credentials profile.
         """
         return self._profile
 
     def load_from_env(self, vars: list[str]) -> dict:
         """
-        Load variable from env.
+        Load variables from environment.
 
         Parameters
         ----------
-        vars : str
-            List of environment variable names.
+        vars : list of str
+            List of environment variable names to load.
 
         Returns
         -------
         dict
-            Environment variable values.
+            Dictionary of environment variable values.
         """
         return {var: os.getenv(var) for var in vars}
 
     def load_from_file(self, vars: list[str]) -> dict:
         """
-        Load variables from config file.
+        Load variables from credentials config file.
 
         Parameters
         ----------
-        vars : str
-            List of environment variable names.
+        vars : list of str
+            List of variable names to load from file.
 
         Returns
         -------
         dict
-            Environment variable values.
+            Dictionary of variable values from file.
         """
         file = load_file()
         profile = load_profile(file)
@@ -113,12 +121,12 @@ class CredentialHandler:
 
     def write_env(self, creds: dict) -> None:
         """
-        Write the env variables to the .dhcore file.
+        Write credentials to the .dhcore file for the current profile.
 
         Parameters
         ----------
         creds : dict
-            Credentials.
+            Credentials to write.
 
         Returns
         -------
@@ -132,14 +140,14 @@ class CredentialHandler:
 
     def set_credentials(self, origin: str, creds: dict) -> None:
         """
-        Set credentials.
+        Set credentials for the current profile and origin.
 
         Parameters
         ----------
         origin : str
-            The origin of the credentials.
+            The origin of the credentials ('env' or 'file').
         creds : dict
-            The credentials.
+            Credentials to set.
 
         Returns
         -------
@@ -149,17 +157,17 @@ class CredentialHandler:
 
     def get_credentials(self, origin: str) -> dict:
         """
-        Get credentials from origin.
+        Get credentials for the current profile from the specified origin.
 
         Parameters
         ----------
         origin : str
-            The origin of the credentials.
+            The origin to get credentials from ('env' or 'file').
 
         Returns
         -------
         dict
-            The credentials.
+            Dictionary of credentials.
         """
         return self._creds_store.get_credentials(self._profile, origin)
 

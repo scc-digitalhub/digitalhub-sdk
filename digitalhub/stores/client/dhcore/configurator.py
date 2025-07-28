@@ -61,6 +61,16 @@ class ClientDHCoreConfigurator(Configurator):
     ]
 
     def __init__(self) -> None:
+        """
+        Initialize the DHCore configurator.
+
+        Sets up the configurator by calling the parent constructor and
+        initializing the authentication type evaluation process.
+
+        Returns
+        -------
+        None
+        """
         super().__init__()
         self._auth_type: str | None = None
         self.set_auth_type()
@@ -71,7 +81,20 @@ class ClientDHCoreConfigurator(Configurator):
 
     def load_env_vars(self) -> None:
         """
-        Load the credentials from the environment.
+        Load credentials from environment variables.
+
+        Retrieves DHCore credentials from environment variables, sanitizes
+        them (particularly endpoint URLs), and stores them in the credentials
+        handler for the environment origin.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        This method sanitizes endpoint and issuer URLs to ensure they have
+        proper schemes and removes trailing slashes.
         """
         env_creds = self._creds_handler.load_from_env(self.keys)
         env_creds = self._sanitize_env_vars(env_creds)
@@ -79,17 +102,30 @@ class ClientDHCoreConfigurator(Configurator):
 
     def _sanitize_env_vars(self, creds: dict) -> dict:
         """
-        Sanitize the env vars. We expect issuer to have the
-        form "DHCORE_ISSUER" in env.
+        Sanitize credentials loaded from environment variables.
+
+        Validates and normalizes endpoint and issuer URLs from environment
+        variables. Ensures URLs have proper schemes and removes trailing slashes.
 
         Parameters
         ----------
         creds : dict
-            Credentials dictionary.
+            Raw credentials dictionary loaded from environment variables.
 
         Returns
         -------
         dict
+            Sanitized credentials dictionary with normalized URLs.
+
+        Raises
+        ------
+        ClientError
+            If endpoint or issuer URLs have invalid schemes.
+
+        Notes
+        -----
+        Environment variables are expected to have the full "DHCORE_" prefix
+        for issuer endpoints.
         """
         creds[CredsEnvVar.DHCORE_ENDPOINT.value] = self._sanitize_endpoint(creds[CredsEnvVar.DHCORE_ENDPOINT.value])
         creds[CredsEnvVar.DHCORE_ISSUER.value] = self._sanitize_endpoint(creds[CredsEnvVar.DHCORE_ISSUER.value])
@@ -97,7 +133,23 @@ class ClientDHCoreConfigurator(Configurator):
 
     def load_file_vars(self) -> None:
         """
-        Load the credentials from the file.
+        Load credentials from configuration file.
+
+        Retrieves DHCore credentials from the .dhcore.ini file, handles
+        compatibility with CLI format (keys without DHCORE_ prefix), and
+        falls back to environment variables for missing endpoint and
+        personal access token values.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        This method handles the case where:
+        - Endpoint might not be present in file response, falls back to env
+        - Personal access token might not be present, falls back to env
+        - File format uses keys without "DHCORE_" prefix for compatibility
         """
         keys = [*self._remove_prefix_dhcore()]
         file_creds = self._creds_handler.load_from_file(keys)
@@ -118,17 +170,33 @@ class ClientDHCoreConfigurator(Configurator):
 
     def _sanitize_file_vars(self, creds: dict) -> dict:
         """
-        Sanitize the file vars. We expect issuer, client_id and access_token and
-        refresh_token to not have the form "DHCORE_" in the file.
+        Sanitize credentials loaded from configuration file.
+
+        Handles the different key formats used in configuration files compared
+        to environment variables. File format omits "DHCORE_" prefix for
+        certain keys for CLI compatibility.
 
         Parameters
         ----------
         creds : dict
-            Credentials dictionary.
+            Raw credentials dictionary loaded from configuration file.
 
         Returns
         -------
         dict
+            Sanitized credentials dictionary with standardized key names
+            and normalized URLs, filtered to include only valid keys.
+
+        Raises
+        ------
+        ClientError
+            If endpoint or issuer URLs have invalid schemes.
+
+        Notes
+        -----
+        File format expects these keys without "DHCORE_" prefix:
+        - issuer, client_id, access_token, refresh_token
+        But uses full names for: endpoint, user, password, personal_access_token
         """
         creds[CredsEnvVar.DHCORE_ENDPOINT.value] = self._sanitize_endpoint(creds[CredsEnvVar.DHCORE_ENDPOINT.value])
         creds[CredsEnvVar.DHCORE_ISSUER.value] = self._sanitize_endpoint(
@@ -146,12 +214,31 @@ class ClientDHCoreConfigurator(Configurator):
     @staticmethod
     def _sanitize_endpoint(endpoint: str | None = None) -> str | None:
         """
-        Sanitize the endpoint.
+        Sanitize and validate endpoint URL.
+
+        Validates that the endpoint URL has a proper HTTP/HTTPS scheme,
+        trims whitespace, and removes trailing slashes for consistency.
+
+        Parameters
+        ----------
+        endpoint : str, optional
+            The endpoint URL to sanitize. If None, returns None.
 
         Returns
         -------
-        str | None
-            The sanitized endpoint.
+        str or None
+            The sanitized endpoint URL with trailing slash removed,
+            or None if input was None.
+
+        Raises
+        ------
+        ClientError
+            If the endpoint does not start with http:// or https://.
+
+        Notes
+        -----
+        This method ensures endpoint URLs are properly formatted for
+        HTTP requests and prevents common URL formatting issues.
         """
         if endpoint is None:
             return
@@ -163,12 +250,25 @@ class ClientDHCoreConfigurator(Configurator):
 
     def get_endpoint(self) -> str:
         """
-        Get the DHCore endpoint.
+        Get the configured DHCore backend endpoint.
+
+        Retrieves the DHCore endpoint URL from the current credential source
+        (environment or file based on current origin).
 
         Returns
         -------
         str
-            The endpoint.
+            The DHCore backend endpoint URL.
+
+        Raises
+        ------
+        KeyError
+            If the endpoint is not configured in the current credential source.
+
+        Notes
+        -----
+        The endpoint returned is already sanitized and validated during
+        the credential loading process.
         """
         creds = self._creds_handler.get_credentials(self._origin)
         return creds[CredsEnvVar.DHCORE_ENDPOINT.value]
@@ -179,7 +279,22 @@ class ClientDHCoreConfigurator(Configurator):
 
     def change_origin(self) -> None:
         """
-        Change the origin of the credentials.
+        Change the credentials origin and re-evaluate authentication type.
+
+        Switches the credential source (between environment and file) and
+        re-evaluates the authentication type based on the new credential set.
+        This is typically called when the current credential source fails
+        or when switching contexts.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        This method extends the parent class behavior by also re-evaluating
+        the authentication type, which may change based on different
+        credentials available in the new source.
         """
         super().change_origin()
 
@@ -192,11 +307,29 @@ class ClientDHCoreConfigurator(Configurator):
 
     def set_auth_type(self) -> None:
         """
-        Evaluate the auth type from the credentials.
+        Evaluate and set the authentication type from available credentials.
+
+        Analyzes the available credentials and determines the appropriate
+        authentication method based on the following priority:
+        1. EXCHANGE - Personal access token available
+        2. OAUTH2 - Access token and refresh token available
+        3. ACCESS_TOKEN - Only access token available
+        4. BASIC - Username and password available
+        5. None - No valid credentials found
+
+        For EXCHANGE authentication, automatically performs token exchange
+        and switches to file-based credential storage.
 
         Returns
         -------
         None
+
+        Notes
+        -----
+        When EXCHANGE authentication is detected, this method automatically:
+        - Performs credential refresh to exchange the personal access token
+        - Changes origin to file-based storage for the new tokens
+        - Updates the authentication type accordingly
         """
         creds = creds_handler.get_credentials(self._origin)
         self._auth_type = self._eval_auth_type(creds)
@@ -210,30 +343,55 @@ class ClientDHCoreConfigurator(Configurator):
 
     def refreshable_auth_types(self) -> bool:
         """
-        Check if the auth type is refreshable.
+        Check if the current authentication type supports token refresh.
+
+        Determines whether the current authentication method supports
+        automatic token refresh capabilities.
 
         Returns
         -------
         bool
-            True if the auth type is refreshable, False otherwise.
+            True if the authentication type supports refresh (OAUTH2 or EXCHANGE),
+            False otherwise (BASIC or ACCESS_TOKEN).
+
+        Notes
+        -----
+        Only OAUTH2 and EXCHANGE authentication types support refresh:
+        - OAUTH2: Uses refresh token to get new access tokens
+        - EXCHANGE: Uses personal access token for token exchange
+        - BASIC and ACCESS_TOKEN do not support refresh
         """
         return self._auth_type in [AuthType.OAUTH2.value, AuthType.EXCHANGE.value]
 
     def get_auth_parameters(self, kwargs: dict) -> dict:
         """
-        Get the authentication header for the request.
-        It is given for granted that the auth type is set and that,
-        if the auth type is EXCHANGE, the refresh token is set.
+        Add authentication parameters to HTTP request arguments.
+
+        Modifies the provided kwargs dictionary to include the appropriate
+        authentication headers or parameters based on the current authentication
+        type and available credentials.
 
         Parameters
         ----------
         kwargs : dict
-            Keyword arguments to pass to the request.
+            HTTP request keyword arguments to be modified with authentication.
 
         Returns
         -------
         dict
-            Authentication parameters.
+            The modified kwargs dictionary with authentication parameters added.
+
+        Notes
+        -----
+        Authentication is added based on auth type:
+        - OAUTH2/EXCHANGE/ACCESS_TOKEN: Adds Authorization Bearer header
+        - BASIC: Adds auth tuple with username/password
+        - None: No authentication added
+
+        The method assumes that:
+        - Authentication type has been properly set
+        - For EXCHANGE type, refresh token has been obtained
+        - Required credentials are available for the current auth type
         """
         creds = creds_handler.get_credentials(self._origin)
         if self._auth_type in (
@@ -253,16 +411,41 @@ class ClientDHCoreConfigurator(Configurator):
 
     def refresh_credentials(self, change_origin: bool = False) -> None:
         """
-        Get a new access token and a refreshed credentials.
+        Refresh authentication credentials by obtaining new access tokens.
+
+        Performs credential refresh using either OAuth2 refresh token flow
+        or personal access token exchange, depending on the current
+        authentication type. Updates stored credentials with new tokens.
 
         Parameters
         ----------
-        change_origin : bool, optional
-            Whether to change the origin of the credentials, by default False
+        change_origin : bool, default False
+            Whether to allow changing credential source if refresh fails.
+            If True and refresh fails, attempts to switch credential sources
+            and retry once.
 
         Returns
         -------
         None
+
+        Raises
+        ------
+        ClientError
+            If the authentication type doesn't support refresh, if required
+            credentials are missing, or if refresh fails and change_origin
+            is False.
+
+        Notes
+        -----
+        Refresh behavior by authentication type:
+        - OAUTH2: Uses refresh_token grant to get new access/refresh tokens
+        - EXCHANGE: Uses token exchange with personal access token
+
+        If refresh fails with 400/401/403 status and change_origin=True,
+        attempts to switch credential sources and retry once.
+
+        New credentials are automatically saved to the configuration file
+        and the origin is switched to file-based storage.
         """
         if not self.refreshable_auth_types():
             raise ClientError(f"Auth type {self._auth_type} does not support refresh.")
@@ -310,17 +493,26 @@ class ClientDHCoreConfigurator(Configurator):
 
     def _remove_prefix_dhcore(self) -> list[str]:
         """
-        Remove prefix from selected keys. (Compatibility with CLI)
+        Remove DHCORE_ prefix from selected credential keys for CLI compatibility.
 
-        Parameters
-        ----------
-        keys : list[str]
-            List of keys.
+        Creates a list of credential key names with "DHCORE_" prefix removed
+        from specific keys that are stored without the prefix in configuration
+        files for compatibility with CLI tools.
 
         Returns
         -------
         list[str]
-            List of keys without prefix.
+            List of credential keys with selective prefix removal applied.
+
+        Notes
+        -----
+        Keys that have prefix removed (defined in keys_to_unprefix):
+        - DHCORE_REFRESH_TOKEN -> refresh_token
+        - DHCORE_ACCESS_TOKEN -> access_token
+        - DHCORE_ISSUER -> issuer
+        - DHCORE_CLIENT_ID -> client_id
+
+        Other keys retain their full names for consistency.
         """
         new_list = []
         for key in self.keys:
@@ -332,12 +524,31 @@ class ClientDHCoreConfigurator(Configurator):
 
     def _get_refresh_endpoint(self) -> str:
         """
-        Get the refresh endpoint.
+        Discover the OAuth2 token refresh endpoint from the issuer.
+
+        Queries the OAuth2 issuer's well-known configuration endpoint to
+        discover the token endpoint used for credential refresh operations.
 
         Returns
         -------
         str
-            Refresh endpoint.
+            The token endpoint URL for credential refresh.
+
+        Raises
+        ------
+        ClientError
+            If the issuer endpoint is not configured.
+        HTTPError
+            If the well-known configuration endpoint is not accessible.
+        KeyError
+            If the token_endpoint is not found in the issuer configuration.
+
+        Notes
+        -----
+        This method follows the OAuth2/OpenID Connect discovery standard by:
+        1. Accessing the issuer's /.well-known/openid-configuration endpoint
+        2. Extracting the token_endpoint from the configuration
+        3. Using this endpoint for subsequent token refresh operations
         """
         # Get issuer endpoint
         creds = self._creds_handler.get_credentials(self._origin)
@@ -359,19 +570,30 @@ class ClientDHCoreConfigurator(Configurator):
         **kwargs,
     ) -> Response:
         """
-        Call the refresh token endpoint.
+        Make HTTP request to OAuth2 token refresh endpoint.
+
+        Performs a POST request to the OAuth2 token endpoint with the
+        appropriate form-encoded payload for token refresh or exchange.
 
         Parameters
         ----------
         url : str
-            Refresh token endpoint.
-        kwargs : dict
-            Keyword arguments to pass to the request.
+            The token endpoint URL to call.
+        **kwargs : dict
+            Token request parameters such as grant_type, client_id,
+            refresh_token, subject_token, etc.
 
         Returns
         -------
         Response
-            Response object.
+            The HTTP response object from the token endpoint.
+
+        Notes
+        -----
+        This method:
+        - Uses application/x-www-form-urlencoded content type as required by OAuth2
+        - Sets a 60-second timeout for the request
+        - Returns the raw response for caller to handle status and parsing
         """
         # Send request to get new access token
         payload = {**kwargs}
@@ -379,6 +601,32 @@ class ClientDHCoreConfigurator(Configurator):
         return request("POST", url, data=payload, headers=headers, timeout=60)
 
     def _eval_auth_type(self, creds: dict) -> str | None:
+        """
+        Evaluate authentication type based on available credentials.
+
+        Analyzes the provided credentials and determines the most appropriate
+        authentication method based on which credential types are available.
+
+        Parameters
+        ----------
+        creds : dict
+            Dictionary containing credential values.
+
+        Returns
+        -------
+        str or None
+            The determined authentication type from AuthType enum, or None
+            if no valid authentication method can be determined.
+
+        Notes
+        -----
+        Authentication type priority (checked in order):
+        1. EXCHANGE - Personal access token is available
+        2. OAUTH2 - Both access token and refresh token are available
+        3. ACCESS_TOKEN - Only access token is available
+        4. BASIC - Both username and password are available
+        5. None - No valid credential combination found
+        """
         if creds[CredsEnvVar.DHCORE_PERSONAL_ACCESS_TOKEN.value] is not None:
             return AuthType.EXCHANGE.value
         if (
@@ -394,16 +642,31 @@ class ClientDHCoreConfigurator(Configurator):
 
     def _export_new_creds(self, response: dict) -> None:
         """
-        Set new credentials.
+        Save new credentials from token refresh response.
+
+        Takes the response from a successful token refresh operation and
+        persists the new credentials to the configuration file, then
+        reloads file-based credentials and switches to file origin.
 
         Parameters
         ----------
         response : dict
-            Response from refresh endpoint.
+            Token response containing new access_token, refresh_token,
+            and other credential information.
 
         Returns
         -------
         None
+
+        Notes
+        -----
+        This method:
+        1. Writes new credentials to the configuration file
+        2. Reloads file-based credentials to ensure consistency
+        3. Changes current origin to file since new tokens are file-based
+
+        The response typically contains access_token, refresh_token,
+        token_type, expires_in, and other OAuth2 standard fields.
         """
         creds_handler.write_env(response)
         self.load_file_vars()

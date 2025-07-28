@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: © 2025 DSLab - Fondazione Bruno Kessler
 #
 # SPDX-License-Identifier: Apache-2.0
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -15,34 +16,34 @@ from digitalhub.utils.exceptions import StoreError
 
 def get_bucket_name(path: str) -> str:
     """
-    Get bucket name from path.
+    Extract the bucket name from an S3 path.
 
     Parameters
     ----------
     path : str
-        The source path to get the key from.
+        S3 URI (e.g., 's3://bucket/key').
 
     Returns
     -------
     str
-        The bucket name.
+        The bucket name extracted from the URI.
     """
     return urlparse(path).netloc
 
 
 def get_bucket_and_key(path: str) -> tuple[str, str]:
     """
-    Get bucket and key from path.
+    Extract the bucket name and key from an S3 path.
 
     Parameters
     ----------
     path : str
-        The source path to get the key from.
+        S3 URI (e.g., 's3://bucket/key').
 
     Returns
     -------
-    tuple[str, str]
-        The bucket and key.
+    tuple of str
+        Tuple containing (bucket, key) extracted from the URI.
     """
     parsed = urlparse(path)
     return parsed.netloc, parsed.path
@@ -50,7 +51,7 @@ def get_bucket_and_key(path: str) -> tuple[str, str]:
 
 def get_s3_source(bucket: str, key: str, filename: Path) -> None:
     """
-    Get S3 source.
+    Download an object from S3 and save it to a local file.
 
     Parameters
     ----------
@@ -59,7 +60,7 @@ def get_s3_source(bucket: str, key: str, filename: Path) -> None:
     key : str
         S3 object key.
     filename : Path
-        Path where to save the function source.
+        Local path where the downloaded object will be saved.
 
     Returns
     -------
