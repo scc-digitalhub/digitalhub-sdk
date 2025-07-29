@@ -262,8 +262,7 @@ def carriage_return_warn(string: str) -> None:
     None
     """
     if "\r\n" in string:
-        warn("String contains a carriage return. "
-             "It may not be parsed correctly from remote runtimes.")
+        warn("String contains a carriage return. It may not be parsed correctly from remote runtimes.")
 
 
 def read_source(path: str) -> str:
