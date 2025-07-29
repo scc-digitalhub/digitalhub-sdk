@@ -21,6 +21,20 @@ if typing.TYPE_CHECKING:
 
 
 class StoreInfo:
+    """
+    Container for store class and configurator information.
+
+    Holds store class references and their associated configurators
+    for registration and instantiation in the store builder system.
+
+    Attributes
+    ----------
+    _store : Store
+        The store class to be instantiated.
+    _configurator : Configurator or None
+        The configurator class for store configuration, if required.
+    """
+
     def __init__(self, store: Store, configurator: Configurator | None = None) -> None:
         self._store = store
         self._configurator = configurator
@@ -28,7 +42,19 @@ class StoreInfo:
 
 class StoreBuilder:
     """
-    Store builder class.
+    Store factory and registry for managing data store instances.
+
+    Provides registration, instantiation, and caching of data store
+    instances based on URI schemes. Supports various store types
+    including S3, SQL, local, and remote stores with their respective
+    configurators.
+
+    Attributes
+    ----------
+    _builders : dict[str, StoreInfo]
+        Registry of store types mapped to their StoreInfo instances.
+    _instances : dict[str, Store]
+        Cache of instantiated store instances by store type.
     """
 
     def __init__(self) -> None:
@@ -41,6 +67,31 @@ class StoreBuilder:
         store: Store,
         configurator: Configurator | None = None,
     ) -> None:
+        """
+        Register a store type with its class and optional configurator.
+
+        Adds a new store type to the builder registry, associating it
+        with a store class and optional configurator for later instantiation.
+
+        Parameters
+        ----------
+        store_type : str
+            The unique identifier for the store type (e.g., 's3', 'sql').
+        store : Store
+            The store class to register for this type.
+        configurator : Configurator, optional
+            The configurator class for store configuration.
+            If None, the store will be instantiated without configuration.
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        StoreError
+            If the store type is already registered in the builder.
+        """
         if store_type not in self._builders:
             self._builders[store_type] = StoreInfo(store, configurator)
         else:
@@ -48,17 +99,28 @@ class StoreBuilder:
 
     def get(self, uri: str) -> Store:
         """
-        Get a store instance by URI, building it if necessary.
+        Get or create a store instance based on URI scheme.
+
+        Determines the appropriate store type from the URI scheme,
+        instantiates the store if not already cached, and returns
+        the store instance. Store instances are cached for reuse.
 
         Parameters
         ----------
         uri : str
-            URI to parse.
+            The URI to parse for determining the store type.
+            The scheme (e.g., 's3://', 'sql://') determines which
+            store type to instantiate.
 
         Returns
         -------
         Store
-            The store instance.
+            The store instance appropriate for handling the given URI.
+
+        Raises
+        ------
+        KeyError
+            If no store is registered for the URI scheme.
         """
         store_type = map_uri_scheme(uri)
 

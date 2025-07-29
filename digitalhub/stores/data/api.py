@@ -37,7 +37,7 @@ def get_default_store(project: str) -> str:
     var = StoreEnv.DEFAULT_FILES_STORE.value
 
     context = get_context(project)
-    store = context.config.get(var.lower())
+    store = context.config.get(var.lower().replace("dhcore_", ""))
     if store is not None:
         return store
 

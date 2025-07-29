@@ -36,6 +36,7 @@ class CredsEnvVar(Enum):
     """
     Supported credential environment variables.
     """
+
     # S3
     S3_ENDPOINT_URL = "AWS_ENDPOINT_URL"
     S3_ACCESS_KEY_ID = "AWS_ACCESS_KEY_ID"

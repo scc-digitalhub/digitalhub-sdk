@@ -28,11 +28,13 @@ if typing.TYPE_CHECKING:
 
 class ContextEntityOperationsProcessor:
     """
-    Processor for Entity operations.
+    Processor for context entity operations.
 
-    This object interacts with the context, check the category of the object,
-    and then calls the appropriate method to perform the requested operation.
-    Operations can be CRUD, search, list, etc.
+    This class handles CRUD operations and other entity management tasks
+    for context-level entities (artifacts, functions, workflows, runs, etc.)
+    within projects. It manages the full lifecycle of versioned and
+    unversioned entities including creation, reading, updating, deletion,
+    import/export, and specialized operations like file uploads and metrics.
     """
 
     ##############################
@@ -46,23 +48,24 @@ class ContextEntityOperationsProcessor:
         entity_dict: dict,
     ) -> dict:
         """
-        Create object in backend.
+        Create a context entity in the backend.
+
+        Builds the appropriate API endpoint and sends a create request
+        to the backend for context-level entities within a project.
 
         Parameters
         ----------
         context : Context
-            Context instance.
-        project : str
-            Project name.
+            The project context instance.
         entity_type : str
-            Entity type.
+            The type of entity to create (e.g., 'artifact', 'function').
         entity_dict : dict
-            Object instance.
+            The entity data dictionary to create.
 
         Returns
         -------
         dict
-            Object instance.
+            The created entity data returned from the backend.
         """
         api = context.client.build_api(
             ApiCategories.CONTEXT.value,
@@ -78,17 +81,25 @@ class ContextEntityOperationsProcessor:
         **kwargs,
     ) -> ContextEntity:
         """
-        Create object in backend.
+        Create a context entity in the backend.
+
+        Creates a new context entity either from an existing entity object
+        or by building one from the provided parameters. Handles entity
+        creation within a project context.
 
         Parameters
         ----------
+        _entity : ContextEntity, optional
+            An existing context entity object to create. If None,
+            a new entity will be built from kwargs.
         **kwargs : dict
-            Parameters to pass to entity builder.
+            Parameters for entity creation, including 'project' and
+            entity-specific parameters.
 
         Returns
         -------
         ContextEntity
-            Object instance.
+            The created context entity with backend data populated.
         """
         if _entity is not None:
             context = _entity._context()
@@ -104,17 +115,29 @@ class ContextEntityOperationsProcessor:
         **kwargs,
     ) -> MaterialEntity:
         """
-        Create object in backend and upload file.
+        Create a material entity in the backend and upload associated files.
+
+        Creates a new material entity (artifact, dataitem, or model) and
+        handles file upload operations. Manages upload state transitions
+        and error handling during the upload process.
 
         Parameters
         ----------
         **kwargs : dict
-            Parameters to pass to entity builder.
+            Parameters for entity creation including:
+            - 'source': file source(s) to upload
+            - 'project': project name
+            - other entity-specific parameters
 
         Returns
         -------
         MaterialEntity
-            Object instance.
+            The created material entity with uploaded files.
+
+        Raises
+        ------
+        EntityError
+            If file upload fails during the process.
         """
         source: SourcesOrListOfSources = kwargs.pop("source")
         context = get_context_from_project(kwargs["project"])
@@ -160,27 +183,31 @@ class ContextEntityOperationsProcessor:
         **kwargs,
     ) -> dict:
         """
-        Read object from backend.
+        Read a context entity from the backend.
+
+        Retrieves entity data from the backend using either entity ID
+        for direct access or entity name for latest version lookup.
+        Handles both specific version reads and latest version queries.
 
         Parameters
         ----------
         context : Context
-            Context instance.
+            The project context instance.
         identifier : str
-            Entity key (store://...) or entity name.
-        entity_type : str
-            Entity type.
-        project : str
-            Project name.
-        entity_id : str
-            Entity ID.
+            Entity key (store://...) or entity name identifier.
+        entity_type : str, optional
+            The type of entity to read.
+        project : str, optional
+            Project name (used for identifier parsing).
+        entity_id : str, optional
+            Specific entity ID to read.
         **kwargs : dict
-            Parameters to pass to the API call.
+            Additional parameters to pass to the API call.
 
         Returns
         -------
         dict
-            Object instance.
+            The entity data retrieved from the backend.
         """
         project, entity_type, _, entity_name, entity_id = parse_identifier(
             identifier,
@@ -224,25 +251,28 @@ class ContextEntityOperationsProcessor:
         **kwargs,
     ) -> ContextEntity:
         """
-        Read object from backend.
+        Read a context entity from the backend.
+
+        Retrieves entity data from the backend and constructs a context
+        entity object. Handles post-processing for metrics and file info.
 
         Parameters
         ----------
         identifier : str
-            Entity key (store://...) or entity name.
-        entity_type : str
-            Entity type.
-        project : str
-            Project name.
-        entity_id : str
-            Entity ID.
+            Entity key (store://...) or entity name identifier.
+        entity_type : str, optional
+            The type of entity to read.
+        project : str, optional
+            Project name for context resolution.
+        entity_id : str, optional
+            Specific entity ID to read.
         **kwargs : dict
-            Parameters to pass to the API call.
+            Additional parameters to pass to the API call.
 
         Returns
         -------
-        VersionedEntity
-            Object instance.
+        ContextEntity
+            The context entity object populated with backend data.
         """
         context = get_context_from_identifier(identifier, project)
         obj = self._read_context_entity(
@@ -265,25 +295,29 @@ class ContextEntityOperationsProcessor:
         **kwargs,
     ) -> UnversionedEntity:
         """
-        Read object from backend.
+        Read an unversioned entity from the backend.
+
+        Retrieves unversioned entity data (runs, tasks) from the backend.
+        Handles identifier parsing for entities that don't follow the
+        standard versioned naming convention.
 
         Parameters
         ----------
         identifier : str
-            Entity key (store://...) or entity name.
-        entity_type : str
-            Entity type.
-        project : str
-            Project name.
-        entity_id : str
-            Entity ID.
+            Entity key (store://...) or entity ID.
+        entity_type : str, optional
+            The type of entity to read.
+        project : str, optional
+            Project name for context resolution.
+        entity_id : str, optional
+            Specific entity ID to read.
         **kwargs : dict
-            Parameters to pass to the API call.
+            Additional parameters to pass to the API call.
 
         Returns
         -------
         UnversionedEntity
-            Object instance.
+            The unversioned entity object populated with backend data.
         """
         if not identifier.startswith("store://"):
             entity_id = identifier
@@ -304,17 +338,26 @@ class ContextEntityOperationsProcessor:
         file: str,
     ) -> ContextEntity:
         """
-        Import object from a YAML file and create a new object into the backend.
+        Import a context entity from a YAML file and create it in the backend.
+
+        Reads entity configuration from a YAML file and creates a new
+        context entity in the backend. Raises an error if the entity
+        already exists.
 
         Parameters
         ----------
         file : str
-            Path to YAML file.
+            Path to the YAML file containing entity configuration.
 
         Returns
         -------
         ContextEntity
-            Object instance.
+            The imported and created context entity.
+
+        Raises
+        ------
+        EntityError
+            If the entity already exists in the backend.
         """
         dict_obj: dict = read_yaml(file)
         dict_obj["status"] = {}
@@ -331,17 +374,27 @@ class ContextEntityOperationsProcessor:
         file: str,
     ) -> ExecutableEntity:
         """
-        Import object from a YAML file and create a new object into the backend.
+        Import an executable entity from a YAML file and create it in the backend.
+
+        Reads executable entity configuration from a YAML file and creates
+        a new executable entity (function or workflow) in the backend.
+        Also imports associated task definitions if present in the file.
 
         Parameters
         ----------
         file : str
-            Path to YAML file.
+            Path to the YAML file containing executable entity configuration.
+            Can contain a single entity or a list with the executable and tasks.
 
         Returns
         -------
         ExecutableEntity
-            Object instance.
+            The imported and created executable entity.
+
+        Raises
+        ------
+        EntityError
+            If the entity already exists in the backend.
         """
         dict_obj: dict | list[dict] = read_yaml(file)
         if isinstance(dict_obj, list):
@@ -371,17 +424,21 @@ class ContextEntityOperationsProcessor:
         file: str,
     ) -> ContextEntity:
         """
-        Load object from a YAML file and update an existing object into the backend.
+        Load a context entity from a YAML file and update it in the backend.
+
+        Reads entity configuration from a YAML file and updates an existing
+        entity in the backend. If the entity doesn't exist, it creates a
+        new one.
 
         Parameters
         ----------
         file : str
-            Path to YAML file.
+            Path to the YAML file containing entity configuration.
 
         Returns
         -------
         ContextEntity
-            Object instance.
+            The loaded and updated context entity.
         """
         dict_obj: dict = read_yaml(file)
         context = get_context_from_project(dict_obj["project"])
@@ -397,17 +454,22 @@ class ContextEntityOperationsProcessor:
         file: str,
     ) -> ExecutableEntity:
         """
-        Load object from a YAML file and update an existing object into the backend.
+        Load an executable entity from a YAML file and update it in the backend.
+
+        Reads executable entity configuration from a YAML file and updates
+        an existing executable entity in the backend. If the entity doesn't
+        exist, it creates a new one. Also handles task imports.
 
         Parameters
         ----------
         file : str
-            Path to YAML file.
+            Path to the YAML file containing executable entity configuration.
+            Can contain a single entity or a list with the executable and tasks.
 
         Returns
         -------
         ExecutableEntity
-            Object instance.
+            The loaded and updated executable entity.
         """
         dict_obj: dict | list[dict] = read_yaml(file)
         if isinstance(dict_obj, list):
@@ -436,25 +498,28 @@ class ContextEntityOperationsProcessor:
         **kwargs,
     ) -> list[dict]:
         """
-        Get all versions object from backend.
+        Read all versions of a context entity from the backend.
+
+        Retrieves all available versions of a named entity from the
+        backend using the entity name identifier.
 
         Parameters
         ----------
         context : Context
-            Context instance.
+            The project context instance.
         identifier : str
-            Entity key (store://...) or entity name.
-        entity_type : str
-            Entity type.
-        project : str
-            Project name.
+            Entity key (store://...) or entity name identifier.
+        entity_type : str, optional
+            The type of entity to read versions for.
+        project : str, optional
+            Project name (used for identifier parsing).
         **kwargs : dict
-            Parameters to pass to the API call.
+            Additional parameters to pass to the API call.
 
         Returns
         -------
         list[dict]
-            Object instances.
+            List of entity data dictionaries for all versions.
         """
         project, entity_type, _, entity_name, _ = parse_identifier(
             identifier,
@@ -485,23 +550,27 @@ class ContextEntityOperationsProcessor:
         **kwargs,
     ) -> list[ContextEntity]:
         """
-        Read object versions from backend.
+        Read all versions of a context entity from the backend.
+
+        Retrieves all available versions of a named entity and constructs
+        context entity objects for each version. Applies post-processing
+        for metrics and file info.
 
         Parameters
         ----------
         identifier : str
-            Entity key (store://...) or entity name.
-        entity_type : str
-            Entity type.
-        project : str
-            Project name.
+            Entity key (store://...) or entity name identifier.
+        entity_type : str, optional
+            The type of entity to read versions for.
+        project : str, optional
+            Project name for context resolution.
         **kwargs : dict
-            Parameters to pass to the API call.
+            Additional parameters to pass to the API call.
 
         Returns
         -------
         list[ContextEntity]
-            List of object instances.
+            List of context entity objects for all versions.
         """
         context = get_context_from_identifier(identifier, project)
         objs = self._read_context_entity_versions(
@@ -525,21 +594,25 @@ class ContextEntityOperationsProcessor:
         **kwargs,
     ) -> list[dict]:
         """
-        List objects from backend.
+        List context entities from the backend.
+
+        Retrieves a list of entities of a specific type from the backend
+        within the project context.
 
         Parameters
         ----------
         context : Context
-            Context instance.
+            The project context instance.
         entity_type : str
-            Entity type.
+            The type of entities to list.
         **kwargs : dict
-            Parameters to pass to the API call.
+            Additional parameters to pass to the API call for filtering
+            or pagination.
 
         Returns
         -------
         list[dict]
-            List of objects.
+            List of entity data dictionaries from the backend.
         """
         api = context.client.build_api(
             ApiCategories.CONTEXT.value,
@@ -556,21 +629,27 @@ class ContextEntityOperationsProcessor:
         **kwargs,
     ) -> list[ContextEntity]:
         """
-        List all latest version objects from backend.
+        List all latest version context entities from the backend.
+
+        Retrieves a list of entities of a specific type from the backend
+        and constructs context entity objects. Only returns the latest
+        version of each entity. Applies post-processing for metrics and
+        file info.
 
         Parameters
         ----------
         project : str
-            Project name.
+            The project name to list entities from.
         entity_type : str
-            Entity type.
+            The type of entities to list.
         **kwargs : dict
-            Parameters to pass to the API call.
+            Additional parameters to pass to the API call for filtering
+            or pagination.
 
         Returns
         -------
         list[ContextEntity]
-            List of object instances.
+            List of context entity objects (latest versions only).
         """
         context = get_context_from_project(project)
         objs = self._list_context_entities(context, entity_type, **kwargs)
@@ -586,17 +665,20 @@ class ContextEntityOperationsProcessor:
         new_obj: MaterialEntity,
     ) -> dict:
         """
-        Update material object shortcut.
+        Update a material entity using a shortcut method.
+
+        Convenience method for updating material entities during
+        file upload operations.
 
         Parameters
         ----------
         new_obj : MaterialEntity
-            Object instance.
+            The material entity object to update.
 
         Returns
         -------
         dict
-            Response from backend.
+            Response data from the backend update operation.
         """
         return self.update_context_entity(
             new_obj.project,
@@ -614,25 +696,29 @@ class ContextEntityOperationsProcessor:
         **kwargs,
     ) -> dict:
         """
-        Update object. Note that object spec are immutable.
+        Update a context entity in the backend.
+
+        Updates an existing context entity with new data. Entity
+        specifications are typically immutable, so this primarily
+        updates status and metadata.
 
         Parameters
         ----------
         context : Context
-            Context instance.
+            The project context instance.
         entity_type : str
-            Entity type.
+            The type of entity to update.
         entity_id : str
-            Entity ID.
+            The unique identifier of the entity to update.
         entity_dict : dict
-            Entity dictionary.
+            The updated entity data dictionary.
         **kwargs : dict
-            Parameters to pass to the API call.
+            Additional parameters to pass to the API call.
 
         Returns
         -------
         dict
-            Response from backend.
+            Response data from the backend update operation.
         """
         api = context.client.build_api(
             ApiCategories.CONTEXT.value,
@@ -652,25 +738,29 @@ class ContextEntityOperationsProcessor:
         **kwargs,
     ) -> ContextEntity:
         """
-        Update object. Note that object spec are immutable.
+        Update a context entity in the backend.
+
+        Updates an existing context entity with new data and returns
+        the updated context entity object. Entity specifications are
+        typically immutable.
 
         Parameters
         ----------
         project : str
-            Project name.
+            The project name containing the entity.
         entity_type : str
-            Entity type.
+            The type of entity to update.
         entity_id : str
-            Entity ID.
+            The unique identifier of the entity to update.
         entity_dict : dict
-            Entity dictionary.
+            The updated entity data dictionary.
         **kwargs : dict
-            Parameters to pass to the API call.
+            Additional parameters to pass to the API call.
 
         Returns
         -------
         ContextEntity
-            Object instance.
+            The updated context entity object.
         """
         context = get_context_from_project(project)
         obj = self._update_context_entity(
@@ -692,27 +782,33 @@ class ContextEntityOperationsProcessor:
         **kwargs,
     ) -> dict:
         """
-        Delete object from backend.
+        Delete a context entity from the backend.
+
+        Removes an entity from the backend, with options for deleting
+        specific versions or all versions of a named entity. Handles
+        cascade deletion if supported.
 
         Parameters
         ----------
         context : Context
-            Context instance.
+            The project context instance.
         identifier : str
-            Entity key (store://...) or entity name.
-        entity_type : str
-            Entity type.
-        project : str
-            Project name.
-        entity_id : str
-            Entity ID.
+            Entity key (store://...) or entity name identifier.
+        entity_type : str, optional
+            The type of entity to delete.
+        project : str, optional
+            Project name (used for identifier parsing).
+        entity_id : str, optional
+            Specific entity ID to delete.
         **kwargs : dict
-            Parameters to pass to the API call.
+            Additional parameters including:
+            - 'delete_all_versions': delete all versions of named entity
+            - 'cascade': cascade deletion options
 
         Returns
         -------
         dict
-            Response from backend.
+            Response data from the backend delete operation.
         """
         project, entity_type, _, entity_name, entity_id = parse_identifier(
             identifier,
@@ -758,25 +854,28 @@ class ContextEntityOperationsProcessor:
         **kwargs,
     ) -> dict:
         """
-        Delete object from backend.
+        Delete a context entity from the backend.
+
+        Removes an entity from the backend with support for deleting
+        specific versions or all versions of a named entity.
 
         Parameters
         ----------
         identifier : str
-            Entity key (store://...) or entity name.
-        project : str
-            Project name.
-        entity_type : str
-            Entity type.
-        entity_id : str
-            Entity ID.
+            Entity key (store://...) or entity name identifier.
+        project : str, optional
+            Project name for context resolution.
+        entity_type : str, optional
+            The type of entity to delete.
+        entity_id : str, optional
+            Specific entity ID to delete.
         **kwargs : dict
-            Parameters to pass to the API call.
+            Additional parameters including deletion options.
 
         Returns
         -------
         dict
-            Response from backend.
+            Response data from the backend delete operation.
         """
         context = get_context_from_identifier(identifier, project)
         return self._delete_context_entity(
@@ -790,17 +889,20 @@ class ContextEntityOperationsProcessor:
 
     def _post_process_get(self, entity: ContextEntity) -> ContextEntity:
         """
-        Post process get (files, metrics).
+        Post-process a retrieved context entity.
+
+        Applies additional processing to entities after retrieval,
+        including loading metrics and file information if available.
 
         Parameters
         ----------
         entity : ContextEntity
-            Entity to post process.
+            The entity to post-process.
 
         Returns
         -------
         ContextEntity
-            Post processed entity.
+            The post-processed entity with additional data loaded.
         """
         if hasattr(entity.status, "metrics"):
             entity._get_metrics()
@@ -821,25 +923,28 @@ class ContextEntityOperationsProcessor:
         entity_id: str | None = None,
     ) -> str:
         """
-        Build object key.
+        Build a storage key for a context entity.
+
+        Creates a standardized key string for context entity identification
+        and storage within a project context.
 
         Parameters
         ----------
         context : Context
-            Context instance.
+            The project context instance.
         entity_type : str
-            Entity type.
+            The type of entity.
         entity_kind : str
-            Entity kind.
+            The kind/subtype of entity.
         entity_name : str
-            Entity name.
-        entity_id : str
-            Entity ID.
+            The name of the entity.
+        entity_id : str, optional
+            The unique identifier of the entity version.
 
         Returns
         -------
         str
-            Object key.
+            The constructed context entity key string.
         """
         return context.client.build_key(
             ApiCategories.CONTEXT.value,
@@ -859,25 +964,28 @@ class ContextEntityOperationsProcessor:
         entity_id: str | None = None,
     ) -> str:
         """
-        Build object key.
+        Build a storage key for a context entity.
+
+        Creates a standardized key string for context entity identification
+        and storage, resolving the project context automatically.
 
         Parameters
         ----------
         project : str
-            Project name.
+            The project name containing the entity.
         entity_type : str
-            Entity type.
+            The type of entity.
         entity_kind : str
-            Entity kind.
+            The kind/subtype of entity.
         entity_name : str
-            Entity name.
-        entity_id : str
-            Entity ID.
+            The name of the entity.
+        entity_id : str, optional
+            The unique identifier of the entity version.
 
         Returns
         -------
         str
-            Object key.
+            The constructed context entity key string.
         """
         context = get_context_from_project(project)
         return self._build_context_entity_key(context, entity_type, entity_kind, entity_name, entity_id)
@@ -889,21 +997,24 @@ class ContextEntityOperationsProcessor:
         **kwargs,
     ) -> dict:
         """
-        Get data from backend.
+        Read secret data from the backend.
+
+        Retrieves secret data stored in the backend for a specific
+        project and entity type.
 
         Parameters
         ----------
         project : str
-            Project name.
+            The project name containing the secrets.
         entity_type : str
-            Entity type.
+            The type of entity (typically 'secret').
         **kwargs : dict
-            Parameters to pass to the API call.
+            Additional parameters to pass to the API call.
 
         Returns
         -------
         dict
-            Response from backend.
+            Secret data retrieved from the backend.
         """
         context = get_context_from_project(project)
         api = context.client.build_api(
@@ -922,18 +1033,21 @@ class ContextEntityOperationsProcessor:
         **kwargs,
     ) -> None:
         """
-        Set data in backend.
+        Update secret data in the backend.
+
+        Stores or updates secret data in the backend for a specific
+        project and entity type.
 
         Parameters
         ----------
         project : str
-            Project name.
+            The project name to store secrets in.
         entity_type : str
-            Entity type.
+            The type of entity (typically 'secret').
         data : dict
-            Data dictionary.
+            The secret data dictionary to store.
         **kwargs : dict
-            Parameters to pass to the API call.
+            Additional parameters to pass to the API call.
 
         Returns
         -------
@@ -956,23 +1070,26 @@ class ContextEntityOperationsProcessor:
         **kwargs,
     ) -> dict:
         """
-        Get logs from backend.
+        Read execution logs from the backend.
+
+        Retrieves logs for a specific run or task execution from
+        the backend.
 
         Parameters
         ----------
         project : str
-            Project name.
+            The project name containing the entity.
         entity_type : str
-            Entity type.
+            The type of entity (typically 'run' or 'task').
         entity_id : str
-            Entity ID.
+            The unique identifier of the entity to get logs for.
         **kwargs : dict
-            Parameters to pass to the API call.
+            Additional parameters to pass to the API call.
 
         Returns
         -------
         dict
-            Response from backend.
+            Log data retrieved from the backend.
         """
         context = get_context_from_project(project)
         api = context.client.build_api(
@@ -992,18 +1109,21 @@ class ContextEntityOperationsProcessor:
         **kwargs,
     ) -> None:
         """
-        Stop object in backend.
+        Stop a running entity in the backend.
+
+        Sends a stop signal to halt execution of a running entity
+        such as a workflow or long-running task.
 
         Parameters
         ----------
         project : str
-            Project name.
+            The project name containing the entity.
         entity_type : str
-            Entity type.
+            The type of entity to stop.
         entity_id : str
-            Entity ID.
+            The unique identifier of the entity to stop.
         **kwargs : dict
-            Parameters to pass to the API call.
+            Additional parameters to pass to the API call.
 
         Returns
         -------
@@ -1027,18 +1147,21 @@ class ContextEntityOperationsProcessor:
         **kwargs,
     ) -> None:
         """
-        Resume object in backend.
+        Resume a stopped entity in the backend.
+
+        Sends a resume signal to restart execution of a previously
+        stopped entity such as a workflow or task.
 
         Parameters
         ----------
         project : str
-            Project name.
+            The project name containing the entity.
         entity_type : str
-            Entity type.
+            The type of entity to resume.
         entity_id : str
-            Entity ID.
+            The unique identifier of the entity to resume.
         **kwargs : dict
-            Parameters to pass to the API call.
+            Additional parameters to pass to the API call.
 
         Returns
         -------
@@ -1062,23 +1185,26 @@ class ContextEntityOperationsProcessor:
         **kwargs,
     ) -> list[dict]:
         """
-        Get files info from backend.
+        Read file information from the backend.
+
+        Retrieves metadata about files associated with an entity,
+        including file paths, sizes, and other attributes.
 
         Parameters
         ----------
         project : str
-            Project name.
+            The project name containing the entity.
         entity_type : str
-            Entity type.
+            The type of entity to get file info for.
         entity_id : str
-            Entity ID.
+            The unique identifier of the entity.
         **kwargs : dict
-            Parameters to pass to the API call.
+            Additional parameters to pass to the API call.
 
         Returns
         -------
         list[dict]
-            Response from backend.
+            List of file information dictionaries from the backend.
         """
         context = get_context_from_project(project)
         api = context.client.build_api(
@@ -1137,23 +1263,30 @@ class ContextEntityOperationsProcessor:
         **kwargs,
     ) -> dict:
         """
-        Get metrics from backend.
+        Read metrics from the backend for a specific entity.
+
+        Retrieves metrics data associated with an entity. Can fetch either
+        all metrics or a specific metric by name. Used for performance
+        monitoring and analysis of entity operations.
 
         Parameters
         ----------
         project : str
-            Project name.
+            The project name containing the entity.
         entity_type : str
-            Entity type.
+            The type of entity to read metrics from.
         entity_id : str
-            Entity ID.
+            The unique identifier of the entity.
+        metric_name : str, optional
+            The name of a specific metric to retrieve.
+            If None, retrieves all available metrics.
         **kwargs : dict
-            Parameters to pass to the API call.
+            Additional parameters to pass to the API call.
 
         Returns
         -------
         dict
-            Response from backend.
+            Dictionary containing metric data from the backend.
         """
         context = get_context_from_project(project)
         api = context.client.build_api(
@@ -1176,18 +1309,27 @@ class ContextEntityOperationsProcessor:
         **kwargs,
     ) -> None:
         """
-        Get single metric from backend.
+        Update or create a metric value for an entity in the backend.
+
+        Updates an existing metric or creates a new one with the specified
+        value. Metrics are used for tracking performance, status, and
+        other quantitative aspects of entity operations.
 
         Parameters
         ----------
         project : str
-            Project name.
+            The project name containing the entity.
         entity_type : str
-            Entity type.
+            The type of entity to update metrics for.
         entity_id : str
-            Entity ID.
+            The unique identifier of the entity.
+        metric_name : str
+            The name of the metric to update or create.
+        metric_value : Any
+            The value to set for the metric.
+            Can be numeric, string, or other supported types.
         **kwargs : dict
-            Parameters to pass to the API call.
+            Additional parameters to pass to the API call.
 
         Returns
         -------
@@ -1210,19 +1352,23 @@ class ContextEntityOperationsProcessor:
         **kwargs,
     ) -> dict:
         """
-        Search in backend.
+        Execute search query against the backend API.
+
+        Internal method that performs the actual search operation
+        by building API parameters, executing the search request,
+        and processing the results into entity objects.
 
         Parameters
         ----------
         context : Context
-            Context instance.
+            The context instance containing client and project information.
         **kwargs : dict
-            Parameters to pass to the API call.
+            Search parameters and filters to pass to the API call.
 
         Returns
         -------
         dict
-            Response from backend.
+            List of context entity objects matching the search criteria.
         """
         kwargs = context.client.build_parameters(
             ApiCategories.CONTEXT.value,
@@ -1251,35 +1397,40 @@ class ContextEntityOperationsProcessor:
         **kwargs,
     ) -> list[ContextEntity]:
         """
-        Search objects from backend.
+        Search for entities in the backend using various criteria.
+
+        Performs a flexible search across multiple entity attributes,
+        allowing for complex queries and filtering. Returns matching
+        entities from the project context.
 
         Parameters
         ----------
         project : str
-            Project name.
-        query : str
-            Search query.
-        entity_types : list[str]
-            Entity types.
-        name : str
-            Entity name.
-        kind : str
-            Entity kind.
-        created : str
-            Entity creation date.
-        updated : str
-            Entity update date.
-        description : str
-            Entity description.
-        labels : list[str]
-            Entity labels.
+            The project name to search within.
+        query : str, optional
+            Free-text search query to match against entity content.
+        entity_types : list[str], optional
+            List of entity types to filter by.
+            If None, searches all entity types.
+        name : str, optional
+            Entity name pattern to match.
+        kind : str, optional
+            Entity kind to filter by.
+        created : str, optional
+            Creation date filter (ISO format).
+        updated : str, optional
+            Last update date filter (ISO format).
+        description : str, optional
+            Description pattern to match.
+        labels : list[str], optional
+            List of label patterns to match.
         **kwargs : dict
-            Parameters to pass to the API call.
+            Additional search parameters to pass to the API call.
 
         Returns
         -------
         list[ContextEntity]
-            List of object instances.
+            List of matching entity instances from the search.
         """
         context = get_context_from_project(project)
         return self._search(

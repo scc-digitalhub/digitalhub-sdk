@@ -28,8 +28,17 @@ if typing.TYPE_CHECKING:
 
 class SqlStore(Store):
     """
-    SQL store class. It implements the Store interface and provides methods to fetch and persist
-    artifacts on SQL based storage.
+    SQL-based data store implementation for database operations.
+
+    Provides functionality for reading, writing, and managing data in SQL
+    databases. Implements the Store interface with SQL-specific operations
+    including table downloads, DataFrame operations, and query execution.
+
+    Attributes
+    ----------
+    _configurator : SqlStoreConfigurator
+        The configurator instance for managing SQL database credentials
+        and connection parameters.
     """
 
     def __init__(self, configurator: Configurator | None = None) -> None:
@@ -47,21 +56,33 @@ class SqlStore(Store):
         overwrite: bool = False,
     ) -> str:
         """
-        Download artifacts from storage.
+        Download a SQL table as a Parquet file to local storage.
+
+        Retrieves data from a SQL table and saves it as a Parquet file
+        at the specified destination. The source path should be in the
+        format 'sql://database/schema/table'.
 
         Parameters
         ----------
         src : str
-            Path of the material entity.
-        dst : str
-            The destination of the material entity on local filesystem.
-        overwrite : bool
-            Specify if overwrite existing file(s).
+            The SQL URI path of the table to download in the format
+            'sql://database/schema/table' or 'sql://database/table'.
+        dst : Path
+            The destination path on the local filesystem where the
+            Parquet file will be saved.
+        overwrite : bool, default False
+            Whether to overwrite existing files at the destination path.
 
         Returns
         -------
         str
-            Destination path of the downloaded files.
+            The absolute path of the downloaded Parquet file.
+
+        Raises
+        ------
+        StoreError
+            If the destination path has an invalid extension or if
+            file operations fail.
         """
         table_name = self._get_table_name(src) + ".parquet"
         # Case where dst is not provided
@@ -92,12 +113,12 @@ class SqlStore(Store):
         dst: str,
     ) -> list[tuple[str, str]]:
         """
-        Upload an artifact to storage.
+        Upload artifacts to SQL storage.
 
         Raises
         ------
         StoreError
-            This method is not implemented.
+            Always raised as SQL store does not support direct upload.
         """
         raise StoreError("SQL store does not support upload.")
 
@@ -107,17 +128,12 @@ class SqlStore(Store):
         paths: list[tuple[str, str]],
     ) -> list[dict]:
         """
-        Get file information from SQL based storage.
-
-        Parameters
-        ----------
-        paths : list[str]
-            List of source paths.
+        Get file metadata information from SQL storage.
 
         Returns
         -------
         list[dict]
-            Returns files metadata.
+            Empty list.
         """
         return []
 
@@ -133,23 +149,33 @@ class SqlStore(Store):
         **kwargs,
     ) -> Any:
         """
-        Read DataFrame from path.
+        Read a DataFrame from a SQL table.
+
+        Connects to the SQL database and reads data from the specified
+        table into a DataFrame using the specified engine (pandas, polars, etc.).
 
         Parameters
         ----------
         path : SourcesOrListOfSources
-            Path(s) to read DataFrame from.
-        file_format : str
-            Extension of the file.
-        engine : str
-            Dataframe engine (pandas, polars, etc.).
+            The SQL URI path to read from in the format
+            'sql://database/schema/table'. Only single paths are supported.
+        file_format : str, optional
+            File format specification (not used for SQL operations).
+        engine : str, optional
+            DataFrame engine to use (e.g., 'pandas', 'polars').
+            If None, uses the default engine.
         **kwargs : dict
-            Keyword arguments.
+            Additional keyword arguments passed to the reader.
 
         Returns
         -------
         Any
-            DataFrame.
+            DataFrame object containing the table data.
+
+        Raises
+        ------
+        StoreError
+            If a list of paths is provided (only single path supported).
         """
         if isinstance(path, list):
             raise StoreError("SQL store can only read a single DataFrame at a time.")
@@ -171,21 +197,26 @@ class SqlStore(Store):
         engine: str | None = None,
     ) -> Any:
         """
-        Query data from database.
+        Execute a custom SQL query and return results as a DataFrame.
+
+        Runs a SQL query against the database specified in the path
+        and returns the results using the specified DataFrame engine.
 
         Parameters
         ----------
         query : str
-            The query to execute.
+            The SQL query string to execute against the database.
         path : str
-            Path to the database.
-        engine : str
-            Dataframe engine (pandas, polars, etc.).
+            The SQL URI path specifying the database connection
+            in the format 'sql://database/schema/table'.
+        engine : str, optional
+            DataFrame engine to use for result processing
+            (e.g., 'pandas', 'polars'). If None, uses the default.
 
         Returns
         -------
         Any
-            DataFrame.
+            DataFrame object containing the query results.
         """
         reader = self._get_reader(engine)
         schema = self._get_schema(path)
@@ -194,21 +225,29 @@ class SqlStore(Store):
 
     def write_df(self, df: Any, dst: str, extension: str | None = None, **kwargs) -> str:
         """
-        Write a dataframe to a database. Kwargs are passed to df.to_sql().
+        Write a DataFrame to a SQL database table.
+
+        Takes a DataFrame and writes it to the specified SQL table.
+        The destination should be in SQL URI format. Additional
+        parameters are passed to the underlying to_sql() method.
 
         Parameters
         ----------
         df : Any
-            The dataframe to write.
+            The DataFrame object to write to the database.
         dst : str
-            The destination of the dataframe.
+            The destination SQL URI in the format
+            'sql://database/schema/table' or 'sql://database/table'.
+        extension : str, optional
+            File extension parameter (not used for SQL operations).
         **kwargs : dict
-            Keyword arguments.
+            Additional keyword arguments passed to the DataFrame's
+            to_sql() method for controlling write behavior.
 
         Returns
         -------
         str
-            Path of written dataframe.
+            The SQL URI path where the DataFrame was written.
         """
         schema = self._get_schema(dst)
         table = self._get_table_name(dst)
@@ -220,21 +259,25 @@ class SqlStore(Store):
 
     def _download_table(self, schema: str, table: str, dst: str) -> str:
         """
-        Download a table from SQL based storage.
+        Download a specific table from SQL database to Parquet file.
+
+        Internal method that handles the actual table download process.
+        Connects to the database, retrieves all data from the specified
+        table, and writes it to a Parquet file using PyArrow.
 
         Parameters
         ----------
         schema : str
-            The origin schema.
+            The database schema name containing the table.
         table : str
-            The origin table.
+            The name of the table to download.
         dst : str
-            The destination path.
+            The local file path where the Parquet file will be saved.
 
         Returns
         -------
         str
-            The destination path.
+            The destination file path of the created Parquet file.
         """
         engine = self._check_factory(schema=schema)
 
@@ -258,23 +301,29 @@ class SqlStore(Store):
 
     def _upload_table(self, df: Any, schema: str, table: str, **kwargs) -> str:
         """
-        Upload a table to SQL based storage.
+        Upload a DataFrame to a SQL table.
+
+        Internal method that handles writing a DataFrame to a SQL database
+        table. Uses the appropriate reader based on the DataFrame type
+        and manages the database connection.
 
         Parameters
         ----------
-        df : DataFrame
-            The dataframe.
+        df : Any
+            The DataFrame object to upload to the database.
         schema : str
-            Destination schema.
+            The target database schema name.
         table : str
-            Destination table.
+            The target table name within the schema.
         **kwargs : dict
-            Keyword arguments.
+            Additional keyword arguments passed to the write operation,
+            such as if_exists, index, method, etc.
 
         Returns
         -------
         str
-            The SQL URI where the dataframe was saved.
+            The SQL URI where the DataFrame was saved in the format
+            'sql://database/schema/table'.
         """
         reader = get_reader_by_object(df)
         engine = self._check_factory()
@@ -288,32 +337,43 @@ class SqlStore(Store):
 
     def _get_connection_string(self) -> str:
         """
-        Get the connection string.
+        Retrieve the database connection string from the configurator.
+
+        Gets the PostgreSQL connection string using the configured
+        database credentials (username, password, host, port, database).
 
         Returns
         -------
         str
-            The connection string.
+            The PostgreSQL connection string in the format
+            'postgresql://username:password@host:port/database'.
         """
         return self._configurator.get_sql_conn_string()
 
-    def _get_engine(self, origin: str, schema: str | None = None) -> Engine:
+    def _get_engine(self, schema: str | None = None) -> Engine:
         """
-        Create engine from connection string.
+        Create a SQLAlchemy engine from the connection string.
+
+        Establishes a database engine using the configured connection
+        string with appropriate connection parameters and schema settings.
 
         Parameters
         ----------
-        origin : str
-            The origin of the credentials.
-        schema : str
-            The schema.
+        schema : str, optional
+            The database schema to set in the search path.
+            If provided, sets the PostgreSQL search_path option.
 
         Returns
         -------
         Engine
-            An SQLAlchemy engine.
+            A configured SQLAlchemy engine instance.
+
+        Raises
+        ------
+        StoreError
+            If the connection string is invalid or engine creation fails.
         """
-        connection_string = self._get_connection_string(origin)
+        connection_string = self._get_connection_string()
         if not isinstance(connection_string, str):
             raise StoreError("Connection string must be a string.")
         try:
@@ -326,19 +386,29 @@ class SqlStore(Store):
 
     def _check_factory(self, retry: bool = True, schema: str | None = None) -> Engine:
         """
-        Check if the database is accessible and return the engine.
+        Validate database accessibility and return a working engine.
+
+        Creates and tests a database engine, with retry capability if
+        the initial connection fails. Handles configuration changes
+        and ensures the database is accessible before returning.
 
         Parameters
         ----------
-        retry : bool
-            Whether to retry if the database is not accessible.
-        schema : str
-            The schema.
+        retry : bool, default True
+            Whether to attempt a retry with different configuration
+            if the initial connection fails.
+        schema : str, optional
+            The database schema to configure in the engine.
 
         Returns
         -------
         Engine
-            The database engine.
+            A validated SQLAlchemy engine with confirmed database access.
+
+        Raises
+        ------
+        ConfigError
+            If database access fails and retry is exhausted or disabled.
         """
         try:
             engine = self._get_engine(schema)
@@ -353,17 +423,29 @@ class SqlStore(Store):
     @staticmethod
     def _parse_path(path: str) -> dict:
         """
-        Parse the path and return the components.
+        Parse a SQL URI path into its component parts.
+
+        Breaks down a SQL URI into database, schema, and table components.
+        Supports both full three-part paths and simplified two-part paths
+        (using 'public' as default schema).
 
         Parameters
         ----------
         path : str
-            The path.
+            The SQL URI path to parse in the format
+            'sql://database/schema/table' or 'sql://database/table'.
 
         Returns
         -------
         dict
-            A dictionary containing the components of the path.
+            Dictionary containing parsed components with keys:
+            'database', 'schema', and 'table'.
+
+        Raises
+        ------
+        ValueError
+            If the path format is invalid or doesn't follow the
+            expected SQL URI structure.
         """
         # Parse path
         err_msg = "Invalid SQL path. Must be sql://<database>/<schema>/<table> or sql://<database>/<table>"
@@ -380,45 +462,54 @@ class SqlStore(Store):
 
     def _get_schema(self, uri: str) -> str:
         """
-        Get the name of the SQL schema from the URI.
+        Extract the schema name from a SQL URI.
+
+        Parses the SQL URI and returns the schema component.
+        Uses 'public' as the default schema if not specified in the URI.
 
         Parameters
         ----------
         uri : str
-            The URI.
+            The SQL URI to extract the schema from.
 
         Returns
         -------
         str
-            The name of the SQL schema.
+            The schema name extracted from the URI.
         """
         return str(self._parse_path(uri).get("schema"))
 
     def _get_table_name(self, uri: str) -> str:
         """
-        Get the name of the table from the URI.
+        Extract the table name from a SQL URI.
+
+        Parses the SQL URI and returns the table component,
+        which is always the last part of the URI path.
 
         Parameters
         ----------
         uri : str
-            The URI.
+            The SQL URI to extract the table name from.
 
         Returns
         -------
         str
-            The name of the table
+            The table name extracted from the URI.
         """
         return str(self._parse_path(uri).get("table"))
 
     @staticmethod
     def _check_access_to_storage(engine: Engine) -> None:
         """
-        Check if there is access to the storage.
+        Verify database connectivity using the provided engine.
+
+        Tests the database connection by attempting to connect.
+        Properly disposes of the engine if connection fails.
 
         Parameters
         ----------
         engine : Engine
-            An SQLAlchemy engine.
+            The SQLAlchemy engine to test for connectivity.
 
         Returns
         -------
@@ -426,8 +517,8 @@ class SqlStore(Store):
 
         Raises
         ------
-        StoreError
-            If there is no access to the storage.
+        ConfigError
+            If database connection cannot be established.
         """
         try:
             engine.connect()
