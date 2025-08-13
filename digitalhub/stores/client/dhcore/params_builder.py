@@ -12,18 +12,12 @@ class ClientDHCoreParametersBuilder(ClientParametersBuilder):
     """
     Parameter builder for DHCore client API calls.
 
-    This class constructs HTTP request parameters for different DHCore API
-    operations, handling the specific parameter formats and query structures
-    required by the DigitalHub Core backend. It supports both base-level
-    operations (like project management) and context-level operations
-    (entity operations within projects).
-
-    The builder handles various parameter transformations including:
-    - Query parameter formatting for different operations
-    - Search filter construction for Solr-based searches
-    - Cascade deletion options
-    - Versioning parameters
-    - Entity sharing parameters
+    Constructs HTTP request parameters for DHCore API operations, handling
+    parameter formats and query structures for both base-level operations
+    (project management) and context-level operations (entity operations
+    within projects). Supports query parameter formatting, search filter
+    construction for Solr-based searches, cascade deletion options,
+    versioning parameters, and entity sharing parameters.
 
     Methods
     -------
@@ -39,36 +33,27 @@ class ClientDHCoreParametersBuilder(ClientParametersBuilder):
         """
         Build HTTP request parameters for DHCore API calls.
 
-        Routes parameter building to the appropriate method based on the
-        API category (base or context operations) and applies operation-specific
-        parameter transformations.
+        Routes parameter building to appropriate method based on API category
+        (base or context operations) and applies operation-specific transformations.
+        Acts as dispatcher, initializing parameter dictionaries with 'params' key
+        for query parameters.
 
         Parameters
         ----------
         category : str
-            The API category, either 'base' for project-level operations
-            or 'context' for entity operations within projects.
+            API category: 'base' for project-level operations or 'context'
+            for entity operations within projects.
         operation : str
-            The specific API operation being performed (create, read, update,
-            delete, list, search, etc.).
+            Specific API operation (create, read, update, delete, list, search, etc.).
         **kwargs : dict
-            Raw parameters to be transformed into proper HTTP request format.
-            May include entity identifiers, filter criteria, pagination
-            options, etc.
+            Raw parameters to transform including entity identifiers, filter
+            criteria, pagination options, etc.
 
         Returns
         -------
         dict
-            Formatted parameters dictionary ready for HTTP request, typically
-            containing a 'params' key with query parameters and other
-            request-specific parameters.
-
-        Notes
-        -----
-        This method acts as a dispatcher, routing to either base or context
-        parameter building based on the category. All parameter dictionaries
-        are initialized with a 'params' key for query parameters if not
-        already present.
+            Formatted parameters dictionary with 'params' key for query parameters
+            and other request-specific parameters.
         """
         if category == ApiCategories.BASE.value:
             return self.build_parameters_base(operation, **kwargs)
@@ -78,18 +63,18 @@ class ClientDHCoreParametersBuilder(ClientParametersBuilder):
         """
         Build parameters for base-level API operations.
 
-        Constructs HTTP request parameters for operations that work at the
-        base level of the API, typically project-level operations and
-        entity sharing functionality.
+        Constructs HTTP request parameters for project-level operations and
+        entity sharing functionality. Handles CASCADE (boolean to lowercase string),
+        SHARE (user parameter to query params), and UNSHARE (requires unshare=True
+        and entity id).
 
         Parameters
         ----------
         operation : str
-            The API operation being performed. Supported operations:
-            - DELETE: Project deletion with optional cascade
-            - SHARE: Entity sharing/unsharing with users
+            API operation: DELETE (project deletion with optional cascade)
+            or SHARE (entity sharing/unsharing with users).
         **kwargs : dict
-            Operation-specific parameters including:
+            Operation-specific parameters:
             - cascade (bool): For DELETE, whether to cascade delete
             - user (str): For SHARE, target user for sharing
             - unshare (bool): For SHARE, whether to unshare instead
@@ -98,15 +83,7 @@ class ClientDHCoreParametersBuilder(ClientParametersBuilder):
         Returns
         -------
         dict
-            Formatted parameters with 'params' containing query parameters
-            and other request-specific parameters.
-
-        Notes
-        -----
-        Parameter transformations:
-        - CASCADE: Boolean values are converted to lowercase strings
-        - SHARE: User parameter is moved to query params
-        - UNSHARE: Requires both unshare=True and entity id
+            Formatted parameters with 'params' containing query parameters.
         """
         kwargs = self._set_params(**kwargs)
         if operation == BackendOperations.DELETE.value:
@@ -123,23 +100,22 @@ class ClientDHCoreParametersBuilder(ClientParametersBuilder):
         """
         Build parameters for context-level API operations.
 
-        Constructs HTTP request parameters for operations that work within
-        a specific context (project), including entity management and
-        search functionality.
+        Constructs HTTP request parameters for entity management and search within
+        projects. Handles search filters via 'filter' parameter, pagination with
+        'page' and 'size', result ordering with 'sort' parameter. READ supports
+        embedded entity inclusion, DELETE requires entity 'id' parameter.
 
         Parameters
         ----------
         operation : str
-            The API operation being performed. Supported operations:
-            - SEARCH: Search entities with filtering and pagination
-            - READ_MANY: Retrieve multiple entities with pagination
-            - DELETE: Delete specific entity by ID
-            - READ: Read specific entity by ID (with optional embedded)
+            API operation: SEARCH (search entities with filtering), READ_MANY
+            (retrieve multiple with pagination), DELETE (delete by ID),
+            READ (read by ID with optional embedded).
         **kwargs : dict
-            Operation-specific parameters including:
+            Operation-specific parameters:
             - params (dict): Search filters and conditions
             - page (int): Page number for pagination (default: 0)
-            - size (int): Number of items per page (default: 20)
+            - size (int): Items per page (default: 20)
             - order_by (str): Field to order results by
             - order (str): Order direction ('asc' or 'desc')
             - embedded (bool): For READ, whether to include embedded entities
@@ -148,19 +124,8 @@ class ClientDHCoreParametersBuilder(ClientParametersBuilder):
         Returns
         -------
         dict
-            Formatted parameters with 'params' containing query parameters
-            and other request-specific parameters like 'id' for entity operations.
-
-        Notes
-        -----
-        Search and pagination:
-        - Filters are applied via 'filter' parameter in query string
-        - Pagination uses 'page' and 'size' parameters
-        - Results can be ordered using 'sort' parameter format
-
-        Entity operations:
-        - READ: Supports embedded entity inclusion via 'embedded' param
-        - DELETE: Requires entity 'id' parameter
+            Formatted parameters with 'params' for query parameters and
+            other request-specific parameters like 'id' for entity operations.
         """
         kwargs = self._set_params(**kwargs)
 
@@ -249,27 +214,20 @@ class ClientDHCoreParametersBuilder(ClientParametersBuilder):
         """
         Initialize parameter dictionary with query parameters structure.
 
-        Ensures that the parameter dictionary has a 'params' key for
-        HTTP query parameters. This is a utility method used by all
-        parameter building methods to guarantee consistent structure.
+        Ensures parameter dictionary has 'params' key for HTTP query parameters,
+        guaranteeing consistent structure for all parameter building methods.
 
         Parameters
         ----------
         **kwargs : dict
-            Keyword arguments to be formatted. May be empty or contain
-            various parameters for API operations.
+            Keyword arguments to format. May be empty or contain various
+            parameters for API operations.
 
         Returns
         -------
         dict
             Parameters dictionary with guaranteed 'params' key containing
-            an empty dict if not already present.
-
-        Notes
-        -----
-        This method is called at the beginning of all parameter building
-        methods to ensure consistent dictionary structure for query
-        parameter handling.
+            empty dict if not already present.
         """
         if not kwargs:
             kwargs = {}

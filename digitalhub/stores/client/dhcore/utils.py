@@ -23,36 +23,30 @@ def set_dhcore_env(
     client_id: str | None = None,
 ) -> None:
     """
-    Function to set environment variables for DHCore config.
+    Set DHCore environment variables and reload client configuration.
 
-    Sets the environment variables for DHCore configuration and
-    reloads the client configurator to use the new settings.
-    Note that if the environment variable is already set, it
-    will be overwritten.
+    Updates environment variables for DHCore configuration and automatically
+    reloads the client configurator to apply new settings. Overwrites existing
+    environment variables if already set.
 
     Parameters
     ----------
     endpoint : str, optional
-        The endpoint URL of the DHCore backend.
+        DHCore backend endpoint URL.
     user : str, optional
-        The username for basic authentication.
+        Username for basic authentication.
     password : str, optional
-        The password for basic authentication.
+        Password for basic authentication.
     access_token : str, optional
-        The OAuth2 access token.
+        OAuth2 access token.
     refresh_token : str, optional
-        The OAuth2 refresh token.
+        OAuth2 refresh token.
     client_id : str, optional
-        The OAuth2 client identifier.
+        OAuth2 client identifier.
 
     Returns
     -------
     None
-
-    Notes
-    -----
-    After setting the environment variables, this function automatically
-    reloads the client configurator to apply the new configuration.
     """
     if endpoint is not None:
         os.environ[CredsEnvVar.DHCORE_ENDPOINT.value] = endpoint
@@ -73,11 +67,10 @@ def set_dhcore_env(
 
 def refresh_token() -> None:
     """
-    Function to refresh the OAuth2 access token.
+    Refresh the current OAuth2 access token.
 
-    Attempts to refresh the current OAuth2 access token using the
-    refresh token stored in the client configuration. This function
-    requires that the client be configured with OAuth2 authentication.
+    Uses the refresh token stored in client configuration to obtain a new
+    access token. Requires OAuth2 authentication configuration.
 
     Returns
     -------
@@ -86,8 +79,7 @@ def refresh_token() -> None:
     Raises
     ------
     ClientError
-        If the client is not properly configured or if the token
-        refresh fails.
+        If client not properly configured or token refresh fails.
     """
     client: ClientDHCore = get_client(local=False)
     client._configurator.check_config()
