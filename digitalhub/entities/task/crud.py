@@ -134,7 +134,7 @@ def list_tasks(project: str, **kwargs) -> list[Task]:
     )
 
 
-def import_task(file: str) -> Task:
+def import_task(file: str, reset_id: bool = False) -> Task:
     """
     Import object from a YAML file and create a new object into the backend.
 
@@ -152,7 +152,7 @@ def import_task(file: str) -> Task:
     -------
     >>> obj = import_task("my-task.yaml")
     """
-    return context_processor.import_context_entity(file)
+    return context_processor.import_context_entity(file, reset_id)
 
 
 def load_task(file: str) -> Task:

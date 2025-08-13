@@ -238,7 +238,7 @@ def list_artifacts(project: str, **kwargs) -> list[Artifact]:
     )
 
 
-def import_artifact(file: str) -> Artifact:
+def import_artifact(file: str, reset_id: bool = False) -> Artifact:
     """
     Import object from a YAML file and create a new object into the backend.
 
@@ -256,7 +256,7 @@ def import_artifact(file: str) -> Artifact:
     --------
     >>> obj = import_artifact("my-artifact.yaml")
     """
-    return context_processor.import_context_entity(file)
+    return context_processor.import_context_entity(file, reset_id)
 
 
 def load_artifact(file: str) -> Artifact:

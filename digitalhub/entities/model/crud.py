@@ -237,7 +237,7 @@ def list_models(project: str, **kwargs) -> list[Model]:
     )
 
 
-def import_model(file: str) -> Model:
+def import_model(file: str, reset_id: bool = False) -> Model:
     """
     Import object from a YAML file and create a new object into the backend.
 
@@ -255,7 +255,7 @@ def import_model(file: str) -> Model:
     --------
     >>> obj = import_model("my-model.yaml")
     """
-    return context_processor.import_context_entity(file)
+    return context_processor.import_context_entity(file, reset_id)
 
 
 def load_model(file: str) -> Model:

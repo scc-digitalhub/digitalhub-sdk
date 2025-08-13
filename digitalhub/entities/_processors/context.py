@@ -8,6 +8,7 @@ import typing
 from typing import Any
 
 from digitalhub.entities._commons.enums import ApiCategories, BackendOperations, Relationship, State
+from digitalhub.entities._constructors.uuid import build_uuid
 from digitalhub.entities._processors.utils import (
     get_context_from_identifier,
     get_context_from_project,
@@ -336,6 +337,7 @@ class ContextEntityOperationsProcessor:
     def import_context_entity(
         self,
         file: str,
+        reset_id: bool = False,
     ) -> ContextEntity:
         """
         Import a context entity from a YAML file and create it in the backend.
@@ -348,6 +350,8 @@ class ContextEntityOperationsProcessor:
         ----------
         file : str
             Path to the YAML file containing entity configuration.
+        reset_id : bool
+            Flag to determine if the ID of context entities should be reset.
 
         Returns
         -------
@@ -363,6 +367,10 @@ class ContextEntityOperationsProcessor:
         dict_obj["status"] = {}
         context = get_context_from_project(dict_obj["project"])
         obj = factory.build_entity_from_dict(dict_obj)
+        if reset_id:
+            new_id = build_uuid()
+            obj.id = new_id
+            obj.metadata.version = new_id
         try:
             self._create_context_entity(context, obj.ENTITY_TYPE, obj.to_dict())
         except EntityAlreadyExistsError:
@@ -372,6 +380,7 @@ class ContextEntityOperationsProcessor:
     def import_executable_entity(
         self,
         file: str,
+        reset_id: bool = False,
     ) -> ExecutableEntity:
         """
         Import an executable entity from a YAML file and create it in the backend.
@@ -385,6 +394,8 @@ class ContextEntityOperationsProcessor:
         file : str
             Path to the YAML file containing executable entity configuration.
             Can contain a single entity or a list with the executable and tasks.
+        reset_id : bool
+            Flag to determine if the ID of executable entities should be reset.
 
         Returns
         -------
@@ -410,6 +421,12 @@ class ContextEntityOperationsProcessor:
 
         context = get_context_from_project(exec_dict["project"])
         obj: ExecutableEntity = factory.build_entity_from_dict(exec_dict)
+
+        if reset_id:
+            new_id = build_uuid()
+            obj.id = new_id
+            obj.metadata.version = new_id
+
         try:
             self._create_context_entity(context, obj.ENTITY_TYPE, obj.to_dict())
         except EntityAlreadyExistsError:

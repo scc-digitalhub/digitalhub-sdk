@@ -118,6 +118,7 @@ def import_project(
     file: str,
     local: bool = False,
     setup_kwargs: dict | None = None,
+    reset_id: bool = False,
 ) -> Project:
     """
     Import object from a YAML file and create a new object into the backend.
@@ -130,6 +131,8 @@ def import_project(
         Flag to determine if backend is local.
     setup_kwargs : dict
         Setup keyword arguments passed to setup_project() function.
+    reset_id : bool
+        Flag to determine if the ID of project entities should be reset.
 
     Returns
     -------
@@ -140,7 +143,11 @@ def import_project(
     --------
     >>> obj = import_project("my-project.yaml")
     """
-    obj = base_processor.import_project_entity(file=file, local=local)
+    obj = base_processor.import_project_entity(
+        file=file,
+        local=local,
+        reset_id=reset_id,
+    )
     return setup_project(obj, setup_kwargs)
 
 

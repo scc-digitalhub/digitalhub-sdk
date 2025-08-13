@@ -6,9 +6,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from digitalhub.entities._base.entity._constructors.uuid import build_uuid
 from digitalhub.entities._base.material.utils import build_log_path_from_source, eval_local_source
 from digitalhub.entities._commons.enums import EntityTypes
+from digitalhub.entities._constructors.uuid import build_uuid
 
 
 def eval_source(

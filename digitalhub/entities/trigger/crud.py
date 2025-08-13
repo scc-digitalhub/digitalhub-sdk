@@ -197,7 +197,7 @@ def list_triggers(project: str, **kwargs) -> list[Trigger]:
     )
 
 
-def import_trigger(file: str) -> Trigger:
+def import_trigger(file: str, reset_id: bool = False) -> Trigger:
     """
     Import object from a YAML file and create a new object into the backend.
 
@@ -215,7 +215,7 @@ def import_trigger(file: str) -> Trigger:
     --------
     >>> obj = import_trigger("my-trigger.yaml")
     """
-    return context_processor.import_context_entity(file)
+    return context_processor.import_context_entity(file, reset_id)
 
 
 def load_trigger(file: str) -> Trigger:

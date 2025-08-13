@@ -181,7 +181,7 @@ def list_workflows(project: str, **kwargs) -> list[Workflow]:
     )
 
 
-def import_workflow(file: str) -> Workflow:
+def import_workflow(file: str, reset_id: bool = False) -> Workflow:
     """
     Import object from a YAML file and create a new object into the backend.
 
@@ -199,7 +199,7 @@ def import_workflow(file: str) -> Workflow:
     --------
     >>> obj = import_workflow("my-workflow.yaml")
     """
-    return context_processor.import_executable_entity(file)
+    return context_processor.import_executable_entity(file, reset_id)
 
 
 def load_workflow(file: str) -> Workflow:

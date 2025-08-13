@@ -182,7 +182,7 @@ def list_functions(project: str, **kwargs) -> list[Function]:
     )
 
 
-def import_function(file: str) -> Function:
+def import_function(file: str, reset_id: bool = False) -> Function:
     """
     Import object from a YAML file and create a new object into the backend.
 
@@ -200,7 +200,7 @@ def import_function(file: str) -> Function:
     --------
     >>> obj = import_function("my-function.yaml")
     """
-    return context_processor.import_executable_entity(file)
+    return context_processor.import_executable_entity(file, reset_id)
 
 
 def load_function(file: str) -> Function:

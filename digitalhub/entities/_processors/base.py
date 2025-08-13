@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import typing
+from warnings import warn
 
 from digitalhub.context.api import delete_context
 from digitalhub.entities._commons.enums import ApiCategories, BackendOperations
@@ -190,7 +191,7 @@ class BaseEntityOperationsProcessor:
         file : str
             Path to the YAML file containing project configuration.
         **kwargs : dict
-            Additional parameters including 'local' flag.
+            Additional parameters including 'local' and 'reset_id' flags.
 
         Returns
         -------
@@ -207,14 +208,21 @@ class BaseEntityOperationsProcessor:
         obj["status"] = {}
         obj["local"] = client.is_local()
         ent: Project = factory.build_entity_from_dict(obj)
+        reset_id = kwargs.pop("reset_id", False)
 
         try:
             self._create_base_entity(ent._client, ent.ENTITY_TYPE, ent.to_dict())
         except EntityAlreadyExistsError:
-            raise EntityError(f"Entity {ent.name} already exists. If you want to update it, use load instead.")
+            msg = f"Entity {ent.name} already exists."
+            if reset_id:
+                ent._import_entities(obj, reset_id=reset_id)
+                warn(f"{msg} Other entities ids have been imported.")
+                ent.refresh()
+                return ent
+            raise EntityError(f"{msg} If you want to update it, use load instead.")
 
         # Import related entities
-        ent._import_entities(obj)
+        ent._import_entities(obj, reset_id=reset_id)
         ent.refresh()
         return ent
 

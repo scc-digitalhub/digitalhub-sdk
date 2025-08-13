@@ -195,7 +195,7 @@ def list_secrets(project: str, **kwargs) -> list[Secret]:
     )
 
 
-def import_secret(file: str) -> Secret:
+def import_secret(file: str, reset_id: bool = False) -> Secret:
     """
     Import object from a YAML file and create a new object into the backend.
 
@@ -213,7 +213,7 @@ def import_secret(file: str) -> Secret:
     --------
     >>> obj = import_secret("my-secret.yaml")
     """
-    return context_processor.import_context_entity(file)
+    return context_processor.import_context_entity(file, reset_id)
 
 
 def load_secret(file: str) -> Secret:

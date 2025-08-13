@@ -264,7 +264,7 @@ def list_dataitems(project: str, **kwargs) -> list[Dataitem]:
     )
 
 
-def import_dataitem(file: str) -> Dataitem:
+def import_dataitem(file: str, reset_id: bool = False) -> Dataitem:
     """
     Import object from a YAML file and create a new object into the backend.
 
@@ -282,7 +282,7 @@ def import_dataitem(file: str) -> Dataitem:
     --------
     >>> obj = import_dataitem("my-dataitem.yaml")
     """
-    return context_processor.import_context_entity(file)
+    return context_processor.import_context_entity(file, reset_id)
 
 
 def load_dataitem(file: str) -> Dataitem:

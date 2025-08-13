@@ -11,6 +11,7 @@ from typing import Any
 from digitalhub.context.api import build_context
 from digitalhub.entities._base.entity.entity import Entity
 from digitalhub.entities._commons.enums import EntityTypes
+from digitalhub.entities._constructors.uuid import build_uuid
 from digitalhub.entities._processors.base import base_processor
 from digitalhub.entities._processors.context import context_processor
 from digitalhub.entities.artifact.crud import (
@@ -290,7 +291,7 @@ class Project(Entity):
         # Return updated object
         return obj
 
-    def _import_entities(self, obj: dict) -> None:
+    def _import_entities(self, obj: dict, reset_id: bool = False) -> None:
         """
         Import project entities.
 
@@ -319,11 +320,11 @@ class Project(Entity):
                         try:
                             # Artifacts, Dataitems and Models
                             if entity_type in entity_types[:3]:
-                                context_processor.import_context_entity(ref)
+                                context_processor.import_context_entity(ref, reset_id=reset_id)
 
                             # Functions and Workflows
                             elif entity_type in entity_types[3:]:
-                                context_processor.import_executable_entity(ref)
+                                context_processor.import_executable_entity(ref, reset_id=reset_id)
 
                         except FileNotFoundError:
                             msg = f"File not found: {ref}."
@@ -334,6 +335,11 @@ class Project(Entity):
                     # It's possible that embedded field in metadata is not shown
                     if entity["metadata"].get("embedded") is None:
                         entity["metadata"]["embedded"] = True
+
+                    if reset_id:
+                        new_id = build_uuid()
+                        entity["id"] = new_id
+                        entity["metadata"]["version"] = new_id
 
                     try:
                         factory.build_entity_from_dict(entity).save()
