@@ -9,10 +9,11 @@ import typing
 from digitalhub.stores.client.builder import client_builder
 
 if typing.TYPE_CHECKING:
-    from digitalhub.stores.client._base.client import Client
+    from digitalhub.stores.client.dhcore.client import ClientDHCore
+    from digitalhub.stores.client.local.client import ClientLocal
 
 
-def get_client(local: bool = False, config: dict | None = None) -> Client:
+def get_client(local: bool = False) -> ClientLocal | ClientDHCore:
     """
     Wrapper around ClientBuilder.build.
 
@@ -22,15 +23,10 @@ def get_client(local: bool = False, config: dict | None = None) -> Client:
         Whether to create a local client or not. If True, creates a
         ClientLocal instance that operates in-memory. If False, creates
         a ClientDHCore instance that communicates with a remote backend.
-    config : dict, optional
-        DHCore environment configuration. Only used when local=False.
-        If None, configuration will be loaded from environment variables
-        and configuration files.
 
     Returns
     -------
-    Client
-        The client instance. Either ClientLocal or ClientDHCore depending
-        on the local parameter.
+    ClientLocal | ClientDHCore
+        The client instance.
     """
-    return client_builder.build(local, config)
+    return client_builder.build(local)

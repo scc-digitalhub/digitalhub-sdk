@@ -4,9 +4,7 @@
 
 from __future__ import annotations
 
-import shutil
 import typing
-from pathlib import Path
 from typing import Any
 
 from digitalhub.entities.dataitem._base.entity import Dataitem
@@ -138,22 +136,3 @@ class DataitemTable(Dataitem):
             extension=extension,
             **kwargs,
         )
-
-    @staticmethod
-    def _clean_tmp_path(pth: Path | None, clean: bool) -> None:
-        """
-        Clean temporary path.
-
-        Parameters
-        ----------
-        pth : Path | None
-            Path to clean.
-        clean : bool
-            If True, the path will be cleaned.
-
-        Returns
-        -------
-        None
-        """
-        if pth is not None and clean:
-            shutil.rmtree(pth)

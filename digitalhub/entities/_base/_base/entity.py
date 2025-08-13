@@ -63,17 +63,6 @@ class Base:
             if k not in self.__dict__:
                 setattr(self, k, v)
 
-    def _get_private_attrs(self) -> dict:
-        """
-        Return all private attributes of the object.
-
-        Returns
-        -------
-        dict
-            A dictionary containing the private attributes of the entity instance.
-        """
-        return {k: v for k, v in self.__dict__.items() if k.startswith("_")}
-
     def __repr__(self) -> str:
         """
         Return string representation of the entity object.

@@ -146,19 +146,3 @@ def set_current_profile(environment: str) -> None:
 
     except Exception as e:
         raise ClientError(f"Failed to write env file: {e}")
-
-
-def read_env_from_file() -> str | None:
-    """
-    Read the current credentials profile name from the .dhcore.ini file.
-
-    Returns
-    -------
-    str or None
-        Name of the current credentials profile, or None if not found.
-    """
-    try:
-        cfg = load_file()
-        return cfg["DEFAULT"]["current_environment"]
-    except Exception:
-        return None

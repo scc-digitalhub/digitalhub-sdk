@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import shutil
 from pathlib import Path
 from typing import Any
 
@@ -179,106 +178,4 @@ class LocalStore(Store):
         self._check_local_dst(dst)
         reader = get_reader_by_object(df)
         reader.write_df(df, dst, extension=extension, **kwargs)
-        return dst
-
-    ##############################
-    # Private I/O methods
-    ##############################
-
-    def _get_src_dst_files(self, src: Path, dst: Path) -> list[str]:
-        """
-        Copy files from source to destination.
-
-        Parameters
-        ----------
-        src : Path
-            The source path.
-        dst : Path
-            The destination path.
-
-        Returns
-        -------
-        list[str]
-            Returns the list of destination and source paths of the
-            copied files.
-        """
-        return [self._get_src_dst_file(i, dst) for i in src.rglob("*") if i.is_file()]
-
-    def _get_src_dst_file(self, src: Path, dst: Path) -> str:
-        """
-        Copy file from source to destination.
-
-        Parameters
-        ----------
-        src : Path
-            The source path.
-        dst : Path
-            The destination path.
-
-        Returns
-        -------
-        str
-        """
-        dst_pth = self._copy_file(src, dst, True)
-        return str(dst_pth), str(src)
-
-    def _copy_dir(self, src: Path, dst: Path, overwrite: bool) -> list[str]:
-        """
-        Download file from source to destination.
-
-        Parameters
-        ----------
-        src : Path
-            The source path.
-        dst : Path
-            The destination path.
-
-        Returns
-        -------
-        list[str]
-        """
-        dst = self._rebuild_path(dst, src)
-        shutil.copytree(src, dst, dirs_exist_ok=overwrite)
-        return [str(i) for i in dst.rglob("*") if i.is_file()]
-
-    def _copy_file(self, src: Path, dst: Path, overwrite: bool) -> str:
-        """
-        Copy file from source to destination.
-
-        Parameters
-        ----------
-        src : Path
-            The source path.
-        dst : Path
-            The destination path.
-
-        Returns
-        -------
-        str
-        """
-        dst = self._rebuild_path(dst, src)
-        self._check_overwrite(dst, overwrite)
-        return str(shutil.copy2(src, dst))
-
-    def _rebuild_path(self, dst: Path, src: Path) -> Path:
-        """
-        Rebuild path.
-
-        Parameters
-        ----------
-        dst : Path
-            The destination path.
-        src : Path
-            The source path.
-
-        Returns
-        -------
-        Path
-            The rebuilt path.
-        """
-        if dst.is_dir():
-            if src.is_absolute():
-                raise StoreError("Source must be a relative path if the destination is a directory.")
-            dst = dst / src
-        self._build_path(dst)
         return dst

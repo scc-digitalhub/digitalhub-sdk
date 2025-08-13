@@ -10,7 +10,7 @@ from digitalhub.stores.client.dhcore.client import ClientDHCore
 from digitalhub.stores.client.local.client import ClientLocal
 
 if typing.TYPE_CHECKING:
-    from digitalhub.stores.client._base.client import Client
+    pass
 
 
 class ClientBuilder:
@@ -27,7 +27,7 @@ class ClientBuilder:
         self._local = None
         self._dhcore = None
 
-    def build(self, local: bool = False, config: dict | None = None) -> Client:
+    def build(self, local: bool = False, config: dict | None = None) -> ClientLocal | ClientDHCore:
         """
         Method to create a client instance.
 
@@ -40,7 +40,7 @@ class ClientBuilder:
 
         Returns
         -------
-        Client
+        ClientLocal | ClientDHCore
             Returns the client instance.
         """
         if local:

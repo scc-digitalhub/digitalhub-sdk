@@ -374,60 +374,6 @@ class Factory:
                 raise BuilderError(f"Runtime builder for kind '{kind}' not found.")
         return self._runtime_builders[kind]
 
-    def _raise_if_entity_builder_not_found(self, kind: str) -> None:
-        """
-        Verify entity builder existence.
-
-        Parameters
-        ----------
-        kind : str
-            The entity kind to verify.
-
-        Returns
-        -------
-        None
-
-        Raises
-        ------
-        BuilderError
-            If no builder exists for the specified kind.
-        """
-        if not self._entities_registered:
-            self._ensure_entities_registered()
-        if kind not in self._entity_builders:
-            # Try to register runtime entities if not already done
-            if not self._runtimes_registered:
-                self._ensure_runtimes_registered()
-
-            if kind not in self._entity_builders:
-                raise BuilderError(f"Entity builder for kind '{kind}' not found.")
-
-    def _raise_if_runtime_builder_not_found(self, kind: str) -> None:
-        """
-        Verify runtime builder existence.
-
-        Parameters
-        ----------
-        kind : str
-            The runtime kind to verify.
-
-        Returns
-        -------
-        None
-
-        Raises
-        ------
-        BuilderError
-            If no builder exists for the specified kind.
-        """
-        if kind not in self._runtime_builders:
-            # Try to register runtime entities if not already done
-            if not self._runtimes_registered:
-                self._ensure_runtimes_registered()
-
-            if kind not in self._runtime_builders:
-                raise BuilderError(f"Runtime builder for kind '{kind}' not found.")
-
     def _ensure_entities_registered(self) -> None:
         """
         Ensure core entities are registered on-demand.

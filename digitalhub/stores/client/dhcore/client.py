@@ -409,6 +409,7 @@ class ClientDHCore(Client):
         str
             The complete URL for the API call.
         """
+
     def _build_url(self, api: str) -> str:
         """
         Build complete URL for API call.

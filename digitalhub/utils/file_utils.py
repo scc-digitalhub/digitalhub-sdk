@@ -141,23 +141,6 @@ def get_last_modified(data_path: str) -> str:
     return datetime.fromtimestamp(timestamp).astimezone().isoformat()
 
 
-def get_s3_path(src_path: str) -> str:
-    """
-    Get the S3 URI of a file path.
-
-    Parameters
-    ----------
-    src_path : str
-        Path to the file.
-
-    Returns
-    -------
-    str
-        The S3 URI of the file.
-    """
-    return Path(src_path).as_uri()
-
-
 def get_file_info_from_local(path: str, src_path: str) -> None | dict:
     """
     Get file info from a local path.
