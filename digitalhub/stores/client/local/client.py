@@ -207,7 +207,16 @@ class ClientLocal(Client):
 
             else:
                 name = obj.get("name", entity_id)
-                self._db[entity_type][name][entity_id] = obj
+                container = self._db[entity_type][name]
+                container[entity_id] = obj
+
+                # Keep the "latest" pointer consistent when updating the latest entity
+                try:
+                    if container.get("latest", {}).get("id") == entity_id:
+                        container["latest"] = obj
+                except AttributeError:
+                    # In case "latest" is malformed, ignore and continue
+                    pass
 
         except KeyError:
             msg = self._format_msg(3, entity_type=entity_type, entity_id=entity_id)
@@ -253,55 +262,51 @@ class ClientLocal(Client):
 
                 # Name is optional and extracted from kwargs
                 # "params": {"name": <name>}
-                name = kwargs.get("params", {}).get("name")
+                name_param = kwargs.get("params", {}).get("name")
 
-                # Delete by name
-                if entity_id is None and name is not None:
-                    self._db[entity_type].pop(name, None)
+                # Delete by name (remove the whole named container)
+                if entity_id is None and name_param is not None:
+                    self._db[entity_type].pop(name_param, None)
                     return {"deleted": True}
 
                 # Delete by id
-                for _, v in self._db[entity_type].items():
+                found_name: str | None = None
+                container: dict | None = None
+                for n, v in self._db[entity_type].items():
                     if entity_id in v:
-                        v.pop(entity_id)
-
-                        # Handle latest
-                        if v["latest"]["id"] == entity_id:
-                            name = v["latest"].get("name", entity_id)
-                            v.pop("latest")
-                            reset_latest = True
+                        found_name = n
+                        container = v
                         break
                 else:
                     raise KeyError
 
-                if name is not None:
-                    # Pop name if empty
-                    if not self._db[entity_type][name]:
-                        self._db[entity_type].pop(name)
+                # Remove the entity from the container
+                assert container is not None  # for type checkers
+                container.pop(entity_id)
 
-                    # Handle latest
-                    elif reset_latest:
-                        latest_uuid = None
-                        latest_date = None
-                        for k, v in self._db[entity_type][name].items():
-                            # Get created from metadata. If tzinfo is None, set it to UTC
-                            # If created is not in ISO format, use fallback
-                            fallback = datetime.fromtimestamp(0, timezone.utc)
-                            try:
-                                current_created = datetime.fromisoformat(v.get("metadata", {}).get("created"))
-                                if current_created.tzinfo is None:
-                                    current_created = current_created.replace(tzinfo=timezone.utc)
-                            except ValueError:
-                                current_created = fallback
+                # Handle latest pointer if needed
+                if container.get("latest", {}).get("id") == entity_id:
+                    # Remove stale latest
+                    container.pop("latest", None)
+                    reset_latest = True
 
-                            # Update latest date and uuid
-                            if latest_date is None or current_created > latest_date:
-                                latest_uuid = k
-                                latest_date = current_created
+                # If container is now empty, drop it entirely
+                if not container:
+                    assert found_name is not None
+                    self._db[entity_type].pop(found_name, None)
+                # Otherwise, recompute latest if required
+                elif reset_latest:
+                    latest_uuid = None
+                    latest_date = None
+                    for k, v in container.items():
+                        # Parse creation time from metadata; tolerate various formats
+                        current_created = self._safe_parse_created(v)
+                        if latest_date is None or current_created > latest_date:
+                            latest_uuid = k
+                            latest_date = current_created
 
-                        # Set new latest
-                        if latest_uuid is not None:
-                            self._db[entity_type][name]["latest"] = self._db[entity_type][name][latest_uuid]
+                    if latest_uuid is not None:
+                        container["latest"] = container[latest_uuid]
 
         except KeyError:
             msg = self._format_msg(3, entity_type=entity_type, entity_id=entity_id)
@@ -330,7 +335,10 @@ class ClientLocal(Client):
         # "params": {"name": <name>}
         name = kwargs.get("params", {}).get("name")
         if name is not None:
-            return [self._db[entity_type][name]["latest"]]
+            try:
+                return [self._db[entity_type][name]["latest"]]
+            except KeyError:
+                return []
 
         try:
             # If no name is provided, get latest objects
@@ -343,7 +351,7 @@ class ClientLocal(Client):
         if kind is not None:
             listed_objects = [obj for obj in listed_objects if obj["kind"] == kind]
 
-        # If function is provided, return objects by function
+        # If function/task is provided, return objects by function/task
         spec_params = ["function", "task"]
         for i in spec_params:
             p = kwargs.get("params", {}).get(i)
@@ -489,14 +497,15 @@ class ClientLocal(Client):
         """
         # Deepcopy to avoid modifying the original object
         project = deepcopy(obj)
-        spec = project.get("spec", {})
+        # Ensure spec exists on the returned project
+        spec = project.setdefault("spec", {})
 
         # Get all entities associated with the project specs
         projects_entities = [k for k, _ in self._db.items() if k not in ["projects", "runs", "tasks"]]
 
         for entity_type in projects_entities:
             # Get all objects of the entity type for the project
-            objs = self._db[entity_type]
+            objs = self._db.get(entity_type, {})
 
             # Set empty list
             spec[entity_type] = []
@@ -520,6 +529,29 @@ class ClientLocal(Client):
                         spec[entity_type].append(copied)
 
         return project
+
+    @staticmethod
+    def _safe_parse_created(obj: dict) -> datetime:
+        """
+        Safely parse the creation datetime of an object.
+
+        - Accepts ISO format with optional 'Z'.
+        - If tzinfo is missing, assume UTC.
+        - Falls back to epoch if missing/invalid.
+        """
+        created_raw = obj.get("metadata", {}).get("created")
+        fallback = datetime.fromtimestamp(0, timezone.utc)
+        if not created_raw or not isinstance(created_raw, str):
+            return fallback
+        try:
+            # Support trailing 'Z'
+            ts = created_raw.replace("Z", "+00:00")
+            dt = datetime.fromisoformat(ts)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return dt
+        except Exception:
+            return fallback
 
     ##############################
     # Utils
