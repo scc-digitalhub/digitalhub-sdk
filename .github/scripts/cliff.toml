@@ -62,9 +62,10 @@ commit_preprocessors = [
 commit_parsers = [
   { message = "^feat", group = "<!-- 0 --> Features" },
   { message = "^fix", group = "<!-- 1 --> Bug Fixes" },
-  { message = "^perf", group = "<!-- 3 --> Performance" },
-  { message = "^build", group = "<!-- 4 --> Build" },
-  { message = "^doc", group = "<!-- 5 --> Documentation" },
+  { message = "^perf", group = "<!-- 2 --> Performance" },
+  { message = "^build", group = "<!-- 3 --> Build" },
+  { message = "^doc", group = "<!-- 4 --> Documentation" },
+  { message = "^BREAKING", group = "<!-- 5 --> Breaking Changes" },
   { message = ".*", group = "<!-- 10 --> Other" , skip = true },
 ]
 # filter out the commits that are not matched by commit parsers
