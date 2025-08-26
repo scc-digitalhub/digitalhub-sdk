@@ -26,7 +26,7 @@ if typing.TYPE_CHECKING:
 
 # API levels that are supported
 MAX_API_LEVEL = 20
-MIN_API_LEVEL = 13
+MIN_API_LEVEL = 11
 LIB_VERSION = 13
 
 

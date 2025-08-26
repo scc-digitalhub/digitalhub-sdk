@@ -289,7 +289,7 @@ class Factory:
         builder = self._get_entity_builder(kind)
         return builder.get_task_kind_from_action(action)
 
-    def get_run_kind(self, kind: str) -> str:
+    def get_run_kind_from_action(self, kind: str, action: str) -> str:
         """
         Get run kind.
 
@@ -304,7 +304,7 @@ class Factory:
             Run kind.
         """
         builder = self._get_entity_builder(kind)
-        return builder.get_run_kind()
+        return builder.get_run_kind_from_action(action)
 
     def get_all_kinds(self, kind: str) -> list[str]:
         """

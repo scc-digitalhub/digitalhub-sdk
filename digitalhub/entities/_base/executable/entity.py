@@ -430,7 +430,7 @@ class ExecutableEntity(VersionedEntity):
         task_string = task._get_task_string()
 
         # Get run validator for building trigger template
-        run_kind = factory.get_run_kind(self.kind)
+        run_kind = factory.get_run_kind_from_action(self.kind, action)
         run_validator: SpecValidator = factory.get_spec_validator(run_kind)
         # Override kwargs
         kwargs["project"] = self.project

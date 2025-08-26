@@ -73,7 +73,7 @@ class Workflow(ExecutableEntity):
         """
         # Get task and run kind
         task_kind = factory.get_task_kind_from_action(self.kind, action)
-        run_kind = factory.get_run_kind(self.kind)
+        run_kind = factory.get_run_kind_from_action(self.kind, action)
 
         # Create or update new task
         task = self._get_or_create_task(task_kind)

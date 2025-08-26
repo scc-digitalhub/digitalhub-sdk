@@ -4,7 +4,11 @@
 
 from __future__ import annotations
 
+from collections import namedtuple
+
 from digitalhub.entities._commons.enums import EntityTypes
+
+KindAction = namedtuple("KindAction", ["kind", "action"])
 
 
 def parse_entity_key(key: str) -> tuple[str, str, str, str | None, str]:
@@ -112,3 +116,20 @@ def get_project_from_key(key: str) -> str:
     """
     project, _, _, _, _ = parse_entity_key(key)
     return project
+
+
+def map_actions(kind_action_list: list[tuple[str, str]]) -> list[KindAction]:
+    """
+    Build task actions as KindAction namedtuples.
+
+    Parameters
+    ----------
+    kind_action_list : list[tuple[str, str]]
+        List of kind-action couples.
+
+    Returns
+    -------
+    list[KindAction]
+        Returns the task actions as KindAction namedtuples.
+    """
+    return [KindAction(kind, action) for (kind, action) in kind_action_list]
