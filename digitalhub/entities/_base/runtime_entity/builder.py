@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-
 from digitalhub.entities._commons.utils import KindAction
 from digitalhub.utils.exceptions import EntityError
 
