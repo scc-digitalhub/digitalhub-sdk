@@ -125,15 +125,35 @@ class Model(MaterialEntity):
         -------
         None
 
+        Examples
+        --------
+        Log multiple metrics at once
+        >>> entity.log_metrics({"loss": 0.002, "accuracy": 0.95})
+
+        Log metrics with lists and single values
+        >>> entity.log_metrics({"loss": [0.1, 0.05], "epoch": 10})
+
+        Append to existing metrics (default behavior)
+        >>> entity.log_metrics({"loss": 0.001, "accuracy": 0.96})  # Appends to existing
+
+        Overwrite existing metrics
+        >>> entity.log_metrics({"loss": 0.0005, "accuracy": 0.98}, overwrite=True)
+
         See also
         --------
         log_metric
         """
         for key, value in metrics.items():
+            # For lists, use log_metric which handles appending correctly
             if isinstance(value, list):
                 self.log_metric(key, value, overwrite)
+
+            # For single values, check if we should append or create new
             else:
-                self.log_metric(key, value, overwrite, single_value=True)
+                if not overwrite and key in self.status.metrics:
+                    self.log_metric(key, value)
+                else:
+                    self.log_metric(key, value, overwrite, single_value=True)
 
     ##############################
     # Helper methods
