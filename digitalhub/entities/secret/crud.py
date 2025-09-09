@@ -195,7 +195,7 @@ def list_secrets(project: str, **kwargs) -> list[Secret]:
     )
 
 
-def import_secret(file: str, reset_id: bool = False) -> Secret:
+def import_secret(file: str, reset_id: bool = False, context: str | None = None) -> Secret:
     """
     Import object from a YAML file and create a new object into the backend.
 
@@ -203,6 +203,11 @@ def import_secret(file: str, reset_id: bool = False) -> Secret:
     ----------
     file : str
         Path to YAML file.
+    reset_id : bool
+        Flag to determine if the ID of context entities should be reset.
+    context : str, optional
+        Project name to use for context resolution. If None, uses
+        the project specified in the YAML file.
 
     Returns
     -------
@@ -213,7 +218,7 @@ def import_secret(file: str, reset_id: bool = False) -> Secret:
     --------
     >>> obj = import_secret("my-secret.yaml")
     """
-    return context_processor.import_context_entity(file, reset_id)
+    return context_processor.import_context_entity(file, reset_id, context)
 
 
 def load_secret(file: str) -> Secret:

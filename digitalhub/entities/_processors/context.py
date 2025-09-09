@@ -338,6 +338,7 @@ class ContextEntityOperationsProcessor:
         self,
         file: str,
         reset_id: bool = False,
+        context: str | None = None,
     ) -> ContextEntity:
         """
         Import a context entity from a YAML file and create it in the backend.
@@ -352,6 +353,9 @@ class ContextEntityOperationsProcessor:
             Path to the YAML file containing entity configuration.
         reset_id : bool
             Flag to determine if the ID of context entities should be reset.
+        context : str, optional
+            Project name to use for context resolution. If None, uses
+            the project specified in the YAML file.
 
         Returns
         -------
@@ -365,22 +369,26 @@ class ContextEntityOperationsProcessor:
         """
         dict_obj: dict = read_yaml(file)
         dict_obj["status"] = {}
-        context = get_context_from_project(dict_obj["project"])
+        if context is None:
+            context = dict_obj["project"]
+        ctx = get_context_from_project(context)
         obj = factory.build_entity_from_dict(dict_obj)
         if reset_id:
             new_id = build_uuid()
             obj.id = new_id
             obj.metadata.version = new_id
         try:
-            self._create_context_entity(context, obj.ENTITY_TYPE, obj.to_dict())
+            bck_obj = self._create_context_entity(ctx, obj.ENTITY_TYPE, obj.to_dict())
+            new_obj: ContextEntity = factory.build_entity_from_dict(bck_obj)
         except EntityAlreadyExistsError:
             raise EntityError(f"Entity {obj.name} already exists. If you want to update it, use load instead.")
-        return obj
+        return new_obj
 
     def import_executable_entity(
         self,
         file: str,
         reset_id: bool = False,
+        context: str | None = None,
     ) -> ExecutableEntity:
         """
         Import an executable entity from a YAML file and create it in the backend.
@@ -396,6 +404,9 @@ class ContextEntityOperationsProcessor:
             Can contain a single entity or a list with the executable and tasks.
         reset_id : bool
             Flag to determine if the ID of executable entities should be reset.
+        context : str, optional
+            Project name to use for context resolution. If None, uses
+            the project specified in the YAML file.
 
         Returns
         -------
@@ -419,7 +430,10 @@ class ContextEntityOperationsProcessor:
             exec_dict = dict_obj
             tsk_dicts = []
 
-        context = get_context_from_project(exec_dict["project"])
+        if context is None:
+            context = exec_dict["project"]
+
+        ctx = get_context_from_project(context)
         obj: ExecutableEntity = factory.build_entity_from_dict(exec_dict)
 
         if reset_id:
@@ -428,13 +442,14 @@ class ContextEntityOperationsProcessor:
             obj.metadata.version = new_id
 
         try:
-            self._create_context_entity(context, obj.ENTITY_TYPE, obj.to_dict())
+            bck_obj = self._create_context_entity(ctx, obj.ENTITY_TYPE, obj.to_dict())
+            new_obj: ExecutableEntity = factory.build_entity_from_dict(bck_obj)
         except EntityAlreadyExistsError:
             raise EntityError(f"Entity {obj.name} already exists. If you want to update it, use load instead.")
 
-        obj.import_tasks(tsk_dicts)
+        new_obj.import_tasks(tsk_dicts)
 
-        return obj
+        return new_obj
 
     def load_context_entity(
         self,

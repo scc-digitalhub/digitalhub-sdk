@@ -320,11 +320,19 @@ class Project(Entity):
                         try:
                             # Artifacts, Dataitems and Models
                             if entity_type in entity_types[:3]:
-                                context_processor.import_context_entity(ref, reset_id=reset_id)
+                                context_processor.import_context_entity(
+                                    ref,
+                                    reset_id=reset_id,
+                                    context=self.name,
+                                )
 
                             # Functions and Workflows
                             elif entity_type in entity_types[3:]:
-                                context_processor.import_executable_entity(ref, reset_id=reset_id)
+                                context_processor.import_executable_entity(
+                                    ref,
+                                    reset_id=reset_id,
+                                    context=self.name,
+                                )
 
                         except FileNotFoundError:
                             msg = f"File not found: {ref}."
@@ -623,7 +631,7 @@ class Project(Entity):
     def import_artifact(
         self,
         file: str,
-        **kwargs,
+        reset_id: bool = True,
     ) -> Artifact:
         """
         Import object from a YAML file and create a new object into the backend.
@@ -632,8 +640,11 @@ class Project(Entity):
         ----------
         file : str
             Path to YAML file.
-        **kwargs : dict
-            Parameters to pass to the API call.
+        reset_id : bool
+            Flag to determine if the ID of context entities should be reset.
+        context : str, optional
+            Project name to use for context resolution. If None, uses
+            the project specified in the YAML file.
 
         Returns
         -------
@@ -644,7 +655,7 @@ class Project(Entity):
         --------
         >>> obj = project.import_artifact("my-artifact.yaml")
         """
-        return import_artifact(file, **kwargs)
+        return import_artifact(file, reset_id, context=self.name)
 
     def update_artifact(self, entity: Artifact) -> Artifact:
         """
@@ -926,7 +937,7 @@ class Project(Entity):
     def import_dataitem(
         self,
         file: str,
-        **kwargs,
+        reset_id: bool = True,
     ) -> Dataitem:
         """
         Import object from a YAML file and create a new object into the backend.
@@ -935,8 +946,11 @@ class Project(Entity):
         ----------
         file : str
             Path to YAML file.
-        **kwargs : dict
-            Parameters to pass to the API call.
+        reset_id : bool
+            Flag to determine if the ID of context entities should be reset.
+        context : str, optional
+            Project name to use for context resolution. If None, uses
+            the project specified in the YAML file.
 
         Returns
         -------
@@ -947,7 +961,7 @@ class Project(Entity):
         --------
         >>> obj = project.import_dataitem("my-dataitem.yaml")
         """
-        return import_dataitem(file, **kwargs)
+        return import_dataitem(file, reset_id, context=self.name)
 
     def update_dataitem(self, entity: Dataitem) -> Dataitem:
         """
@@ -1218,7 +1232,7 @@ class Project(Entity):
     def import_model(
         self,
         file: str,
-        **kwargs,
+        reset_id: bool = True,
     ) -> Model:
         """
         Import object from a YAML file and create a new object into the backend.
@@ -1227,8 +1241,11 @@ class Project(Entity):
         ----------
         file : str
             Path to YAML file.
-        **kwargs : dict
-            Parameters to pass to the API call.
+        reset_id : bool
+            Flag to determine if the ID of context entities should be reset.
+        context : str, optional
+            Project name to use for context resolution. If None, uses
+            the project specified in the YAML file.
 
         Returns
         -------
@@ -1239,7 +1256,7 @@ class Project(Entity):
         --------
         >>> obj = project.import_model("my-model.yaml")
         """
-        return import_model(file, **kwargs)
+        return import_model(file, reset_id, context=self.name)
 
     def update_model(self, entity: Model) -> Model:
         """
@@ -1461,7 +1478,7 @@ class Project(Entity):
     def import_function(
         self,
         file: str,
-        **kwargs,
+        reset_id: bool = True,
     ) -> Function:
         """
         Import object from a YAML file and create a new object into the backend.
@@ -1470,8 +1487,11 @@ class Project(Entity):
         ----------
         file : str
             Path to YAML file.
-        **kwargs : dict
-            Parameters to pass to the API call.
+        reset_id : bool
+            Flag to determine if the ID of context entities should be reset.
+        context : str, optional
+            Project name to use for context resolution. If None, uses
+            the project specified in the YAML file.
 
         Returns
         -------
@@ -1482,7 +1502,7 @@ class Project(Entity):
         --------
         >>> obj = project.import_function("my-function.yaml")
         """
-        return import_function(file, **kwargs)
+        return import_function(file, reset_id, context=self.name)
 
     def update_function(self, entity: Function) -> Function:
         """
@@ -1707,7 +1727,7 @@ class Project(Entity):
     def import_workflow(
         self,
         file: str,
-        **kwargs,
+        reset_id: bool = True,
     ) -> Workflow:
         """
         Import object from a YAML file and create a new object into the backend.
@@ -1716,8 +1736,11 @@ class Project(Entity):
         ----------
         file : str
             Path to YAML file.
-        **kwargs : dict
-            Parameters to pass to the API call.
+        reset_id : bool
+            Flag to determine if the ID of context entities should be reset.
+        context : str, optional
+            Project name to use for context resolution. If None, uses
+            the project specified in the YAML file.
 
         Returns
         -------
@@ -1728,7 +1751,7 @@ class Project(Entity):
         --------
         >>> obj = project.import_workflow("my-workflow.yaml")
         """
-        return import_workflow(file, **kwargs)
+        return import_workflow(file, reset_id, context=self.name)
 
     def update_workflow(self, entity: Workflow) -> Workflow:
         """
@@ -1951,7 +1974,7 @@ class Project(Entity):
     def import_secret(
         self,
         file: str,
-        **kwargs,
+        reset_id: bool = True,
     ) -> Secret:
         """
         Import object from a YAML file and create a new object into the backend.
@@ -1960,8 +1983,11 @@ class Project(Entity):
         ----------
         file : str
             Path to YAML file.
-        **kwargs : dict
-            Parameters to pass to the API call.
+        reset_id : bool
+            Flag to determine if the ID of context entities should be reset.
+        context : str, optional
+            Project name to use for context resolution. If None, uses
+            the project specified in the YAML file.
 
         Returns
         -------
@@ -1972,7 +1998,7 @@ class Project(Entity):
         --------
         >>> obj = project.import_secret("my-secret.yaml")
         """
-        return import_secret(file, **kwargs)
+        return import_secret(file, reset_id, context=self.name)
 
     def update_secret(self, entity: Secret) -> Secret:
         """

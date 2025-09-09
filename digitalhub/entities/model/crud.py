@@ -237,7 +237,7 @@ def list_models(project: str, **kwargs) -> list[Model]:
     )
 
 
-def import_model(file: str, reset_id: bool = False) -> Model:
+def import_model(file: str, reset_id: bool = False, context: str | None = None) -> Model:
     """
     Import object from a YAML file and create a new object into the backend.
 
@@ -245,6 +245,11 @@ def import_model(file: str, reset_id: bool = False) -> Model:
     ----------
     file : str
         Path to YAML file.
+    reset_id : bool
+        Flag to determine if the ID of context entities should be reset.
+    context : str, optional
+        Project name to use for context resolution. If None, uses
+        the project specified in the YAML file.
 
     Returns
     -------
@@ -255,7 +260,7 @@ def import_model(file: str, reset_id: bool = False) -> Model:
     --------
     >>> obj = import_model("my-model.yaml")
     """
-    return context_processor.import_context_entity(file, reset_id)
+    return context_processor.import_context_entity(file, reset_id, context)
 
 
 def load_model(file: str) -> Model:

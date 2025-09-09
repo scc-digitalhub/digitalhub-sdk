@@ -238,7 +238,7 @@ def list_artifacts(project: str, **kwargs) -> list[Artifact]:
     )
 
 
-def import_artifact(file: str, reset_id: bool = False) -> Artifact:
+def import_artifact(file: str, reset_id: bool = False, context: str | None = None) -> Artifact:
     """
     Import object from a YAML file and create a new object into the backend.
 
@@ -246,6 +246,11 @@ def import_artifact(file: str, reset_id: bool = False) -> Artifact:
     ----------
     file : str
         Path to YAML file.
+    reset_id : bool
+        Flag to determine if the ID of context entities should be reset.
+    context : str, optional
+        Project name to use for context resolution. If None, uses
+        the project specified in the YAML file.
 
     Returns
     -------
@@ -256,7 +261,7 @@ def import_artifact(file: str, reset_id: bool = False) -> Artifact:
     --------
     >>> obj = import_artifact("my-artifact.yaml")
     """
-    return context_processor.import_context_entity(file, reset_id)
+    return context_processor.import_context_entity(file, reset_id, context)
 
 
 def load_artifact(file: str) -> Artifact:

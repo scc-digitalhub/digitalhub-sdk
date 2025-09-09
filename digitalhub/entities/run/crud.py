@@ -135,7 +135,7 @@ def list_runs(project: str, **kwargs) -> list[Run]:
     )
 
 
-def import_run(file: str, reset_id: bool = False) -> Run:
+def import_run(file: str, reset_id: bool = False, context: str | None = None) -> Run:
     """
     Import object from a YAML file and create a new object into the backend.
 
@@ -143,6 +143,11 @@ def import_run(file: str, reset_id: bool = False) -> Run:
     ----------
     file : str
         Path to YAML file.
+    reset_id : bool
+        Flag to determine if the ID of context entities should be reset.
+    context : str, optional
+        Project name to use for context resolution. If None, uses
+        the project specified in the YAML file.
 
     Returns
     -------
@@ -153,7 +158,7 @@ def import_run(file: str, reset_id: bool = False) -> Run:
     -------
     >>> obj = import_run("my-run.yaml")
     """
-    return context_processor.import_context_entity(file, reset_id)
+    return context_processor.import_context_entity(file, reset_id, context)
 
 
 def load_run(file: str) -> Run:
