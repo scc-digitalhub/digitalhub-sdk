@@ -12,7 +12,7 @@ Explore the full documentation at the [link](https://scc-digitalhub.github.io/sd
 To install the Digitalhub, you can use pip:
 
 ```bash
-pip install digitalhub
+pip install digitalhub[full]
 ```
 
 To be able to create and execute functions or workflows, you need to install the runtime you want to use. The Digitalhub SDK supports multiple runtimes, each with its own installation instructions:
