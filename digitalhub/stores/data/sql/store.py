@@ -254,6 +254,21 @@ class SqlStore(Store):
         return self._upload_table(df, schema, table, **kwargs)
 
     ##############################
+    # Wrapper methods
+    ##############################
+
+    def get_engine(self, schema: str | None = None) -> Engine:
+        """
+        Get a SQLAlchemy engine connected to the database.
+
+        Returns
+        -------
+        Engine
+            A SQLAlchemy engine instance connected to the database.
+        """
+        return self._check_factory(schema=schema)
+
+    ##############################
     # Private I/O methods
     ##############################
 

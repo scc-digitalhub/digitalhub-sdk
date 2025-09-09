@@ -16,7 +16,6 @@ from boto3.s3.transfer import TransferConfig
 from botocore.exceptions import ClientError, NoCredentialsError
 
 from digitalhub.stores.data._base.store import Store
-from digitalhub.stores.data.s3.utils import get_bucket_name
 from digitalhub.stores.readers.data.api import get_reader_by_object
 from digitalhub.utils.exceptions import ConfigError, StoreError
 from digitalhub.utils.file_utils import get_file_info_from_s3, get_file_mime_type
@@ -338,6 +337,49 @@ class S3Store(Store):
         return self.upload_fileobject(fileobj, dst)
 
     ##############################
+    # Wrapper methods
+    ##############################
+
+    def get_s3_source(self, src: str, filename: Path) -> None:
+        """
+        Download a file from S3 and save it to a local file.
+
+        Parameters
+        ----------
+        src : str
+            S3 path of the object to be downloaded (e.g., 's3://bucket
+        filename : Path
+            Local path where the downloaded object will be saved.
+
+        Returns
+        -------
+        None
+        """
+        client, bucket = self._check_factory(src)
+        key = self._get_key(src)
+        self._download_file(key, filename, client, bucket)
+
+    def get_s3_client(self, file: bool = True) -> S3Client:
+        """
+        Get an S3 client object.
+
+        Parameters
+        ----------
+        file : bool
+            Whether to use file-based credentials. Default is True.
+
+        Returns
+        -------
+        S3Client
+            Returns a client object that interacts with the S3 storage service.
+        """
+        if file:
+            cfg = self._configurator.get_file_config()
+        else:
+            cfg = self._configurator.get_env_config()
+        return self._get_client(cfg)
+
+    ##############################
     # Private I/O methods
     ##############################
 
@@ -595,7 +637,7 @@ class S3Store(Store):
         str
             The name of the S3 bucket.
         """
-        return get_bucket_name(root)
+        return urlparse(root).netloc
 
     def _get_client(self, cfg: dict) -> S3Client:
         """

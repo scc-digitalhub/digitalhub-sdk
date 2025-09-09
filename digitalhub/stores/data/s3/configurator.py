@@ -74,12 +74,23 @@ class S3StoreConfigurator(Configurator):
         dict
             Dictionary containing S3 credentials and configuration.
         """
-        creds = self.get_credentials(self._origin)
-        expired = creds[CredsEnvVar.S3_CREDENTIALS_EXPIRATION.value]
-        if self._origin == self._file and self._is_expired(expired):
-            refresh_token()
-            self.load_file_vars()
-            creds = self.get_credentials(self._origin)
+        creds = self.evaluate_credentials()
+        return self.get_creds_dict(creds)
+
+    def get_creds_dict(self, creds: dict) -> dict:
+        """
+        Returns a dictionary containing the S3 credentials.
+
+        Parameters
+        ----------
+        creds : dict
+            The credentials dictionary.
+
+        Returns
+        -------
+        dict
+            A dictionary containing the S3 credentials.
+        """
         return {
             "endpoint_url": creds[CredsEnvVar.S3_ENDPOINT_URL.value],
             "aws_access_key_id": creds[CredsEnvVar.S3_ACCESS_KEY_ID.value],
@@ -90,6 +101,49 @@ class S3StoreConfigurator(Configurator):
                 signature_version=creds[CredsEnvVar.S3_SIGNATURE_VERSION.value],
             ),
         }
+
+    def evaluate_credentials(self) -> dict:
+        """
+        Evaluates and returns the current valid credentials.
+        If the credentials are expired and were loaded from file,
+        it refreshes them.
+
+        Returns
+        -------
+        dict
+            The current valid credentials.
+        """
+        creds = self.get_credentials(self._origin)
+        expired = creds[CredsEnvVar.S3_CREDENTIALS_EXPIRATION.value]
+        if self._origin == self._file and self._is_expired(expired):
+            refresh_token()
+            self.load_file_vars()
+            creds = self.get_credentials(self._origin)
+        return creds
+
+    def get_file_config(self) -> dict:
+        """
+        Returns the credentials loaded from file.
+
+        Returns
+        -------
+        dict
+            The credentials loaded from file.
+        """
+        creds = self.get_credentials(self._file)
+        return self.get_creds_dict(creds)
+
+    def get_env_config(self) -> dict:
+        """
+        Returns the credentials loaded from environment variables.
+
+        Returns
+        -------
+        dict
+            The credentials loaded from environment variables.
+        """
+        creds = self.get_credentials(self._env)
+        return self.get_creds_dict(creds)
 
     @staticmethod
     def _is_expired(timestamp: str | None) -> bool:
