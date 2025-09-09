@@ -7,6 +7,7 @@ from __future__ import annotations
 import typing
 
 from digitalhub.entities._commons.enums import EntityTypes
+from digitalhub.entities._commons.utils import is_valid_key
 from digitalhub.entities._processors.context import context_processor
 from digitalhub.utils.exceptions import EntityError
 
@@ -135,19 +136,25 @@ def list_runs(project: str, **kwargs) -> list[Run]:
     )
 
 
-def import_run(file: str, reset_id: bool = False, context: str | None = None) -> Run:
+def import_run(
+    file: str | None = None,
+    key: str | None = None,
+    reset_id: bool = False,
+    context: str | None = None,
+) -> Run:
     """
-    Import object from a YAML file and create a new object into the backend.
+    Import an object from a YAML file or from a storage key.
 
     Parameters
     ----------
     file : str
-        Path to YAML file.
+        Path to the YAML file.
+    key : str
+        Entity key (store://...).
     reset_id : bool
-        Flag to determine if the ID of context entities should be reset.
-    context : str, optional
-        Project name to use for context resolution. If None, uses
-        the project specified in the YAML file.
+        Flag to determine if the ID of executable entities should be reset.
+    context : str
+        Project name to use for context resolution.
 
     Returns
     -------
@@ -158,7 +165,12 @@ def import_run(file: str, reset_id: bool = False, context: str | None = None) ->
     -------
     >>> obj = import_run("my-run.yaml")
     """
-    return context_processor.import_context_entity(file, reset_id, context)
+    return context_processor.import_context_entity(
+        file,
+        key,
+        reset_id,
+        context,
+    )
 
 
 def load_run(file: str) -> Run:
@@ -235,7 +247,7 @@ def delete_run(
     >>> obj = delete_run("store://my-run-key")
     >>> obj = delete_run("my-run-id", project="my-project")
     """
-    if not identifier.startswith("store://") and project is None:
+    if not is_valid_key(identifier) and project is None:
         raise EntityError("Specify entity key or entity ID combined with project")
     return context_processor.delete_context_entity(
         identifier=identifier,

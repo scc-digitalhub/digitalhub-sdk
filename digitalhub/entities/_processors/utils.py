@@ -8,7 +8,7 @@ import typing
 
 from digitalhub.context.api import get_context
 from digitalhub.entities._commons.enums import ApiCategories, BackendOperations, EntityTypes
-from digitalhub.entities._commons.utils import get_project_from_key, parse_entity_key
+from digitalhub.entities._commons.utils import get_project_from_key, is_valid_key, parse_entity_key
 from digitalhub.factory.factory import factory
 from digitalhub.stores.client.api import get_client
 from digitalhub.utils.exceptions import ContextError, EntityError, EntityNotExistsError
@@ -57,7 +57,7 @@ def parse_identifier(
     ValueError
         If identifier is not a full key and project or entity_type is None.
     """
-    if not identifier.startswith("store://"):
+    if not is_valid_key(identifier):
         if project is None or entity_type is None:
             raise ValueError("Project and entity type must be specified.")
         return project, entity_type, entity_kind, identifier, entity_id
@@ -93,7 +93,7 @@ def get_context_from_identifier(
     EntityError
         If identifier is not a full key and project parameter is None.
     """
-    if not identifier.startswith("store://"):
+    if not is_valid_key(identifier):
         if project is None:
             raise EntityError("Specify project if you do not specify entity key.")
     else:

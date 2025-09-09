@@ -4,11 +4,33 @@
 
 from __future__ import annotations
 
+import re
 from collections import namedtuple
 
 from digitalhub.entities._commons.enums import EntityTypes
 
 KindAction = namedtuple("KindAction", ["kind", "action"])
+
+
+KEY_PATTERN_WITH_ID = "store://([^/]+)/([^/]+)/([^/]+)/([^:]+):(.+)"
+KEY_PATTERN_NO_ID = "store://([^/]+)/([^/]+)/([^/]+)/([^:]+)"
+
+
+def is_valid_key(key: str) -> bool:
+    """
+    Check if an entity key is valid.
+
+    Parameters
+    ----------
+    key : str
+        The entity key to validate.
+
+    Returns
+    -------
+    bool
+        True if the key is valid, False otherwise.
+    """
+    return bool(re.fullmatch(KEY_PATTERN_WITH_ID, key) or re.fullmatch(KEY_PATTERN_NO_ID, key))
 
 
 def parse_entity_key(key: str) -> tuple[str, str, str, str | None, str]:
@@ -36,34 +58,34 @@ def parse_entity_key(key: str) -> tuple[str, str, str, str | None, str]:
     ValueError
         If the key format is invalid or cannot be parsed.
     """
-    try:
-        # Remove "store://" from the key
-        key = key.replace("store://", "")
+    if not is_valid_key(key):
+        raise ValueError("Invalid entity key format.")
 
-        # Split the key into parts
-        parts = key.split("/")
+    # Remove "store://" from the key
+    key = key.replace("store://", "")
 
-        # The project is the first part
-        project = parts[0]
+    # Split the key into parts
+    parts = key.split("/")
 
-        # The entity type is the second part
-        entity_type = parts[1]
+    # The project is the first part
+    project = parts[0]
 
-        # The kind is the third part
-        kind = parts[2]
+    # The entity type is the second part
+    entity_type = parts[1]
 
-        # Tasks and runs have no name and uuid
-        if entity_type in (EntityTypes.TASK.value, EntityTypes.RUN.value):
-            name = None
-            uuid = parts[3]
+    # The kind is the third part
+    kind = parts[2]
 
-        # The name and uuid are separated by a colon in the last part
-        else:
-            name, uuid = parts[3].split(":")
+    # Tasks and runs have no name and uuid
+    if entity_type in (EntityTypes.TASK.value, EntityTypes.RUN.value):
+        name = None
+        uuid = parts[3]
 
-        return project, entity_type, kind, name, uuid
-    except Exception as e:
-        raise ValueError("Invalid key format.") from e
+    # The name and uuid are separated by a colon in the last part
+    else:
+        name, uuid = parts[3].split(":")
+
+    return project, entity_type, kind, name, uuid
 
 
 def get_entity_type_from_key(key: str) -> str:

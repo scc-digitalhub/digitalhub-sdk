@@ -181,19 +181,25 @@ def list_workflows(project: str, **kwargs) -> list[Workflow]:
     )
 
 
-def import_workflow(file: str, reset_id: bool = False, context: str | None = None) -> Workflow:
+def import_workflow(
+    file: str | None = None,
+    key: str | None = None,
+    reset_id: bool = False,
+    context: str | None = None,
+) -> Workflow:
     """
-    Import object from a YAML file and create a new object into the backend.
+    Import an object from a YAML file or from a storage key.
 
     Parameters
     ----------
     file : str
-        Path to YAML file.
+        Path to the YAML file.
+    key : str
+        Entity key (store://...).
     reset_id : bool
-        Flag to determine if the ID of context entities should be reset.
-    context : str, optional
-        Project name to use for context resolution. If None, uses
-        the project specified in the YAML file.
+        Flag to determine if the ID of executable entities should be reset.
+    context : str
+        Project name to use for context resolution.
 
     Returns
     -------
@@ -204,7 +210,7 @@ def import_workflow(file: str, reset_id: bool = False, context: str | None = Non
     --------
     >>> obj = import_workflow("my-workflow.yaml")
     """
-    return context_processor.import_executable_entity(file, reset_id, context)
+    return context_processor.import_executable_entity(file, key, reset_id, context)
 
 
 def load_workflow(file: str) -> Workflow:

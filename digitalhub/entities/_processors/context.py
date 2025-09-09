@@ -8,6 +8,7 @@ import typing
 from typing import Any
 
 from digitalhub.entities._commons.enums import ApiCategories, BackendOperations, Relationship, State
+from digitalhub.entities._commons.utils import is_valid_key
 from digitalhub.entities._constructors.uuid import build_uuid
 from digitalhub.entities._processors.utils import (
     get_context_from_identifier,
@@ -320,7 +321,7 @@ class ContextEntityOperationsProcessor:
         UnversionedEntity
             The unversioned entity object populated with backend data.
         """
-        if not identifier.startswith("store://"):
+        if not is_valid_key(identifier):
             entity_id = identifier
         else:
             splt = identifier.split(":")
@@ -336,21 +337,20 @@ class ContextEntityOperationsProcessor:
 
     def import_context_entity(
         self,
-        file: str,
+        file: str | None = None,
+        key: str | None = None,
         reset_id: bool = False,
         context: str | None = None,
     ) -> ContextEntity:
         """
-        Import a context entity from a YAML file and create it in the backend.
-
-        Reads entity configuration from a YAML file and creates a new
-        context entity in the backend. Raises an error if the entity
-        already exists.
+        Import a context entity from a YAML file or from a storage key.
 
         Parameters
         ----------
         file : str
             Path to the YAML file containing entity configuration.
+        key : str
+            Storage key (store://...) to read the entity from.
         reset_id : bool
             Flag to determine if the ID of context entities should be reset.
         context : str, optional
@@ -367,10 +367,20 @@ class ContextEntityOperationsProcessor:
         EntityError
             If the entity already exists in the backend.
         """
-        dict_obj: dict = read_yaml(file)
+        if (file is None) == (key is None):
+            raise ValueError("Provide key or file, not both or none.")
+
+        if file is not None:
+            dict_obj: dict = read_yaml(file)
+        else:
+            ctx = get_context_from_identifier(key)
+            dict_obj: dict = self._read_context_entity(ctx, key)
+
         dict_obj["status"] = {}
+
         if context is None:
             context = dict_obj["project"]
+
         ctx = get_context_from_project(context)
         obj = factory.build_entity_from_dict(dict_obj)
         if reset_id:
@@ -386,27 +396,25 @@ class ContextEntityOperationsProcessor:
 
     def import_executable_entity(
         self,
-        file: str,
+        file: str | None = None,
+        key: str | None = None,
         reset_id: bool = False,
         context: str | None = None,
     ) -> ExecutableEntity:
         """
-        Import an executable entity from a YAML file and create it in the backend.
-
-        Reads executable entity configuration from a YAML file and creates
-        a new executable entity (function or workflow) in the backend.
-        Also imports associated task definitions if present in the file.
+        Import an executable entity from a YAML file or from a storage key.
 
         Parameters
         ----------
         file : str
             Path to the YAML file containing executable entity configuration.
             Can contain a single entity or a list with the executable and tasks.
+        key : str
+            Storage key (store://...) to read the entity from.
         reset_id : bool
             Flag to determine if the ID of executable entities should be reset.
         context : str, optional
-            Project name to use for context resolution. If None, uses
-            the project specified in the YAML file.
+            Project name to use for context resolution.
 
         Returns
         -------
@@ -418,7 +426,15 @@ class ContextEntityOperationsProcessor:
         EntityError
             If the entity already exists in the backend.
         """
-        dict_obj: dict | list[dict] = read_yaml(file)
+        if (file is None) == (key is None):
+            raise ValueError("Provide key or file, not both or none.")
+
+        if file is not None:
+            dict_obj: dict | list[dict] = read_yaml(file)
+        else:
+            ctx = get_context_from_identifier(key)
+            dict_obj: dict = self._read_context_entity(ctx, key)
+
         if isinstance(dict_obj, list):
             exec_dict = dict_obj[0]
             exec_dict["status"] = {}
@@ -428,6 +444,7 @@ class ContextEntityOperationsProcessor:
                 tsk_dicts.append(i)
         else:
             exec_dict = dict_obj
+            exec_dict["status"] = {}
             tsk_dicts = []
 
         if context is None:

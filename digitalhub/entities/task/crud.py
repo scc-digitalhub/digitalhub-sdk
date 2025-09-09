@@ -7,6 +7,7 @@ from __future__ import annotations
 import typing
 
 from digitalhub.entities._commons.enums import EntityTypes
+from digitalhub.entities._commons.utils import is_valid_key
 from digitalhub.entities._processors.context import context_processor
 from digitalhub.utils.exceptions import EntityError
 
@@ -134,19 +135,25 @@ def list_tasks(project: str, **kwargs) -> list[Task]:
     )
 
 
-def import_task(file: str, reset_id: bool = False, context: str | None = None) -> Task:
+def import_task(
+    file: str | None = None,
+    key: str | None = None,
+    reset_id: bool = False,
+    context: str | None = None,
+) -> Task:
     """
-    Import object from a YAML file and create a new object into the backend.
+    Import an object from a YAML file or from a storage key.
 
     Parameters
     ----------
     file : str
-        Path to YAML file.
+        Path to the YAML file.
+    key : str
+        Entity key (store://...).
     reset_id : bool
-        Flag to determine if the ID of context entities should be reset.
-    context : str, optional
-        Project name to use for context resolution. If None, uses
-        the project specified in the YAML file.
+        Flag to determine if the ID of executable entities should be reset.
+    context : str
+        Project name to use for context resolution.
 
     Returns
     -------
@@ -157,7 +164,12 @@ def import_task(file: str, reset_id: bool = False, context: str | None = None) -
     -------
     >>> obj = import_task("my-task.yaml")
     """
-    return context_processor.import_context_entity(file, reset_id, context)
+    return context_processor.import_context_entity(
+        file,
+        key,
+        reset_id,
+        context,
+    )
 
 
 def load_task(file: str) -> Task:
@@ -248,7 +260,7 @@ def delete_task(
     >>>                  project="my-project",
     >>>                  delete_all_versions=True)
     """
-    if not identifier.startswith("store://"):
+    if not is_valid_key(identifier):
         raise EntityError("Task has no name. Use key instead.")
     return context_processor.delete_context_entity(
         identifier=identifier,

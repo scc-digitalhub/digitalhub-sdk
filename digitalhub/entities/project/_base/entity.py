@@ -321,7 +321,7 @@ class Project(Entity):
                             # Artifacts, Dataitems and Models
                             if entity_type in entity_types[:3]:
                                 context_processor.import_context_entity(
-                                    ref,
+                                    file=ref,
                                     reset_id=reset_id,
                                     context=self.name,
                                 )
@@ -329,7 +329,7 @@ class Project(Entity):
                             # Functions and Workflows
                             elif entity_type in entity_types[3:]:
                                 context_processor.import_executable_entity(
-                                    ref,
+                                    file=ref,
                                     reset_id=reset_id,
                                     context=self.name,
                                 )
@@ -630,7 +630,8 @@ class Project(Entity):
 
     def import_artifact(
         self,
-        file: str,
+        file: str | None = None,
+        key: str | None = None,
         reset_id: bool = True,
     ) -> Artifact:
         """
@@ -640,11 +641,10 @@ class Project(Entity):
         ----------
         file : str
             Path to YAML file.
+        key : str
+            Entity key (store://...).
         reset_id : bool
             Flag to determine if the ID of context entities should be reset.
-        context : str, optional
-            Project name to use for context resolution. If None, uses
-            the project specified in the YAML file.
 
         Returns
         -------
@@ -655,7 +655,7 @@ class Project(Entity):
         --------
         >>> obj = project.import_artifact("my-artifact.yaml")
         """
-        return import_artifact(file, reset_id, context=self.name)
+        return import_artifact(file, key, reset_id, self.name)
 
     def update_artifact(self, entity: Artifact) -> Artifact:
         """
@@ -936,7 +936,8 @@ class Project(Entity):
 
     def import_dataitem(
         self,
-        file: str,
+        file: str | None = None,
+        key: str | None = None,
         reset_id: bool = True,
     ) -> Dataitem:
         """
@@ -946,11 +947,10 @@ class Project(Entity):
         ----------
         file : str
             Path to YAML file.
+        key : str
+            Entity key (store://...).
         reset_id : bool
             Flag to determine if the ID of context entities should be reset.
-        context : str, optional
-            Project name to use for context resolution. If None, uses
-            the project specified in the YAML file.
 
         Returns
         -------
@@ -961,7 +961,7 @@ class Project(Entity):
         --------
         >>> obj = project.import_dataitem("my-dataitem.yaml")
         """
-        return import_dataitem(file, reset_id, context=self.name)
+        return import_dataitem(file, key, reset_id, self.name)
 
     def update_dataitem(self, entity: Dataitem) -> Dataitem:
         """
@@ -1231,7 +1231,8 @@ class Project(Entity):
 
     def import_model(
         self,
-        file: str,
+        file: str | None = None,
+        key: str | None = None,
         reset_id: bool = True,
     ) -> Model:
         """
@@ -1241,11 +1242,10 @@ class Project(Entity):
         ----------
         file : str
             Path to YAML file.
+        key : str
+            Entity key (store://...).
         reset_id : bool
             Flag to determine if the ID of context entities should be reset.
-        context : str, optional
-            Project name to use for context resolution. If None, uses
-            the project specified in the YAML file.
 
         Returns
         -------
@@ -1256,7 +1256,7 @@ class Project(Entity):
         --------
         >>> obj = project.import_model("my-model.yaml")
         """
-        return import_model(file, reset_id, context=self.name)
+        return import_model(file, key, reset_id, self.name)
 
     def update_model(self, entity: Model) -> Model:
         """
@@ -1477,7 +1477,8 @@ class Project(Entity):
 
     def import_function(
         self,
-        file: str,
+        file: str | None = None,
+        key: str | None = None,
         reset_id: bool = True,
     ) -> Function:
         """
@@ -1487,11 +1488,10 @@ class Project(Entity):
         ----------
         file : str
             Path to YAML file.
+        key : str
+            Entity key (store://...).
         reset_id : bool
             Flag to determine if the ID of context entities should be reset.
-        context : str, optional
-            Project name to use for context resolution. If None, uses
-            the project specified in the YAML file.
 
         Returns
         -------
@@ -1502,7 +1502,7 @@ class Project(Entity):
         --------
         >>> obj = project.import_function("my-function.yaml")
         """
-        return import_function(file, reset_id, context=self.name)
+        return import_function(file, key, reset_id, self.name)
 
     def update_function(self, entity: Function) -> Function:
         """
@@ -1726,7 +1726,8 @@ class Project(Entity):
 
     def import_workflow(
         self,
-        file: str,
+        file: str | None = None,
+        key: str | None = None,
         reset_id: bool = True,
     ) -> Workflow:
         """
@@ -1736,11 +1737,10 @@ class Project(Entity):
         ----------
         file : str
             Path to YAML file.
+        key : str
+            Entity key (store://...).
         reset_id : bool
             Flag to determine if the ID of context entities should be reset.
-        context : str, optional
-            Project name to use for context resolution. If None, uses
-            the project specified in the YAML file.
 
         Returns
         -------
@@ -1751,7 +1751,7 @@ class Project(Entity):
         --------
         >>> obj = project.import_workflow("my-workflow.yaml")
         """
-        return import_workflow(file, reset_id, context=self.name)
+        return import_workflow(file, key, reset_id, self.name)
 
     def update_workflow(self, entity: Workflow) -> Workflow:
         """
@@ -1973,7 +1973,8 @@ class Project(Entity):
 
     def import_secret(
         self,
-        file: str,
+        file: str | None = None,
+        key: str | None = None,
         reset_id: bool = True,
     ) -> Secret:
         """
@@ -1983,11 +1984,10 @@ class Project(Entity):
         ----------
         file : str
             Path to YAML file.
+        key : str
+            Entity key (store://...).
         reset_id : bool
             Flag to determine if the ID of context entities should be reset.
-        context : str, optional
-            Project name to use for context resolution. If None, uses
-            the project specified in the YAML file.
 
         Returns
         -------
@@ -1998,7 +1998,7 @@ class Project(Entity):
         --------
         >>> obj = project.import_secret("my-secret.yaml")
         """
-        return import_secret(file, reset_id, context=self.name)
+        return import_secret(file, key, reset_id, self.name)
 
     def update_secret(self, entity: Secret) -> Secret:
         """
