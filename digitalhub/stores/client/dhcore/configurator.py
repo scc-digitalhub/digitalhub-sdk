@@ -37,7 +37,7 @@ class ClientDHCoreConfigurator(Configurator):
 
     keys = [*list_enum(CredsEnvVar)]
     required_keys = [CredsEnvVar.DHCORE_ENDPOINT.value]
-    keys_to_unprefix = [
+    keys_to_prefix = [
         CredsEnvVar.DHCORE_REFRESH_TOKEN.value,
         CredsEnvVar.DHCORE_ACCESS_TOKEN.value,
         CredsEnvVar.DHCORE_ISSUER.value,
@@ -112,19 +112,12 @@ class ClientDHCoreConfigurator(Configurator):
         -------
         None
         """
-        keys = [*self._remove_prefix_dhcore()]
-        file_creds = self._creds_handler.load_from_file(keys)
-        env_creds = self._creds_handler.load_from_env(self.keys)
-
-        # Because in the response there is no endpoint
-        if file_creds[CredsEnvVar.DHCORE_ENDPOINT.value] is None:
-            file_creds[CredsEnvVar.DHCORE_ENDPOINT.value] = env_creds.get(CredsEnvVar.DHCORE_ENDPOINT.value)
+        file_creds = self._creds_handler.load_from_file(self.keys)
 
         # Because in the response there is no personal access token
-        if file_creds[CredsEnvVar.DHCORE_PERSONAL_ACCESS_TOKEN.value] is None:
-            file_creds[CredsEnvVar.DHCORE_PERSONAL_ACCESS_TOKEN.value] = env_creds.get(
-                CredsEnvVar.DHCORE_PERSONAL_ACCESS_TOKEN.value
-            )
+        pat = CredsEnvVar.DHCORE_PERSONAL_ACCESS_TOKEN.value
+        if file_creds[pat] is None:
+            file_creds[pat] = self._creds_handler.load_from_env([pat]).get(pat)
 
         file_creds = self._sanitize_file_vars(file_creds)
         self._creds_handler.set_credentials(self._file, file_creds)
@@ -153,16 +146,7 @@ class ClientDHCoreConfigurator(Configurator):
             If endpoint or issuer URLs have invalid schemes.
         """
         creds[CredsEnvVar.DHCORE_ENDPOINT.value] = self._sanitize_endpoint(creds[CredsEnvVar.DHCORE_ENDPOINT.value])
-        creds[CredsEnvVar.DHCORE_ISSUER.value] = self._sanitize_endpoint(
-            creds[CredsEnvVar.DHCORE_ISSUER.value.removeprefix("DHCORE_")]
-        )
-        creds[CredsEnvVar.DHCORE_REFRESH_TOKEN.value] = creds[
-            CredsEnvVar.DHCORE_REFRESH_TOKEN.value.removeprefix("DHCORE_")
-        ]
-        creds[CredsEnvVar.DHCORE_ACCESS_TOKEN.value] = creds[
-            CredsEnvVar.DHCORE_ACCESS_TOKEN.value.removeprefix("DHCORE_")
-        ]
-        creds[CredsEnvVar.DHCORE_CLIENT_ID.value] = creds[CredsEnvVar.DHCORE_CLIENT_ID.value.removeprefix("DHCORE_")]
+        creds[CredsEnvVar.DHCORE_ISSUER.value] = self._sanitize_endpoint(creds[CredsEnvVar.DHCORE_ISSUER.value])
         return {k: v for k, v in creds.items() if k in self.keys}
 
     @staticmethod
@@ -374,26 +358,6 @@ class ClientDHCoreConfigurator(Configurator):
         # Read new credentials and propagate to config file
         self._export_new_creds(response.json())
 
-    def _remove_prefix_dhcore(self) -> list[str]:
-        """
-        Remove DHCORE_ prefix from selected keys for CLI compatibility.
-
-        Creates key list with prefix removed from: DHCORE_REFRESH_TOKEN,
-        DHCORE_ACCESS_TOKEN, DHCORE_ISSUER, DHCORE_CLIENT_ID.
-
-        Returns
-        -------
-        list[str]
-            Credential keys with selective prefix removal.
-        """
-        new_list = []
-        for key in self.keys:
-            if key in self.keys_to_unprefix:
-                new_list.append(key.removeprefix("DHCORE_"))
-            else:
-                new_list.append(key)
-        return new_list
-
     def _get_refresh_endpoint(self) -> str:
         """
         Discover OAuth2 token endpoint from issuer well-known configuration.
@@ -503,6 +467,10 @@ class ClientDHCoreConfigurator(Configurator):
         -------
         None
         """
+        for key in self.keys_to_prefix:
+            key = key.lower()
+            if key.removeprefix("dhcore_") in response:
+                response[key] = response.pop(key.removeprefix("dhcore_"))
         creds_handler.write_env(response)
         self.load_file_vars()
 
