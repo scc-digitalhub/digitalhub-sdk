@@ -200,7 +200,7 @@ class MaterialEntity(VersionedEntity):
         list
             Paths of the files in the status.
         """
-        return [f.get("path") for f in self.status.files]
+        return [f.get("path") if f.get("path") is not None else f.get("name") for f in self.status.files]
 
     ##############################
     #  Private Helpers
