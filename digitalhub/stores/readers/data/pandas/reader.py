@@ -133,7 +133,9 @@ class DataframeReaderPandas(DataframeReader):
         -------
         None
         """
-        df.to_csv(dst, index=False, **kwargs)
+        if "index" not in kwargs:
+            kwargs["index"] = False
+        df.to_csv(dst, **kwargs)
 
     @staticmethod
     def write_parquet(df: pd.DataFrame, dst: str | BytesIO, **kwargs) -> None:
@@ -153,6 +155,8 @@ class DataframeReaderPandas(DataframeReader):
         -------
         None
         """
+        if "index" not in kwargs:
+            kwargs["index"] = False
         df.to_parquet(dst, index=False, **kwargs)
 
     @staticmethod
@@ -177,7 +181,9 @@ class DataframeReaderPandas(DataframeReader):
         -------
         None
         """
-        df.to_sql(table, engine, schema=schema, index=False, **kwargs)
+        if "index" not in kwargs:
+            kwargs["index"] = False
+        df.to_sql(table, engine, schema=schema, **kwargs)
 
     ##############################
     # Utils
