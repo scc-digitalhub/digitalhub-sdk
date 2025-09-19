@@ -89,6 +89,7 @@ def eval_data(
     source: SourcesOrListOfSources,
     data: Any | None = None,
     file_format: str | None = None,
+    read_df_params: dict | None = None,
     engine: str | None = None,
 ) -> Any:
     """
@@ -121,10 +122,13 @@ def eval_data(
     """
     if kind == EntityKinds.DATAITEM_TABLE.value:
         if data is None:
+            if read_df_params is None:
+                read_df_params = {}
             return get_store(source).read_df(
                 source,
                 file_format=file_format,
                 engine=engine,
+                **read_df_params,
             )
     return data
 

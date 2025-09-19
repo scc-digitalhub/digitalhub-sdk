@@ -115,13 +115,17 @@ class DataitemTable(Dataitem):
         Write DataFrame as parquet/csv/table into dataitem spec.path.
         keyword arguments will be passed to the DataFrame reader function such as
         pandas's to_csv or to_parquet.
+        Note that by default the index is dropped when writing the dataframe. To
+        keep the index, you can pass index=True as a keyword argument.
+        If the dataitem path is a SQL scheme, the dataframe will be written to the
+        table specified in the path (sql://<database_name>(/<schema_name>)/<table_name>).
 
         Parameters
         ----------
         df : Any
             DataFrame to write.
         extension : str
-            Extension of the file.
+            Extension of the file (supported parquet and csv).
         **kwargs : dict
             Keyword arguments passed to the write_df function.
 
@@ -129,6 +133,21 @@ class DataitemTable(Dataitem):
         -------
         str
             Path to the written dataframe.
+
+        Examples
+        --------
+        >>> import digitalhub as dh
+        >>> import pandas as pd
+        >>>
+        >>> p = dh.get_project("my_project")
+        >>> df = pd.read_df("data/my_data.csv")
+        >>> di = p.new_dataitem(
+        ...     name="my_dataitem",
+        ...     kind="table",
+        ...     path="s3://my-bucket/my-data.parquet",
+        ... )
+        >>> di.write_df(df, extension="parquet", index=True)
+        's3://my-bucket/my-data.parquet'
         """
         return get_store(self.spec.path).write_df(
             df,

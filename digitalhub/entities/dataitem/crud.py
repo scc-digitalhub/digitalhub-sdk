@@ -87,6 +87,7 @@ def log_dataitem(
     data: Any | None = None,
     path: str | None = None,
     file_format: str | None = None,
+    read_df_params: dict | None = None,
     engine: str | None = "pandas",
     **kwargs,
 ) -> Dataitem:
@@ -108,7 +109,9 @@ def log_dataitem(
     path : str
         Destination path of the dataitem. If not provided, it's generated.
     file_format : str
-        Extension of the file.
+        Extension of the file source (parquet, csv, json, xlsx, txt).
+    read_df_params : dict
+        Parameters to pass to the dataframe reader.
     engine : str
         Dataframe engine (pandas, polars, etc.).
     **kwargs : dict
@@ -131,7 +134,7 @@ def log_dataitem(
         cleanup = True
 
     source = eval_source(source, data, kind, name, project)
-    data = eval_data(kind, source, data, file_format, engine)
+    data = eval_data(kind, source, data, file_format, read_df_params, engine)
     kwargs = process_kwargs(
         project,
         name,
