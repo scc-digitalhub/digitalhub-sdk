@@ -53,10 +53,6 @@ class Configurator:
     def load_configs(self) -> None:
         """
         Load the configuration from both environment and file sources.
-
-        Returns
-        -------
-        None
         """
         self.load_env_vars()
         self.load_file_vars()
@@ -71,10 +67,6 @@ class Configurator:
         """
         Check if the current profile has changed and reload
         the file credentials if needed.
-
-        Returns
-        -------
-        None
         """
         if (current := self._creds_handler.get_current_profile()) != self._current_profile:
             self.load_file_vars()
@@ -119,10 +111,6 @@ class Configurator:
         """
         Attempt to change the origin of credentials.
         Raise error if already evaluated.
-
-        Returns
-        -------
-        None
         """
         try:
             self.change_origin()
@@ -132,10 +120,6 @@ class Configurator:
     def change_origin(self) -> None:
         """
         Change the origin of credentials from env to file or vice versa.
-
-        Returns
-        -------
-        None
         """
         if self._changed_origin:
             raise ConfigError("Origin has already been changed.")
@@ -147,10 +131,6 @@ class Configurator:
     def change_to_file(self) -> None:
         """
         Set the credentials origin to file.
-
-        Returns
-        -------
-        None
         """
         if self._origin == self._env:
             self._changed_origin = True
@@ -159,10 +139,6 @@ class Configurator:
     def change_to_env(self) -> None:
         """
         Set the credentials origin to environment.
-
-        Returns
-        -------
-        None
         """
         if self._origin == self._file:
             self._changed_origin = True

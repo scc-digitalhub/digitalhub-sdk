@@ -47,10 +47,6 @@ class ClientDHCoreConfigurator(Configurator):
     def __init__(self) -> None:
         """
         Initialize DHCore configurator and evaluate authentication type.
-
-        Returns
-        -------
-        None
         """
         super().__init__()
         self._auth_type: str | None = None
@@ -66,10 +62,6 @@ class ClientDHCoreConfigurator(Configurator):
 
         Sanitizes endpoint and issuer URLs to ensure proper HTTP/HTTPS schemes
         and removes trailing slashes.
-
-        Returns
-        -------
-        None
         """
         env_creds = self._creds_handler.load_from_env(self.keys)
         env_creds = self._sanitize_env_vars(env_creds)
@@ -107,10 +99,6 @@ class ClientDHCoreConfigurator(Configurator):
 
         Handles keys without "DHCORE_" prefix for CLI compatibility. Falls back
         to environment variables for missing endpoint and personal access token values.
-
-        Returns
-        -------
-        None
         """
         file_creds = self._creds_handler.load_from_file(self.keys)
 
@@ -213,10 +201,6 @@ class ClientDHCoreConfigurator(Configurator):
 
         Changes between environment and file credential sources, then re-evaluates
         authentication type based on the new credentials.
-
-        Returns
-        -------
-        None
         """
         super().change_origin()
 
@@ -235,10 +219,6 @@ class ClientDHCoreConfigurator(Configurator):
         OAUTH2 (access + refresh tokens), ACCESS_TOKEN (access only), BASIC
         (username + password). For EXCHANGE type, automatically exchanges the
         personal access token and switches to file-based credentials storage.
-
-        Returns
-        -------
-        None
         """
         creds = creds_handler.get_credentials(self._origin)
         self._auth_type = self._eval_auth_type(creds)
@@ -309,10 +289,6 @@ class ClientDHCoreConfigurator(Configurator):
         ----------
         change_origin : bool, default False
             Whether to switch credential sources on auth failure.
-
-        Returns
-        -------
-        None
 
         Raises
         ------
@@ -467,10 +443,6 @@ class ClientDHCoreConfigurator(Configurator):
         ----------
         response : dict
             OAuth2 token response with new credentials.
-
-        Returns
-        -------
-        None
         """
         for key in self.keys_to_prefix:
             key = key.lower()

@@ -83,10 +83,6 @@ class StoreBuilder:
             The configurator class for store configuration.
             If None, the store will be instantiated without configuration.
 
-        Returns
-        -------
-        None
-
         Raises
         ------
         StoreError

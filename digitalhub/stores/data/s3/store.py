@@ -350,10 +350,6 @@ class S3Store(Store):
             S3 path of the object to be downloaded (e.g., 's3://bucket
         filename : Path
             Local path where the downloaded object will be saved.
-
-        Returns
-        -------
-        None
         """
         client, bucket = self._check_factory(src)
         key = self._get_key(src)
@@ -575,10 +571,6 @@ class S3Store(Store):
             The S3 client object.
         bucket : str
             The name of the S3 bucket.
-
-        Returns
-        -------
-        None
         """
         extra_args = {}
         mime_type = get_file_mime_type(src)
@@ -612,10 +604,6 @@ class S3Store(Store):
             The S3 client object.
         bucket : str
             The name of the S3 bucket.
-
-        Returns
-        -------
-        None
         """
         client.upload_fileobj(
             Fileobj=fileobj,

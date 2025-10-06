@@ -46,10 +46,6 @@ class S3StoreConfigurator(Configurator):
     def load_env_vars(self) -> None:
         """
         Loads the credentials from the environment variables.
-
-        Returns
-        -------
-        None
         """
         env_creds = self._creds_handler.load_from_env(self.keys)
         self._creds_handler.set_credentials(self._env, env_creds)
@@ -57,10 +53,6 @@ class S3StoreConfigurator(Configurator):
     def load_file_vars(self) -> None:
         """
         Loads the credentials from a file.
-
-        Returns
-        -------
-        None
         """
         file_creds = self._creds_handler.load_from_file(self.keys)
         self._creds_handler.set_credentials(self._file, file_creds)

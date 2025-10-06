@@ -10,7 +10,7 @@ import typing
 from digitalhub.entities._base.unversioned.entity import UnversionedEntity
 from digitalhub.entities._commons.enums import EntityTypes, State
 from digitalhub.entities._commons.metrics import MetricType, set_metrics, validate_metric_value
-from digitalhub.entities._processors.context import context_processor
+from digitalhub.entities._processors.processors import context_processor
 from digitalhub.factory.entity import entity_factory
 from digitalhub.factory.runtime import runtime_factory
 from digitalhub.utils.exceptions import EntityError
@@ -52,10 +52,6 @@ class Run(UnversionedEntity):
     def build(self) -> None:
         """
         Build run.
-
-        Returns
-        -------
-        None
         """
         executable = self._get_executable()
         task = self._get_task()
@@ -142,10 +138,6 @@ class Run(UnversionedEntity):
     def stop(self) -> None:
         """
         Stop run.
-
-        Returns
-        -------
-        None
         """
         if not self.spec.local_execution:
             return context_processor.stop_entity(self.project, self.ENTITY_TYPE, self.id)
@@ -153,10 +145,6 @@ class Run(UnversionedEntity):
     def resume(self) -> None:
         """
         Resume run.
-
-        Returns
-        -------
-        None
         """
         if not self.spec.local_execution:
             return context_processor.resume_entity(self.project, self.ENTITY_TYPE, self.id)
@@ -184,10 +172,6 @@ class Run(UnversionedEntity):
             If True, overwrite existing metric.
         single_value : bool
             If True, value is a single value.
-
-        Returns
-        -------
-        None
 
         Examples
         --------
@@ -242,10 +226,6 @@ class Run(UnversionedEntity):
             Dict of metrics to log.
         overwrite : bool
             If True, overwrite existing metrics.
-
-        Returns
-        -------
-        None
 
         Examples
         --------
@@ -308,19 +288,11 @@ class Run(UnversionedEntity):
     def _setup_execution(self) -> None:
         """
         Setup run execution.
-
-        Returns
-        -------
-        None
         """
 
     def _start_execution(self) -> None:
         """
         Start run execution.
-
-        Returns
-        -------
-        None
         """
         self._context().set_run(f"{self.key}:{self.id}")
         if self.spec.local_execution:
@@ -332,10 +304,6 @@ class Run(UnversionedEntity):
     def _finish_execution(self) -> None:
         """
         Finish run execution.
-
-        Returns
-        -------
-        None
         """
         self._context().unset_run()
 
@@ -358,10 +326,6 @@ class Run(UnversionedEntity):
         ----------
         status : dict
             Status to set.
-
-        Returns
-        -------
-        None
         """
         self.status: RunStatus = entity_factory.build_status(self.kind, **status)
 
@@ -373,10 +337,6 @@ class Run(UnversionedEntity):
         ----------
         state : str
             State to set.
-
-        Returns
-        -------
-        None
         """
         self.status.state = state
 
@@ -388,10 +348,6 @@ class Run(UnversionedEntity):
         ----------
         message : str
             Message to set.
-
-        Returns
-        -------
-        None
         """
         self.status.message = message
 
@@ -447,10 +403,6 @@ class Run(UnversionedEntity):
     def _get_metrics(self) -> None:
         """
         Get model metrics from backend.
-
-        Returns
-        -------
-        None
         """
         self.status.metrics = context_processor.read_metrics(
             project=self.project,
@@ -478,10 +430,6 @@ class Run(UnversionedEntity):
             If True, overwrite existing metric.
         single_value : bool
             If True, value is a single value.
-
-        Returns
-        -------
-        None
         """
         value = validate_metric_value(value)
         self.status.metrics = set_metrics(

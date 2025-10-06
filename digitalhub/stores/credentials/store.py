@@ -42,10 +42,6 @@ class CredentialsStore:
             Origin of the credentials ('env' or 'file').
         credentials : dict of str to Any
             Dictionary of credentials to set.
-
-        Returns
-        -------
-        None
         """
         if origin == CredsOrigin.ENV.value:
             for key, value in credentials.items():

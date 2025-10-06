@@ -44,10 +44,6 @@ class ErrorParser:
         response : Response
             The HTTP response object from requests.
 
-        Returns
-        -------
-        None
-
         Raises
         ------
         TimeoutError

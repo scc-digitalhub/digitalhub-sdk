@@ -114,10 +114,6 @@ class Store:
         src : str
             The source path.
 
-        Returns
-        -------
-        None
-
         Raises
         ------
         StoreError
@@ -134,10 +130,6 @@ class Store:
         ----------
         dst : str
             The destination path.
-
-        Returns
-        -------
-        None
 
         Raises
         ------
@@ -158,10 +150,6 @@ class Store:
         overwrite : bool
             Specify if overwrite an existing file.
 
-        Returns
-        -------
-        None
-
         Raises
         ------
         StoreError
@@ -179,10 +167,6 @@ class Store:
         ----------
         path : str | Path
             The path to build.
-
-        Returns
-        -------
-        None
         """
         if not isinstance(path, Path):
             path = Path(path)

@@ -8,7 +8,7 @@ import typing
 
 from digitalhub.entities._base.unversioned.entity import UnversionedEntity
 from digitalhub.entities._commons.enums import EntityTypes
-from digitalhub.entities._processors.context import context_processor
+from digitalhub.entities._processors.processors import context_processor
 from digitalhub.factory.entity import entity_factory
 
 if typing.TYPE_CHECKING:

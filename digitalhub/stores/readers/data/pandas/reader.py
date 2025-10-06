@@ -104,10 +104,6 @@ class DataframeReaderPandas(DataframeReader):
             The destination of the dataframe.
         **kwargs : dict
             Keyword arguments.
-
-        Returns
-        -------
-        None
         """
         if extension == FileExtensions.CSV.value:
             return self.write_csv(df, dst, **kwargs)
@@ -128,10 +124,6 @@ class DataframeReaderPandas(DataframeReader):
             The destination of the dataframe.
         **kwargs : dict
             Keyword arguments.
-
-        Returns
-        -------
-        None
         """
         if "index" not in kwargs:
             kwargs["index"] = False
@@ -150,10 +142,6 @@ class DataframeReaderPandas(DataframeReader):
             The destination of the dataframe.
         **kwargs : dict
             Keyword arguments.
-
-        Returns
-        -------
-        None
         """
         if "index" not in kwargs:
             kwargs["index"] = False
@@ -176,10 +164,6 @@ class DataframeReaderPandas(DataframeReader):
             The destination schema.
         **kwargs : dict
             Keyword arguments.
-
-        Returns
-        -------
-        None
         """
         if "index" not in kwargs:
             kwargs["index"] = False

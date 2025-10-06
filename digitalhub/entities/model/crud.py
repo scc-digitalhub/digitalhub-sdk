@@ -7,7 +7,7 @@ from __future__ import annotations
 import typing
 
 from digitalhub.entities._commons.enums import EntityTypes
-from digitalhub.entities._processors.context import context_processor
+from digitalhub.entities._processors.processors import context_processor
 from digitalhub.entities.model.utils import eval_source, process_kwargs
 from digitalhub.utils.types import SourcesOrListOfSources
 

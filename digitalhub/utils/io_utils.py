@@ -80,10 +80,6 @@ class NoDatesSafeLoader(yaml.SafeLoader):
         ----------
         tag_to_remove : str
             The tag to remove.
-
-        Returns
-        -------
-        None
         """
         if "yaml_implicit_resolvers" not in cls.__dict__:
             cls.yaml_implicit_resolvers = cls.yaml_implicit_resolvers.copy()

@@ -526,10 +526,6 @@ class SqlStore(Store):
         engine : Engine
             The SQLAlchemy engine to test for connectivity.
 
-        Returns
-        -------
-        None
-
         Raises
         ------
         ConfigError

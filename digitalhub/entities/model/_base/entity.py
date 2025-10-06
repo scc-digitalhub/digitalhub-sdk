@@ -9,7 +9,7 @@ import typing
 from digitalhub.entities._base.material.entity import MaterialEntity
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._commons.metrics import MetricType, set_metrics, validate_metric_value
-from digitalhub.entities._processors.context import context_processor
+from digitalhub.entities._processors.processors import context_processor
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.entity.metadata import Metadata
@@ -81,10 +81,6 @@ class Model(MaterialEntity):
         single_value : bool
             If True, value is a single value.
 
-        Returns
-        -------
-        None
-
         Examples
         --------
         Log a new value in a list
@@ -138,10 +134,6 @@ class Model(MaterialEntity):
             Dict of metrics to log.
         overwrite : bool
             If True, overwrite existing metrics.
-
-        Returns
-        -------
-        None
 
         Examples
         --------
@@ -204,10 +196,6 @@ class Model(MaterialEntity):
     def _get_metrics(self) -> None:
         """
         Get model metrics from backend.
-
-        Returns
-        -------
-        None
         """
         self.status.metrics = context_processor.read_metrics(
             project=self.project,
@@ -235,10 +223,6 @@ class Model(MaterialEntity):
             If True, overwrite existing metric.
         single_value : bool
             If True, value is a single value.
-
-        Returns
-        -------
-        None
         """
         value = validate_metric_value(value)
         self.status.metrics = set_metrics(

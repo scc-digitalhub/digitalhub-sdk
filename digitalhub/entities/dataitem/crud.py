@@ -8,7 +8,7 @@ import typing
 from typing import Any
 
 from digitalhub.entities._commons.enums import EntityTypes
-from digitalhub.entities._processors.context import context_processor
+from digitalhub.entities._processors.processors import context_processor
 from digitalhub.entities.dataitem.utils import clean_tmp_path, eval_data, eval_source, post_process, process_kwargs
 from digitalhub.utils.types import SourcesOrListOfSources
 

@@ -64,10 +64,6 @@ class CredentialHandler:
         ----------
         creds_set : str
             Name of the credentials profile to set.
-
-        Returns
-        -------
-        None
         """
         self._profile = creds_set
         set_current_profile(creds_set)
@@ -127,10 +123,6 @@ class CredentialHandler:
         ----------
         creds : dict
             Credentials to write.
-
-        Returns
-        -------
-        None
         """
         write_config(creds, self._profile)
 
@@ -148,10 +140,6 @@ class CredentialHandler:
             The origin of the credentials ('env' or 'file').
         creds : dict
             Credentials to set.
-
-        Returns
-        -------
-        None
         """
         self._creds_store.set_credentials(self._profile, origin, creds)
 

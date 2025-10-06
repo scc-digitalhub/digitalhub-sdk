@@ -9,7 +9,7 @@ from abc import abstractmethod
 
 from digitalhub.entities._base.versioned.entity import VersionedEntity
 from digitalhub.entities._commons.enums import EntityTypes
-from digitalhub.entities._processors.context import context_processor
+from digitalhub.entities._processors.processors import context_processor
 from digitalhub.entities.run.crud import list_runs
 from digitalhub.entities.task.crud import delete_task, list_tasks
 from digitalhub.entities.trigger.crud import list_triggers
@@ -94,10 +94,6 @@ class ExecutableEntity(VersionedEntity):
         ----------
         tasks : list[dict]
             List of tasks to import.
-
-        Returns
-        -------
-        None
         """
         # Loop over tasks list, in the case where the function
         # is imported from local file.
@@ -295,10 +291,6 @@ class ExecutableEntity(VersionedEntity):
         kind : str
             Kind the object.
 
-        Returns
-        -------
-        None
-
         Raises
         ------
         EntityError
@@ -315,10 +307,6 @@ class ExecutableEntity(VersionedEntity):
         ----------
         kind : str
             Kind the object.
-
-        Returns
-        -------
-        None
 
         Raises
         ------

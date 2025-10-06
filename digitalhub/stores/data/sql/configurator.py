@@ -56,10 +56,6 @@ class SqlStoreConfigurator(Configurator):
         Retrieves SQL database connection credentials from the system
         environment variables and stores them in the configurator's
         credential handler for use in database connections.
-
-        Returns
-        -------
-        None
         """
         env_creds = self._creds_handler.load_from_env(self.keys)
         self._creds_handler.set_credentials(self._env, env_creds)
@@ -71,10 +67,6 @@ class SqlStoreConfigurator(Configurator):
         Retrieves SQL database connection credentials from a
         configuration file and stores them in the configurator's
         credential handler for use in database connections.
-
-        Returns
-        -------
-        None
         """
         file_creds = self._creds_handler.load_from_file(self.keys)
         self._creds_handler.set_credentials(self._file, file_creds)

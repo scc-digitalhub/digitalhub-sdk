@@ -47,10 +47,6 @@ class BuilderRegistry:
         builder : type[EntityBuilder] | type[RuntimeEntityBuilder]
             The builder class to register. It will be instantiated immediately.
 
-        Returns
-        -------
-        None
-
         Raises
         ------
         BuilderError
@@ -70,10 +66,6 @@ class BuilderRegistry:
             The unique identifier for the builder.
         builder : type[RuntimeBuilder]
             The builder class to register. It will be instantiated immediately.
-
-        Returns
-        -------
-        None
 
         Raises
         ------
@@ -141,10 +133,6 @@ class BuilderRegistry:
     def _ensure_entities_registered(self) -> None:
         """
         Ensure core entities are registered on-demand.
-
-        Returns
-        -------
-        None
         """
         if self._entities_registered:
             return
@@ -160,10 +148,6 @@ class BuilderRegistry:
 
         Imports the core entities module and registers all entity
         builders with the registry.
-
-        Returns
-        -------
-        None
         """
         try:
             module = import_module(FactoryEnum.REG_ENTITIES.value)
@@ -178,10 +162,6 @@ class BuilderRegistry:
     def _ensure_runtimes_registered(self) -> None:
         """
         Ensure runtime entities are registered on-demand.
-
-        Returns
-        -------
-        None
         """
         if self._runtimes_registered:
             return
@@ -197,10 +177,6 @@ class BuilderRegistry:
 
         Imports each runtime package and registers its entity and runtime
         builders with the registry.
-
-        Returns
-        -------
-        None
         """
         try:
             for package in list_runtimes():

@@ -54,10 +54,6 @@ class Base:
         ----------
         **kwargs : dict
             Keyword arguments to be set as attributes.
-
-        Returns
-        -------
-        None
         """
         for k, v in kwargs.items():
             if k not in self.__dict__:

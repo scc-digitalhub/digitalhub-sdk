@@ -82,10 +82,6 @@ class ContextBuilder:
         ----------
         project : str
             The name of the project whose context should be removed.
-
-        Returns
-        -------
-        None
             This method does not return anything.
 
         Notes

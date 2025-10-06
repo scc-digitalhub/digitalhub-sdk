@@ -12,8 +12,7 @@ from digitalhub.context.api import build_context
 from digitalhub.entities._base.entity.entity import Entity
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._constructors.uuid import build_uuid
-from digitalhub.entities._processors.base import base_processor
-from digitalhub.entities._processors.context import context_processor
+from digitalhub.entities._processors.processors import base_processor, context_processor
 from digitalhub.entities.artifact.crud import (
     delete_artifact,
     get_artifact,
@@ -299,10 +298,6 @@ class Project(Entity):
         ----------
         obj : dict
             Project object in dictionary format.
-
-        Returns
-        -------
-        None
         """
         entity_types = self._get_entity_types()
 
@@ -362,10 +357,6 @@ class Project(Entity):
         ----------
         obj : dict
             Project object in dictionary format.
-
-        Returns
-        -------
-        None
         """
         entity_types = self._get_entity_types()
 

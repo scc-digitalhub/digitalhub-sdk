@@ -8,7 +8,7 @@ import typing
 
 from digitalhub.context.api import get_context
 from digitalhub.entities._base.entity.entity import Entity
-from digitalhub.entities._processors.context import context_processor
+from digitalhub.entities._processors.processors import context_processor
 from digitalhub.utils.generic_utils import get_timestamp
 from digitalhub.utils.io_utils import write_yaml
 

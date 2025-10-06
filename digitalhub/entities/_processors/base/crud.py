@@ -5,33 +5,23 @@
 from __future__ import annotations
 
 import typing
-from warnings import warn
 
-from digitalhub.context.api import delete_context
 from digitalhub.entities._commons.enums import ApiCategories, BackendOperations
 from digitalhub.factory.entity import entity_factory
 from digitalhub.stores.client.api import get_client
-from digitalhub.utils.exceptions import EntityAlreadyExistsError, EntityError, EntityNotExistsError
-from digitalhub.utils.io_utils import read_yaml
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.project._base.entity import Project
     from digitalhub.stores.client._base.client import Client
 
 
-class BaseEntityOperationsProcessor:
+class BaseEntityCRUDProcessor:
     """
-    Processor for base entity operations.
+    Processor for core CRUD operations on base entities.
 
-    This class handles CRUD operations and other entity management tasks
-    for base-level entities (primarily projects). It interacts with the
-    client layer to perform backend operations and manages entity lifecycle
-    including creation, reading, updating, deletion, and sharing.
+    Handles creation, reading, updating, deletion, and listing of
+    base-level entities (primarily projects) within the backend.
     """
-
-    ##############################
-    # CRUD base entity
-    ##############################
 
     def _create_base_entity(
         self,
@@ -173,97 +163,6 @@ class BaseEntityOperationsProcessor:
         obj = self._read_base_entity(client, entity_type, entity_name, **kwargs)
         obj["local"] = client.is_local()
         return entity_factory.build_entity_from_dict(obj)
-
-    def import_project_entity(
-        self,
-        file: str,
-        **kwargs,
-    ) -> Project:
-        """
-        Import a project entity from a YAML file and create it in the backend.
-
-        Reads project configuration from a YAML file, creates a new project
-        entity in the backend, and imports any related entities defined
-        in the file. Raises an error if the project already exists.
-
-        Parameters
-        ----------
-        file : str
-            Path to the YAML file containing project configuration.
-        **kwargs : dict
-            Additional parameters including 'local' and 'reset_id' flags.
-
-        Returns
-        -------
-        Project
-            The imported and created project entity.
-
-        Raises
-        ------
-        EntityError
-            If the project already exists in the backend.
-        """
-        client = get_client(kwargs.pop("local", False))
-        obj: dict = read_yaml(file)
-        obj["status"] = {}
-        obj["local"] = client.is_local()
-        ent: Project = entity_factory.build_entity_from_dict(obj)
-        reset_id = kwargs.pop("reset_id", False)
-
-        try:
-            self._create_base_entity(ent._client, ent.ENTITY_TYPE, ent.to_dict())
-        except EntityAlreadyExistsError:
-            msg = f"Entity {ent.name} already exists."
-            if reset_id:
-                ent._import_entities(obj, reset_id=reset_id)
-                warn(f"{msg} Other entities ids have been imported.")
-                ent.refresh()
-                return ent
-            raise EntityError(f"{msg} If you want to update it, use load instead.")
-
-        # Import related entities
-        ent._import_entities(obj, reset_id=reset_id)
-        ent.refresh()
-        return ent
-
-    def load_project_entity(
-        self,
-        file: str,
-        **kwargs,
-    ) -> Project:
-        """
-        Load a project entity from a YAML file and update it in the backend.
-
-        Reads project configuration from a YAML file and updates an existing
-        project in the backend. If the project doesn't exist, it creates a
-        new one. Also loads any related entities defined in the file.
-
-        Parameters
-        ----------
-        file : str
-            Path to the YAML file containing project configuration.
-        **kwargs : dict
-            Additional parameters including 'local' flag.
-
-        Returns
-        -------
-        Project
-            The loaded and updated project entity.
-        """
-        client = get_client(kwargs.pop("local", False))
-        obj: dict = read_yaml(file)
-        obj["local"] = client.is_local()
-        ent: Project = entity_factory.build_entity_from_dict(obj)
-
-        try:
-            self._update_base_entity(ent._client, ent.ENTITY_TYPE, ent.name, ent.to_dict())
-        except EntityNotExistsError:
-            self._create_base_entity(ent._client, ent.ENTITY_TYPE, ent.to_dict())
-
-        # Load related entities
-        ent._load_entities(obj)
-        ent.refresh()
-        return ent
 
     def _list_base_entities(
         self,
@@ -452,6 +351,7 @@ class BaseEntityOperationsProcessor:
 
     def delete_project_entity(
         self,
+        crud_processor,
         entity_type: str,
         entity_name: str,
         **kwargs,
@@ -464,6 +364,8 @@ class BaseEntityOperationsProcessor:
 
         Parameters
         ----------
+        crud_processor : BaseEntityCRUDProcessor
+            The CRUD processor instance for entity operations.
         entity_type : str
             The type of entity to delete (typically 'project').
         entity_name : str
@@ -477,134 +379,14 @@ class BaseEntityOperationsProcessor:
         dict
             Response data from the backend delete operation.
         """
+        from digitalhub.context.api import delete_context
+
         if kwargs.pop("clean_context", True):
             delete_context(entity_name)
         client = get_client(kwargs.pop("local", False))
-        return self._delete_base_entity(
+        return crud_processor._delete_base_entity(
             client,
             entity_type,
             entity_name,
             **kwargs,
         )
-
-    ##############################
-    # Base entity operations
-    ##############################
-
-    def _build_base_entity_key(
-        self,
-        client: Client,
-        entity_id: str,
-    ) -> str:
-        """
-        Build a storage key for a base entity.
-
-        Creates a standardized key string that can be used to identify
-        and store the entity in various contexts.
-
-        Parameters
-        ----------
-        client : Client
-            The client instance to use for key building.
-        entity_id : str
-            The unique identifier of the entity.
-
-        Returns
-        -------
-        str
-            The constructed entity key string.
-        """
-        return client.build_key(ApiCategories.BASE.value, entity_id)
-
-    def build_project_key(
-        self,
-        entity_id: str,
-        **kwargs,
-    ) -> str:
-        """
-        Build a storage key for a project entity.
-
-        Creates a standardized key string for project identification
-        and storage, handling both local and remote client contexts.
-
-        Parameters
-        ----------
-        entity_id : str
-            The unique identifier of the project entity.
-        **kwargs : dict
-            Additional parameters including 'local' flag.
-
-        Returns
-        -------
-        str
-            The constructed project entity key string.
-        """
-        client = get_client(kwargs.pop("local", False))
-        return self._build_base_entity_key(client, entity_id)
-
-    def share_project_entity(
-        self,
-        entity_type: str,
-        entity_name: str,
-        **kwargs,
-    ) -> None:
-        """
-        Share or unshare a project entity with a user.
-
-        Manages project access permissions by sharing the project with
-        a specified user or removing user access. Handles both sharing
-        and unsharing operations based on the 'unshare' parameter.
-
-        Parameters
-        ----------
-        entity_type : str
-            The type of entity to share (typically 'project').
-        entity_name : str
-            The name identifier of the project to share.
-        **kwargs : dict
-            Additional parameters including:
-            - 'user': username to share with/unshare from
-            - 'unshare': boolean flag for unsharing (default False)
-            - 'local': boolean flag for local backend
-
-        Returns
-        -------
-        None
-
-        Raises
-        ------
-        ValueError
-            If trying to unshare from a user who doesn't have access.
-        """
-        client = get_client(kwargs.pop("local", False))
-        api = client.build_api(
-            ApiCategories.BASE.value,
-            BackendOperations.SHARE.value,
-            entity_type=entity_type,
-            entity_name=entity_name,
-        )
-
-        user = kwargs.pop("user", None)
-        if unshare := kwargs.pop("unshare", False):
-            users = client.read_object(api, **kwargs)
-            for u in users:
-                if u["user"] == user:
-                    kwargs["id"] = u["id"]
-                break
-            else:
-                raise ValueError(f"User '{user}' does not have access to project.")
-
-        kwargs = client.build_parameters(
-            ApiCategories.BASE.value,
-            BackendOperations.SHARE.value,
-            unshare=unshare,
-            user=user,
-            **kwargs,
-        )
-        if unshare:
-            client.delete_object(api, **kwargs)
-            return
-        client.create_object(api, obj={}, **kwargs)
-
-
-base_processor = BaseEntityOperationsProcessor()

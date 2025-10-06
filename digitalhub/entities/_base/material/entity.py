@@ -8,7 +8,7 @@ import typing
 from pathlib import Path
 
 from digitalhub.entities._base.versioned.entity import VersionedEntity
-from digitalhub.entities._processors.context import context_processor
+from digitalhub.entities._processors.processors import context_processor
 from digitalhub.stores.data.api import get_store
 from digitalhub.utils.types import SourcesOrListOfSources
 
@@ -142,10 +142,6 @@ class MaterialEntity(VersionedEntity):
         source : str | list[str]
             Local filepath, directory or list of filepaths.
 
-        Returns
-        -------
-        None
-
         Examples
         --------
         Upload a single file:
@@ -181,10 +177,6 @@ class MaterialEntity(VersionedEntity):
         ----------
         files : list[dict]
             Files to add.
-
-        Returns
-        -------
-        None
         """
         available = 100 - len(self.status.files)
         if len(files) > available:
@@ -218,10 +210,6 @@ class MaterialEntity(VersionedEntity):
         ----------
         files_info : list[dict] | None
             Files info.
-
-        Returns
-        -------
-        None
         """
         if files_info is None:
             return
@@ -233,10 +221,6 @@ class MaterialEntity(VersionedEntity):
     def _get_files_info(self) -> None:
         """
         Get files info from backend.
-
-        Returns
-        -------
-        None
         """
         if not self._context().local and not self.status.files:
             files = context_processor.read_files_info(

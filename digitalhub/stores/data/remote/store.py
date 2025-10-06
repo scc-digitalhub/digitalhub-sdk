@@ -174,10 +174,6 @@ class RemoteStore(Store):
         src : str
             The source location.
 
-        Returns
-        -------
-        None
-
         Raises
         ------
         HTTPError

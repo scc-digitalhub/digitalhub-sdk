@@ -79,10 +79,6 @@ class ClientDHCore(Client):
         config : dict, optional
             DHCore environment configuration. If None, loads from environment
             variables and configuration files.
-
-        Returns
-        -------
-        None
         """
         super().__init__()
 
@@ -493,10 +489,6 @@ class ClientDHCore(Client):
         ----------
         response : Response
             HTTP response containing X-Api-Level header.
-
-        Returns
-        -------
-        None
 
         Raises
         ------
