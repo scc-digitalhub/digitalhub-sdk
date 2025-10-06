@@ -143,7 +143,8 @@ class Configurator:
             raise ConfigError("Origin has already been changed.")
         if self._origin == self._env:
             self.change_to_file()
-        self.change_to_env()
+        else:
+            self.change_to_env()
 
     def change_to_file(self) -> None:
         """

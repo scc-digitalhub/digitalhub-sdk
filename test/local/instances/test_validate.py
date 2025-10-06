@@ -7,7 +7,7 @@ from glob import glob
 from pathlib import Path
 
 import pytest
-from digitalhub.factory.factory import factory
+from digitalhub.factory.entity import entity_factory
 from jsonschema import validate
 
 entities_path = "test/local/instances/entities"
@@ -39,7 +39,7 @@ def build_obj(entity_file_path):
     kind = entity["kind"]
     spec = entity["spec"]
 
-    built = factory.build_spec(kind, **spec)
+    built = entity_factory.build_spec(kind, **spec)
     return built.to_dict(), kind
 
 

@@ -11,7 +11,8 @@ from digitalhub.entities._base.unversioned.entity import UnversionedEntity
 from digitalhub.entities._commons.enums import EntityTypes, State
 from digitalhub.entities._commons.metrics import MetricType, set_metrics, validate_metric_value
 from digitalhub.entities._processors.context import context_processor
-from digitalhub.factory.factory import factory
+from digitalhub.factory.entity import entity_factory
+from digitalhub.factory.runtime import runtime_factory
 from digitalhub.utils.exceptions import EntityError
 from digitalhub.utils.logger import LOGGER
 
@@ -59,7 +60,7 @@ class Run(UnversionedEntity):
         executable = self._get_executable()
         task = self._get_task()
         new_spec = self._get_runtime().build(executable, task, self.to_dict())
-        self.spec = factory.build_spec(self.kind, **new_spec)
+        self.spec = entity_factory.build_spec(self.kind, **new_spec)
         self._set_state(State.BUILT.value)
         self.save(update=True)
 
@@ -320,7 +321,7 @@ class Run(UnversionedEntity):
         -------
         None
         """
-        self.status: RunStatus = factory.build_status(self.kind, **status)
+        self.status: RunStatus = entity_factory.build_status(self.kind, **status)
 
     def _set_state(self, state: str) -> None:
         """
@@ -361,7 +362,7 @@ class Run(UnversionedEntity):
         Runtime
             Runtime object.
         """
-        return factory.build_runtime(self.kind, self.project)
+        return runtime_factory.build_runtime(self.kind, self.project)
 
     def _get_executable(self) -> dict:
         """
@@ -373,8 +374,8 @@ class Run(UnversionedEntity):
         dict
             Executable (function or workflow) from backend.
         """
-        exec_kind = factory.get_executable_kind(self.kind)
-        exec_type = factory.get_entity_type_from_kind(exec_kind)
+        exec_kind = entity_factory.get_executable_kind(self.kind)
+        exec_type = entity_factory.get_entity_type_from_kind(exec_kind)
         string_to_split = getattr(self.spec, exec_type)
         exec_name, exec_id = string_to_split.split("://")[-1].split("/")[-1].split(":")
         return context_processor.read_context_entity(

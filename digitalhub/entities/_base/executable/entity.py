@@ -13,7 +13,7 @@ from digitalhub.entities._processors.context import context_processor
 from digitalhub.entities.run.crud import list_runs
 from digitalhub.entities.task.crud import delete_task, list_tasks
 from digitalhub.entities.trigger.crud import list_triggers
-from digitalhub.factory.factory import factory
+from digitalhub.factory.entity import entity_factory
 from digitalhub.utils.exceptions import EntityAlreadyExistsError, EntityError
 
 if typing.TYPE_CHECKING:
@@ -109,7 +109,7 @@ class ExecutableEntity(VersionedEntity):
             # Create a new object from dictionary.
             # the form in which tasks are stored in function
             # status
-            task_obj: Task = factory.build_entity_from_dict(task)
+            task_obj: Task = entity_factory.build_entity_from_dict(task)
 
             # Try to save it in backend to been able to use
             # it for launching runs. In fact, tasks must be
@@ -149,7 +149,7 @@ class ExecutableEntity(VersionedEntity):
         kwargs["kind"] = kind
 
         # Create object instance
-        task: Task = factory.build_entity_from_params(**kwargs)
+        task: Task = entity_factory.build_entity_from_params(**kwargs)
         task.save()
 
         self._tasks[kind] = task
@@ -225,7 +225,7 @@ class ExecutableEntity(VersionedEntity):
         kwargs["uuid"] = self._tasks[kind].id
 
         # Update task
-        task: Task = factory.build_entity_from_params(**kwargs)
+        task: Task = entity_factory.build_entity_from_params(**kwargs)
         task.save(update=True)
         self._tasks[kind] = task
         return task
@@ -425,13 +425,13 @@ class ExecutableEntity(VersionedEntity):
             Run instance.
         """
         # Get task
-        task_kind = factory.get_task_kind_from_action(self.kind, action)
+        task_kind = entity_factory.get_task_kind_from_action(self.kind, action)
         task = self._get_or_create_task(task_kind)
         task_string = task._get_task_string()
 
         # Get run validator for building trigger template
-        run_kind = factory.get_run_kind_from_action(self.kind, action)
-        run_validator: SpecValidator = factory.get_spec_validator(run_kind)
+        run_kind = entity_factory.get_run_kind_from_action(self.kind, action)
+        run_validator: SpecValidator = entity_factory.get_spec_validator(run_kind)
         # Override kwargs
         kwargs["project"] = self.project
         kwargs["kind"] = trigger_kind
@@ -441,7 +441,7 @@ class ExecutableEntity(VersionedEntity):
         kwargs["template"] = run_validator(**kwargs).to_dict()
 
         # Create object instance
-        trigger: Trigger = factory.build_entity_from_params(**kwargs)
+        trigger: Trigger = entity_factory.build_entity_from_params(**kwargs)
         trigger.save()
         return trigger
 

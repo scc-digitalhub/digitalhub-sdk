@@ -72,7 +72,7 @@ from digitalhub.entities.workflow.crud import (
     new_workflow,
     update_workflow,
 )
-from digitalhub.factory.factory import factory
+from digitalhub.factory.entity import entity_factory
 from digitalhub.stores.client.api import get_client
 from digitalhub.utils.exceptions import BackendError, EntityAlreadyExistsError, EntityError
 from digitalhub.utils.generic_utils import get_timestamp
@@ -350,7 +350,7 @@ class Project(Entity):
                         entity["metadata"]["version"] = new_id
 
                     try:
-                        factory.build_entity_from_dict(entity).save()
+                        entity_factory.build_entity_from_dict(entity).save()
                     except EntityAlreadyExistsError:
                         pass
 

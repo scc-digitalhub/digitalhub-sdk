@@ -15,7 +15,7 @@ from digitalhub.entities._processors.utils import (
     get_context_from_project,
     parse_identifier,
 )
-from digitalhub.factory.factory import factory
+from digitalhub.factory.entity import entity_factory
 from digitalhub.utils.exceptions import EntityAlreadyExistsError, EntityError, EntityNotExistsError
 from digitalhub.utils.io_utils import read_yaml
 from digitalhub.utils.types import SourcesOrListOfSources
@@ -108,9 +108,9 @@ class ContextEntityOperationsProcessor:
             obj = _entity
         else:
             context = get_context_from_project(kwargs["project"])
-            obj: ContextEntity = factory.build_entity_from_params(**kwargs)
+            obj: ContextEntity = entity_factory.build_entity_from_params(**kwargs)
         new_obj = self._create_context_entity(context, obj.ENTITY_TYPE, obj.to_dict())
-        return factory.build_entity_from_dict(new_obj)
+        return entity_factory.build_entity_from_dict(new_obj)
 
     def log_material_entity(
         self,
@@ -143,12 +143,12 @@ class ContextEntityOperationsProcessor:
         """
         source: SourcesOrListOfSources = kwargs.pop("source")
         context = get_context_from_project(kwargs["project"])
-        obj = factory.build_entity_from_params(**kwargs)
+        obj = entity_factory.build_entity_from_params(**kwargs)
         if context.is_running:
             obj.add_relationship(Relationship.PRODUCEDBY.value, context.get_run_ctx())
 
         new_obj: MaterialEntity = self._create_context_entity(context, obj.ENTITY_TYPE, obj.to_dict())
-        new_obj = factory.build_entity_from_dict(new_obj)
+        new_obj = entity_factory.build_entity_from_dict(new_obj)
 
         new_obj.status.state = State.UPLOADING.value
         new_obj = self._update_material_entity(new_obj)
@@ -285,7 +285,7 @@ class ContextEntityOperationsProcessor:
             entity_id=entity_id,
             **kwargs,
         )
-        entity = factory.build_entity_from_dict(obj)
+        entity = entity_factory.build_entity_from_dict(obj)
         return self._post_process_get(entity)
 
     def read_unversioned_entity(
@@ -382,14 +382,14 @@ class ContextEntityOperationsProcessor:
             context = dict_obj["project"]
 
         ctx = get_context_from_project(context)
-        obj = factory.build_entity_from_dict(dict_obj)
+        obj = entity_factory.build_entity_from_dict(dict_obj)
         if reset_id:
             new_id = build_uuid()
             obj.id = new_id
             obj.metadata.version = new_id
         try:
             bck_obj = self._create_context_entity(ctx, obj.ENTITY_TYPE, obj.to_dict())
-            new_obj: ContextEntity = factory.build_entity_from_dict(bck_obj)
+            new_obj: ContextEntity = entity_factory.build_entity_from_dict(bck_obj)
         except EntityAlreadyExistsError:
             raise EntityError(f"Entity {obj.name} already exists. If you want to update it, use load instead.")
         return new_obj
@@ -451,7 +451,7 @@ class ContextEntityOperationsProcessor:
             context = exec_dict["project"]
 
         ctx = get_context_from_project(context)
-        obj: ExecutableEntity = factory.build_entity_from_dict(exec_dict)
+        obj: ExecutableEntity = entity_factory.build_entity_from_dict(exec_dict)
 
         if reset_id:
             new_id = build_uuid()
@@ -460,7 +460,7 @@ class ContextEntityOperationsProcessor:
 
         try:
             bck_obj = self._create_context_entity(ctx, obj.ENTITY_TYPE, obj.to_dict())
-            new_obj: ExecutableEntity = factory.build_entity_from_dict(bck_obj)
+            new_obj: ExecutableEntity = entity_factory.build_entity_from_dict(bck_obj)
         except EntityAlreadyExistsError:
             raise EntityError(f"Entity {obj.name} already exists. If you want to update it, use load instead.")
 
@@ -491,7 +491,7 @@ class ContextEntityOperationsProcessor:
         """
         dict_obj: dict = read_yaml(file)
         context = get_context_from_project(dict_obj["project"])
-        obj: ContextEntity = factory.build_entity_from_dict(dict_obj)
+        obj: ContextEntity = entity_factory.build_entity_from_dict(dict_obj)
         try:
             self._update_context_entity(context, obj.ENTITY_TYPE, obj.id, obj.to_dict())
         except EntityNotExistsError:
@@ -529,7 +529,7 @@ class ContextEntityOperationsProcessor:
             tsk_dicts = []
 
         context = get_context_from_project(exec_dict["project"])
-        obj: ExecutableEntity = factory.build_entity_from_dict(exec_dict)
+        obj: ExecutableEntity = entity_factory.build_entity_from_dict(exec_dict)
 
         try:
             self._update_context_entity(context, obj.ENTITY_TYPE, obj.id, obj.to_dict())
@@ -631,7 +631,7 @@ class ContextEntityOperationsProcessor:
         )
         objects = []
         for o in objs:
-            entity: ContextEntity = factory.build_entity_from_dict(o)
+            entity: ContextEntity = entity_factory.build_entity_from_dict(o)
             entity = self._post_process_get(entity)
             objects.append(entity)
         return objects
@@ -704,7 +704,7 @@ class ContextEntityOperationsProcessor:
         objs = self._list_context_entities(context, entity_type, **kwargs)
         objects = []
         for o in objs:
-            entity: ContextEntity = factory.build_entity_from_dict(o)
+            entity: ContextEntity = entity_factory.build_entity_from_dict(o)
             entity = self._post_process_get(entity)
             objects.append(entity)
         return objects
@@ -819,7 +819,7 @@ class ContextEntityOperationsProcessor:
             entity_dict,
             **kwargs,
         )
-        return factory.build_entity_from_dict(obj)
+        return entity_factory.build_entity_from_dict(obj)
 
     def _delete_context_entity(
         self,
