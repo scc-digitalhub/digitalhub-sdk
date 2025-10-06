@@ -192,19 +192,37 @@ class Run(UnversionedEntity):
         Examples
         --------
         Log a new value in a list
-        >>> entity.log_metric("loss", 0.002)
+        >>> entity.log_metric(
+        ...     "loss", 0.002
+        ... )
 
         Append a new value in a list
-        >>> entity.log_metric("loss", 0.0019)
+        >>> entity.log_metric(
+        ...     "loss", 0.0019
+        ... )
 
         Log a list of values and append them to existing metric:
-        >>> entity.log_metric("loss", [0.0018, 0.0015])
+        >>> entity.log_metric(
+        ...     "loss",
+        ...     [
+        ...         0.0018,
+        ...         0.0015,
+        ...     ],
+        ... )
 
         Log a single value (not represented as list):
-        >>> entity.log_metric("accuracy", 0.9, single_value=True)
+        >>> entity.log_metric(
+        ...     "accuracy",
+        ...     0.9,
+        ...     single_value=True,
+        ... )
 
         Log a list of values and overwrite existing metric:
-        >>> entity.log_metric("accuracy", [0.8, 0.9], overwrite=True)
+        >>> entity.log_metric(
+        ...     "accuracy",
+        ...     [0.8, 0.9],
+        ...     overwrite=True,
+        ... )
         """
         self._set_metrics(key, value, overwrite, single_value)
         context_processor.update_metric(self.project, self.ENTITY_TYPE, self.id, key, self.status.metrics[key])
@@ -232,16 +250,40 @@ class Run(UnversionedEntity):
         Examples
         --------
         Log multiple metrics at once
-        >>> entity.log_metrics({"loss": 0.002, "accuracy": 0.95})
+        >>> entity.log_metrics(
+        ...     {
+        ...         "loss": 0.002,
+        ...         "accuracy": 0.95,
+        ...     }
+        ... )
 
         Log metrics with lists and single values
-        >>> entity.log_metrics({"loss": [0.1, 0.05], "epoch": 10})
+        >>> entity.log_metrics(
+        ...     {
+        ...         "loss": [
+        ...             0.1,
+        ...             0.05,
+        ...         ],
+        ...         "epoch": 10,
+        ...     }
+        ... )
 
         Append to existing metrics (default behavior)
-        >>> entity.log_metrics({"loss": 0.001, "accuracy": 0.96})  # Appends to existing
+        >>> entity.log_metrics(
+        ...     {
+        ...         "loss": 0.001,
+        ...         "accuracy": 0.96,
+        ...     }
+        ... )  # Appends to existing
 
         Overwrite existing metrics
-        >>> entity.log_metrics({"loss": 0.0005, "accuracy": 0.98}, overwrite=True)
+        >>> entity.log_metrics(
+        ...     {
+        ...         "loss": 0.0005,
+        ...         "accuracy": 0.98,
+        ...     },
+        ...     overwrite=True,
+        ... )
 
         See also
         --------

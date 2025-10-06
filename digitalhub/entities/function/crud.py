@@ -100,7 +100,9 @@ def get_function(
     Examples
     --------
     Using entity key:
-    >>> obj = get_function("store://my-function-key")
+    >>> obj = get_function(
+    ...     "store://my-function-key"
+    ... )
 
     Using entity name:
     >>> obj = get_function("my-function-name"
@@ -141,7 +143,9 @@ def get_function_versions(
     Examples
     --------
     Using entity key:
-    >>> obj = get_function_versions("store://my-function-key")
+    >>> obj = get_function_versions(
+    ...     "store://my-function-key"
+    ... )
 
     Using entity name:
     >>> obj = get_function_versions("my-function-name"
@@ -173,7 +177,9 @@ def list_functions(project: str, **kwargs) -> list[Function]:
 
     Examples
     --------
-    >>> objs = list_functions(project="my-project")
+    >>> objs = list_functions(
+    ...     project="my-project"
+    ... )
     """
     return context_processor.list_context_entities(
         project=project,
@@ -209,7 +215,9 @@ def import_function(
 
     Examples
     --------
-    >>> obj = import_function("my-function.yaml")
+    >>> obj = import_function(
+    ...     "my-function.yaml"
+    ... )
     """
     return context_processor.import_executable_entity(file, key, reset_id, context)
 
@@ -230,7 +238,9 @@ def load_function(file: str) -> Function:
 
     Examples
     --------
-    >>> obj = load_function("my-function.yaml")
+    >>> obj = load_function(
+    ...     "my-function.yaml"
+    ... )
     """
     return context_processor.load_executable_entity(file)
 
@@ -251,7 +261,11 @@ def update_function(entity: Function) -> Function:
 
     Examples
     --------
-    >>> obj = update_function(obj)
+    >>> obj = (
+    ...     update_function(
+    ...         obj
+    ...     )
+    ... )
     """
     return context_processor.update_context_entity(
         project=entity.project,
@@ -295,7 +309,9 @@ def delete_function(
     Examples
     --------
     If delete_all_versions is False:
-    >>> obj = delete_function("store://my-function-key")
+    >>> obj = delete_function(
+    ...     "store://my-function-key"
+    ... )
 
     Otherwise:
     >>> obj = delete_function("function-name",

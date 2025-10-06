@@ -62,12 +62,10 @@ class Configurator:
         self.load_file_vars()
 
     @abstractmethod
-    def load_env_vars(self) -> None:
-        ...
+    def load_env_vars(self) -> None: ...
 
     @abstractmethod
-    def load_file_vars(self) -> None:
-        ...
+    def load_file_vars(self) -> None: ...
 
     def check_config(self) -> None:
         """

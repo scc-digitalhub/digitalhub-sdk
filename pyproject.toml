@@ -55,11 +55,13 @@ dev = [
 [project.urls]
 Homepage = "https://github.com/scc-digitalhub/digitalhub-sdk"
 
-[tool.flake8]
-max-line-length = 120
-
 [tool.ruff]
 line-length = 120
+
+[tool.ruff.format]
+quote-style = "double"
+docstring-code-format = true
+docstring-code-line-length = 20
 
 [tool.ruff.lint.extend-per-file-ignores]
 "__init__.py" = ["F401"]

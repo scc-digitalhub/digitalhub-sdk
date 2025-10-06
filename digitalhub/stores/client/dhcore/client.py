@@ -61,8 +61,12 @@ class ClientDHCore(Client):
 
     Examples
     --------
-    >>> from digitalhub.stores.client.api import get_client
-    >>> client = get_client(local=False)
+    >>> from digitalhub.stores.client.api import (
+    ...     get_client,
+    ... )
+    >>> client = get_client(
+    ...     local=False
+    ... )
     >>> # Client is now ready for API operations
     """
 

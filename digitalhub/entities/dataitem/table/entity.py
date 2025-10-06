@@ -139,14 +139,22 @@ class DataitemTable(Dataitem):
         >>> import digitalhub as dh
         >>> import pandas as pd
         >>>
-        >>> p = dh.get_project("my_project")
-        >>> df = pd.read_df("data/my_data.csv")
+        >>> p = dh.get_project(
+        ...     "my_project"
+        ... )
+        >>> df = pd.read_df(
+        ...     "data/my_data.csv"
+        ... )
         >>> di = p.new_dataitem(
         ...     name="my_dataitem",
         ...     kind="table",
         ...     path="s3://my-bucket/my-data.parquet",
         ... )
-        >>> di.write_df(df, extension="parquet", index=True)
+        >>> di.write_df(
+        ...     df,
+        ...     extension="parquet",
+        ...     index=True,
+        ... )
         's3://my-bucket/my-data.parquet'
         """
         return get_store(self.spec.path).write_df(

@@ -105,7 +105,9 @@ def get_secret(
     Examples
     --------
     Using entity key:
-    >>> obj = get_secret("store://my-secret-key")
+    >>> obj = get_secret(
+    ...     "store://my-secret-key"
+    ... )
 
     Using entity name:
     >>> obj = get_secret("my-secret-name"
@@ -155,7 +157,9 @@ def get_secret_versions(
     Examples
     --------
     Using entity key:
-    >>> objs = get_secret_versions("store://my-secret-key")
+    >>> objs = get_secret_versions(
+    ...     "store://my-secret-key"
+    ... )
 
     Using entity name:
     >>> objs = get_secret_versions("my-secret-name",
@@ -187,7 +191,9 @@ def list_secrets(project: str, **kwargs) -> list[Secret]:
 
     Examples
     --------
-    >>> objs = list_secrets(project="my-project")
+    >>> objs = list_secrets(
+    ...     project="my-project"
+    ... )
     """
     return context_processor.list_context_entities(
         project=project,
@@ -223,7 +229,9 @@ def import_secret(
 
     Examples
     --------
-    >>> obj = import_secret("my-secret.yaml")
+    >>> obj = import_secret(
+    ...     "my-secret.yaml"
+    ... )
     """
     return context_processor.import_context_entity(
         file,
@@ -249,7 +257,9 @@ def load_secret(file: str) -> Secret:
 
     Examples
     --------
-    >>> obj = load_secret("my-secret.yaml")
+    >>> obj = load_secret(
+    ...     "my-secret.yaml"
+    ... )
     """
     return context_processor.load_context_entity(file)
 
@@ -270,7 +280,9 @@ def update_secret(entity: Secret) -> Secret:
 
     Examples
     --------
-    >>> obj = update_secret(obj)
+    >>> obj = update_secret(
+    ...     obj
+    ... )
     """
     return context_processor.update_context_entity(
         project=entity.project,
@@ -311,7 +323,9 @@ def delete_secret(
     Examples
     --------
     If delete_all_versions is False:
-    >>> obj = delete_secret("store://my-secret-key")
+    >>> obj = delete_secret(
+    ...     "store://my-secret-key"
+    ... )
 
     Otherwise:
     >>> obj = delete_secret("my-secret-name"

@@ -99,7 +99,9 @@ def get_workflow(
     Examples
     --------
     Using entity key:
-    >>> obj = get_workflow("store://my-workflow-key")
+    >>> obj = get_workflow(
+    ...     "store://my-workflow-key"
+    ... )
 
     Using entity name:
     >>> obj = get_workflow("my-workflow-name"
@@ -140,7 +142,9 @@ def get_workflow_versions(
     Examples
     --------
     Using entity key:
-    >>> obj = get_workflow_versions("store://my-workflow-key")
+    >>> obj = get_workflow_versions(
+    ...     "store://my-workflow-key"
+    ... )
 
     Using entity name:
     >>> obj = get_workflow_versions("my-workflow-name"
@@ -172,7 +176,9 @@ def list_workflows(project: str, **kwargs) -> list[Workflow]:
 
     Examples
     --------
-    >>> objs = list_workflows(project="my-project")
+    >>> objs = list_workflows(
+    ...     project="my-project"
+    ... )
     """
     return context_processor.list_context_entities(
         project=project,
@@ -208,7 +214,9 @@ def import_workflow(
 
     Examples
     --------
-    >>> obj = import_workflow("my-workflow.yaml")
+    >>> obj = import_workflow(
+    ...     "my-workflow.yaml"
+    ... )
     """
     return context_processor.import_executable_entity(file, key, reset_id, context)
 
@@ -229,7 +237,9 @@ def load_workflow(file: str) -> Workflow:
 
     Examples
     --------
-    >>> obj = load_workflow("my-workflow.yaml")
+    >>> obj = load_workflow(
+    ...     "my-workflow.yaml"
+    ... )
     """
     return context_processor.load_executable_entity(file)
 
@@ -250,7 +260,11 @@ def update_workflow(entity: Workflow) -> Workflow:
 
     Examples
     --------
-    >>> obj = update_workflow(obj)
+    >>> obj = (
+    ...     update_workflow(
+    ...         obj
+    ...     )
+    ... )
     """
     return context_processor.update_context_entity(
         project=entity.project,
@@ -294,7 +308,9 @@ def delete_workflow(
     Examples
     --------
     If delete_all_versions is False:
-    >>> obj = delete_workflow("store://my-workflow-key")
+    >>> obj = delete_workflow(
+    ...     "store://my-workflow-key"
+    ... )
 
     Otherwise:
     >>> obj = delete_workflow("workflow-name",
