@@ -119,6 +119,11 @@ class ClientDHCoreConfigurator(Configurator):
         if file_creds[pat] is None:
             file_creds[pat] = self._creds_handler.load_from_env([pat]).get(pat)
 
+        # Because in the response there is no endpoint
+        endpoint = CredsEnvVar.DHCORE_ENDPOINT.value
+        if file_creds[endpoint] is None:
+            file_creds[endpoint] = self._creds_handler.load_from_env([endpoint]).get(endpoint)
+
         file_creds = self._sanitize_file_vars(file_creds)
         self._creds_handler.set_credentials(self._file, file_creds)
 
