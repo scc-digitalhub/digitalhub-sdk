@@ -253,6 +253,7 @@ class EntityFactory:
         """
         return self._call_builder_method(kind, "get_spec_validator")
 
+    @staticmethod
     def _get_kind(**kwargs) -> str:
         """
         Extract the 'kind' from parameters.
