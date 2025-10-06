@@ -157,7 +157,7 @@ class DataframeReaderPandas(DataframeReader):
         """
         if "index" not in kwargs:
             kwargs["index"] = False
-        df.to_parquet(dst, index=False, **kwargs)
+        df.to_parquet(dst, **kwargs)
 
     @staticmethod
     def write_table(df: pd.DataFrame, table: str, engine: Any, schema: str | None = None, **kwargs) -> None:
