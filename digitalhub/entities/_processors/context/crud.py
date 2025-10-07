@@ -7,6 +7,7 @@ from __future__ import annotations
 import typing
 
 from digitalhub.entities._commons.enums import ApiCategories, BackendOperations
+from digitalhub.entities._commons.utils import is_valid_key
 from digitalhub.entities._processors.utils import (
     get_context_from_identifier,
     get_context_from_project,
@@ -243,8 +244,6 @@ class ContextEntityCRUDProcessor:
         UnversionedEntity
             The unversioned entity object populated with backend data.
         """
-        from digitalhub.entities._commons.utils import is_valid_key
-
         if not is_valid_key(identifier):
             entity_id = identifier
         else:

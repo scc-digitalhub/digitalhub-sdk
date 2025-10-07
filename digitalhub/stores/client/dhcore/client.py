@@ -29,6 +29,9 @@ MAX_API_LEVEL = 20
 MIN_API_LEVEL = 14
 LIB_VERSION = 14
 
+# Default timeout for requests (in seconds)
+DEFAULT_TIMEOUT = 60
+
 
 class ClientDHCore(Client):
     """
@@ -383,25 +386,6 @@ class ClientDHCore(Client):
 
     def _build_url(self, api: str) -> str:
         """
-        Build the complete URL for an API call.
-
-        Combines the configured endpoint with the API path to create
-        the full URL for the HTTP request. Automatically removes leading
-        slashes from the API path to ensure proper URL construction.
-
-        Parameters
-        ----------
-        api : str
-            The API endpoint path. Leading slashes are automatically handled.
-
-        Returns
-        -------
-        str
-            The complete URL for the API call.
-        """
-
-    def _build_url(self, api: str) -> str:
-        """
         Build complete URL for API call.
 
         Combines configured endpoint with API path, automatically removing
@@ -454,7 +438,7 @@ class ClientDHCore(Client):
             If authentication fails and token refresh not possible.
         """
         # Call the API
-        response = request(call_type, url, timeout=60, **kwargs)
+        response = request(call_type, url, timeout=DEFAULT_TIMEOUT, **kwargs)
 
         # Evaluate DHCore API version
         self._check_core_version(response)

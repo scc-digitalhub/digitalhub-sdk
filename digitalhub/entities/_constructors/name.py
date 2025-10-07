@@ -4,6 +4,9 @@
 
 from __future__ import annotations
 
+import random
+
+from digitalhub.entities._constructors._resources import ADJECTIVES, ANIMALS
 from pydantic import BaseModel, Field
 
 NAME_REGEX = r"^[a-zA-Z0-9._+-]+$"
@@ -33,3 +36,17 @@ def build_name(name: str) -> str:
     """
     NameValidator(name=name)
     return name
+
+
+def random_name() -> str:
+    """
+    Generate a random name.
+
+    Returns
+    -------
+    str
+        The random name.
+    """
+    adjective = random.choice(ADJECTIVES)
+    animal = random.choice(ANIMALS)
+    return f"{adjective}-{animal}"
