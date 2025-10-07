@@ -312,7 +312,7 @@ class Run(UnversionedEntity):
         bool
             True if run is in runnable state, False otherwise.
         """
-        return (self.status.state == State.BUILT.value) or (self.status.state == State.STOPPED.value)
+        return self.status.state in (State.BUILT.value, State.STOPPED.value)
 
     def _set_status(self, status: dict) -> None:
         """
