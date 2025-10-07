@@ -4,8 +4,11 @@
 
 from __future__ import annotations
 
+import os
 import typing
 from pathlib import Path
+
+from digitalhub.runtimes.enums import RuntimeEnvVar
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.project._base.entity import Project
@@ -47,6 +50,15 @@ class Context:
 
         self.is_running: bool = False
         self._run_ctx: str | None = None
+        self._search_run_ctx()
+
+    def _search_run_ctx(self) -> None:
+        """
+        Search for an existing run id in env.
+        """
+        run_id = os.getenv(RuntimeEnvVar.RUN_ID.value)
+        if run_id is not None:
+            self.set_run(run_id)
 
     def set_run(self, run_ctx: str) -> None:
         """
