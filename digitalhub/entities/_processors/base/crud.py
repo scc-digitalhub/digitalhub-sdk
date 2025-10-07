@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import typing
 
+from digitalhub.context.api import delete_context
 from digitalhub.entities._commons.enums import ApiCategories, BackendOperations
 from digitalhub.factory.entity import entity_factory
 from digitalhub.stores.client.api import get_client
@@ -351,7 +352,6 @@ class BaseEntityCRUDProcessor:
 
     def delete_project_entity(
         self,
-        crud_processor,
         entity_type: str,
         entity_name: str,
         **kwargs,
@@ -379,12 +379,10 @@ class BaseEntityCRUDProcessor:
         dict
             Response data from the backend delete operation.
         """
-        from digitalhub.context.api import delete_context
-
         if kwargs.pop("clean_context", True):
             delete_context(entity_name)
         client = get_client(kwargs.pop("local", False))
-        return crud_processor._delete_base_entity(
+        return self._delete_base_entity(
             client,
             entity_type,
             entity_name,
