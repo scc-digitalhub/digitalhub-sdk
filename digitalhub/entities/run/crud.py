@@ -94,9 +94,7 @@ def get_run(
     Examples
     --------
     Using entity key:
-    >>> obj = get_run(
-    ...     "store://my-run-key"
-    ... )
+    >>> obj = get_run("store://my-run-key")
 
     Using entity ID:
     >>> obj = get_run("my-run-id"
@@ -128,9 +126,7 @@ def list_runs(project: str, **kwargs) -> list[Run]:
 
     Examples
     --------
-    >>> objs = list_runs(
-    ...     project="my-project"
-    ... )
+    >>> objs = list_runs(project="my-project")
     """
     # TODO more examples: search by function, latest for task and function
     return context_processor.list_context_entities(
@@ -167,9 +163,7 @@ def import_run(
 
     Example
     -------
-    >>> obj = import_run(
-    ...     "my-run.yaml"
-    ... )
+    >>> obj = import_run("my-run.yaml")
     """
     return context_processor.import_context_entity(
         file,
@@ -195,9 +189,7 @@ def load_run(file: str) -> Run:
 
     Examples
     --------
-    >>> obj = load_run(
-    ...     "my-run.yaml"
-    ... )
+    >>> obj = load_run("my-run.yaml")
     """
     return context_processor.load_context_entity(file)
 
@@ -218,9 +210,7 @@ def update_run(entity: Run) -> Run:
 
     Examples
     --------
-    >>> obj = update_run(
-    ...     obj
-    ... )
+    >>> obj = update_run(obj)
     """
     return context_processor.update_context_entity(
         project=entity.project,
@@ -254,9 +244,7 @@ def delete_run(
 
     Examples
     --------
-    >>> obj = delete_run(
-    ...     "store://my-run-key"
-    ... )
+    >>> obj = delete_run("store://my-run-key")
     >>> obj = delete_run(
     ...     "my-run-id",
     ...     project="my-project",

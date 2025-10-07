@@ -185,9 +185,7 @@ def get_dataitem(
     Examples
     --------
     Using entity key:
-    >>> obj = get_dataitem(
-    ...     "store://my-dataitem-key"
-    ... )
+    >>> obj = get_dataitem("store://my-dataitem-key")
 
     Using entity name:
     >>> obj = get_dataitem("my-dataitem-name"
@@ -228,9 +226,7 @@ def get_dataitem_versions(
     Examples
     --------
     Using entity key:
-    >>> objs = get_dataitem_versions(
-    ...     "store://my-dataitem-key"
-    ... )
+    >>> objs = get_dataitem_versions("store://my-dataitem-key")
 
     Using entity name:
     >>> objs = get_dataitem_versions("my-dataitem-name",
@@ -262,9 +258,7 @@ def list_dataitems(project: str, **kwargs) -> list[Dataitem]:
 
     Examples
     --------
-    >>> objs = list_dataitems(
-    ...     project="my-project"
-    ... )
+    >>> objs = list_dataitems(project="my-project")
     """
     return context_processor.list_context_entities(
         project=project,
@@ -300,9 +294,7 @@ def import_dataitem(
 
     Examples
     --------
-    >>> obj = import_dataitem(
-    ...     "my-dataitem.yaml"
-    ... )
+    >>> obj = import_dataitem("my-dataitem.yaml")
     """
     return context_processor.import_context_entity(
         file,
@@ -328,9 +320,7 @@ def load_dataitem(file: str) -> Dataitem:
 
     Examples
     --------
-    >>> obj = load_dataitem(
-    ...     "my-dataitem.yaml"
-    ... )
+    >>> obj = load_dataitem("my-dataitem.yaml")
     """
     return context_processor.load_context_entity(file)
 
@@ -351,11 +341,7 @@ def update_dataitem(entity: Dataitem) -> Dataitem:
 
     Examples
     --------
-    >>> obj = (
-    ...     update_dataitem(
-    ...         obj
-    ...     )
-    ... )
+    >>> obj = update_dataitem(obj)
     """
     return context_processor.update_context_entity(
         project=entity.project,
@@ -399,9 +385,7 @@ def delete_dataitem(
     Examples
     --------
     If delete_all_versions is False:
-    >>> obj = delete_dataitem(
-    ...     "store://my-dataitem-key"
-    ... )
+    >>> obj = delete_dataitem("store://my-dataitem-key")
 
     Otherwise:
     >>> obj = delete_dataitem("my-dataitem-name",

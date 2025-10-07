@@ -156,9 +156,7 @@ def get_artifact(
     Examples
     --------
     Using entity key:
-    >>> obj = get_artifact(
-    ...     "store://my-artifact-key"
-    ... )
+    >>> obj = get_artifact("store://my-artifact-key")
 
     Using entity name:
     >>> obj = get_artifact("my-artifact-name"
@@ -199,9 +197,7 @@ def get_artifact_versions(
     Examples
     --------
     Using entity key:
-    >>> obj = get_artifact_versions(
-    ...     "store://my-artifact-key"
-    ... )
+    >>> obj = get_artifact_versions("store://my-artifact-key")
 
     Using entity name:
     >>> obj = get_artifact_versions("my-artifact-name"
@@ -233,9 +229,7 @@ def list_artifacts(project: str, **kwargs) -> list[Artifact]:
 
     Examples
     --------
-    >>> objs = list_artifacts(
-    ...     project="my-project"
-    ... )
+    >>> objs = list_artifacts(project="my-project")
     """
     return context_processor.list_context_entities(
         project=project,
@@ -271,9 +265,7 @@ def import_artifact(
 
     Examples
     --------
-    >>> obj = import_artifact(
-    ...     "my-artifact.yaml"
-    ... )
+    >>> obj = import_artifact("my-artifact.yaml")
     """
     return context_processor.import_context_entity(
         file,
@@ -299,9 +291,7 @@ def load_artifact(file: str) -> Artifact:
 
     Examples
     --------
-    >>> obj = load_artifact(
-    ...     "my-artifact.yaml"
-    ... )
+    >>> obj = load_artifact("my-artifact.yaml")
     """
     return context_processor.load_context_entity(file)
 
@@ -322,11 +312,7 @@ def update_artifact(entity: Artifact) -> Artifact:
 
     Examples
     --------
-    >>> obj = (
-    ...     update_artifact(
-    ...         obj
-    ...     )
-    ... )
+    >>> obj = update_artifact(obj)
     """
     return context_processor.update_context_entity(
         project=entity.project,
@@ -370,9 +356,7 @@ def delete_artifact(
     Examples
     --------
     If delete_all_versions is False:
-    >>> delete_artifact(
-    ...     "store://my-artifact-key"
-    ... )
+    >>> delete_artifact("store://my-artifact-key")
 
     Otherwise:
     >>> delete_artifact("my-artifact-name",

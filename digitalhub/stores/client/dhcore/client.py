@@ -58,16 +58,6 @@ class ClientDHCore(Client):
         Parses backend responses and raises appropriate exceptions.
     _configurator : ClientDHCoreConfigurator
         Manages client configuration and authentication.
-
-    Examples
-    --------
-    >>> from digitalhub.stores.client.api import (
-    ...     get_client,
-    ... )
-    >>> client = get_client(
-    ...     local=False
-    ... )
-    >>> # Client is now ready for API operations
     """
 
     def __init__(self, config: dict | None = None) -> None:

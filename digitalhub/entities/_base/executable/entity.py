@@ -349,14 +349,10 @@ class ExecutableEntity(VersionedEntity):
         Examples
         --------
         Using entity key:
-        >>> obj = executable.get_run(
-        ...     "store://my-secret-key"
-        ... )
+        >>> obj = executable.get_run("store://my-secret-key")
 
         Using entity ID:
-        >>> obj = executable.get_run(
-        ...     "123"
-        ... )
+        >>> obj = executable.get_run("123")
         """
         entities = self.list_runs(**kwargs)
         for entity in entities:
@@ -460,14 +456,10 @@ class ExecutableEntity(VersionedEntity):
         Examples
         --------
         Using entity key:
-        >>> obj = executable.get_trigger(
-        ...     "store://my-trigger-key"
-        ... )
+        >>> obj = executable.get_trigger("store://my-trigger-key")
 
         Using entity ID:
-        >>> obj = executable.get_trigger(
-        ...     "123"
-        ... )
+        >>> obj = executable.get_trigger("123")
         """
         entities = self.list_triggers(**kwargs)
         for entity in entities:

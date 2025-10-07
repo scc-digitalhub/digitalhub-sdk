@@ -139,12 +139,8 @@ class DataitemTable(Dataitem):
         >>> import digitalhub as dh
         >>> import pandas as pd
         >>>
-        >>> p = dh.get_project(
-        ...     "my_project"
-        ... )
-        >>> df = pd.read_df(
-        ...     "data/my_data.csv"
-        ... )
+        >>> p = dh.get_project("my_project")
+        >>> df = pd.read_df("data/my_data.csv")
         >>> di = p.new_dataitem(
         ...     name="my_dataitem",
         ...     kind="table",

@@ -155,9 +155,7 @@ def get_model(
     Examples
     --------
     Using entity key:
-    >>> obj = get_model(
-    ...     "store://my-model-key"
-    ... )
+    >>> obj = get_model("store://my-model-key")
 
     Using entity name:
     >>> obj = get_model("my-model-name"
@@ -198,9 +196,7 @@ def get_model_versions(
     Examples
     --------
     Using entity key:
-    >>> objs = get_model_versions(
-    ...     "store://my-model-key"
-    ... )
+    >>> objs = get_model_versions("store://my-model-key")
 
     Using entity name:
     >>> objs = get_model_versions("my-model-name",
@@ -232,9 +228,7 @@ def list_models(project: str, **kwargs) -> list[Model]:
 
     Examples
     --------
-    >>> objs = list_models(
-    ...     project="my-project"
-    ... )
+    >>> objs = list_models(project="my-project")
     """
     return context_processor.list_context_entities(
         project=project,
@@ -270,9 +264,7 @@ def import_model(
 
     Examples
     --------
-    >>> obj = import_model(
-    ...     "my-model.yaml"
-    ... )
+    >>> obj = import_model("my-model.yaml")
     """
     return context_processor.import_context_entity(
         file,
@@ -298,9 +290,7 @@ def load_model(file: str) -> Model:
 
     Examples
     --------
-    >>> obj = load_model(
-    ...     "my-model.yaml"
-    ... )
+    >>> obj = load_model("my-model.yaml")
     """
     return context_processor.load_context_entity(file)
 
@@ -321,9 +311,7 @@ def update_model(entity: Model) -> Model:
 
     Examples
     --------
-    >>> obj = get_model(
-    ...     "store://my-model-key"
-    ... )
+    >>> obj = get_model("store://my-model-key")
     """
     return context_processor.update_context_entity(
         project=entity.project,
@@ -367,9 +355,7 @@ def delete_model(
     Examples
     --------
     If delete_all_versions is False:
-    >>> obj = delete_model(
-    ...     "store://my-model-key"
-    ... )
+    >>> obj = delete_model("store://my-model-key")
 
     Otherwise:
     >>> obj = delete_model("my-model-name",

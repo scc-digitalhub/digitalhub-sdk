@@ -147,15 +147,11 @@ class MaterialEntity(VersionedEntity):
         Upload a single file:
 
         >>> entity.spec.path = "s3://bucket/data.csv"
-        >>> entity.upload(
-        ...     "./data.csv"
-        ... )
+        >>> entity.upload("./data.csv")
 
         Upload a folder:
         >>> entity.spec.path = "s3://bucket/data/"
-        >>> entity.upload(
-        ...     "./data"
-        ... )
+        >>> entity.upload("./data")
         """
         # Get store and upload object
         store = get_store(self.spec.path)

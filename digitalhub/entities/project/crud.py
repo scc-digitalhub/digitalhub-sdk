@@ -58,9 +58,7 @@ def new_project(
 
     Examples
     --------
-    >>> obj = new_project(
-    ...     "my-project"
-    ... )
+    >>> obj = new_project("my-project")
     """
     if context is None:
         context = "./"
@@ -104,9 +102,7 @@ def get_project(
 
     Examples
     --------
-    >>> obj = get_project(
-    ...     "my-project"
-    ... )
+    >>> obj = get_project("my-project")
     """
     obj = base_processor.read_project_entity(
         entity_type=ENTITY_TYPE,
@@ -144,9 +140,7 @@ def import_project(
 
     Examples
     --------
-    >>> obj = import_project(
-    ...     "my-project.yaml"
-    ... )
+    >>> obj = import_project("my-project.yaml")
     """
     obj = base_processor.import_project_entity(
         file=file,
@@ -180,9 +174,7 @@ def load_project(
 
     Examples
     --------
-    >>> obj = load_project(
-    ...     "my-project.yaml"
-    ... )
+    >>> obj = load_project("my-project.yaml")
     """
     obj = base_processor.load_project_entity(file=file, local=local)
     return setup_project(obj, setup_kwargs)
@@ -274,11 +266,7 @@ def update_project(entity: Project, **kwargs) -> Project:
 
     Examples
     --------
-    >>> obj = (
-    ...     update_project(
-    ...         obj
-    ...     )
-    ... )
+    >>> obj = update_project(obj)
     """
     return base_processor.update_project_entity(
         entity_type=entity.ENTITY_TYPE,
@@ -319,9 +307,7 @@ def delete_project(
 
     Examples
     --------
-    >>> delete_project(
-    ...     "my-project"
-    ... )
+    >>> delete_project("my-project")
     """
     return base_processor.delete_project_entity(
         entity_type=ENTITY_TYPE,

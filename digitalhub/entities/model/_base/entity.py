@@ -84,14 +84,10 @@ class Model(MaterialEntity):
         Examples
         --------
         Log a new value in a list
-        >>> entity.log_metric(
-        ...     "loss", 0.002
-        ... )
+        >>> entity.log_metric("loss", 0.002)
 
         Append a new value in a list
-        >>> entity.log_metric(
-        ...     "loss", 0.0019
-        ... )
+        >>> entity.log_metric("loss", 0.0019)
 
         Log a list of values and append them to existing metric:
         >>> entity.log_metric(

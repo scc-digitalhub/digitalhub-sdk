@@ -94,9 +94,7 @@ def get_task(
     Examples
     --------
     Using entity key:
-    >>> obj = get_task(
-    ...     "store://my-task-key"
-    ... )
+    >>> obj = get_task("store://my-task-key")
 
     Using entity ID:
     >>> obj = get_task("my-task-id"
@@ -128,9 +126,7 @@ def list_tasks(project: str, **kwargs) -> list[Task]:
 
     Examples
     --------
-    >>> objs = list_tasks(
-    ...     project="my-project"
-    ... )
+    >>> objs = list_tasks(project="my-project")
     """
     return context_processor.list_context_entities(
         project=project,
@@ -166,9 +162,7 @@ def import_task(
 
     Example
     -------
-    >>> obj = import_task(
-    ...     "my-task.yaml"
-    ... )
+    >>> obj = import_task("my-task.yaml")
     """
     return context_processor.import_context_entity(
         file,
@@ -194,9 +188,7 @@ def load_task(file: str) -> Task:
 
     Examples
     --------
-    >>> obj = load_task(
-    ...     "my-task.yaml"
-    ... )
+    >>> obj = load_task("my-task.yaml")
     """
     return context_processor.load_context_entity(file)
 
@@ -217,9 +209,7 @@ def update_task(entity: Task) -> Task:
 
     Examples
     --------
-    >>> obj = update_task(
-    ...     obj
-    ... )
+    >>> obj = update_task(obj)
     """
     return context_processor.update_context_entity(
         project=entity.project,
@@ -263,9 +253,7 @@ def delete_task(
     Examples
     --------
     If delete_all_versions is False:
-    >>> obj = delete_task(
-    ...     "store://my-task-key"
-    ... )
+    >>> obj = delete_task("store://my-task-key")
 
     Otherwise:
     >>> obj = delete_task("task-name",

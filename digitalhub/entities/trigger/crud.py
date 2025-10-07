@@ -115,9 +115,7 @@ def get_trigger(
     Examples
     --------
     Using entity key:
-    >>> obj = get_trigger(
-    ...     "store://my-trigger-key"
-    ... )
+    >>> obj = get_trigger("store://my-trigger-key")
 
     Using entity name:
     >>> obj = get_trigger("my-trigger-name"
@@ -158,9 +156,7 @@ def get_trigger_versions(
     Examples
     --------
     Using entity key:
-    >>> objs = get_trigger_versions(
-    ...     "store://my-trigger-key"
-    ... )
+    >>> objs = get_trigger_versions("store://my-trigger-key")
 
     Using entity name:
     >>> objs = get_trigger_versions("my-trigger-name",
@@ -192,9 +188,7 @@ def list_triggers(project: str, **kwargs) -> list[Trigger]:
 
     Examples
     --------
-    >>> objs = list_triggers(
-    ...     project="my-project"
-    ... )
+    >>> objs = list_triggers(project="my-project")
     """
     return context_processor.list_context_entities(
         project=project,
@@ -230,9 +224,7 @@ def import_trigger(
 
     Examples
     --------
-    >>> obj = import_trigger(
-    ...     "my-trigger.yaml"
-    ... )
+    >>> obj = import_trigger("my-trigger.yaml")
     """
     return context_processor.import_context_entity(
         file,
@@ -258,9 +250,7 @@ def load_trigger(file: str) -> Trigger:
 
     Examples
     --------
-    >>> obj = load_trigger(
-    ...     "my-trigger.yaml"
-    ... )
+    >>> obj = load_trigger("my-trigger.yaml")
     """
     return context_processor.load_context_entity(file)
 
@@ -281,11 +271,7 @@ def update_trigger(entity: Trigger) -> Trigger:
 
     Examples
     --------
-    >>> obj = (
-    ...     update_trigger(
-    ...         obj
-    ...     )
-    ... )
+    >>> obj = update_trigger(obj)
     """
     return context_processor.update_context_entity(
         project=entity.project,
@@ -326,9 +312,7 @@ def delete_trigger(
     Examples
     --------
     If delete_all_versions is False:
-    >>> obj = delete_trigger(
-    ...     "store://my-trigger-key"
-    ... )
+    >>> obj = delete_trigger("store://my-trigger-key")
 
     Otherwise:
     >>> obj = delete_trigger("my-trigger-name"

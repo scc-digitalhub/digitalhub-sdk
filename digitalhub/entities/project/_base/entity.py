@@ -554,9 +554,7 @@ class Project(Entity):
         Examples
         --------
         Using entity key:
-        >>> obj = project.get_artifact(
-        ...     "store://my-artifact-key"
-        ... )
+        >>> obj = project.get_artifact("store://my-artifact-key")
 
         Using entity name:
         >>> obj = project.get_artifact("my-artifact-name"
@@ -594,14 +592,10 @@ class Project(Entity):
         Examples
         --------
         Using entity key:
-        >>> obj = project.get_artifact_versions(
-        ...     "store://my-artifact-key"
-        ... )
+        >>> obj = project.get_artifact_versions("store://my-artifact-key")
 
         Using entity name:
-        >>> obj = project.get_artifact_versions(
-        ...     "my-artifact-name"
-        ... )
+        >>> obj = project.get_artifact_versions("my-artifact-name")
         """
         return get_artifact_versions(identifier, project=self.name, **kwargs)
 
@@ -650,9 +644,7 @@ class Project(Entity):
 
         Examples
         --------
-        >>> obj = project.import_artifact(
-        ...     "my-artifact.yaml"
-        ... )
+        >>> obj = project.import_artifact("my-artifact.yaml")
         """
         return import_artifact(file, key, reset_id, self.name)
 
@@ -672,9 +664,7 @@ class Project(Entity):
 
         Examples
         --------
-        >>> obj = project.update_artifact(
-        ...     obj
-        ... )
+        >>> obj = project.update_artifact(obj)
         """
         if entity.project != self.name:
             raise ValueError(f"Entity {entity.name} is not in project {self.name}.")
@@ -709,9 +699,7 @@ class Project(Entity):
         Examples
         --------
         If delete_all_versions is False:
-        >>> project.delete_artifact(
-        ...     "store://my-artifact-key"
-        ... )
+        >>> project.delete_artifact("store://my-artifact-key")
 
         Otherwise:
         >>> project.delete_artifact("my-artifact-name",
@@ -872,9 +860,7 @@ class Project(Entity):
         Examples
         --------
         Using entity key:
-        >>> obj = project.get_dataitem(
-        ...     "store://my-dataitem-key"
-        ... )
+        >>> obj = project.get_dataitem("store://my-dataitem-key")
 
         Using entity name:
         >>> obj = project.get_dataitem("my-dataitem-name"
@@ -912,14 +898,10 @@ class Project(Entity):
         Examples
         --------
         Using entity key:
-        >>> obj = project.get_dataitem_versions(
-        ...     "store://my-dataitem-key"
-        ... )
+        >>> obj = project.get_dataitem_versions("store://my-dataitem-key")
 
         Using entity name:
-        >>> obj = project.get_dataitem_versions(
-        ...     "my-dataitem-name"
-        ... )
+        >>> obj = project.get_dataitem_versions("my-dataitem-name")
         """
         return get_dataitem_versions(identifier, project=self.name, **kwargs)
 
@@ -968,9 +950,7 @@ class Project(Entity):
 
         Examples
         --------
-        >>> obj = project.import_dataitem(
-        ...     "my-dataitem.yaml"
-        ... )
+        >>> obj = project.import_dataitem("my-dataitem.yaml")
         """
         return import_dataitem(file, key, reset_id, self.name)
 
@@ -990,9 +970,7 @@ class Project(Entity):
 
         Examples
         --------
-        >>> obj = project.update_dataitem(
-        ...     obj
-        ... )
+        >>> obj = project.update_dataitem(obj)
         """
         if entity.project != self.name:
             raise ValueError(f"Entity {entity.name} is not in project {self.name}.")
@@ -1027,9 +1005,7 @@ class Project(Entity):
         Examples
         --------
         If delete_all_versions is False:
-        >>> project.delete_dataitem(
-        ...     "store://my-dataitem-key"
-        ... )
+        >>> project.delete_dataitem("store://my-dataitem-key")
 
         Otherwise:
         >>> project.delete_dataitem("my-dataitem-name",
@@ -1179,9 +1155,7 @@ class Project(Entity):
         Examples
         --------
         Using entity key:
-        >>> obj = project.get_model(
-        ...     "store://my-model-key"
-        ... )
+        >>> obj = project.get_model("store://my-model-key")
 
         Using entity name:
         >>> obj = project.get_model("my-model-name"
@@ -1219,14 +1193,10 @@ class Project(Entity):
         Examples
         --------
         Using entity key:
-        >>> obj = project.get_model_versions(
-        ...     "store://my-model-key"
-        ... )
+        >>> obj = project.get_model_versions("store://my-model-key")
 
         Using entity name:
-        >>> obj = project.get_model_versions(
-        ...     "my-model-name"
-        ... )
+        >>> obj = project.get_model_versions("my-model-name")
         """
         return get_model_versions(identifier, project=self.name, **kwargs)
 
@@ -1275,9 +1245,7 @@ class Project(Entity):
 
         Examples
         --------
-        >>> obj = project.import_model(
-        ...     "my-model.yaml"
-        ... )
+        >>> obj = project.import_model("my-model.yaml")
         """
         return import_model(file, key, reset_id, self.name)
 
@@ -1297,9 +1265,7 @@ class Project(Entity):
 
         Examples
         --------
-        >>> obj = project.update_model(
-        ...     obj
-        ... )
+        >>> obj = project.update_model(obj)
         """
         if entity.project != self.name:
             raise ValueError(f"Entity {entity.name} is not in project {self.name}.")
@@ -1334,9 +1300,7 @@ class Project(Entity):
         Examples
         --------
         If delete_all_versions is False:
-        >>> project.delete_model(
-        ...     "store://my-model-key"
-        ... )
+        >>> project.delete_model("store://my-model-key")
 
         Otherwise:
         >>> project.delete_model("my-model-name",
@@ -1437,9 +1401,7 @@ class Project(Entity):
         Examples
         --------
         Using entity key:
-        >>> obj = project.get_function(
-        ...     "store://my-function-key"
-        ... )
+        >>> obj = project.get_function("store://my-function-key")
 
         Using entity name:
         >>> obj = project.get_function("my-function-name"
@@ -1477,14 +1439,10 @@ class Project(Entity):
         Examples
         --------
         Using entity key:
-        >>> obj = project.get_function_versions(
-        ...     "store://my-function-key"
-        ... )
+        >>> obj = project.get_function_versions("store://my-function-key")
 
         Using entity name:
-        >>> obj = project.get_function_versions(
-        ...     "my-function-name"
-        ... )
+        >>> obj = project.get_function_versions("my-function-name")
         """
         return get_function_versions(identifier, project=self.name, **kwargs)
 
@@ -1533,9 +1491,7 @@ class Project(Entity):
 
         Examples
         --------
-        >>> obj = project.import_function(
-        ...     "my-function.yaml"
-        ... )
+        >>> obj = project.import_function("my-function.yaml")
         """
         return import_function(file, key, reset_id, self.name)
 
@@ -1555,9 +1511,7 @@ class Project(Entity):
 
         Examples
         --------
-        >>> obj = project.update_function(
-        ...     obj
-        ... )
+        >>> obj = project.update_function(obj)
         """
         if entity.project != self.name:
             raise ValueError(f"Entity {entity.name} is not in project {self.name}.")
@@ -1595,9 +1549,7 @@ class Project(Entity):
         Examples
         --------
         If delete_all_versions is False:
-        >>> project.delete_function(
-        ...     "store://my-function-key"
-        ... )
+        >>> project.delete_function("store://my-function-key")
 
         Otherwise:
         >>> project.delete_function("my-function-name",
@@ -1698,9 +1650,7 @@ class Project(Entity):
         Examples
         --------
         Using entity key:
-        >>> obj = project.get_workflow(
-        ...     "store://my-workflow-key"
-        ... )
+        >>> obj = project.get_workflow("store://my-workflow-key")
 
         Using entity name:
         >>> obj = project.get_workflow("my-workflow-name"
@@ -1738,14 +1688,10 @@ class Project(Entity):
         Examples
         --------
         Using entity key:
-        >>> obj = project.get_workflow_versions(
-        ...     "store://my-workflow-key"
-        ... )
+        >>> obj = project.get_workflow_versions("store://my-workflow-key")
 
         Using entity name:
-        >>> obj = project.get_workflow_versions(
-        ...     "my-workflow-name"
-        ... )
+        >>> obj = project.get_workflow_versions("my-workflow-name")
         """
         return get_workflow_versions(identifier, project=self.name, **kwargs)
 
@@ -1794,9 +1740,7 @@ class Project(Entity):
 
         Examples
         --------
-        >>> obj = project.import_workflow(
-        ...     "my-workflow.yaml"
-        ... )
+        >>> obj = project.import_workflow("my-workflow.yaml")
         """
         return import_workflow(file, key, reset_id, self.name)
 
@@ -1816,9 +1760,7 @@ class Project(Entity):
 
         Examples
         --------
-        >>> obj = project.update_workflow(
-        ...     obj
-        ... )
+        >>> obj = project.update_workflow(obj)
         """
         if entity.project != self.name:
             raise ValueError(f"Entity {entity.name} is not in project {self.name}.")
@@ -1856,9 +1798,7 @@ class Project(Entity):
         Examples
         --------
         If delete_all_versions is False:
-        >>> project.delete_workflow(
-        ...     "store://my-workflow-key"
-        ... )
+        >>> project.delete_workflow("store://my-workflow-key")
 
         Otherwise:
         >>> project.delete_workflow("my-workflow-name",
@@ -1957,9 +1897,7 @@ class Project(Entity):
         Examples
         --------
         Using entity key:
-        >>> obj = project.get_secret(
-        ...     "store://my-secret-key"
-        ... )
+        >>> obj = project.get_secret("store://my-secret-key")
 
         Using entity name:
         >>> obj = project.get_secret("my-secret-name"
@@ -1997,14 +1935,10 @@ class Project(Entity):
         Examples
         --------
         Using entity key:
-        >>> obj = project.get_secret_versions(
-        ...     "store://my-secret-key"
-        ... )
+        >>> obj = project.get_secret_versions("store://my-secret-key")
 
         Using entity name:
-        >>> obj = project.get_secret_versions(
-        ...     "my-secret-name"
-        ... )
+        >>> obj = project.get_secret_versions("my-secret-name")
         """
         return get_secret_versions(identifier, project=self.name, **kwargs)
 
@@ -2053,9 +1987,7 @@ class Project(Entity):
 
         Examples
         --------
-        >>> obj = project.import_secret(
-        ...     "my-secret.yaml"
-        ... )
+        >>> obj = project.import_secret("my-secret.yaml")
         """
         return import_secret(file, key, reset_id, self.name)
 
@@ -2075,9 +2007,7 @@ class Project(Entity):
 
         Examples
         --------
-        >>> obj = project.update_secret(
-        ...     obj
-        ... )
+        >>> obj = project.update_secret(obj)
         """
         if entity.project != self.name:
             raise ValueError(f"Entity {entity.name} is not in project {self.name}.")
@@ -2112,9 +2042,7 @@ class Project(Entity):
         Examples
         --------
         If delete_all_versions is False:
-        >>> project.delete_secret(
-        ...     "store://my-secret-key"
-        ... )
+        >>> project.delete_secret("store://my-secret-key")
 
         Otherwise:
         >>> project.delete_secret("my-secret-name",
@@ -2156,16 +2084,10 @@ class Project(Entity):
         Examples
         --------
         Using entity key:
-        >>> obj = project.get_run(
-        ...     "store://my-secret-key"
-        ... )
+        >>> obj = project.get_run("store://my-secret-key")
 
         Using entity ID:
-        >>> obj = (
-        ...     project.get_run(
-        ...         "123"
-        ...     )
-        ... )
+        >>> obj = project.get_run("123")
         """
         obj = get_run(
             identifier=identifier,
@@ -2217,9 +2139,7 @@ class Project(Entity):
 
         Examples
         --------
-        >>> project.delete_run(
-        ...     "store://my-run-key"
-        ... )
+        >>> project.delete_run("store://my-run-key")
 
         """
         delete_run(
