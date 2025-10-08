@@ -109,8 +109,7 @@ class ClientDHCoreParametersBuilder(ClientParametersBuilder):
 
         # Handle read
         if operation == BackendOperations.READ.value:
-            name = kwargs.pop("name", None)
-            if name is not None:
+            if (name := kwargs.pop("name", None)) is not None:
                 kwargs = self._add_param("name", name, **kwargs)
 
         # Handle read all versions

@@ -246,9 +246,9 @@ class ClientDHCore(Client):
             resp = self._prepare_call("GET", api, **kwargs)
             contents = resp["content"]
             total_pages = resp["totalPages"]
+            objects.extend(contents)
             if not contents or self._params_builder.read_page_number(**kwargs) >= (total_pages - 1):
                 break
-            objects.extend(contents)
             self._params_builder.increment_page_number(**kwargs)
 
         return objects
@@ -314,9 +314,9 @@ class ClientDHCore(Client):
             resp = self._prepare_call("GET", api, **kwargs)
             contents = resp["content"]
             total_pages = resp["totalPages"]
+            objects_with_highlights.extend(contents)
             if not contents or self._params_builder.read_page_number(**kwargs) >= (total_pages - 1):
                 break
-            objects_with_highlights.extend(contents)
             self._params_builder.increment_page_number(**kwargs)
 
         objects = []
