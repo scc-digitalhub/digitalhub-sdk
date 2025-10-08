@@ -111,7 +111,6 @@ def list_tasks(
     state: str | None = None,
     created: str | None = None,
     updated: str | None = None,
-    version: str | None = None,
     function: str | None = None,
     workflow: str | None = None,
 ) -> list[Task]:
@@ -136,8 +135,6 @@ def list_tasks(
         Creation date filter.
     updated : str
         Update date filter.
-    version : str
-        Object version, default is latest.
     function : str
         Function key filter.
     workflow : str
@@ -162,7 +159,6 @@ def list_tasks(
         state=state,
         created=created,
         updated=updated,
-        version=version,
         function=function,
         workflow=workflow,
     )

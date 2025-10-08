@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-
 from digitalhub.stores.client._base.enums import ApiCategories, BackendOperations
 from digitalhub.stores.client._base.params_builder import ClientParametersBuilder
 

@@ -179,19 +179,60 @@ class ExecutableEntity(VersionedEntity):
             self._tasks[kind] = resp[0]
             return self._tasks[kind]
 
-    def list_task(self, **kwargs) -> list[Task]:
+    def list_task(
+        self,
+        q: str | None = None,
+        name: str | None = None,
+        kind: str | None = None,
+        user: str | None = None,
+        state: str | None = None,
+        created: str | None = None,
+        updated: str | None = None,
+    ) -> list[Task]:
         """
-        List tasks.
+        List tasks of the executable entity from backend.
 
         Parameters
         ----------
-        **kwargs : dict
-            Keyword arguments.
+        q : str
+            Query string to filter objects.
+        name : str
+            Object name.
+        kind : str
+            Kind of the object.
+        user : str
+            User that created the object.
+        state : str
+            Object state.
+        created : str
+            Creation date filter.
+        updated : str
+            Update date filter.
 
         Returns
         -------
-        list
-            List of tasks.
+        list[Task]
+            List of object instances.
+        """
+        return self._list_tasks(
+            self.project,
+            q=q,
+            name=name,
+            kind=kind,
+            user=user,
+            state=state,
+            created=created,
+            updated=updated,
+        )
+
+    def _list_tasks(self, **kwargs) -> list[Task]:
+        """
+        List all tasks of the executable entity from backend.
+
+        Returns
+        -------
+        list[Task]
+            List of object instances.
         """
         kwargs["params"] = {self.ENTITY_TYPE: self._get_executable_string()}
         return list_tasks(self.project, **kwargs)
@@ -261,7 +302,7 @@ class ExecutableEntity(VersionedEntity):
             Response from backend.
         """
         params = {self.ENTITY_TYPE: self._get_executable_string(), "kind": kind}
-        return context_processor.list_context_entities(self.project, EntityTypes.TASK.value, params=params)
+        return context_processor.list_context_entities(self.project, EntityTypes.TASK.value, **params)
 
     def _check_task_in_backend(self, kind: str) -> bool:
         """
@@ -326,35 +367,21 @@ class ExecutableEntity(VersionedEntity):
         Create and execute a new run.
         """
 
-    def get_run(
-        self,
-        identifier: str,
-        **kwargs,
-    ) -> Run:
+    def get_run(self, identifier: str) -> Run:
         """
-        Get object from backend.
+        Get specific run object of the executable from backend.
 
         Parameters
         ----------
         identifier : str
             Entity key (store://...) or entity ID.
-        **kwargs : dict
-            Parameters to pass to the API call.
 
         Returns
         -------
         Run
             Object instance.
-
-        Examples
-        --------
-        Using entity key:
-        >>> obj = executable.get_run("store://my-secret-key")
-
-        Using entity ID:
-        >>> obj = executable.get_run("123")
         """
-        entities = self.list_runs(**kwargs)
+        entities = self._list_runs()
         for entity in entities:
             if getattr(entity.spec, self.ENTITY_TYPE) == self._get_executable_string():
                 if entity.id == identifier:
@@ -363,25 +390,69 @@ class ExecutableEntity(VersionedEntity):
                     return entity
         raise EntityError(f"Run '{identifier}' does not exist or does not belong to this executable.")
 
-    def list_runs(self, **kwargs) -> list[Run]:
+    def list_runs(
+        self,
+        q: str | None = None,
+        name: str | None = None,
+        kind: str | None = None,
+        user: str | None = None,
+        state: str | None = None,
+        created: str | None = None,
+        updated: str | None = None,
+        task: str | None = None,
+        action: str | None = None,
+    ) -> list[Run]:
         """
-        List all runs from backend.
+        List runs of the executable entity from backend.
 
         Parameters
         ----------
-        **kwargs : dict
-            Parameters to pass to the API call.
+        q : str
+            Query string to filter objects.
+        name : str
+            Object name.
+        kind : str
+            Kind of the object.
+        user : str
+            User that created the object.
+        state : str
+            Object state.
+        created : str
+            Creation date filter.
+        updated : str
+            Update date filter.
+        task : str
+            Task string filter.
+        action : str
+            Action name filter.
 
         Returns
         -------
         list[Run]
             List of object instances.
-
-        Examples
-        --------
-        >>> objs = executable.list_runs()
         """
-        kwargs["params"] = {self.ENTITY_TYPE: self._get_executable_string()}
+        return self._list_runs(
+            q=q,
+            name=name,
+            kind=kind,
+            user=user,
+            state=state,
+            created=created,
+            updated=updated,
+            task=task,
+            action=action,
+        )
+
+    def _list_runs(self, **kwargs) -> list[Run]:
+        """
+        List all runs of the executable entity from backend.
+
+        Returns
+        -------
+        list[Run]
+            List of object instances.
+        """
+        kwargs[self.ENTITY_TYPE] = self._get_executable_string()
         return list_runs(self.project, **kwargs)
 
     ##############################
@@ -409,8 +480,8 @@ class ExecutableEntity(VersionedEntity):
 
         Returns
         -------
-        Run
-            Run instance.
+        Trigger
+            Object instance.
         """
         # Get task
         task_kind = entity_factory.get_task_kind_from_action(self.kind, action)
@@ -433,11 +504,7 @@ class ExecutableEntity(VersionedEntity):
         trigger.save()
         return trigger
 
-    def get_trigger(
-        self,
-        identifier: str,
-        **kwargs,
-    ) -> Trigger:
+    def get_trigger(self, identifier: str) -> Trigger:
         """
         Get object from backend.
 
@@ -445,23 +512,13 @@ class ExecutableEntity(VersionedEntity):
         ----------
         identifier : str
             Entity key (store://...) or entity ID.
-        **kwargs : dict
-            Parameters to pass to the API call.
 
         Returns
         -------
         Trigger
             Object instance.
-
-        Examples
-        --------
-        Using entity key:
-        >>> obj = executable.get_trigger("store://my-trigger-key")
-
-        Using entity ID:
-        >>> obj = executable.get_trigger("123")
         """
-        entities = self.list_triggers(**kwargs)
+        entities = self._list_triggers()
         for entity in entities:
             if getattr(entity.spec, self.ENTITY_TYPE) == self._get_executable_string():
                 if entity.id == identifier:
@@ -470,9 +527,58 @@ class ExecutableEntity(VersionedEntity):
                     return entity
         raise EntityError(f"Trigger '{identifier}' does not exist or does not belong to this executable.")
 
-    def list_triggers(self, **kwargs) -> list[Trigger]:
+    def list_triggers(
+        self,
+        q: str | None = None,
+        name: str | None = None,
+        kind: str | None = None,
+        user: str | None = None,
+        created: str | None = None,
+        updated: str | None = None,
+        version: str | None = None,
+        task: str | None = None,
+    ) -> list[Trigger]:
         """
-        List all triggers from backend.
+        List triggers of the executable entity from backend.
+
+        Parameters
+        ----------
+        q : str
+            Query string to filter objects.
+        name : str
+            Object name.
+        kind : str
+            Kind of the object.
+        user : str
+            User that created the object.
+        created : str
+            Creation date filter.
+        updated : str
+            Update date filter.
+        version : str
+            Object version, default is latest.
+        task : str
+            Task string filter.
+
+        Returns
+        -------
+        list[Trigger]
+            List of object instances.
+        """
+        return self._list_triggers(
+            q=q,
+            name=name,
+            kind=kind,
+            user=user,
+            created=created,
+            updated=updated,
+            version=version,
+            task=task,
+        )
+
+    def _list_triggers(self, **kwargs) -> list[Trigger]:
+        """
+        List triggers of the executable from backend.
 
         Parameters
         ----------
@@ -483,10 +589,6 @@ class ExecutableEntity(VersionedEntity):
         -------
         list[Trigger]
             List of object instances.
-
-        Examples
-        --------
-        >>> objs = executable.list_triggers()
         """
         kwargs["params"] = {self.ENTITY_TYPE: self._get_executable_string()}
         return list_triggers(self.project, **kwargs)

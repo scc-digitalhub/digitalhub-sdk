@@ -111,7 +111,6 @@ def list_runs(
     state: str | None = None,
     created: str | None = None,
     updated: str | None = None,
-    version: str | None = None,
     function: str | None = None,
     workflow: str | None = None,
     task: str | None = None,
@@ -138,8 +137,6 @@ def list_runs(
         Creation date filter.
     updated : str
         Update date filter.
-    version : str
-        Object version, default is latest.
     function : str
         Function key filter.
     workflow : str
@@ -168,7 +165,6 @@ def list_runs(
         state=state,
         created=created,
         updated=updated,
-        version=version,
         function=function,
         workflow=workflow,
         task=task,
