@@ -234,7 +234,7 @@ class ExecutableEntity(VersionedEntity):
         list[Task]
             List of object instances.
         """
-        kwargs["params"] = {self.ENTITY_TYPE: self._get_executable_string()}
+        kwargs[self.ENTITY_TYPE] = self.key
         return list_tasks(self.project, **kwargs)
 
     def update_task(self, kind: str, **kwargs) -> Task:
@@ -301,7 +301,7 @@ class ExecutableEntity(VersionedEntity):
         list
             Response from backend.
         """
-        params = {self.ENTITY_TYPE: self._get_executable_string(), "kind": kind}
+        params = {self.ENTITY_TYPE: self.key, "kind": kind}
         return context_processor.list_context_entities(self.project, EntityTypes.TASK.value, **params)
 
     def _check_task_in_backend(self, kind: str) -> bool:
@@ -452,7 +452,7 @@ class ExecutableEntity(VersionedEntity):
         list[Run]
             List of object instances.
         """
-        kwargs[self.ENTITY_TYPE] = self._get_executable_string()
+        kwargs[self.ENTITY_TYPE] = self.key
         return list_runs(self.project, **kwargs)
 
     ##############################
@@ -590,5 +590,5 @@ class ExecutableEntity(VersionedEntity):
         list[Trigger]
             List of object instances.
         """
-        kwargs["params"] = {self.ENTITY_TYPE: self._get_executable_string()}
+        kwargs[self.ENTITY_TYPE] = self.key
         return list_triggers(self.project, **kwargs)
