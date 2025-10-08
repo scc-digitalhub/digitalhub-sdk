@@ -2120,7 +2120,7 @@ class Project(Entity):
     def delete_run(
         self,
         identifier: str,
-        **kwargs,
+        entity_id: str,
     ) -> None:
         """
         Delete run from backend.
@@ -2128,9 +2128,9 @@ class Project(Entity):
         Parameters
         ----------
         identifier : str
-            Entity key (store://...) or entity ID.
-        **kwargs : dict
-            Parameters to pass to the API call.
+            Entity key (store://...) or entity name.
+        entity_id : str
+            Entity ID.
 
         Returns
         -------
@@ -2145,7 +2145,7 @@ class Project(Entity):
         delete_run(
             identifier=identifier,
             project=self.name,
-            **kwargs,
+            entity_id=entity_id,
         )
         self.refresh()
 

@@ -7,9 +7,10 @@ from __future__ import annotations
 import typing
 
 from digitalhub.context.api import get_context
-from digitalhub.entities._commons.enums import ApiCategories, BackendOperations, EntityTypes
+from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._commons.utils import get_project_from_key, is_valid_key, parse_entity_key
 from digitalhub.factory.entity import entity_factory
+from digitalhub.stores.client._base.enums import ApiCategories, BackendOperations
 from digitalhub.stores.client.api import get_client
 from digitalhub.utils.exceptions import ContextError, EntityError, EntityNotExistsError
 

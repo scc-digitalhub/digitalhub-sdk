@@ -81,7 +81,6 @@ def get_secret(
     identifier: str,
     project: str | None = None,
     entity_id: str | None = None,
-    **kwargs,
 ) -> Secret:
     """
     Get object from backend.
@@ -94,8 +93,6 @@ def get_secret(
         Project name.
     entity_id : str
         Entity ID.
-    **kwargs : dict
-        Parameters to pass to the API call.
 
     Returns
     -------
@@ -122,18 +119,16 @@ def get_secret(
         else:
             raise EntityNotExistsError(f"Secret {identifier} not found.")
     return context_processor.read_context_entity(
-        identifier,
+        identifier=identifier,
         entity_type=ENTITY_TYPE,
         project=project,
         entity_id=entity_id,
-        **kwargs,
     )
 
 
 def get_secret_versions(
     identifier: str,
     project: str | None = None,
-    **kwargs,
 ) -> list[Secret]:
     """
     Get object versions from backend.
@@ -144,8 +139,6 @@ def get_secret_versions(
         Entity key (store://...) or entity name.
     project : str
         Project name.
-    **kwargs : dict
-        Parameters to pass to the API call.
 
     Returns
     -------
@@ -162,14 +155,13 @@ def get_secret_versions(
     >>>                            project="my-project")
     """
     return context_processor.read_context_entity_versions(
-        identifier,
+        identifier=identifier,
         entity_type=ENTITY_TYPE,
         project=project,
-        **kwargs,
     )
 
 
-def list_secrets(project: str, **kwargs) -> list[Secret]:
+def list_secrets(project: str) -> list[Secret]:
     """
     List all latest version objects from backend.
 
@@ -177,8 +169,6 @@ def list_secrets(project: str, **kwargs) -> list[Secret]:
     ----------
     project : str
         Project name.
-    **kwargs : dict
-        Parameters to pass to the API call.
 
     Returns
     -------
@@ -192,7 +182,6 @@ def list_secrets(project: str, **kwargs) -> list[Secret]:
     return context_processor.list_context_entities(
         project=project,
         entity_type=ENTITY_TYPE,
-        **kwargs,
     )
 
 
@@ -285,7 +274,6 @@ def delete_secret(
     project: str | None = None,
     entity_id: str | None = None,
     delete_all_versions: bool = False,
-    **kwargs,
 ) -> dict:
     """
     Delete object from backend.
@@ -299,9 +287,8 @@ def delete_secret(
     entity_id : str
         Entity ID.
     delete_all_versions : bool
-        Delete all versions of the named entity. If True, use entity name instead of entity key as identifier.
-    **kwargs : dict
-        Parameters to pass to the API call.
+        Delete all versions of the named entity.
+        If True, use entity name instead of entity key as identifier.
 
     Returns
     -------
@@ -324,5 +311,4 @@ def delete_secret(
         project=project,
         entity_id=entity_id,
         delete_all_versions=delete_all_versions,
-        **kwargs,
     )

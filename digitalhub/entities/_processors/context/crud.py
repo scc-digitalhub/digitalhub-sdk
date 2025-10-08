@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.entities._commons.enums import ApiCategories, BackendOperations
 from digitalhub.entities._commons.utils import is_valid_key
 from digitalhub.entities._processors.utils import (
     get_context_from_identifier,
@@ -14,6 +13,7 @@ from digitalhub.entities._processors.utils import (
     parse_identifier,
 )
 from digitalhub.factory.entity import entity_factory
+from digitalhub.stores.client._base.enums import ApiCategories, BackendOperations
 
 if typing.TYPE_CHECKING:
     from digitalhub.context.context import Context
@@ -142,7 +142,7 @@ class ContextEntityCRUDProcessor:
         )
 
         if entity_id is None:
-            kwargs["entity_name"] = entity_name
+            kwargs["name"] = entity_name
         kwargs = context.client.build_parameters(
             ApiCategories.CONTEXT.value,
             BackendOperations.READ.value,
@@ -299,7 +299,7 @@ class ContextEntityCRUDProcessor:
         kwargs = context.client.build_parameters(
             ApiCategories.CONTEXT.value,
             BackendOperations.READ_ALL_VERSIONS.value,
-            entity_name=entity_name,
+            name=entity_name,
             **kwargs,
         )
 
@@ -383,6 +383,11 @@ class ContextEntityCRUDProcessor:
         list[dict]
             List of entity data dictionaries from the backend.
         """
+        kwargs = context.client.build_parameters(
+            ApiCategories.CONTEXT.value,
+            BackendOperations.LIST.value,
+            **kwargs,
+        )
         api = context.client.build_api(
             ApiCategories.CONTEXT.value,
             BackendOperations.LIST.value,
@@ -560,31 +565,27 @@ class ContextEntityCRUDProcessor:
         )
 
         delete_all_versions: bool = kwargs.pop("delete_all_versions", False)
+        if delete_all_versions:
+            op = BackendOperations.DELETE_ALL_VERSIONS.value
+            kwargs["name"] = entity_name
+        else:
+            if entity_id is None:
+                raise ValueError("If `delete_all_versions` is False, `entity_id` must be provided.")
+            op = BackendOperations.DELETE.value
+
         kwargs = context.client.build_parameters(
             ApiCategories.CONTEXT.value,
-            BackendOperations.DELETE.value,
-            entity_id=entity_id,
-            entity_name=entity_name,
-            cascade=kwargs.pop("cascade", None),
-            delete_all_versions=delete_all_versions,
+            op,
             **kwargs,
         )
 
-        if delete_all_versions:
-            api = context.client.build_api(
-                ApiCategories.CONTEXT.value,
-                BackendOperations.LIST.value,
-                project=context.name,
-                entity_type=entity_type,
-            )
-        else:
-            api = context.client.build_api(
-                ApiCategories.CONTEXT.value,
-                BackendOperations.DELETE.value,
-                project=context.name,
-                entity_type=entity_type,
-                entity_id=entity_id,
-            )
+        api = context.client.build_api(
+            ApiCategories.CONTEXT.value,
+            op,
+            project=context.name,
+            entity_type=entity_type,
+            entity_id=entity_id,
+        )
         return context.client.delete_object(api, **kwargs)
 
     def delete_context_entity(

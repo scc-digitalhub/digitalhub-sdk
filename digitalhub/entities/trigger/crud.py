@@ -91,7 +91,6 @@ def get_trigger(
     identifier: str,
     project: str | None = None,
     entity_id: str | None = None,
-    **kwargs,
 ) -> Trigger:
     """
     Get object from backend.
@@ -104,8 +103,6 @@ def get_trigger(
         Project name.
     entity_id : str
         Entity ID.
-    **kwargs : dict
-        Parameters to pass to the API call.
 
     Returns
     -------
@@ -123,18 +120,16 @@ def get_trigger(
     >>>                  entity_id="my-trigger-id")
     """
     return context_processor.read_context_entity(
-        identifier,
+        identifier=identifier,
         entity_type=ENTITY_TYPE,
         project=project,
         entity_id=entity_id,
-        **kwargs,
     )
 
 
 def get_trigger_versions(
     identifier: str,
     project: str | None = None,
-    **kwargs,
 ) -> list[Trigger]:
     """
     Get object versions from backend.
@@ -145,8 +140,6 @@ def get_trigger_versions(
         Entity key (store://...) or entity name.
     project : str
         Project name.
-    **kwargs : dict
-        Parameters to pass to the API call.
 
     Returns
     -------
@@ -163,14 +156,24 @@ def get_trigger_versions(
     >>>                            project="my-project")
     """
     return context_processor.read_context_entity_versions(
-        identifier,
+        identifier=identifier,
         entity_type=ENTITY_TYPE,
         project=project,
-        **kwargs,
     )
 
 
-def list_triggers(project: str, **kwargs) -> list[Trigger]:
+def list_triggers(
+    project: str,
+    q: str | None = None,
+    name: str | None = None,
+    kind: str | None = None,
+    user: str | None = None,
+    state: str | None = None,
+    created: str | None = None,
+    updated: str | None = None,
+    version: str | None = None,
+    task: str | None = None,
+) -> list[Trigger]:
     """
     List all latest version objects from backend.
 
@@ -178,8 +181,24 @@ def list_triggers(project: str, **kwargs) -> list[Trigger]:
     ----------
     project : str
         Project name.
-    **kwargs : dict
-        Parameters to pass to the API call.
+    q : str
+        Query string to filter objects.
+    name : str
+        Object name.
+    kind : str
+        Kind of the object.
+    user : str
+        User that created the object.
+    state : str
+        Object state.
+    created : str
+        Creation date filter.
+    updated : str
+        Update date filter.
+    version : str
+        Object version, default is latest.
+    task : str
+        Task string filter.
 
     Returns
     -------
@@ -193,7 +212,15 @@ def list_triggers(project: str, **kwargs) -> list[Trigger]:
     return context_processor.list_context_entities(
         project=project,
         entity_type=ENTITY_TYPE,
-        **kwargs,
+        q=q,
+        name=name,
+        kind=kind,
+        user=user,
+        state=state,
+        created=created,
+        updated=updated,
+        version=version,
+        task=task,
     )
 
 
@@ -286,7 +313,6 @@ def delete_trigger(
     project: str | None = None,
     entity_id: str | None = None,
     delete_all_versions: bool = False,
-    **kwargs,
 ) -> dict:
     """
     Delete object from backend.
@@ -300,9 +326,8 @@ def delete_trigger(
     entity_id : str
         Entity ID.
     delete_all_versions : bool
-        Delete all versions of the named entity. If True, use entity name instead of entity key as identifier.
-    **kwargs : dict
-        Parameters to pass to the API call.
+        Delete all versions of the named entity.
+        If True, use entity name instead of entity key as identifier.
 
     Returns
     -------
@@ -325,5 +350,4 @@ def delete_trigger(
         project=project,
         entity_id=entity_id,
         delete_all_versions=delete_all_versions,
-        **kwargs,
     )

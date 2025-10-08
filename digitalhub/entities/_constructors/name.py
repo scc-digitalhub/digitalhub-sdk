@@ -6,8 +6,9 @@ from __future__ import annotations
 
 import random
 
-from digitalhub.entities._constructors._resources import ADJECTIVES, ANIMALS
 from pydantic import BaseModel, Field
+
+from digitalhub.entities._constructors._resources import ADJECTIVES, ANIMALS
 
 NAME_REGEX = r"^[a-zA-Z0-9._+-]+$"
 

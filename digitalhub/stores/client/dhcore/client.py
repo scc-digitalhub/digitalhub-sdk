@@ -76,13 +76,13 @@ class ClientDHCore(Client):
         super().__init__()
 
         # API builder
-        self._api_builder = ClientDHCoreApiBuilder()
+        self._api_builder: ClientDHCoreApiBuilder = ClientDHCoreApiBuilder()
 
         # Key builder
-        self._key_builder = ClientDHCoreKeyBuilder()
+        self._key_builder: ClientDHCoreKeyBuilder = ClientDHCoreKeyBuilder()
 
         # Parameters builder
-        self._params_builder = ClientDHCoreParametersBuilder()
+        self._params_builder: ClientDHCoreParametersBuilder = ClientDHCoreParametersBuilder()
 
         # Error parser
         self._error_parser = ErrorParser()
@@ -121,9 +121,7 @@ class ClientDHCore(Client):
         ClientError
             If there are client-side configuration issues.
         """
-        if "headers" not in kwargs:
-            kwargs["headers"] = {}
-        kwargs["headers"]["Content-Type"] = "application/json"
+        kwargs = self._set_application_json_header(**kwargs)
         kwargs["data"] = dump_json(obj)
         return self._prepare_call("POST", api, **kwargs)
 
@@ -181,9 +179,7 @@ class ClientDHCore(Client):
         EntityNotExistsError
             If the object to update does not exist.
         """
-        if "headers" not in kwargs:
-            kwargs["headers"] = {}
-        kwargs["headers"]["Content-Type"] = "application/json"
+        kwargs = self._set_application_json_header(**kwargs)
         kwargs["data"] = dump_json(obj)
         return self._prepare_call("PUT", api, **kwargs)
 
@@ -243,22 +239,17 @@ class ClientDHCore(Client):
         BackendError
             If the backend returns an error response.
         """
-        if "params" not in kwargs:
-            kwargs["params"] = {}
-
-        start_page = 0
-        if "page" not in kwargs["params"]:
-            kwargs["params"]["page"] = start_page
+        kwargs = self._params_builder.set_pagination(partial=True, **kwargs)
 
         objects = []
         while True:
             resp = self._prepare_call("GET", api, **kwargs)
             contents = resp["content"]
             total_pages = resp["totalPages"]
-            if not contents or kwargs["params"]["page"] >= total_pages:
+            if not contents or self._params_builder.read_page_number(**kwargs) >= (total_pages - 1):
                 break
             objects.extend(contents)
-            kwargs["params"]["page"] += 1
+            self._params_builder.increment_page_number(**kwargs)
 
         return objects
 
@@ -317,29 +308,16 @@ class ClientDHCore(Client):
         BackendError
             If the backend returns an error response.
         """
-        if "params" not in kwargs:
-            kwargs["params"] = {}
-
-        start_page = 0
-        if "page" not in kwargs["params"]:
-            kwargs["params"]["page"] = start_page
-
-        if "size" not in kwargs["params"]:
-            kwargs["params"]["size"] = 10
-
-        # Add sorting
-        if "sort" not in kwargs["params"]:
-            kwargs["params"]["sort"] = "metadata.updated,DESC"
-
+        kwargs = self._params_builder.set_pagination(**kwargs)
         objects_with_highlights: list[dict] = []
         while True:
             resp = self._prepare_call("GET", api, **kwargs)
             contents = resp["content"]
             total_pages = resp["totalPages"]
-            if not contents or kwargs["params"]["page"] >= total_pages:
+            if not contents or self._params_builder.read_page_number(**kwargs) >= (total_pages - 1):
                 break
             objects_with_highlights.extend(contents)
-            kwargs["params"]["page"] += 1
+            self._params_builder.increment_page_number(**kwargs)
 
         objects = []
         for obj in objects_with_highlights:
@@ -523,3 +501,53 @@ class ClientDHCore(Client):
             False, indicating this client communicates with remote DHCore backend.
         """
         return False
+
+    ##############################
+    # Utility methods
+    ##############################
+
+    @staticmethod
+    def _ensure_header(**kwargs) -> dict:
+        """
+        Initialize header dictionary.
+
+        Ensures parameter dictionary has 'headers' key for HTTP headers,
+        guaranteeing consistent structure for all parameter building methods.
+
+        Parameters
+        ----------
+        **kwargs : dict
+            Keyword arguments to format. May be empty or contain various
+            parameters for API operations.
+
+        Returns
+        -------
+        dict
+            Headers dictionary with guaranteed 'headers' key containing
+            empty dict if not already present.
+        """
+        if "headers" not in kwargs:
+            kwargs["headers"] = {}
+        return kwargs
+
+    def _set_application_json_header(self, **kwargs) -> dict:
+        """
+        Set Content-Type header to application/json.
+
+        Ensures that the 'Content-Type' header is set to 'application/json'
+        for requests that require JSON payloads.
+
+        Parameters
+        ----------
+        **kwargs : dict
+            Keyword arguments to format. May be empty or contain various
+            parameters for API operations.
+
+        Returns
+        -------
+        dict
+            Headers dictionary with 'Content-Type' set to 'application/json'.
+        """
+        kwargs = self._ensure_header(**kwargs)
+        kwargs["headers"]["Content-Type"] = "application/json"
+        return kwargs

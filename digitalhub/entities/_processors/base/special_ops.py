@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.entities._commons.enums import ApiCategories, BackendOperations
+from digitalhub.stores.client._base.enums import ApiCategories, BackendOperations
 from digitalhub.stores.client.api import get_client
 
 if typing.TYPE_CHECKING:

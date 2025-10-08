@@ -4,8 +4,8 @@
 
 from __future__ import annotations
 
-from digitalhub.entities._commons.enums import ApiCategories, BackendOperations
 from digitalhub.stores.client._base.api_builder import ClientApiBuilder
+from digitalhub.stores.client._base.enums import ApiCategories, BackendOperations
 from digitalhub.stores.client.local.enums import LocalClientVar
 from digitalhub.utils.exceptions import BackendError
 

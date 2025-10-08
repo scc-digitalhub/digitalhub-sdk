@@ -4,8 +4,13 @@
 
 from __future__ import annotations
 
-from digitalhub.entities._commons.enums import ApiCategories, BackendOperations
+
+from digitalhub.stores.client._base.enums import ApiCategories, BackendOperations
 from digitalhub.stores.client._base.params_builder import ClientParametersBuilder
+
+DEFAULT_START_PAGE = 0
+DEFAULT_SIZE = 25
+DEFAULT_SORT = "metadata.updated,DESC"
 
 
 class ClientDHCoreParametersBuilder(ClientParametersBuilder):
@@ -33,11 +38,6 @@ class ClientDHCoreParametersBuilder(ClientParametersBuilder):
         """
         Build HTTP request parameters for DHCore API calls.
 
-        Routes parameter building to appropriate method based on API category
-        (base or context operations) and applies operation-specific transformations.
-        Acts as dispatcher, initializing parameter dictionaries with 'params' key
-        for query parameters.
-
         Parameters
         ----------
         category : str
@@ -61,108 +61,106 @@ class ClientDHCoreParametersBuilder(ClientParametersBuilder):
 
     def build_parameters_base(self, operation: str, **kwargs) -> dict:
         """
-        Build parameters for base-level API operations.
-
-        Constructs HTTP request parameters for project-level operations and
-        entity sharing functionality. Handles CASCADE (boolean to lowercase string),
-        SHARE (user parameter to query params), and UNSHARE (requires unshare=True
-        and entity id).
+        Constructs HTTP request parameters for project operations.
 
         Parameters
         ----------
         operation : str
-            API operation: DELETE (project deletion with optional cascade)
-            or SHARE (entity sharing/unsharing with users).
+            API operation.
         **kwargs : dict
-            Operation-specific parameters:
-            - cascade (bool): For DELETE, whether to cascade delete
-            - user (str): For SHARE, target user for sharing
-            - unshare (bool): For SHARE, whether to unshare instead
-            - id (str): For SHARE unshare, entity ID to unshare
-
+            Operation-specific parameters.
         Returns
         -------
         dict
             Formatted parameters with 'params' containing query parameters.
         """
-        kwargs = self._set_params(**kwargs)
+        kwargs = self._ensure_params(**kwargs)
+
+        # Handle delete
         if operation == BackendOperations.DELETE.value:
             if (cascade := kwargs.pop("cascade", None)) is not None:
-                kwargs["params"]["cascade"] = str(cascade).lower()
+                kwargs = self._add_param("cascade", str(cascade).lower(), **kwargs)
+
+        # Handle share
         elif operation == BackendOperations.SHARE.value:
-            kwargs["params"]["user"] = kwargs.pop("user")
+            kwargs = self._add_param("user", kwargs.pop("user"), **kwargs)
             if kwargs.pop("unshare", False):
-                kwargs["params"]["id"] = kwargs.pop("id")
+                kwargs = self._add_param("id", kwargs.pop("id"), **kwargs)
 
         return kwargs
 
     def build_parameters_context(self, operation: str, **kwargs) -> dict:
         """
-        Build parameters for context-level API operations.
-
         Constructs HTTP request parameters for entity management and search within
-        projects. Handles search filters via 'filter' parameter, pagination with
-        'page' and 'size', result ordering with 'sort' parameter. READ supports
-        embedded entity inclusion, DELETE requires entity 'id' parameter.
+        projects.
 
         Parameters
         ----------
         operation : str
-            API operation: SEARCH (search entities with filtering), READ_MANY
-            (retrieve multiple with pagination), DELETE (delete by ID),
-            READ (read by ID with optional embedded).
+            API operation.
         **kwargs : dict
-            Operation-specific parameters:
-            - params (dict): Search filters and conditions
-            - page (int): Page number for pagination (default: 0)
-            - size (int): Items per page (default: 20)
-            - order_by (str): Field to order results by
-            - order (str): Order direction ('asc' or 'desc')
-            - embedded (bool): For READ, whether to include embedded entities
-            - id (str): For READ/DELETE, entity identifier
+            Operation-specific parameters.
 
         Returns
         -------
         dict
-            Formatted parameters with 'params' for query parameters and
-            other request-specific parameters like 'id' for entity operations.
+            Formatted parameters with 'params'.
         """
-        kwargs = self._set_params(**kwargs)
+        kwargs = self._ensure_params(**kwargs)
 
         # Handle read
         if operation == BackendOperations.READ.value:
-            name = kwargs.pop("entity_name", None)
+            name = kwargs.pop("name", None)
             if name is not None:
-                kwargs["params"]["name"] = name
+                kwargs = self._add_param("name", name, **kwargs)
+
+        # Handle read all versions
         elif operation == BackendOperations.READ_ALL_VERSIONS.value:
-            kwargs["params"]["versions"] = "all"
-            kwargs["params"]["name"] = kwargs.pop("entity_name")
+            kwargs = self._add_param("versions", "all", **kwargs)
+            kwargs = self._add_param("name", kwargs.pop("name"), **kwargs)
+
+        # Handle list
+        elif operation == BackendOperations.LIST.value:
+            possible_list_params = [
+                "q",
+                "name",
+                "kind",
+                "user",
+                "state",
+                "created",
+                "updated",
+                "versions",
+                "function",
+                "workflow",
+                "action",
+                "task",
+            ]
+            list_params = {k: kwargs.get(k, None) for k in possible_list_params}
+            list_params = self._filter_none_params(**list_params)
+            for k, v in list_params.items():
+                kwargs = self._add_param(k, v, **kwargs)
+            for k in possible_list_params:
+                kwargs.pop(k, None)
+
         # Handle delete
         elif operation == BackendOperations.DELETE.value:
-            # Handle cascade
             if (cascade := kwargs.pop("cascade", None)) is not None:
-                kwargs["params"]["cascade"] = str(cascade).lower()
+                kwargs = self._add_param("cascade", str(cascade).lower(), **kwargs)
 
-            # Handle delete all versions
-            entity_id = kwargs.pop("entity_id")
-            entity_name = kwargs.pop("entity_name")
-            if not kwargs.pop("delete_all_versions", False):
-                if entity_id is None:
-                    raise ValueError(
-                        "If `delete_all_versions` is False, `entity_id` must be provided,"
-                        " either as an argument or in key `identifier`.",
-                    )
-            else:
-                kwargs["params"]["name"] = entity_name
+        elif operation == BackendOperations.DELETE_ALL_VERSIONS.value:
+            if (cascade := kwargs.pop("cascade", None)) is not None:
+                kwargs = self._add_param("cascade", str(cascade).lower(), **kwargs)
+            kwargs = self._add_param("name", kwargs.pop("name"), **kwargs)
+
         # Handle search
         elif operation == BackendOperations.SEARCH.value:
             # Handle fq
             if (fq := kwargs.pop("fq", None)) is not None:
-                kwargs["params"]["fq"] = fq
+                kwargs = self._add_param("fq", fq, **kwargs)
 
             # Add search query
             if (query := kwargs.pop("query", None)) is not None:
-                kwargs["params"]["q"] = query
+                kwargs = self._add_param("q", query, **kwargs)
 
             # Add search filters
             fq = []
@@ -205,17 +203,13 @@ class ClientDHCoreParametersBuilder(ClientParametersBuilder):
                 fq.append(f"metadata.labels:({labels})")
 
             # Add filters
-            kwargs["params"]["fq"] = fq
+            kwargs = self._add_param("fq", fq, **kwargs)
 
         return kwargs
 
-    @staticmethod
-    def _set_params(**kwargs) -> dict:
+    def set_pagination(self, partial: bool = False, **kwargs) -> dict:
         """
-        Initialize parameter dictionary with query parameters structure.
-
-        Ensures parameter dictionary has 'params' key for HTTP query parameters,
-        guaranteeing consistent structure for all parameter building methods.
+        Ensure pagination parameters are set in kwargs.
 
         Parameters
         ----------
@@ -226,11 +220,74 @@ class ClientDHCoreParametersBuilder(ClientParametersBuilder):
         Returns
         -------
         dict
-            Parameters dictionary with guaranteed 'params' key containing
-            empty dict if not already present.
+            Pagination parameters set in 'params' of kwargs.
         """
-        if not kwargs:
-            kwargs = {}
-        if "params" not in kwargs:
-            kwargs["params"] = {}
+        kwargs = self._ensure_params(**kwargs)
+
+        if "page" not in kwargs["params"]:
+            kwargs["params"]["page"] = DEFAULT_START_PAGE
+
+        if partial:
+            return kwargs
+
+        if "size" not in kwargs["params"]:
+            kwargs["params"]["size"] = DEFAULT_SIZE
+
+        if "sort" not in kwargs["params"]:
+            kwargs["params"]["sort"] = DEFAULT_SORT
+
         return kwargs
+
+    @staticmethod
+    def read_page_number(**kwargs) -> int:
+        """
+        Read current page number from kwargs.
+
+        Parameters
+        ----------
+        **kwargs : dict
+            Keyword arguments to format. May be empty or contain various
+            parameters for API operations.
+
+        Returns
+        -------
+        int
+            Current page number.
+        """
+        return kwargs["params"]["page"]
+
+    @staticmethod
+    def increment_page_number(**kwargs) -> dict:
+        """
+        Increment page number in kwargs.
+
+        Parameters
+        ----------
+        **kwargs : dict
+            Keyword arguments to format. May be empty or contain various
+            parameters for API operations.
+
+        Returns
+        -------
+        dict
+            Parameters dictionary with incremented 'page' number in 'params'.
+        """
+        kwargs["params"]["page"] += 1
+        return kwargs
+
+    @staticmethod
+    def _filter_none_params(**kwargs) -> dict:
+        """
+        Filter out None values from kwargs.
+
+        Parameters
+        ----------
+        **kwargs : dict
+            Keyword arguments to filter.
+
+        Returns
+        -------
+        dict
+            Filtered kwargs.
+        """
+        return {k: v for k, v in kwargs.items() if v is not None}

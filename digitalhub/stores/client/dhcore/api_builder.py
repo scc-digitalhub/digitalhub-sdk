@@ -4,8 +4,8 @@
 
 from __future__ import annotations
 
-from digitalhub.entities._commons.enums import ApiCategories, BackendOperations
 from digitalhub.stores.client._base.api_builder import ClientApiBuilder
+from digitalhub.stores.client._base.enums import ApiCategories, BackendOperations
 from digitalhub.utils.exceptions import BackendError
 
 API_BASE = "/api/v1"
@@ -100,6 +100,7 @@ class ClientDHCoreApiBuilder(ClientApiBuilder):
         if operation in (
             BackendOperations.CREATE.value,
             BackendOperations.LIST.value,
+            BackendOperations.DELETE_ALL_VERSIONS.value,
         ):
             return f"{API_CONTEXT}/{project}/{entity_type}"
         elif operation in (

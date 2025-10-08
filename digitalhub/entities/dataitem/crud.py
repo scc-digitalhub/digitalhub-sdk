@@ -161,7 +161,6 @@ def get_dataitem(
     identifier: str,
     project: str | None = None,
     entity_id: str | None = None,
-    **kwargs,
 ) -> Dataitem:
     """
     Get object from backend.
@@ -174,8 +173,6 @@ def get_dataitem(
         Project name.
     entity_id : str
         Entity ID.
-    **kwargs : dict
-        Parameters to pass to the API call.
 
     Returns
     -------
@@ -197,14 +194,12 @@ def get_dataitem(
         entity_type=ENTITY_TYPE,
         project=project,
         entity_id=entity_id,
-        **kwargs,
     )
 
 
 def get_dataitem_versions(
     identifier: str,
     project: str | None = None,
-    **kwargs,
 ) -> list[Dataitem]:
     """
     Get object versions from backend.
@@ -215,8 +210,6 @@ def get_dataitem_versions(
         Entity key (store://...) or entity name.
     project : str
         Project name.
-    **kwargs : dict
-        Parameters to pass to the API call.
 
     Returns
     -------
@@ -236,11 +229,20 @@ def get_dataitem_versions(
         identifier=identifier,
         entity_type=ENTITY_TYPE,
         project=project,
-        **kwargs,
     )
 
 
-def list_dataitems(project: str, **kwargs) -> list[Dataitem]:
+def list_dataitems(
+    project: str,
+    q: str | None = None,
+    name: str | None = None,
+    kind: str | None = None,
+    user: str | None = None,
+    state: str | None = None,
+    created: str | None = None,
+    updated: str | None = None,
+    version: str | None = None,
+) -> list[Dataitem]:
     """
     List all latest version objects from backend.
 
@@ -248,8 +250,22 @@ def list_dataitems(project: str, **kwargs) -> list[Dataitem]:
     ----------
     project : str
         Project name.
-    **kwargs : dict
-        Parameters to pass to the API call.
+    q : str
+        Query string to filter objects.
+    name : str
+        Object name.
+    kind : str
+        Kind of the object.
+    user : str
+        User that created the object.
+    state : str
+        Object state.
+    created : str
+        Creation date filter.
+    updated : str
+        Update date filter.
+    version : str
+        Object version, default is latest.
 
     Returns
     -------
@@ -263,7 +279,14 @@ def list_dataitems(project: str, **kwargs) -> list[Dataitem]:
     return context_processor.list_context_entities(
         project=project,
         entity_type=ENTITY_TYPE,
-        **kwargs,
+        q=q,
+        name=name,
+        kind=kind,
+        user=user,
+        state=state,
+        created=created,
+        updated=updated,
+        version=version,
     )
 
 
@@ -371,7 +394,8 @@ def delete_dataitem(
     entity_id : str
         Entity ID.
     delete_all_versions : bool
-        Delete all versions of the named entity. If True, use entity name instead of entity key as identifier.
+        Delete all versions of the named entity.
+        If True, use entity name instead of entity key as identifier.
     cascade : bool
         Cascade delete.
     **kwargs : dict

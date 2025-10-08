@@ -7,9 +7,7 @@ from __future__ import annotations
 import typing
 
 from digitalhub.entities._commons.enums import EntityTypes
-from digitalhub.entities._commons.utils import is_valid_key
 from digitalhub.entities._processors.processors import context_processor
-from digitalhub.utils.exceptions import EntityError
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.run._base.entity import Run
@@ -72,7 +70,6 @@ def new_run(
 def get_run(
     identifier: str,
     project: str | None = None,
-    **kwargs,
 ) -> Run:
     """
     Get object from backend.
@@ -83,8 +80,6 @@ def get_run(
         Entity key (store://...) or entity ID.
     project : str
         Project name.
-    **kwargs : dict
-        Parameters to pass to the API call.
 
     Returns
     -------
@@ -101,14 +96,27 @@ def get_run(
     >>>               project="my-project")
     """
     return context_processor.read_unversioned_entity(
-        identifier,
+        identifier=identifier,
         entity_type=ENTITY_TYPE,
         project=project,
-        **kwargs,
     )
 
 
-def list_runs(project: str, **kwargs) -> list[Run]:
+def list_runs(
+    project: str,
+    q: str | None = None,
+    name: str | None = None,
+    kind: str | None = None,
+    user: str | None = None,
+    state: str | None = None,
+    created: str | None = None,
+    updated: str | None = None,
+    version: str | None = None,
+    function: str | None = None,
+    workflow: str | None = None,
+    task: str | None = None,
+    action: str | None = None,
+) -> list[Run]:
     """
     List all latest version objects from backend.
 
@@ -116,23 +124,55 @@ def list_runs(project: str, **kwargs) -> list[Run]:
     ----------
     project : str
         Project name.
-    **kwargs : dict
-        Parameters to pass to the API call.
+    q : str
+        Query string to filter objects.
+    name : str
+        Object name.
+    kind : str
+        Kind of the object.
+    user : str
+        User that created the object.
+    state : str
+        Object state.
+    created : str
+        Creation date filter.
+    updated : str
+        Update date filter.
+    version : str
+        Object version, default is latest.
+    function : str
+        Function key filter.
+    workflow : str
+        Workflow key filter.
+    task : str
+        Task string filter.
+    action : str
+        Action name filter.
 
     Returns
     -------
-    list[Run]
+    list[Model]
         List of object instances.
 
     Examples
     --------
     >>> objs = list_runs(project="my-project")
     """
-    # TODO more examples: search by function, latest for task and function
     return context_processor.list_context_entities(
         project=project,
         entity_type=ENTITY_TYPE,
-        **kwargs,
+        q=q,
+        name=name,
+        kind=kind,
+        user=user,
+        state=state,
+        created=created,
+        updated=updated,
+        version=version,
+        function=function,
+        workflow=workflow,
+        task=task,
+        action=action,
     )
 
 
@@ -223,7 +263,7 @@ def update_run(entity: Run) -> Run:
 def delete_run(
     identifier: str,
     project: str | None = None,
-    **kwargs,
+    entity_id: str | None = None,
 ) -> dict:
     """
     Delete object from backend.
@@ -231,11 +271,11 @@ def delete_run(
     Parameters
     ----------
     identifier : str
-        Entity key (store://...) or entity ID.
+        Entity key (store://...) or entity name.
     project : str
         Project name.
-    **kwargs : dict
-        Parameters to pass to the API call.
+    entity_id : str
+        Entity ID.
 
     Returns
     -------
@@ -250,12 +290,9 @@ def delete_run(
     ...     project="my-project",
     ... )
     """
-    if not is_valid_key(identifier) and project is None:
-        raise EntityError("Specify entity key or entity ID combined with project")
     return context_processor.delete_context_entity(
         identifier=identifier,
         entity_type=ENTITY_TYPE,
         project=project,
-        entity_id=identifier,
-        **kwargs,
+        entity_id=entity_id,
     )

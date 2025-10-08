@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 
-from digitalhub.entities._commons.enums import ApiCategories
+from digitalhub.stores.client._base.enums import ApiCategories
 
 
 class ClientKeyBuilder:

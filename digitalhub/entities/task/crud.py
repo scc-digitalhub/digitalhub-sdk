@@ -7,9 +7,7 @@ from __future__ import annotations
 import typing
 
 from digitalhub.entities._commons.enums import EntityTypes
-from digitalhub.entities._commons.utils import is_valid_key
 from digitalhub.entities._processors.processors import context_processor
-from digitalhub.utils.exceptions import EntityError
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.task._base.entity import Task
@@ -72,7 +70,6 @@ def new_task(
 def get_task(
     identifier: str,
     project: str | None = None,
-    **kwargs,
 ) -> Task:
     """
     Get object from backend.
@@ -83,8 +80,6 @@ def get_task(
         Entity key (store://...) or entity ID.
     project : str
         Project name.
-    **kwargs : dict
-        Parameters to pass to the API call.
 
     Returns
     -------
@@ -101,14 +96,25 @@ def get_task(
     >>>               project="my-project")
     """
     return context_processor.read_unversioned_entity(
-        identifier,
+        identifier=identifier,
         entity_type=ENTITY_TYPE,
         project=project,
-        **kwargs,
     )
 
 
-def list_tasks(project: str, **kwargs) -> list[Task]:
+def list_tasks(
+    project: str,
+    q: str | None = None,
+    name: str | None = None,
+    kind: str | None = None,
+    user: str | None = None,
+    state: str | None = None,
+    created: str | None = None,
+    updated: str | None = None,
+    version: str | None = None,
+    function: str | None = None,
+    workflow: str | None = None,
+) -> list[Task]:
     """
     List all latest version objects from backend.
 
@@ -116,8 +122,26 @@ def list_tasks(project: str, **kwargs) -> list[Task]:
     ----------
     project : str
         Project name.
-    **kwargs : dict
-        Parameters to pass to the API call.
+    q : str
+        Query string to filter objects.
+    name : str
+        Object name.
+    kind : str
+        Kind of the object.
+    user : str
+        User that created the object.
+    state : str
+        Object state.
+    created : str
+        Creation date filter.
+    updated : str
+        Update date filter.
+    version : str
+        Object version, default is latest.
+    function : str
+        Function key filter.
+    workflow : str
+        Workflow key filter.
 
     Returns
     -------
@@ -131,7 +155,16 @@ def list_tasks(project: str, **kwargs) -> list[Task]:
     return context_processor.list_context_entities(
         project=project,
         entity_type=ENTITY_TYPE,
-        **kwargs,
+        q=q,
+        name=name,
+        kind=kind,
+        user=user,
+        state=state,
+        created=created,
+        updated=updated,
+        version=version,
+        function=function,
+        workflow=workflow,
     )
 
 
@@ -223,9 +256,7 @@ def delete_task(
     identifier: str,
     project: str | None = None,
     entity_id: str | None = None,
-    delete_all_versions: bool = False,
     cascade: bool = True,
-    **kwargs,
 ) -> dict:
     """
     Delete object from backend.
@@ -238,8 +269,6 @@ def delete_task(
         Project name.
     entity_id : str
         Entity ID.
-    delete_all_versions : bool
-        Delete all versions of the named entity. If True, use entity name instead of entity key as identifier.
     cascade : bool
         Cascade delete.
     **kwargs : dict
@@ -252,22 +281,12 @@ def delete_task(
 
     Examples
     --------
-    If delete_all_versions is False:
     >>> obj = delete_task("store://my-task-key")
-
-    Otherwise:
-    >>> obj = delete_task("task-name",
-    >>>                  project="my-project",
-    >>>                  delete_all_versions=True)
     """
-    if not is_valid_key(identifier):
-        raise EntityError("Task has no name. Use key instead.")
     return context_processor.delete_context_entity(
         identifier=identifier,
         entity_type=ENTITY_TYPE,
         project=project,
         entity_id=entity_id,
-        delete_all_versions=delete_all_versions,
         cascade=cascade,
-        **kwargs,
     )

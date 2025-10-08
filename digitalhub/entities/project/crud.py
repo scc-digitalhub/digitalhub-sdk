@@ -79,7 +79,6 @@ def get_project(
     name: str,
     local: bool = False,
     setup_kwargs: dict | None = None,
-    **kwargs,
 ) -> Project:
     """
     Retrieves project details from backend.
@@ -92,8 +91,6 @@ def get_project(
         Flag to determine if backend is local.
     setup_kwargs : dict
         Setup keyword arguments passed to setup_project() function.
-    **kwargs : dict
-        Parameters to pass to the API call.
 
     Returns
     -------
@@ -108,7 +105,6 @@ def get_project(
         entity_type=ENTITY_TYPE,
         entity_name=name,
         local=local,
-        **kwargs,
     )
     return setup_project(obj, setup_kwargs)
 
@@ -180,7 +176,7 @@ def load_project(
     return setup_project(obj, setup_kwargs)
 
 
-def list_projects(local: bool = False, **kwargs) -> list[Project]:
+def list_projects(local: bool = False) -> list[Project]:
     """
     List projects in backend.
 
@@ -188,15 +184,13 @@ def list_projects(local: bool = False, **kwargs) -> list[Project]:
     ----------
     local : bool
         Flag to determine if backend is local.
-    **kwargs : dict
-        Parameters to pass to the API call.
 
     Returns
     -------
     list
         List of objects.
     """
-    return base_processor.list_project_entities(local=local, **kwargs)
+    return base_processor.list_project_entities(local=local)
 
 
 def get_or_create_project(
@@ -282,7 +276,6 @@ def delete_project(
     cascade: bool = True,
     clean_context: bool = True,
     local: bool = False,
-    **kwargs,
 ) -> dict:
     """
     Delete a project.
@@ -297,8 +290,6 @@ def delete_project(
         Flag to determine if context will be deleted.
     local : bool
         Flag to determine if backend is local.
-    **kwargs : dict
-        Parameters to pass to the API call.
 
     Returns
     -------
@@ -315,7 +306,6 @@ def delete_project(
         local=local,
         cascade=cascade,
         clean_context=clean_context,
-        **kwargs,
     )
 
 
@@ -329,7 +319,6 @@ def search_entity(
     updated: str | None = None,
     description: str | None = None,
     labels: list[str] | None = None,
-    **kwargs,
 ) -> list[ContextEntity]:
     """
     Search objects from backend.
@@ -354,13 +343,11 @@ def search_entity(
         Entity description.
     labels : list[str]
         Entity labels.
-    **kwargs : dict
-        Parameters to pass to the API call.
 
-        Returns
-        -------
-        list[ContextEntity]
-            List of object instances.
+    Returns
+    -------
+    list[ContextEntity]
+        List of object instances.
     """
     return context_processor.search_entity(
         project_name,
@@ -372,5 +359,4 @@ def search_entity(
         updated=updated,
         description=description,
         labels=labels,
-        **kwargs,
     )

@@ -63,37 +63,6 @@ class State(Enum):
     UPLOADING = "UPLOADING"
 
 
-class ApiCategories(Enum):
-    """
-    Entity categories.
-    """
-
-    BASE = "base"
-    CONTEXT = "context"
-
-
-class BackendOperations(Enum):
-    """
-    Backend operations.
-    """
-
-    CREATE = "create"
-    READ = "read"
-    READ_ALL_VERSIONS = "read_all_versions"
-    UPDATE = "update"
-    DELETE = "delete"
-    LIST = "list"
-    LIST_FIRST = "list_first"
-    STOP = "stop"
-    RESUME = "resume"
-    DATA = "data"
-    FILES = "files"
-    LOGS = "logs"
-    SEARCH = "search"
-    SHARE = "share"
-    METRICS = "metrics"
-
-
 class EntityKinds(Enum):
     """
     Entity kinds.

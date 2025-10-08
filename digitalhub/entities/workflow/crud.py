@@ -75,7 +75,6 @@ def get_workflow(
     identifier: str,
     project: str | None = None,
     entity_id: str | None = None,
-    **kwargs,
 ) -> Workflow:
     """
     Get object from backend.
@@ -88,8 +87,6 @@ def get_workflow(
         Project name.
     entity_id : str
         Entity ID.
-    **kwargs : dict
-        Parameters to pass to the API call.
 
     Returns
     -------
@@ -107,18 +104,16 @@ def get_workflow(
     >>>                    entity_id="my-workflow-id")
     """
     return context_processor.read_context_entity(
-        identifier,
+        identifier=identifier,
         entity_type=ENTITY_TYPE,
         project=project,
         entity_id=entity_id,
-        **kwargs,
     )
 
 
 def get_workflow_versions(
     identifier: str,
     project: str | None = None,
-    **kwargs,
 ) -> list[Workflow]:
     """
     Get object versions from backend.
@@ -129,8 +124,6 @@ def get_workflow_versions(
         Entity key (store://...) or entity name.
     project : str
         Project name.
-    **kwargs : dict
-        Parameters to pass to the API call.
 
     Returns
     -------
@@ -147,14 +140,23 @@ def get_workflow_versions(
     >>>                             project="my-project")
     """
     return context_processor.read_context_entity_versions(
-        identifier,
+        identifier=identifier,
         entity_type=ENTITY_TYPE,
         project=project,
-        **kwargs,
     )
 
 
-def list_workflows(project: str, **kwargs) -> list[Workflow]:
+def list_workflows(
+    project: str,
+    q: str | None = None,
+    name: str | None = None,
+    kind: str | None = None,
+    user: str | None = None,
+    state: str | None = None,
+    created: str | None = None,
+    updated: str | None = None,
+    version: str | None = None,
+) -> list[Workflow]:
     """
     List all latest version objects from backend.
 
@@ -162,8 +164,22 @@ def list_workflows(project: str, **kwargs) -> list[Workflow]:
     ----------
     project : str
         Project name.
-    **kwargs : dict
-        Parameters to pass to the API call.
+    q : str
+        Query string to filter objects.
+    name : str
+        Object name.
+    kind : str
+        Kind of the object.
+    user : str
+        User that created the object.
+    state : str
+        Object state.
+    created : str
+        Creation date filter.
+    updated : str
+        Update date filter.
+    version : str
+        Object version, default is latest.
 
     Returns
     -------
@@ -177,7 +193,14 @@ def list_workflows(project: str, **kwargs) -> list[Workflow]:
     return context_processor.list_context_entities(
         project=project,
         entity_type=ENTITY_TYPE,
-        **kwargs,
+        q=q,
+        name=name,
+        kind=kind,
+        user=user,
+        state=state,
+        created=created,
+        updated=updated,
+        version=version,
     )
 
 
@@ -280,7 +303,8 @@ def delete_workflow(
     entity_id : str
         Entity ID.
     delete_all_versions : bool
-        Delete all versions of the named entity. If True, use entity name instead of entity key as identifier.
+        Delete all versions of the named entity.
+        If True, use entity name instead of entity key as identifier.
     cascade : bool
         Cascade delete.
     **kwargs : dict
@@ -308,5 +332,4 @@ def delete_workflow(
         entity_id=entity_id,
         delete_all_versions=delete_all_versions,
         cascade=cascade,
-        **kwargs,
     )
