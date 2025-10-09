@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import typing
 from pathlib import Path
 
 from digitalhub.stores.data.api import get_default_store
@@ -108,3 +109,24 @@ def build_log_path_from_source(
         path += f"/{Path(source).name}"
 
     return path
+
+
+def refresh_decorator(fn: typing.Callable) -> typing.Callable:
+    """
+    Refresh decorator.
+
+    Parameters
+    ----------
+    fn : Callable
+        Function to decorate.
+
+    Returns
+    -------
+    Callable
+        Decorated function.
+    """
+    def wrapper(self, *args, **kwargs):
+        self.refresh()
+        print(self.to_dict())
+        return fn(*args, **kwargs)
+    return wrapper

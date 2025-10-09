@@ -7,6 +7,7 @@ from __future__ import annotations
 import typing
 from typing import Any
 
+from digitalhub.entities._base.material.utils import refresh_decorator
 from digitalhub.entities.dataitem._base.entity import Dataitem
 from digitalhub.stores.data.api import get_store
 from digitalhub.utils.uri_utils import has_sql_scheme
@@ -63,6 +64,7 @@ class DataitemTable(Dataitem):
         self._query = query
         return self
 
+    @refresh_decorator
     def as_df(
         self,
         file_format: str | None = None,
@@ -105,6 +107,7 @@ class DataitemTable(Dataitem):
             **kwargs,
         )
 
+    @refresh_decorator
     def write_df(
         self,
         df: Any,

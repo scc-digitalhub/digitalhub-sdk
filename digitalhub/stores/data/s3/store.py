@@ -29,6 +29,7 @@ if typing.TYPE_CHECKING:
 # Type aliases
 S3Client = Type["botocore.client.S3"]
 
+MULTIPART_THRESHOLD = 100 * 1024 * 1024
 
 class S3Store(Store):
     """
@@ -331,10 +332,11 @@ class S3Store(Store):
         str
             The S3 path where the dataframe was saved.
         """
-        fileobj = BytesIO()
         reader = get_reader_by_object(df)
-        reader.write_df(df, fileobj, extension=extension, **kwargs)
-        return self.upload_fileobject(fileobj, dst)
+        with BytesIO() as fileobj:
+            reader.write_df(df, fileobj, extension=extension, **kwargs)
+            fileobj.seek(0)
+            return self.upload_fileobject(fileobj, dst)
 
     ##############################
     # Wrapper methods
@@ -581,7 +583,7 @@ class S3Store(Store):
             Bucket=bucket,
             Key=key,
             ExtraArgs=extra_args,
-            Config=TransferConfig(multipart_threshold=100 * 1024 * 1024),
+            Config=TransferConfig(multipart_threshold=MULTIPART_THRESHOLD),
         )
 
     @staticmethod
@@ -609,7 +611,7 @@ class S3Store(Store):
             Fileobj=fileobj,
             Bucket=bucket,
             Key=key,
-            Config=TransferConfig(multipart_threshold=100 * 1024 * 1024),
+            Config=TransferConfig(multipart_threshold=MULTIPART_THRESHOLD),
         )
 
     ##############################
