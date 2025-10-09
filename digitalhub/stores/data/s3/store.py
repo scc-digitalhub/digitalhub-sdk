@@ -31,6 +31,7 @@ S3Client = Type["botocore.client.S3"]
 
 MULTIPART_THRESHOLD = 100 * 1024 * 1024
 
+
 class S3Store(Store):
     """
     S3 store class. It implements the Store interface and provides methods to fetch and persist

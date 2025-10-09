@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import typing
 from pathlib import Path
-from digitalhub.entities._base.material.utils import refresh_decorator
 
+from digitalhub.entities._base.material.utils import refresh_decorator
 from digitalhub.entities._base.versioned.entity import VersionedEntity
 from digitalhub.entities._processors.processors import context_processor
 from digitalhub.stores.data.api import get_store

@@ -112,7 +112,7 @@ def get_secret(
     if not is_valid_key(identifier):
         if project is None:
             raise ValueError("Project must be provided.")
-        secrets = list_secrets(project=project, **kwargs)
+        secrets = list_secrets(project=project)
         for secret in secrets:
             if secret.name == identifier:
                 return secret
