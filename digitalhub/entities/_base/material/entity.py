@@ -7,6 +7,7 @@ from __future__ import annotations
 import typing
 from pathlib import Path
 
+from digitalhub.entities._base.material.utils import refresh_decorator
 from digitalhub.entities._base.versioned.entity import VersionedEntity
 from digitalhub.entities._processors.context import context_processor
 from digitalhub.stores.data.api import get_store
@@ -72,6 +73,7 @@ class MaterialEntity(VersionedEntity):
     # I/O Methods
     ##############################
 
+    @refresh_decorator
     def as_file(self) -> list[str]:
         """
         Get object as file(s). It downloads the object from storage in
@@ -86,6 +88,7 @@ class MaterialEntity(VersionedEntity):
         dst = store._build_temp()
         return store.download(self.spec.path, dst=dst)
 
+    @refresh_decorator
     def download(
         self,
         destination: str | None = None,
@@ -130,6 +133,7 @@ class MaterialEntity(VersionedEntity):
 
         return store.download(self.spec.path, dst, overwrite=overwrite)
 
+    @refresh_decorator
     def upload(self, source: SourcesOrListOfSources) -> None:
         """
         Upload object from given local path to spec path destination.

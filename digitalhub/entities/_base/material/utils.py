@@ -4,9 +4,11 @@
 
 from __future__ import annotations
 
+import typing
 from pathlib import Path
 
 from digitalhub.stores.data.api import get_default_store
+from digitalhub.utils.exceptions import BackendError
 from digitalhub.utils.file_utils import eval_zip_type
 from digitalhub.utils.uri_utils import has_local_scheme
 
@@ -108,3 +110,28 @@ def build_log_path_from_source(
         path += f"/{Path(source).name}"
 
     return path
+
+def refresh_decorator(fn: typing.Callable) -> typing.Callable:
+    """
+    Refresh decorator.
+
+    Parameters
+    ----------
+    fn : Callable
+        Function to decorate.
+
+    Returns
+    -------
+    Callable
+        Decorated function.
+    """
+
+    def wrapper(self, *args, **kwargs):
+        # Prevent rising error if entity is not yet created in backend
+        try:
+            self.refresh()
+        except BackendError:
+            pass
+        return fn(self, *args, **kwargs)
+
+    return wrapper
