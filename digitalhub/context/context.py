@@ -8,7 +8,10 @@ import os
 import typing
 from pathlib import Path
 
+from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.runtimes.enums import RuntimeEnvVar
+from digitalhub.stores.client._base.enums import ApiCategories, BackendOperations
+from digitalhub.utils.exceptions import BackendError
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.project._base.entity import Project
@@ -58,7 +61,18 @@ class Context:
         """
         run_id = os.getenv(RuntimeEnvVar.RUN_ID.value)
         if run_id is not None:
-            self.set_run(run_id)
+            try:
+                api = self.client.build_api(
+                    category=ApiCategories.CONTEXT.value,
+                    operation=BackendOperations.READ.value,
+                    project=self.name,
+                    entity_type=EntityTypes.RUN.value,
+                    entity_id=run_id,
+                )
+                run_key = self.client.read_object(api=api)["key"]
+                self.set_run(run_key)
+            except BackendError:
+                pass
 
     def set_run(self, run_ctx: str) -> None:
         """
