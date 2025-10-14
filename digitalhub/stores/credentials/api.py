@@ -15,10 +15,6 @@ def set_current_profile(environment: str) -> None:
     ----------
     environment : str
         Name of the credentials profile to set.
-
-    Returns
-    -------
-    None
     """
     creds_handler.set_current_profile(environment)
 

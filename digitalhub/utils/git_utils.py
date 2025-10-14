@@ -47,10 +47,6 @@ def clone_repository(path: Path, url: str) -> None:
         Path where to save the repository.
     url : str
         URL of the repository.
-
-    Returns
-    -------
-    None
     """
     clean_path(path)
     checkout_object = get_checkout_object(url)
@@ -85,10 +81,6 @@ def clean_path(path: Path) -> None:
     ----------
     path : Path
         Path to clean.
-
-    Returns
-    -------
-    None
     """
 
     shutil.rmtree(path, ignore_errors=True)

@@ -60,9 +60,5 @@ def delete_context(project: str) -> None:
     ----------
     project : str
         Project name.
-
-    Returns
-    -------
-    None
     """
     context_builder.remove(project)

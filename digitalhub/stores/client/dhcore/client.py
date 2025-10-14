@@ -4,33 +4,16 @@
 
 from __future__ import annotations
 
-import typing
 from typing import Any
-from warnings import warn
-
-from requests import request
-from requests.exceptions import JSONDecodeError
 
 from digitalhub.stores.client._base.client import Client
 from digitalhub.stores.client.dhcore.api_builder import ClientDHCoreApiBuilder
-from digitalhub.stores.client.dhcore.configurator import ClientDHCoreConfigurator
-from digitalhub.stores.client.dhcore.error_parser import ErrorParser
+from digitalhub.stores.client.dhcore.header_manager import HeaderManager
+from digitalhub.stores.client.dhcore.http_handler import HttpRequestHandler
 from digitalhub.stores.client.dhcore.key_builder import ClientDHCoreKeyBuilder
 from digitalhub.stores.client.dhcore.params_builder import ClientDHCoreParametersBuilder
-from digitalhub.utils.exceptions import BackendError, ClientError
+from digitalhub.utils.exceptions import BackendError
 from digitalhub.utils.generic_utils import dump_json
-
-if typing.TYPE_CHECKING:
-    from requests import Response
-
-
-# API levels that are supported
-MAX_API_LEVEL = 20
-MIN_API_LEVEL = 14
-LIB_VERSION = 14
-
-# Default timeout for requests (in seconds)
-DEFAULT_TIMEOUT = 60
 
 
 class ClientDHCore(Client):
@@ -41,54 +24,19 @@ class ClientDHCore(Client):
     multiple authentication methods: Basic (username/password), OAuth2 (token
     with refresh), and Personal Access Token exchange. Automatically handles
     API version compatibility, pagination, token refresh, error parsing, and
-    JSON serialization. Supports API versions {MIN_API_LEVEL} to {MAX_API_LEVEL}.
-
-    Parameters
-    ----------
-    config : dict, optional
-        DHCore environment configuration. If None, loads from environment
-        variables and configuration files.
-
-    Attributes
-    ----------
-    _api_builder : ClientDHCoreApiBuilder
-        Builds API endpoint URLs for different operations.
-    _key_builder : ClientDHCoreKeyBuilder
-        Builds storage keys for entities.
-    _params_builder : ClientDHCoreParametersBuilder
-        Builds request parameters for API calls.
-    _error_parser : ErrorParser
-        Parses backend responses and raises appropriate exceptions.
-    _configurator : ClientDHCoreConfigurator
-        Manages client configuration and authentication.
+    JSON serialization.
     """
 
     def __init__(self, config: dict | None = None) -> None:
-        """
-        Initialize DHCore client with API builders and configurators.
-
-        Parameters
-        ----------
-        config : dict, optional
-            DHCore environment configuration. If None, loads from environment
-            variables and configuration files.
-        """
         super().__init__()
 
-        # API builder
+        # API, key and parameters builders
         self._api_builder: ClientDHCoreApiBuilder = ClientDHCoreApiBuilder()
-
-        # Key builder
         self._key_builder: ClientDHCoreKeyBuilder = ClientDHCoreKeyBuilder()
-
-        # Parameters builder
         self._params_builder: ClientDHCoreParametersBuilder = ClientDHCoreParametersBuilder()
 
-        # Error parser
-        self._error_parser = ErrorParser()
-
-        # Client Configurator
-        self._configurator = ClientDHCoreConfigurator()
+        # HTTP request handling
+        self._http_handler = HttpRequestHandler()
 
     ##############################
     # CRUD methods
@@ -113,17 +61,10 @@ class ClientDHCore(Client):
         -------
         dict
             Created object as returned by the backend.
-
-        Raises
-        ------
-        BackendError
-            If the backend returns an error response.
-        ClientError
-            If there are client-side configuration issues.
         """
-        kwargs = self._set_application_json_header(**kwargs)
+        kwargs = HeaderManager.set_json_content_type(**kwargs)
         kwargs["data"] = dump_json(obj)
-        return self._prepare_call("POST", api, **kwargs)
+        return self._http_handler.prepare_request("POST", api, **kwargs)
 
     def read_object(self, api: str, **kwargs) -> dict:
         """
@@ -150,7 +91,7 @@ class ClientDHCore(Client):
         EntityNotExistsError
             If the requested object does not exist.
         """
-        return self._prepare_call("GET", api, **kwargs)
+        return self._http_handler.prepare_request("GET", api, **kwargs)
 
     def update_object(self, api: str, obj: Any, **kwargs) -> dict:
         """
@@ -171,17 +112,10 @@ class ClientDHCore(Client):
         -------
         dict
             Updated object as returned by the backend.
-
-        Raises
-        ------
-        BackendError
-            If the backend returns an error response.
-        EntityNotExistsError
-            If the object to update does not exist.
         """
-        kwargs = self._set_application_json_header(**kwargs)
+        kwargs = HeaderManager.set_json_content_type(**kwargs)
         kwargs["data"] = dump_json(obj)
-        return self._prepare_call("PUT", api, **kwargs)
+        return self._http_handler.prepare_request("PUT", api, **kwargs)
 
     def delete_object(self, api: str, **kwargs) -> dict:
         """
@@ -201,15 +135,8 @@ class ClientDHCore(Client):
         -------
         dict
             Deletion result from backend or {"deleted": bool} wrapper.
-
-        Raises
-        ------
-        BackendError
-            If the backend returns an error response.
-        EntityNotExistsError
-            If the object to delete does not exist.
         """
-        resp = self._prepare_call("DELETE", api, **kwargs)
+        resp = self._http_handler.prepare_request("DELETE", api, **kwargs)
         if isinstance(resp, bool):
             resp = {"deleted": resp}
         return resp
@@ -233,17 +160,12 @@ class ClientDHCore(Client):
         -------
         list[dict]
             List containing all objects from all pages.
-
-        Raises
-        ------
-        BackendError
-            If the backend returns an error response.
         """
         kwargs = self._params_builder.set_pagination(partial=True, **kwargs)
 
         objects = []
         while True:
-            resp = self._prepare_call("GET", api, **kwargs)
+            resp = self._http_handler.prepare_request("GET", api, **kwargs)
             contents = resp["content"]
             total_pages = resp["totalPages"]
             objects.extend(contents)
@@ -271,11 +193,6 @@ class ClientDHCore(Client):
         -------
         dict
             First object from the list.
-
-        Raises
-        ------
-        BackendError
-            If no objects found or backend returns an error.
         """
         try:
             return self.list_objects(api, **kwargs)[0]
@@ -302,16 +219,11 @@ class ClientDHCore(Client):
         -------
         list[dict]
             List of matching objects with search highlights removed.
-
-        Raises
-        ------
-        BackendError
-            If the backend returns an error response.
         """
         kwargs = self._params_builder.set_pagination(**kwargs)
         objects_with_highlights: list[dict] = []
         while True:
-            resp = self._prepare_call("GET", api, **kwargs)
+            resp = self._http_handler.prepare_request("GET", api, **kwargs)
             contents = resp["content"]
             total_pages = resp["totalPages"]
             objects_with_highlights.extend(contents)
@@ -325,163 +237,6 @@ class ClientDHCore(Client):
             objects.append(obj)
 
         return objects
-
-    ##############################
-    # Call methods
-    ##############################
-
-    def _prepare_call(self, call_type: str, api: str, **kwargs) -> dict:
-        """
-        Prepare DHCore API call with configuration and authentication.
-
-        Checks configuration, builds URL, and adds authentication parameters.
-
-        Parameters
-        ----------
-        call_type : str
-            HTTP method type (GET, POST, PUT, DELETE, etc.).
-        api : str
-            API endpoint path to call.
-        **kwargs : dict
-            Additional HTTP request arguments.
-
-        Returns
-        -------
-        dict
-            Response from the API call.
-
-        Raises
-        ------
-        ClientError
-            If client configuration is invalid.
-        BackendError
-            If backend returns an error response.
-        """
-        self._configurator.check_config()
-        url = self._build_url(api)
-        full_kwargs = self._configurator.get_auth_parameters(kwargs)
-        return self._make_call(call_type, url, **full_kwargs)
-
-    def _build_url(self, api: str) -> str:
-        """
-        Build complete URL for API call.
-
-        Combines configured endpoint with API path, automatically removing
-        leading slashes for proper URL construction.
-
-        Parameters
-        ----------
-        api : str
-            API endpoint path. Leading slashes are automatically handled.
-
-        Returns
-        -------
-        str
-            Complete URL for the API call.
-        """
-        endpoint = self._configurator.get_endpoint()
-        return f"{endpoint}/{api.removeprefix('/')}"
-
-    def _make_call(self, call_type: str, url: str, refresh: bool = True, **kwargs) -> dict:
-        """
-        Execute HTTP request to DHCore API with automatic handling.
-
-        Handles API version checking, token refresh on 401 errors, response parsing,
-        and error handling with 60-second timeout.
-
-        Parameters
-        ----------
-        call_type : str
-            HTTP method type (GET, POST, PUT, DELETE, etc.).
-        url : str
-            Complete URL to call.
-        refresh : bool, default True
-            Whether to attempt token refresh on authentication errors.
-            Set to False to prevent infinite recursion during refresh.
-        **kwargs : dict
-            Additional HTTP request arguments.
-
-        Returns
-        -------
-        dict
-            Parsed response from backend as dictionary.
-
-        Raises
-        ------
-        ClientError
-            If backend API version is not supported.
-        BackendError
-            If backend returns error response or response parsing fails.
-        UnauthorizedError
-            If authentication fails and token refresh not possible.
-        """
-        # Call the API
-        response = request(call_type, url, timeout=DEFAULT_TIMEOUT, **kwargs)
-
-        # Evaluate DHCore API version
-        self._check_core_version(response)
-
-        # Handle token refresh (redo call)
-        if (response.status_code in [401]) and (refresh) and self._configurator.refreshable_auth_types():
-            self._configurator.refresh_credentials(change_origin=True)
-            kwargs = self._configurator.get_auth_parameters(kwargs)
-            return self._make_call(call_type, url, refresh=False, **kwargs)
-
-        self._error_parser.parse(response)
-        return self._dictify_response(response)
-
-    def _check_core_version(self, response: Response) -> None:
-        """
-        Validate DHCore API version compatibility.
-
-        Checks backend API version against supported range and warns if backend
-        version is newer than library. Supported: {MIN_API_LEVEL} to {MAX_API_LEVEL}.
-
-        Parameters
-        ----------
-        response : Response
-            HTTP response containing X-Api-Level header.
-
-        Raises
-        ------
-        ClientError
-            If backend API level is not supported by this client.
-        """
-        if "X-Api-Level" in response.headers:
-            core_api_level = int(response.headers["X-Api-Level"])
-            if not (MIN_API_LEVEL <= core_api_level <= MAX_API_LEVEL):
-                raise ClientError("Backend API level not supported.")
-            if LIB_VERSION < core_api_level:
-                warn("Backend API level is higher than library version. You should consider updating the library.")
-
-    def _dictify_response(self, response: Response) -> dict:
-        """
-        Parse HTTP response body to dictionary.
-
-        Converts JSON response to Python dictionary, treating empty responses
-        as valid and returning empty dict.
-
-        Parameters
-        ----------
-        response : Response
-            HTTP response object to parse.
-
-        Returns
-        -------
-        dict
-            Parsed response body as dictionary, or empty dict if body is empty.
-
-        Raises
-        ------
-        BackendError
-            If response cannot be parsed as JSON.
-        """
-        try:
-            return response.json()
-        except JSONDecodeError:
-            if response.text == "":
-                return {}
-            raise BackendError("Backend response could not be parsed.")
 
     ##############################
     # Interface methods
@@ -506,48 +261,9 @@ class ClientDHCore(Client):
     # Utility methods
     ##############################
 
-    @staticmethod
-    def _ensure_header(**kwargs) -> dict:
+    def refresh_token(self) -> None:
         """
-        Initialize header dictionary.
-
-        Ensures parameter dictionary has 'headers' key for HTTP headers,
-        guaranteeing consistent structure for all parameter building methods.
-
-        Parameters
-        ----------
-        **kwargs : dict
-            Keyword arguments to format. May be empty or contain various
-            parameters for API operations.
-
-        Returns
-        -------
-        dict
-            Headers dictionary with guaranteed 'headers' key containing
-            empty dict if not already present.
+        Manually trigger OAuth2 token refresh.
         """
-        if "headers" not in kwargs:
-            kwargs["headers"] = {}
-        return kwargs
-
-    def _set_application_json_header(self, **kwargs) -> dict:
-        """
-        Set Content-Type header to application/json.
-
-        Ensures that the 'Content-Type' header is set to 'application/json'
-        for requests that require JSON payloads.
-
-        Parameters
-        ----------
-        **kwargs : dict
-            Keyword arguments to format. May be empty or contain various
-            parameters for API operations.
-
-        Returns
-        -------
-        dict
-            Headers dictionary with 'Content-Type' set to 'application/json'.
-        """
-        kwargs = self._ensure_header(**kwargs)
-        kwargs["headers"]["Content-Type"] = "application/json"
-        return kwargs
+        self._http_handler._configurator.check_config()
+        self._http_handler._configurator.refresh_credentials()

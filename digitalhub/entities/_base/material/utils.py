@@ -21,10 +21,6 @@ def eval_local_source(source: str | list[str]) -> None:
     ----------
     source : str | list[str]
         Source(s).
-
-    Returns
-    -------
-    None
     """
     if isinstance(source, list):
         if not source:

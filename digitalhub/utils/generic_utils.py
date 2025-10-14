@@ -95,10 +95,6 @@ def requests_chunk_download(source: str, filename: Path) -> None:
         URL to download the file from.
     filename : Path
         Path where to save the downloaded file.
-
-    Returns
-    -------
-    None
     """
     with requests.get(source, stream=True) as r:
         r.raise_for_status()
@@ -117,10 +113,6 @@ def extract_archive(path: Path, filename: Path) -> None:
         Directory where to extract the archive.
     filename : Path
         Path to the zip archive file.
-
-    Returns
-    -------
-    None
     """
     with ZipFile(filename, "r") as zip_file:
         zip_file.extractall(path)
@@ -256,10 +248,6 @@ def carriage_return_warn(string: str) -> None:
     ----------
     string : str
         The string to check.
-
-    Returns
-    -------
-    None
     """
     if "\r\n" in string:
         warn("String contains a carriage return. It may not be parsed correctly from remote runtimes.")

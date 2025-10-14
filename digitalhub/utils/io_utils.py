@@ -23,10 +23,6 @@ def write_yaml(filepath: str | Path, obj: dict | list[dict]) -> None:
         The YAML file path to write.
     obj : dict or list of dict
         The dict or list of dicts to write.
-
-    Returns
-    -------
-    None
     """
     if isinstance(obj, list):
         with open(filepath, "w", encoding="utf-8") as out_file:
@@ -46,10 +42,6 @@ def write_text(filepath: Path, text: str) -> None:
         The file path to write.
     text : str
         The text to write.
-
-    Returns
-    -------
-    None
     """
     filepath.write_text(text, encoding="utf-8")
 

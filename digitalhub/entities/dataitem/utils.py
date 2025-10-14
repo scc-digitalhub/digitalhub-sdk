@@ -201,10 +201,6 @@ def clean_tmp_path(pth: SourcesOrListOfSources) -> None:
     pth : SourcesOrListOfSources
         The path or list of paths to clean up. Can be file paths
         or directory paths that need to be removed.
-
-    Returns
-    -------
-    None
     """
     if isinstance(pth, list):
         for p in pth:

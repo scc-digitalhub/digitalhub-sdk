@@ -92,9 +92,6 @@ def write_config(creds: dict, environment: str) -> None:
     environment : str
         Name of the credentials profile/environment.
 
-    Returns
-    -------
-    None
 
     Raises
     ------
@@ -129,9 +126,6 @@ def set_current_profile(environment: str) -> None:
     environment : str
         Name of the credentials profile to set as current.
 
-    Returns
-    -------
-    None
 
     Raises
     ------
