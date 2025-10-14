@@ -8,7 +8,7 @@ from requests import request
 
 from digitalhub.stores.client.dhcore.configurator import ClientDHCoreConfigurator
 from digitalhub.stores.client.dhcore.response_processor import ResponseProcessor
-from digitalhub.utils.exceptions import ClientError
+from digitalhub.utils.exceptions import BackendError
 
 # Default timeout for requests (in seconds)
 DEFAULT_TIMEOUT = 60
@@ -46,8 +46,8 @@ class HttpRequestHandler:
         dict
             Response from the API call.
         """
-        url = self._build_url(api)
         full_kwargs = self._set_auth(**kwargs)
+        url = self._build_url(api)
         return self._execute_request(method, url, **full_kwargs)
 
     def _execute_request(
@@ -87,7 +87,7 @@ class HttpRequestHandler:
         # Process response (version check, error parsing, dictify)
         try:
             return self._response_processor.process(response)
-        except ClientError as e:
+        except BackendError as e:
             # Handle authentication errors with token refresh
             if response.status_code == 401 and refresh and self._configurator.refreshable_auth_types():
                 self._configurator.refresh_credentials(change_origin=True)
