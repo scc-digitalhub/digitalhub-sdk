@@ -57,7 +57,6 @@ METHODS = [
     "delete_workflow",
     "delete_dataitem",
     "delete_model",
-    "set_dhcore_env",
     "load_project",
     "get_or_create_project",
 ]
