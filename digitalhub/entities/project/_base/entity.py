@@ -532,7 +532,6 @@ class Project(Entity):
         self,
         identifier: str,
         entity_id: str | None = None,
-        **kwargs,
     ) -> Artifact:
         """
         Get object from backend.
@@ -543,8 +542,6 @@ class Project(Entity):
             Entity key (store://...) or entity name.
         entity_id : str
             Entity ID.
-        **kwargs : dict
-            Parameters to pass to the API call.
 
         Returns
         -------
@@ -564,7 +561,6 @@ class Project(Entity):
             identifier=identifier,
             project=self.name,
             entity_id=entity_id,
-            **kwargs,
         )
         self.refresh()
         return obj
@@ -572,7 +568,6 @@ class Project(Entity):
     def get_artifact_versions(
         self,
         identifier: str,
-        **kwargs,
     ) -> list[Artifact]:
         """
         Get object versions from backend.
@@ -581,8 +576,6 @@ class Project(Entity):
         ----------
         identifier : str
             Entity key (store://...) or entity name.
-        **kwargs : dict
-            Parameters to pass to the API call.
 
         Returns
         -------
@@ -597,16 +590,40 @@ class Project(Entity):
         Using entity name:
         >>> obj = project.get_artifact_versions("my-artifact-name")
         """
-        return get_artifact_versions(identifier, project=self.name, **kwargs)
+        return get_artifact_versions(identifier, project=self.name)
 
-    def list_artifacts(self, **kwargs) -> list[Artifact]:
+    def list_artifacts(
+        self,
+        q: str | None = None,
+        name: str | None = None,
+        kind: str | None = None,
+        user: str | None = None,
+        state: str | None = None,
+        created: str | None = None,
+        updated: str | None = None,
+        version: str | None = None,
+    ) -> list[Artifact]:
         """
         List all latest version objects from backend.
 
         Parameters
         ----------
-        **kwargs : dict
-            Parameters to pass to the API call.
+        q : str
+            Query string to filter objects.
+        name : str
+            Object name.
+        kind : str
+            Kind of the object.
+        user : str
+            User that created the object.
+        state : str
+            Object state.
+        created : str
+            Creation date filter.
+        updated : str
+            Update date filter.
+        version : str
+            Object version, default is latest.
 
         Returns
         -------
@@ -617,7 +634,17 @@ class Project(Entity):
         --------
         >>> objs = project.list_artifacts()
         """
-        return list_artifacts(self.name, **kwargs)
+        return list_artifacts(
+            self.name,
+            q=q,
+            name=name,
+            kind=kind,
+            user=user,
+            state=state,
+            created=created,
+            updated=updated,
+            version=version,
+        )
 
     def import_artifact(
         self,
@@ -675,7 +702,6 @@ class Project(Entity):
         identifier: str,
         entity_id: str | None = None,
         delete_all_versions: bool = False,
-        **kwargs,
     ) -> None:
         """
         Delete object from backend.
@@ -688,8 +714,6 @@ class Project(Entity):
             Entity ID.
         delete_all_versions : bool
             Delete all versions of the named entity. If True, use entity name instead of entity key as identifier.
-        **kwargs : dict
-            Parameters to pass to the API call.
 
         Returns
         -------
@@ -710,7 +734,6 @@ class Project(Entity):
             project=self.name,
             entity_id=entity_id,
             delete_all_versions=delete_all_versions,
-            **kwargs,
         )
         self.refresh()
 
@@ -838,7 +861,6 @@ class Project(Entity):
         self,
         identifier: str,
         entity_id: str | None = None,
-        **kwargs,
     ) -> Dataitem:
         """
         Get object from backend.
@@ -849,8 +871,6 @@ class Project(Entity):
             Entity key (store://...) or entity name.
         entity_id : str
             Entity ID.
-        **kwargs : dict
-            Parameters to pass to the API call.
 
         Returns
         -------
@@ -870,7 +890,6 @@ class Project(Entity):
             identifier=identifier,
             project=self.name,
             entity_id=entity_id,
-            **kwargs,
         )
         self.refresh()
         return obj
@@ -878,7 +897,6 @@ class Project(Entity):
     def get_dataitem_versions(
         self,
         identifier: str,
-        **kwargs,
     ) -> list[Dataitem]:
         """
         Get object versions from backend.
@@ -887,8 +905,6 @@ class Project(Entity):
         ----------
         identifier : str
             Entity key (store://...) or entity name.
-        **kwargs : dict
-            Parameters to pass to the API call.
 
         Returns
         -------
@@ -903,16 +919,40 @@ class Project(Entity):
         Using entity name:
         >>> obj = project.get_dataitem_versions("my-dataitem-name")
         """
-        return get_dataitem_versions(identifier, project=self.name, **kwargs)
+        return get_dataitem_versions(identifier, project=self.name)
 
-    def list_dataitems(self, **kwargs) -> list[Dataitem]:
+    def list_dataitems(
+        self,
+        q: str | None = None,
+        name: str | None = None,
+        kind: str | None = None,
+        user: str | None = None,
+        state: str | None = None,
+        created: str | None = None,
+        updated: str | None = None,
+        version: str | None = None,
+    ) -> list[Dataitem]:
         """
         List all latest version objects from backend.
 
         Parameters
         ----------
-        **kwargs : dict
-            Parameters to pass to the API call.
+        q : str
+            Query string to filter objects.
+        name : str
+            Object name.
+        kind : str
+            Kind of the object.
+        user : str
+            User that created the object.
+        state : str
+            Object state.
+        created : str
+            Creation date filter.
+        updated : str
+            Update date filter.
+        version : str
+            Object version, default is latest.
 
         Returns
         -------
@@ -923,7 +963,17 @@ class Project(Entity):
         --------
         >>> objs = project.list_dataitems()
         """
-        return list_dataitems(self.name, **kwargs)
+        return list_dataitems(
+            self.name,
+            q=q,
+            name=name,
+            kind=kind,
+            user=user,
+            state=state,
+            created=created,
+            updated=updated,
+            version=version,
+        )
 
     def import_dataitem(
         self,
@@ -981,7 +1031,6 @@ class Project(Entity):
         identifier: str,
         entity_id: str | None = None,
         delete_all_versions: bool = False,
-        **kwargs,
     ) -> None:
         """
         Delete object from backend.
@@ -994,8 +1043,6 @@ class Project(Entity):
             Entity ID.
         delete_all_versions : bool
             Delete all versions of the named entity. If True, use entity name instead of entity key as identifier.
-        **kwargs : dict
-            Parameters to pass to the API call.
 
         Returns
         -------
@@ -1017,7 +1064,6 @@ class Project(Entity):
             project=self.name,
             entity_id=entity_id,
             delete_all_versions=delete_all_versions,
-            **kwargs,
         )
         self.refresh()
 
@@ -1133,7 +1179,6 @@ class Project(Entity):
         self,
         identifier: str,
         entity_id: str | None = None,
-        **kwargs,
     ) -> Model:
         """
         Get object from backend.
@@ -1144,8 +1189,6 @@ class Project(Entity):
             Entity key (store://...) or entity name.
         entity_id : str
             Entity ID.
-        **kwargs : dict
-            Parameters to pass to the API call.
 
         Returns
         -------
@@ -1165,7 +1208,6 @@ class Project(Entity):
             identifier=identifier,
             project=self.name,
             entity_id=entity_id,
-            **kwargs,
         )
         self.refresh()
         return obj
@@ -1173,7 +1215,6 @@ class Project(Entity):
     def get_model_versions(
         self,
         identifier: str,
-        **kwargs,
     ) -> list[Model]:
         """
         Get object versions from backend.
@@ -1182,8 +1223,6 @@ class Project(Entity):
         ----------
         identifier : str
             Entity key (store://...) or entity name.
-        **kwargs : dict
-            Parameters to pass to the API call.
 
         Returns
         -------
@@ -1198,16 +1237,40 @@ class Project(Entity):
         Using entity name:
         >>> obj = project.get_model_versions("my-model-name")
         """
-        return get_model_versions(identifier, project=self.name, **kwargs)
+        return get_model_versions(identifier, project=self.name)
 
-    def list_models(self, **kwargs) -> list[Model]:
+    def list_models(
+        self,
+        q: str | None = None,
+        name: str | None = None,
+        kind: str | None = None,
+        user: str | None = None,
+        state: str | None = None,
+        created: str | None = None,
+        updated: str | None = None,
+        version: str | None = None,
+    ) -> list[Model]:
         """
         List all latest version objects from backend.
 
         Parameters
         ----------
-        **kwargs : dict
-            Parameters to pass to the API call.
+        q : str
+            Query string to filter objects.
+        name : str
+            Object name.
+        kind : str
+            Kind of the object.
+        user : str
+            User that created the object.
+        state : str
+            Object state.
+        created : str
+            Creation date filter.
+        updated : str
+            Update date filter.
+        version : str
+            Object version, default is latest.
 
         Returns
         -------
@@ -1218,7 +1281,17 @@ class Project(Entity):
         --------
         >>> objs = project.list_models()
         """
-        return list_models(self.name, **kwargs)
+        return list_models(
+            self.name,
+            q=q,
+            name=name,
+            kind=kind,
+            user=user,
+            state=state,
+            created=created,
+            updated=updated,
+            version=version,
+        )
 
     def import_model(
         self,
@@ -1276,7 +1349,6 @@ class Project(Entity):
         identifier: str,
         entity_id: str | None = None,
         delete_all_versions: bool = False,
-        **kwargs,
     ) -> None:
         """
         Delete object from backend.
@@ -1289,8 +1361,6 @@ class Project(Entity):
             Entity ID.
         delete_all_versions : bool
             Delete all versions of the named entity. If True, use entity name instead of entity key as identifier.
-        **kwargs : dict
-            Parameters to pass to the API call.
 
         Returns
         -------
@@ -1312,7 +1382,6 @@ class Project(Entity):
             project=self.name,
             entity_id=entity_id,
             delete_all_versions=delete_all_versions,
-            **kwargs,
         )
         self.refresh()
 
@@ -1379,7 +1448,6 @@ class Project(Entity):
         self,
         identifier: str,
         entity_id: str | None = None,
-        **kwargs,
     ) -> Function:
         """
         Get object from backend.
@@ -1390,8 +1458,6 @@ class Project(Entity):
             Entity key (store://...) or entity name.
         entity_id : str
             Entity ID.
-        **kwargs : dict
-            Parameters to pass to the API call.
 
         Returns
         -------
@@ -1411,7 +1477,6 @@ class Project(Entity):
             identifier=identifier,
             project=self.name,
             entity_id=entity_id,
-            **kwargs,
         )
         self.refresh()
         return obj
@@ -1419,7 +1484,6 @@ class Project(Entity):
     def get_function_versions(
         self,
         identifier: str,
-        **kwargs,
     ) -> list[Function]:
         """
         Get object versions from backend.
@@ -1428,8 +1492,6 @@ class Project(Entity):
         ----------
         identifier : str
             Entity key (store://...) or entity name.
-        **kwargs : dict
-            Parameters to pass to the API call.
 
         Returns
         -------
@@ -1444,16 +1506,40 @@ class Project(Entity):
         Using entity name:
         >>> obj = project.get_function_versions("my-function-name")
         """
-        return get_function_versions(identifier, project=self.name, **kwargs)
+        return get_function_versions(identifier, project=self.name)
 
-    def list_functions(self, **kwargs) -> list[Function]:
+    def list_functions(
+        self,
+        q: str | None = None,
+        name: str | None = None,
+        kind: str | None = None,
+        user: str | None = None,
+        state: str | None = None,
+        created: str | None = None,
+        updated: str | None = None,
+        version: str | None = None,
+    ) -> list[Function]:
         """
         List all latest version objects from backend.
 
         Parameters
         ----------
-        **kwargs : dict
-            Parameters to pass to the API call.
+        q : str
+            Query string to filter objects.
+        name : str
+            Object name.
+        kind : str
+            Kind of the object.
+        user : str
+            User that created the object.
+        state : str
+            Object state.
+        created : str
+            Creation date filter.
+        updated : str
+            Update date filter.
+        version : str
+            Object version, default is latest.
 
         Returns
         -------
@@ -1464,7 +1550,17 @@ class Project(Entity):
         --------
         >>> objs = project.list_functions()
         """
-        return list_functions(self.name, **kwargs)
+        return list_functions(
+            self.name,
+            q=q,
+            name=name,
+            kind=kind,
+            user=user,
+            state=state,
+            created=created,
+            updated=updated,
+            version=version,
+        )
 
     def import_function(
         self,
@@ -1523,7 +1619,6 @@ class Project(Entity):
         entity_id: str | None = None,
         delete_all_versions: bool = False,
         cascade: bool = True,
-        **kwargs,
     ) -> None:
         """
         Delete object from backend.
@@ -1538,8 +1633,6 @@ class Project(Entity):
             Delete all versions of the named entity. If True, use entity name instead of entity key as identifier.
         cascade : bool
             Cascade delete.
-        **kwargs : dict
-            Parameters to pass to the API call.
 
         Returns
         -------
@@ -1561,7 +1654,6 @@ class Project(Entity):
             entity_id=entity_id,
             delete_all_versions=delete_all_versions,
             cascade=cascade,
-            **kwargs,
         )
         self.refresh()
 
@@ -1628,7 +1720,6 @@ class Project(Entity):
         self,
         identifier: str,
         entity_id: str | None = None,
-        **kwargs,
     ) -> Workflow:
         """
         Get object from backend.
@@ -1639,8 +1730,6 @@ class Project(Entity):
             Entity key (store://...) or entity name.
         entity_id : str
             Entity ID.
-        **kwargs : dict
-            Parameters to pass to the API call.
 
         Returns
         -------
@@ -1660,7 +1749,6 @@ class Project(Entity):
             identifier=identifier,
             project=self.name,
             entity_id=entity_id,
-            **kwargs,
         )
         self.refresh()
         return obj
@@ -1668,7 +1756,6 @@ class Project(Entity):
     def get_workflow_versions(
         self,
         identifier: str,
-        **kwargs,
     ) -> list[Workflow]:
         """
         Get object versions from backend.
@@ -1677,8 +1764,6 @@ class Project(Entity):
         ----------
         identifier : str
             Entity key (store://...) or entity name.
-        **kwargs : dict
-            Parameters to pass to the API call.
 
         Returns
         -------
@@ -1693,16 +1778,40 @@ class Project(Entity):
         Using entity name:
         >>> obj = project.get_workflow_versions("my-workflow-name")
         """
-        return get_workflow_versions(identifier, project=self.name, **kwargs)
+        return get_workflow_versions(identifier, project=self.name)
 
-    def list_workflows(self, **kwargs) -> list[Workflow]:
+    def list_workflows(
+        self,
+        q: str | None = None,
+        name: str | None = None,
+        kind: str | None = None,
+        user: str | None = None,
+        state: str | None = None,
+        created: str | None = None,
+        updated: str | None = None,
+        version: str | None = None,
+    ) -> list[Workflow]:
         """
         List all latest version objects from backend.
 
         Parameters
         ----------
-        **kwargs : dict
-            Parameters to pass to the API call.
+        q : str
+            Query string to filter objects.
+        name : str
+            Object name.
+        kind : str
+            Kind of the object.
+        user : str
+            User that created the object.
+        state : str
+            Object state.
+        created : str
+            Creation date filter.
+        updated : str
+            Update date filter.
+        version : str
+            Object version, default is latest.
 
         Returns
         -------
@@ -1713,7 +1822,17 @@ class Project(Entity):
         --------
         >>> objs = project.list_workflows()
         """
-        return list_workflows(self.name, **kwargs)
+        return list_workflows(
+            self.name,
+            q=q,
+            name=name,
+            kind=kind,
+            user=user,
+            state=state,
+            created=created,
+            updated=updated,
+            version=version,
+        )
 
     def import_workflow(
         self,
@@ -1772,7 +1891,6 @@ class Project(Entity):
         entity_id: str | None = None,
         delete_all_versions: bool = False,
         cascade: bool = True,
-        **kwargs,
     ) -> None:
         """
         Delete object from backend.
@@ -1787,8 +1905,6 @@ class Project(Entity):
             Delete all versions of the named entity. If True, use entity name instead of entity key as identifier.
         cascade : bool
             Cascade delete.
-        **kwargs : dict
-            Parameters to pass to the API call.
 
         Returns
         -------
@@ -1810,7 +1926,6 @@ class Project(Entity):
             entity_id=entity_id,
             delete_all_versions=delete_all_versions,
             cascade=cascade,
-            **kwargs,
         )
         self.refresh()
 
@@ -1875,7 +1990,6 @@ class Project(Entity):
         self,
         identifier: str,
         entity_id: str | None = None,
-        **kwargs,
     ) -> Secret:
         """
         Get object from backend.
@@ -1886,8 +2000,6 @@ class Project(Entity):
             Entity key (store://...) or entity name.
         entity_id : str
             Entity ID.
-        **kwargs : dict
-            Parameters to pass to the API call.
 
         Returns
         -------
@@ -1907,7 +2019,6 @@ class Project(Entity):
             identifier=identifier,
             project=self.name,
             entity_id=entity_id,
-            **kwargs,
         )
         self.refresh()
         return obj
@@ -1915,7 +2026,6 @@ class Project(Entity):
     def get_secret_versions(
         self,
         identifier: str,
-        **kwargs,
     ) -> list[Secret]:
         """
         Get object versions from backend.
@@ -1924,8 +2034,6 @@ class Project(Entity):
         ----------
         identifier : str
             Entity key (store://...) or entity name.
-        **kwargs : dict
-            Parameters to pass to the API call.
 
         Returns
         -------
@@ -1940,9 +2048,9 @@ class Project(Entity):
         Using entity name:
         >>> obj = project.get_secret_versions("my-secret-name")
         """
-        return get_secret_versions(identifier, project=self.name, **kwargs)
+        return get_secret_versions(identifier, project=self.name)
 
-    def list_secrets(self, **kwargs) -> list[Secret]:
+    def list_secrets(self) -> list[Secret]:
         """
         List all latest version objects from backend.
 
@@ -1960,7 +2068,7 @@ class Project(Entity):
         --------
         >>> objs = project.list_secrets()
         """
-        return list_secrets(self.name, **kwargs)
+        return list_secrets(self.name)
 
     def import_secret(
         self,
@@ -2018,7 +2126,6 @@ class Project(Entity):
         identifier: str,
         entity_id: str | None = None,
         delete_all_versions: bool = False,
-        **kwargs,
     ) -> None:
         """
         Delete object from backend.
@@ -2031,8 +2138,6 @@ class Project(Entity):
             Entity ID.
         delete_all_versions : bool
             Delete all versions of the named entity. If True, use entity name instead of entity key as identifier.
-        **kwargs : dict
-            Parameters to pass to the API call.
 
         Returns
         -------
@@ -2053,7 +2158,6 @@ class Project(Entity):
             project=self.name,
             entity_id=entity_id,
             delete_all_versions=delete_all_versions,
-            **kwargs,
         )
         self.refresh()
 
@@ -2064,7 +2168,6 @@ class Project(Entity):
     def get_run(
         self,
         identifier: str,
-        **kwargs,
     ) -> Run:
         """
         Get object from backend.
@@ -2073,8 +2176,6 @@ class Project(Entity):
         ----------
         identifier : str
             Entity key (store://...) or entity ID.
-        **kwargs : dict
-            Parameters to pass to the API call.
 
         Returns
         -------
@@ -2092,19 +2193,51 @@ class Project(Entity):
         obj = get_run(
             identifier=identifier,
             project=self.name,
-            **kwargs,
         )
         self.refresh()
         return obj
 
-    def list_runs(self, **kwargs) -> list[Run]:
+    def list_runs(
+        self,
+        q: str | None = None,
+        name: str | None = None,
+        kind: str | None = None,
+        user: str | None = None,
+        state: str | None = None,
+        created: str | None = None,
+        updated: str | None = None,
+        function: str | None = None,
+        workflow: str | None = None,
+        task: str | None = None,
+        action: str | None = None,
+    ) -> list[Run]:
         """
         List all latest objects from backend.
 
         Parameters
         ----------
-        **kwargs : dict
-            Parameters to pass to the API call.
+        q : str
+            Query string to filter objects.
+        name : str
+            Object name.
+        kind : str
+            Kind of the object.
+        user : str
+            User that created the object.
+        state : str
+            Object state.
+        created : str
+            Creation date filter.
+        updated : str
+            Update date filter.
+        function : str
+            Function key filter.
+        workflow : str
+            Workflow key filter.
+        task : str
+            Task string filter.
+        action : str
+            Action name filter.
 
         Returns
         -------
@@ -2115,7 +2248,20 @@ class Project(Entity):
         --------
         >>> objs = project.list_runs()
         """
-        return list_runs(self.name, **kwargs)
+        return list_runs(
+            self.name,
+            q=q,
+            name=name,
+            kind=kind,
+            user=user,
+            state=state,
+            created=created,
+            updated=updated,
+            function=function,
+            workflow=workflow,
+            task=task,
+            action=action,
+        )
 
     def delete_run(
         self,
