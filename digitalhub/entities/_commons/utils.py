@@ -33,6 +33,25 @@ def is_valid_key(key: str) -> bool:
     return bool(re.fullmatch(KEY_PATTERN_WITH_ID, key) or re.fullmatch(KEY_PATTERN_NO_ID, key))
 
 
+def sanitize_unversioned_key(key: str) -> str:
+    """
+    Sanitize an unversioned entity key (from name:id to id).
+
+    Parameters
+    ----------
+    key : str
+        The unversioned entity key.
+
+    Returns
+    -------
+    str
+        The sanitized entity key with version.
+    """
+    splt = key.split("/")[2:]
+    ent_id = splt[-1].split(":")[0]
+    return "store://" + "/".join(splt[:-1] + [ent_id])
+
+
 def parse_entity_key(key: str) -> tuple[str, str, str, str | None, str]:
     """
     Parse an entity key into its constituent components.

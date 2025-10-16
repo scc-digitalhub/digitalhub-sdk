@@ -159,9 +159,9 @@ class SqlStore(Store):
         path : SourcesOrListOfSources
             The SQL URI path to read from in the format
             'sql://database/schema/table'. Only single paths are supported.
-        file_format : str, optional
+        file_format : str
             File format specification (not used for SQL operations).
-        engine : str, optional
+        engine : str
             DataFrame engine to use (e.g., 'pandas', 'polars').
             If None, uses the default engine.
         **kwargs : dict
@@ -209,7 +209,7 @@ class SqlStore(Store):
         path : str
             The SQL URI path specifying the database connection
             in the format 'sql://database/schema/table'.
-        engine : str, optional
+        engine : str
             DataFrame engine to use for result processing
             (e.g., 'pandas', 'polars'). If None, uses the default.
 
@@ -238,7 +238,7 @@ class SqlStore(Store):
         dst : str
             The destination SQL URI in the format
             'sql://database/schema/table' or 'sql://database/table'.
-        extension : str, optional
+        extension : str
             File extension parameter (not used for SQL operations).
         **kwargs : dict
             Additional keyword arguments passed to the DataFrame's
@@ -374,7 +374,7 @@ class SqlStore(Store):
 
         Parameters
         ----------
-        schema : str, optional
+        schema : str
             The database schema to set in the search path.
             If provided, sets the PostgreSQL search_path option.
 
@@ -412,7 +412,7 @@ class SqlStore(Store):
         retry : bool, default True
             Whether to attempt a retry with different configuration
             if the initial connection fails.
-        schema : str, optional
+        schema : str
             The database schema to configure in the engine.
 
         Returns

@@ -79,7 +79,7 @@ class StoreBuilder:
             The unique identifier for the store type (e.g., 's3', 'sql').
         store : Store
             The store class to register for this type.
-        configurator : Configurator, optional
+        configurator : Configurator
             The configurator class for store configuration.
             If None, the store will be instantiated without configuration.
 

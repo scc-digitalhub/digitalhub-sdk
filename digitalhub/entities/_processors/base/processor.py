@@ -49,7 +49,7 @@ class BaseEntityOperationsProcessor:
 
         Parameters
         ----------
-        _entity : Project, optional
+        _entity : Project
             An existing project entity object to create. If None,
             a new entity will be built from kwargs.
         **kwargs : dict
@@ -212,7 +212,7 @@ class BaseEntityOperationsProcessor:
         EntityError
             If the project already exists in the backend.
         """
-        return self.import_export_processor.import_project_entity(file, **kwargs)
+        return self.import_export_processor.import_project_entity(self.crud_processor, file, **kwargs)
 
     def load_project_entity(
         self,
@@ -238,7 +238,7 @@ class BaseEntityOperationsProcessor:
         Project
             The loaded and updated project entity.
         """
-        return self.import_export_processor.load_project_entity(file, **kwargs)
+        return self.import_export_processor.load_project_entity(self.crud_processor, file, **kwargs)
 
     ##############################
     # Base entity operations

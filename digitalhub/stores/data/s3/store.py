@@ -654,7 +654,7 @@ class S3Store(Store):
         ----------
         s3_path : str
             Path to the S3 bucket (e.g., 's3://bucket/path').
-        retry : bool, optional
+        retry : bool
             Whether to retry the operation if a ConfigError is raised. Default is True.
 
         Returns

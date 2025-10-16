@@ -18,6 +18,7 @@ class VolumeType(Enum):
     PERSISTENT_VOLUME_CLAIM = "persistent_volume_claim"
     EMPTY_DIR = "empty_dir"
     EPHEMERAL = "ephemeral"
+    SHARED_VOLUME = "shared_volume"
 
 
 class SpecEmptyDir(BaseModel):
@@ -46,6 +47,14 @@ class SpecEphemeral(BaseModel):
     size: Optional[str] = None
 
 
+class SharedVolumeSpec(BaseModel):
+    """
+    Shared volume spec model.
+    """
+
+    size: Optional[str] = None
+
+
 class Volume(BaseModel):
     """
     Volume model.
@@ -62,7 +71,7 @@ class Volume(BaseModel):
     mount_path: str
     """Volume mount path inside the container."""
 
-    spec: Optional[Union[SpecEmptyDir, SpecPVC, SpecEphemeral]] = None
+    spec: Optional[Union[SpecEmptyDir, SpecPVC, SpecEphemeral, SharedVolumeSpec]] = None
     """Volume spec."""
 
 

@@ -38,7 +38,7 @@ class ContextBuilder:
         ----------
         project : Project
             The project instance to create a context for.
-        overwrite : bool, optional
+        overwrite : bool
             If True, overwrites existing context if project name already exists. Default is False.
 
         Returns

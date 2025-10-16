@@ -570,9 +570,9 @@ class ClientLocal(Client):
         ----------
         error_code : int
             Error code identifying the type of error.
-        entity_type : str, optional
+        entity_type : str
             Entity type that caused the error.
-        entity_id : str, optional
+        entity_id : str
             Entity ID that caused the error.
 
         Returns

@@ -24,7 +24,7 @@ def build_context(project: Project, overwrite: bool = False) -> Context:
     ----------
     project : Project
         The project object used to build the context.
-    overwrite : bool, optional
+    overwrite : bool
         If True, overwrites existing context if it exists. Default is False.
 
     Returns

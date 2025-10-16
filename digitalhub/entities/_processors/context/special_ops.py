@@ -47,7 +47,7 @@ class ContextEntitySpecialOpsProcessor:
             The kind/subtype of entity.
         entity_name : str
             The name of the entity.
-        entity_id : str, optional
+        entity_id : str
             The unique identifier of the entity version.
 
         Returns
@@ -336,7 +336,7 @@ class ContextEntitySpecialOpsProcessor:
             The type of entity to read metrics from.
         entity_id : str
             The unique identifier of the entity.
-        metric_name : str, optional
+        metric_name : str
             The name of a specific metric to retrieve.
             If None, retrieves all available metrics.
         **kwargs : dict
@@ -428,22 +428,22 @@ class ContextEntitySpecialOpsProcessor:
             The CRUD processor instance for entity operations.
         project : str
             The project name to search within.
-        query : str, optional
+        query : str
             Free-text search query to match against entity content.
-        entity_types : list[str], optional
+        entity_types : list[str]
             List of entity types to filter by.
             If None, searches all entity types.
-        name : str, optional
+        name : str
             Entity name pattern to match.
-        kind : str, optional
+        kind : str
             Entity kind to filter by.
-        created : str, optional
+        created : str
             Creation date filter (ISO format).
-        updated : str, optional
+        updated : str
             Last update date filter (ISO format).
-        description : str, optional
+        description : str
             Description pattern to match.
-        labels : list[str], optional
+        labels : list[str]
             List of label patterns to match.
         **kwargs : dict
             Additional search parameters to pass to the API call.

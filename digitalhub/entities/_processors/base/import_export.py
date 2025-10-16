@@ -13,6 +13,7 @@ from digitalhub.utils.exceptions import EntityAlreadyExistsError, EntityError, E
 from digitalhub.utils.io_utils import read_yaml
 
 if typing.TYPE_CHECKING:
+    from digitalhub.entities._processors.base.crud import BaseEntityCRUDProcessor
     from digitalhub.entities.project._base.entity import Project
 
 
@@ -26,7 +27,7 @@ class BaseEntityImportExportProcessor:
 
     def import_project_entity(
         self,
-        crud_processor,
+        crud_processor: BaseEntityCRUDProcessor,
         file: str,
         **kwargs,
     ) -> Project:
@@ -81,7 +82,7 @@ class BaseEntityImportExportProcessor:
 
     def load_project_entity(
         self,
-        crud_processor,
+        crud_processor: BaseEntityCRUDProcessor,
         file: str,
         **kwargs,
     ) -> Project:

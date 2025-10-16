@@ -151,7 +151,7 @@ class ClientDHCoreConfigurator(Configurator):
 
         Parameters
         ----------
-        endpoint : str, optional
+        endpoint : str
             Endpoint URL to sanitize.
 
         Returns

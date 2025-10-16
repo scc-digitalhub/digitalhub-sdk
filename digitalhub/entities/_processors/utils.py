@@ -38,13 +38,13 @@ def parse_identifier(
     identifier : str
         The entity identifier to parse. Can be either a full entity key
         (store://project/entity_type/kind/name:id) or a simple entity name.
-    project : str, optional
+    project : str
         The project name. Required when identifier is not a full key.
-    entity_type : str, optional
+    entity_type : str
         The entity type. Required when identifier is not a full key.
-    entity_kind : str, optional
+    entity_kind : str
         The entity kind specification.
-    entity_id : str, optional
+    entity_id : str
         The entity version identifier.
 
     Returns
@@ -81,7 +81,7 @@ def get_context_from_identifier(
     identifier : str
         The entity identifier to extract context from. Can be either
         a full entity key (store://...) or a simple entity name.
-    project : str, optional
+    project : str
         The project name. Required when identifier is not a full key.
 
     Returns

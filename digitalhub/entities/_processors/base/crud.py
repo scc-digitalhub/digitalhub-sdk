@@ -74,7 +74,7 @@ class BaseEntityCRUDProcessor:
 
         Parameters
         ----------
-        _entity : Project, optional
+        _entity : Project
             An existing project entity object to create. If None,
             a new entity will be built from kwargs.
         **kwargs : dict

@@ -41,17 +41,17 @@ def eval_source(
 
     Parameters
     ----------
-    source : SourcesOrListOfSources, optional
+    source : SourcesOrListOfSources
         The source specification(s) for the dataitem. Can be file paths,
         URLs, or other source identifiers.
-    data : Any, optional
+    data : Any
         The data object to process (e.g., DataFrame). Alternative to source.
         Exactly one of source or data must be provided.
-    kind : str, optional
+    kind : str
         The kind of dataitem being created (e.g., 'table').
-    name : str, optional
+    name : str
         The name of the dataitem, used for generating file paths.
-    project : str, optional
+    project : str
         The project name, used for context and path generation.
 
     Returns
@@ -105,13 +105,13 @@ def eval_data(
         how data should be processed.
     source : SourcesOrListOfSources
         The source specification(s) to load data from.
-    data : Any, optional
+    data : Any
         Pre-loaded data object. If provided, may be returned directly
         depending on the dataitem kind.
-    file_format : str, optional
+    file_format : str
         The file format specification for reading the source
         (e.g., 'parquet', 'csv').
-    engine : str, optional
+    engine : str
         The engine to use for reading the data (e.g., 'pandas', 'polars').
 
     Returns
@@ -159,10 +159,10 @@ def process_kwargs(
         The kind of dataitem being created (e.g., 'table').
     source : SourcesOrListOfSources
         The source specification(s) for the dataitem content.
-    data : Any, optional
+    data : Any
         The data object for schema extraction and processing.
         Used as an alternative to source for table dataitems.
-    path : str, optional
+    path : str
         The destination path for the dataitem entity.
         If None, a path will be automatically generated.
     **kwargs : dict

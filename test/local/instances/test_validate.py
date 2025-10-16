@@ -7,8 +7,9 @@ from glob import glob
 from pathlib import Path
 
 import pytest
-from digitalhub.factory.entity import entity_factory
 from jsonschema import validate
+
+from digitalhub.factory.entity import entity_factory
 
 entities_path = "test/local/instances/entities"
 schemas_path = "test/local/instances/schemas"

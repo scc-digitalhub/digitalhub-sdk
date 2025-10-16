@@ -32,7 +32,7 @@ def get_sql_engine(schema: str | None = None) -> Engine:
 
     Parameters
     ----------
-    schema : str, optional
+    schema : str
         The schema to connect to, by default None.
 
     Returns

@@ -23,7 +23,7 @@ def eval_source(
 
     Parameters
     ----------
-    source : str, list[str], or None, optional
+    source : str, list[str], or None
         The source specification(s) to evaluate. Can be a single
         source string, a list of source strings, or None.
 
@@ -59,7 +59,7 @@ def process_kwargs(
     source : str or list[str]
         The source specification(s) for the model content.
         Can be a single source or multiple sources.
-    path : str, optional
+    path : str
         The destination path for the model entity.
         If None, a path will be automatically generated.
     **kwargs : dict

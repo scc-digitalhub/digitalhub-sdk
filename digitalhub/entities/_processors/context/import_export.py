@@ -47,7 +47,7 @@ class ContextEntityImportExportProcessor:
             Storage key (store://...) to read the entity from.
         reset_id : bool
             Flag to determine if the ID of context entities should be reset.
-        context : str, optional
+        context : str
             Project name to use for context resolution. If None, uses
             the project specified in the YAML file.
 
@@ -110,7 +110,7 @@ class ContextEntityImportExportProcessor:
             Storage key (store://...) to read the entity from.
         reset_id : bool
             Flag to determine if the ID of executable entities should be reset.
-        context : str, optional
+        context : str
             Project name to use for context resolution.
 
         Returns

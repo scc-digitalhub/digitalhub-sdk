@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.entities._commons.utils import is_valid_key
+from digitalhub.entities._commons.utils import is_valid_key, sanitize_unversioned_key
 from digitalhub.entities._processors.utils import (
     get_context_from_identifier,
     get_context_from_project,
@@ -77,7 +77,7 @@ class ContextEntityCRUDProcessor:
 
         Parameters
         ----------
-        _entity : ContextEntity, optional
+        _entity : ContextEntity
             An existing context entity object to create. If None,
             a new entity will be built from kwargs.
         **kwargs : dict
@@ -120,11 +120,11 @@ class ContextEntityCRUDProcessor:
             The project context instance.
         identifier : str
             Entity key (store://...) or entity name identifier.
-        entity_type : str, optional
+        entity_type : str
             The type of entity to read.
-        project : str, optional
+        project : str
             Project name (used for identifier parsing).
-        entity_id : str, optional
+        entity_id : str
             Specific entity ID to read.
         **kwargs : dict
             Additional parameters to pass to the API call.
@@ -185,11 +185,11 @@ class ContextEntityCRUDProcessor:
         ----------
         identifier : str
             Entity key (store://...) or entity name identifier.
-        entity_type : str, optional
+        entity_type : str
             The type of entity to read.
-        project : str, optional
+        project : str
             Project name for context resolution.
-        entity_id : str, optional
+        entity_id : str
             Specific entity ID to read.
         **kwargs : dict
             Additional parameters to pass to the API call.
@@ -230,11 +230,11 @@ class ContextEntityCRUDProcessor:
         ----------
         identifier : str
             Entity key (store://...) or entity ID.
-        entity_type : str, optional
+        entity_type : str
             The type of entity to read.
-        project : str, optional
+        project : str
             Project name for context resolution.
-        entity_id : str, optional
+        entity_id : str
             Specific entity ID to read.
         **kwargs : dict
             Additional parameters to pass to the API call.
@@ -247,9 +247,7 @@ class ContextEntityCRUDProcessor:
         if not is_valid_key(identifier):
             entity_id = identifier
         else:
-            splt = identifier.split(":")
-            if len(splt) == 3:
-                identifier = f"{splt[0]}:{splt[1]}"
+            identifier = sanitize_unversioned_key(identifier)
         return self.read_context_entity(
             identifier,
             entity_type=entity_type,
@@ -278,9 +276,9 @@ class ContextEntityCRUDProcessor:
             The project context instance.
         identifier : str
             Entity key (store://...) or entity name identifier.
-        entity_type : str, optional
+        entity_type : str
             The type of entity to read versions for.
-        project : str, optional
+        project : str
             Project name (used for identifier parsing).
         **kwargs : dict
             Additional parameters to pass to the API call.
@@ -329,9 +327,9 @@ class ContextEntityCRUDProcessor:
         ----------
         identifier : str
             Entity key (store://...) or entity name identifier.
-        entity_type : str, optional
+        entity_type : str
             The type of entity to read versions for.
-        project : str, optional
+        project : str
             Project name for context resolution.
         **kwargs : dict
             Additional parameters to pass to the API call.
@@ -541,11 +539,11 @@ class ContextEntityCRUDProcessor:
             The project context instance.
         identifier : str
             Entity key (store://...) or entity name identifier.
-        entity_type : str, optional
+        entity_type : str
             The type of entity to delete.
-        project : str, optional
+        project : str
             Project name (used for identifier parsing).
-        entity_id : str, optional
+        entity_id : str
             Specific entity ID to delete.
         **kwargs : dict
             Additional parameters including:
@@ -606,11 +604,11 @@ class ContextEntityCRUDProcessor:
         ----------
         identifier : str
             Entity key (store://...) or entity name identifier.
-        project : str, optional
+        project : str
             Project name for context resolution.
-        entity_type : str, optional
+        entity_type : str
             The type of entity to delete.
-        entity_id : str, optional
+        entity_id : str
             Specific entity ID to delete.
         **kwargs : dict
             Additional parameters including deletion options.

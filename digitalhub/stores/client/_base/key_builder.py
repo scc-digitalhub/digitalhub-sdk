@@ -74,7 +74,7 @@ class ClientKeyBuilder:
             The entity kind.
         entity_name : str
             The entity name.
-        entity_id : str, optional
+        entity_id : str
             The entity identifier. If None, key will not include version.
 
         Returns
