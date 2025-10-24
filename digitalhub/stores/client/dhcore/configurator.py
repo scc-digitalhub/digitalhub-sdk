@@ -42,6 +42,7 @@ class ClientDHCoreConfigurator(Configurator):
         CredsEnvVar.DHCORE_ACCESS_TOKEN.value,
         CredsEnvVar.DHCORE_ISSUER.value,
         CredsEnvVar.DHCORE_CLIENT_ID.value,
+        CredsEnvVar.OAUTH2_TOKEN_ENDPOINT.value,
     ]
 
     def __init__(self) -> None:
@@ -298,11 +299,12 @@ class ClientDHCoreConfigurator(Configurator):
         if not self.refreshable_auth_types():
             raise ClientError(f"Auth type {self._auth_type} does not support refresh.")
 
-        # Get refresh endpoint
-        url = self._get_refresh_endpoint()
-
         # Get credentials
         creds = self._creds_handler.get_credentials(self._origin)
+
+        # Get token refresh from creds
+        if (url := creds.get(CredsEnvVar.OAUTH2_TOKEN_ENDPOINT.value)) is None:
+            raise ClientError("Token endpoint not set.")
 
         # Get client id
         if (client_id := creds.get(CredsEnvVar.DHCORE_CLIENT_ID.value)) is None:
@@ -338,41 +340,6 @@ class ClientDHCoreConfigurator(Configurator):
 
         # Read new credentials and propagate to config file
         self._export_new_creds(response.json())
-
-    def _get_refresh_endpoint(self) -> str:
-        """
-        Discover OAuth2 token endpoint from issuer well-known configuration.
-
-        Queries /.well-known/openid-configuration to extract token_endpoint for
-        credential refresh operations.
-
-        Returns
-        -------
-        str
-            Token endpoint URL for credential refresh.
-
-        Raises
-        ------
-        ClientError
-            If issuer endpoint not configured.
-        HTTPError
-            If well-known configuration endpoint inaccessible.
-        KeyError
-            If token_endpoint not found in issuer configuration.
-        """
-        # Get issuer endpoint
-        creds = self._creds_handler.get_credentials(self._origin)
-        endpoint_issuer = creds.get(CredsEnvVar.DHCORE_ISSUER.value)
-        if endpoint_issuer is None:
-            raise ClientError("Issuer endpoint not set.")
-
-        # Standard issuer endpoint path
-        url = endpoint_issuer + "/.well-known/openid-configuration"
-
-        # Call issuer to get refresh endpoint
-        r = request("GET", url, timeout=60)
-        r.raise_for_status()
-        return r.json().get("token_endpoint")
 
     def _call_refresh_endpoint(
         self,
@@ -445,9 +412,13 @@ class ClientDHCoreConfigurator(Configurator):
             OAuth2 token response with new credentials.
         """
         for key in self.keys_to_prefix:
+            if key == CredsEnvVar.OAUTH2_TOKEN_ENDPOINT.value:
+                prefix = "oauth2_"
+            else:
+                prefix = "dhcore_"
             key = key.lower()
-            if key.removeprefix("dhcore_") in response:
-                response[key] = response.pop(key.removeprefix("dhcore_"))
+            if key.removeprefix(prefix) in response:
+                response[key] = response.pop(key.removeprefix(prefix))
         creds_handler.write_env(response)
         self.load_file_vars()
 
