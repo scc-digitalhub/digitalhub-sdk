@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.stores.client._base.enums import ApiCategories, BackendOperations
-from digitalhub.stores.client.api import get_client
+from digitalhub.stores.client.builder import get_client
+from digitalhub.stores.client.enums import ApiCategories, BackendOperations
 
 if typing.TYPE_CHECKING:
     pass
@@ -77,7 +77,7 @@ class BaseEntitySpecialOpsProcessor:
         ValueError
             If trying to unshare from a user who doesn't have access.
         """
-        client = get_client(kwargs.pop("local", False))
+        client = get_client()
         api = client.build_api(
             ApiCategories.BASE.value,
             BackendOperations.SHARE.value,

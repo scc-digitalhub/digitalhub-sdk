@@ -8,7 +8,6 @@ import typing
 from warnings import warn
 
 from digitalhub.factory.entity import entity_factory
-from digitalhub.stores.client.api import get_client
 from digitalhub.utils.exceptions import EntityAlreadyExistsError, EntityError, EntityNotExistsError
 from digitalhub.utils.io_utils import read_yaml
 
@@ -57,10 +56,8 @@ class BaseEntityImportExportProcessor:
         EntityError
             If the project already exists in the backend.
         """
-        client = get_client(kwargs.pop("local", False))
         obj: dict = read_yaml(file)
         obj["status"] = {}
-        obj["local"] = client.is_local()
         ent: Project = entity_factory.build_entity_from_dict(obj)
         reset_id = kwargs.pop("reset_id", False)
 
@@ -107,9 +104,7 @@ class BaseEntityImportExportProcessor:
         Project
             The loaded and updated project entity.
         """
-        client = get_client(kwargs.pop("local", False))
         obj: dict = read_yaml(file)
-        obj["local"] = client.is_local()
         ent: Project = entity_factory.build_entity_from_dict(obj)
 
         try:

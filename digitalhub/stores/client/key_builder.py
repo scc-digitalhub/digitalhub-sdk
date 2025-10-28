@@ -4,13 +4,35 @@
 
 from __future__ import annotations
 
-from digitalhub.stores.client._base.key_builder import ClientKeyBuilder
+from digitalhub.stores.client.enums import ApiCategories
 
 
-class ClientDHCoreKeyBuilder(ClientKeyBuilder):
+class ClientKeyBuilder:
     """
     Class that build the key of entities.
     """
+
+    def build_key(self, category: str, *args, **kwargs) -> str:
+        """
+        Build key.
+
+        Parameters
+        ----------
+        category : str
+            Key category.
+        *args : tuple
+            Positional arguments.
+        **kwargs : dict
+            Keyword arguments.
+
+        Returns
+        -------
+        str
+            Key.
+        """
+        if category == ApiCategories.BASE.value:
+            return self.base_entity_key(*args, **kwargs)
+        return self.context_entity_key(*args, **kwargs)
 
     def base_entity_key(self, entity_id: str) -> str:
         """

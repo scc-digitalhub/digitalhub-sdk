@@ -4,15 +4,14 @@
 
 from __future__ import annotations
 
-from digitalhub.stores.client._base.api_builder import ClientApiBuilder
-from digitalhub.stores.client._base.enums import ApiCategories, BackendOperations
+from digitalhub.stores.client.enums import ApiCategories, BackendOperations
 from digitalhub.utils.exceptions import BackendError
 
 API_BASE = "/api/v1"
 API_CONTEXT = f"{API_BASE}/-"
 
 
-class ClientDHCoreApiBuilder(ClientApiBuilder):
+class ClientApiBuilder:
     """
     This class is used to build the API for the DHCore client.
     """

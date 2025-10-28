@@ -10,7 +10,6 @@ from concurrent.futures import ThreadPoolExecutor
 from digitalhub.entities._base.executable.entity import ExecutableEntity
 from digitalhub.entities._commons.enums import EntityTypes, Relationship
 from digitalhub.factory.entity import entity_factory
-from digitalhub.utils.exceptions import BackendError
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.entity.metadata import Metadata
@@ -91,8 +90,6 @@ class Function(ExecutableEntity):
 
         # If execution is done by DHCore backend, return the object
         if not local_execution:
-            if self._context().local:
-                raise BackendError("Cannot run remote function with local backend.")
             if wait:
                 return run.wait(log_info=log_info)
             return run

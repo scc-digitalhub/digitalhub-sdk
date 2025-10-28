@@ -10,12 +10,12 @@ from pathlib import Path
 
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.runtimes.enums import RuntimeEnvVar
-from digitalhub.stores.client._base.enums import ApiCategories, BackendOperations
+from digitalhub.stores.client.enums import ApiCategories, BackendOperations
 from digitalhub.utils.exceptions import BackendError
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.project._base.entity import Project
-    from digitalhub.stores.client._base.client import Client
+    from digitalhub.stores.client.client import Client
 
 
 class Context:
@@ -47,7 +47,6 @@ class Context:
         self.name: str = project.name
         self.client: Client = project._client
         self.config: dict = project.spec.config
-        self.local: bool = project._client.is_local()
         self.root: Path = Path(project.spec.context)
         self.root.mkdir(parents=True, exist_ok=True)
 

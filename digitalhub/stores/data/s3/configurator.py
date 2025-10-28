@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 
 from botocore.config import Config
 
-from digitalhub.stores.client.dhcore.utils import refresh_token
+from digitalhub.stores.client.utils import refresh_token
 from digitalhub.stores.credentials.configurator import Configurator
 from digitalhub.stores.credentials.enums import CredsEnvVar
 

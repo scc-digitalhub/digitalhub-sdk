@@ -72,9 +72,8 @@ from digitalhub.entities.workflow.crud import (
     update_workflow,
 )
 from digitalhub.factory.entity import entity_factory
-from digitalhub.stores.client.api import get_client
+from digitalhub.stores.client.builder import get_client
 from digitalhub.utils.exceptions import BackendError, EntityAlreadyExistsError, EntityError
-from digitalhub.utils.generic_utils import get_timestamp
 from digitalhub.utils.io_utils import write_yaml
 from digitalhub.utils.uri_utils import has_local_scheme
 
@@ -115,12 +114,12 @@ class Project(Entity):
 
         self.id = name
         self.name = name
-        self.key = base_processor.build_project_key(self.name, local=local)
+        self.key = base_processor.build_project_key(self.name)
 
         self._obj_attr.extend(["id", "name"])
 
         # Set client
-        self._client = get_client(local)
+        self._client = get_client()
 
         # Set context
         build_context(self)
@@ -144,13 +143,10 @@ class Project(Entity):
             Entity saved.
         """
         if update:
-            if self._client.is_local():
-                self.metadata.updated = get_timestamp()
             new_obj = base_processor.update_project_entity(
                 entity_type=self.ENTITY_TYPE,
                 entity_name=self.name,
                 entity_dict=self.to_dict(),
-                local=self._client.is_local(),
             )
         else:
             new_obj = base_processor.create_project_entity(_entity=self)
@@ -169,7 +165,6 @@ class Project(Entity):
         new_obj = base_processor.read_project_entity(
             entity_type=self.ENTITY_TYPE,
             entity_name=self.name,
-            local=self._client.is_local(),
         )
         self._update_attributes(new_obj)
         return self
@@ -2346,7 +2341,6 @@ class Project(Entity):
             entity_name=self.name,
             user=user,
             unshare=False,
-            local=self._client.is_local(),
         )
 
     def unshare(self, user: str) -> None:
@@ -2366,5 +2360,4 @@ class Project(Entity):
             entity_name=self.name,
             user=user,
             unshare=True,
-            local=self._client.is_local(),
         )

@@ -7,6 +7,17 @@ from __future__ import annotations
 from enum import Enum
 
 
+class AuthType(Enum):
+    """
+    Authentication types.
+    """
+
+    BASIC = "basic"
+    OAUTH2 = "oauth2"
+    EXCHANGE = "exchange"
+    ACCESS_TOKEN = "access_token_only"
+
+
 class ApiCategories(Enum):
     """
     API categories.

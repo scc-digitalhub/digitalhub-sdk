@@ -8,7 +8,7 @@ import typing
 from typing import Any
 
 from digitalhub.entities._processors.utils import get_context_from_project
-from digitalhub.stores.client._base.enums import ApiCategories, BackendOperations
+from digitalhub.stores.client.enums import ApiCategories, BackendOperations
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.context.entity import ContextEntity

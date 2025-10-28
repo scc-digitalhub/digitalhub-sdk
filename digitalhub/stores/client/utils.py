@@ -4,12 +4,7 @@
 
 from __future__ import annotations
 
-import typing
-
-from digitalhub.stores.client.api import get_client
-
-if typing.TYPE_CHECKING:
-    pass
+from digitalhub.stores.client.builder import get_client
 
 
 def refresh_token() -> None:
@@ -25,4 +20,4 @@ def refresh_token() -> None:
     ClientError
         If client not properly configured or token refresh fails.
     """
-    get_client(local=False).refresh_token()
+    get_client().refresh_token()

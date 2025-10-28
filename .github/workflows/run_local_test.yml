@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
 
     steps:
       - uses: actions/checkout@v4
@@ -32,11 +32,11 @@ jobs:
           wget https://github.com/scc-digitalhub/digitalhub-core/archive/main.zip
           7z x main.zip
           rm main.zip
-          mv digitalhub-core-main/schemas/specs test/local/instances/schemas
+          mv digitalhub-core-main/schemas/specs test/instances/schemas
           rm -r digitalhub-core-main
       - name: Test with pytest
         run: |
-          coverage run -m pytest test/local -v -s
+          coverage run -m pytest test -v -s
       - name: Generate Coverage Report
         run: |
           coverage report -m

@@ -9,7 +9,7 @@ from warnings import warn
 
 from requests.exceptions import JSONDecodeError
 
-from digitalhub.stores.client.dhcore.error_parser import ErrorParser
+from digitalhub.stores.client.error_parser import ErrorParser
 from digitalhub.utils.exceptions import BackendError, ClientError
 
 if typing.TYPE_CHECKING:

@@ -9,7 +9,6 @@ import typing
 from digitalhub.entities._base.executable.entity import ExecutableEntity
 from digitalhub.entities._commons.enums import EntityTypes, Relationship
 from digitalhub.factory.entity import entity_factory
-from digitalhub.utils.exceptions import BackendError
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.entity.metadata import Metadata
@@ -77,10 +76,6 @@ class Workflow(ExecutableEntity):
 
         # Create or update new task
         task = self._get_or_create_task(task_kind)
-
-        # Raise error if execution is not done by DHCore backend
-        if self._context().local:
-            raise BackendError("Cannot run workflow with local backend.")
 
         # Run task
         run = task.run(run_kind, save=False, local_execution=False, **kwargs)

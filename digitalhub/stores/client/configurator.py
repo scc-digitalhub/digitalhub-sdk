@@ -8,7 +8,7 @@ import typing
 
 from requests import request
 
-from digitalhub.stores.client.dhcore.enums import AuthType
+from digitalhub.stores.client.enums import AuthType
 from digitalhub.stores.credentials.configurator import Configurator
 from digitalhub.stores.credentials.enums import CredsEnvVar
 from digitalhub.stores.credentials.handler import creds_handler
@@ -20,7 +20,7 @@ if typing.TYPE_CHECKING:
     from requests import Response
 
 
-class ClientDHCoreConfigurator(Configurator):
+class ClientConfigurator(Configurator):
     """
     DHCore client configurator for credential management and authentication.
 

@@ -4,15 +4,16 @@
 
 from __future__ import annotations
 
-from digitalhub.stores.client._base.enums import ApiCategories, BackendOperations
-from digitalhub.stores.client._base.params_builder import ClientParametersBuilder
+from typing import Any
+
+from digitalhub.stores.client.enums import ApiCategories, BackendOperations
 
 DEFAULT_START_PAGE = 0
 DEFAULT_SIZE = 25
 DEFAULT_SORT = "metadata.updated,DESC"
 
 
-class ClientDHCoreParametersBuilder(ClientParametersBuilder):
+class ClientParametersBuilder:
     """
     Parameter builder for DHCore client API calls.
 
@@ -22,15 +23,6 @@ class ClientDHCoreParametersBuilder(ClientParametersBuilder):
     within projects). Supports query parameter formatting, search filter
     construction for Solr-based searches, cascade deletion options,
     versioning parameters, and entity sharing parameters.
-
-    Methods
-    -------
-    build_parameters(category, operation, **kwargs)
-        Main entry point for parameter building based on API category.
-    build_parameters_base(operation, **kwargs)
-        Builds parameters for base-level API operations.
-    build_parameters_context(operation, **kwargs)
-        Builds parameters for context-level API operations.
     """
 
     def build_parameters(self, category: str, operation: str, **kwargs) -> dict:
@@ -234,6 +226,53 @@ class ClientDHCoreParametersBuilder(ClientParametersBuilder):
         if "sort" not in kwargs["params"]:
             kwargs["params"]["sort"] = DEFAULT_SORT
 
+        return kwargs
+
+    @staticmethod
+    def _ensure_params(**kwargs) -> dict:
+        """
+        Initialize parameter dictionary with query parameters structure.
+
+        Ensures parameter dictionary has 'params' key for HTTP query parameters,
+        guaranteeing consistent structure for all parameter building methods.
+
+        Parameters
+        ----------
+        **kwargs : dict
+            Keyword arguments to format. May be empty or contain various
+            parameters for API operations.
+
+        Returns
+        -------
+        dict
+            Parameters dictionary with guaranteed 'params' key containing
+            empty dict if not already present.
+        """
+        if "params" not in kwargs:
+            kwargs["params"] = {}
+        return kwargs
+
+    @staticmethod
+    def _add_param(key: str, value: Any | None, **kwargs) -> dict:
+        """
+        Add a single query parameter to kwargs.
+
+        Parameters
+        ----------
+        key : str
+            Parameter key.
+        value : Any
+            Parameter value.
+        **kwargs : dict
+            Keyword arguments to format. May be empty or contain various
+            parameters for API operations.
+
+        Returns
+        -------
+        dict
+            Parameters dictionary with added key-value pair in 'params'.
+        """
+        kwargs["params"][key] = value
         return kwargs
 
     @staticmethod

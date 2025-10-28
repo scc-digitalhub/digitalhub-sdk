@@ -8,12 +8,12 @@ import typing
 
 from digitalhub.context.api import delete_context
 from digitalhub.factory.entity import entity_factory
-from digitalhub.stores.client._base.enums import ApiCategories, BackendOperations
-from digitalhub.stores.client.api import get_client
+from digitalhub.stores.client.builder import get_client
+from digitalhub.stores.client.enums import ApiCategories, BackendOperations
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.project._base.entity import Project
-    from digitalhub.stores.client._base.client import Client
+    from digitalhub.stores.client.client import Client
 
 
 class BaseEntityCRUDProcessor:
@@ -69,8 +69,7 @@ class BaseEntityCRUDProcessor:
         Create a project entity in the backend.
 
         Creates a new project either from an existing entity object or
-        by building one from the provided parameters. Handles both
-        local and remote backend creation.
+        by building one from the provided parameters.
 
         Parameters
         ----------
@@ -78,8 +77,7 @@ class BaseEntityCRUDProcessor:
             An existing project entity object to create. If None,
             a new entity will be built from kwargs.
         **kwargs : dict
-            Parameters for entity creation, including 'local' flag
-            and entity-specific parameters.
+            Parameters for entity creation.
 
         Returns
         -------
@@ -90,10 +88,9 @@ class BaseEntityCRUDProcessor:
             client = _entity._client
             obj = _entity
         else:
-            client = get_client(kwargs.get("local"))
+            client = get_client()
             obj = entity_factory.build_entity_from_params(**kwargs)
         ent = self._create_base_entity(client, obj.ENTITY_TYPE, obj.to_dict())
-        ent["local"] = client.is_local()
         return entity_factory.build_entity_from_dict(ent)
 
     def _read_base_entity(
@@ -160,9 +157,8 @@ class BaseEntityCRUDProcessor:
         Project
             The project entity object populated with backend data.
         """
-        client = get_client(kwargs.pop("local", False))
+        client = get_client()
         obj = self._read_base_entity(client, entity_type, entity_name, **kwargs)
-        obj["local"] = client.is_local()
         return entity_factory.build_entity_from_dict(obj)
 
     def _list_base_entities(
@@ -215,19 +211,17 @@ class BaseEntityCRUDProcessor:
         entity_type : str
             The type of entities to list (typically 'project').
         **kwargs : dict
-            Additional parameters including 'local' flag and
-            API call parameters for filtering or pagination.
+            Additional parameters.
 
         Returns
         -------
         list[Project]
             List of project entity objects.
         """
-        client = get_client(kwargs.pop("local", False))
+        client = get_client()
         objs = self._list_base_entities(client, entity_type, **kwargs)
         entities = []
         for obj in objs:
-            obj["local"] = client.is_local()
             ent = entity_factory.build_entity_from_dict(obj)
             entities.append(ent)
         return entities
@@ -294,17 +288,15 @@ class BaseEntityCRUDProcessor:
         entity_dict : dict
             The updated project data dictionary.
         **kwargs : dict
-            Additional parameters including 'local' flag and
-            API call parameters.
+            Additional parameters.
 
         Returns
         -------
         Project
             The updated project entity object.
         """
-        client = get_client(kwargs.pop("local", False))
+        client = get_client()
         obj = self._update_base_entity(client, entity_type, entity_name, entity_dict, **kwargs)
-        obj["local"] = client.is_local()
         return entity_factory.build_entity_from_dict(obj)
 
     def _delete_base_entity(
@@ -360,7 +352,7 @@ class BaseEntityCRUDProcessor:
         Delete a project entity from the backend.
 
         Deletes a project from the backend and optionally cleans up
-        the associated context. Handles both local and remote backends.
+        the associated context.
 
         Parameters
         ----------
@@ -371,8 +363,7 @@ class BaseEntityCRUDProcessor:
         entity_name : str
             The name identifier of the project to delete.
         **kwargs : dict
-            Additional parameters including 'local' flag, 'clean_context'
-            flag (default True), and API call parameters.
+            Additional parameters including 'clean_context'.
 
         Returns
         -------
@@ -381,7 +372,7 @@ class BaseEntityCRUDProcessor:
         """
         if kwargs.pop("clean_context", True):
             delete_context(entity_name)
-        client = get_client(kwargs.pop("local", False))
+        client = get_client()
         return self._delete_base_entity(
             client,
             entity_type,

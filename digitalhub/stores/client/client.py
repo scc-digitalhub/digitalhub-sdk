@@ -6,17 +6,16 @@ from __future__ import annotations
 
 from typing import Any
 
-from digitalhub.stores.client._base.client import Client
-from digitalhub.stores.client.dhcore.api_builder import ClientDHCoreApiBuilder
-from digitalhub.stores.client.dhcore.header_manager import HeaderManager
-from digitalhub.stores.client.dhcore.http_handler import HttpRequestHandler
-from digitalhub.stores.client.dhcore.key_builder import ClientDHCoreKeyBuilder
-from digitalhub.stores.client.dhcore.params_builder import ClientDHCoreParametersBuilder
+from digitalhub.stores.client.api_builder import ClientApiBuilder
+from digitalhub.stores.client.header_manager import HeaderManager
+from digitalhub.stores.client.http_handler import HttpRequestHandler
+from digitalhub.stores.client.key_builder import ClientKeyBuilder
+from digitalhub.stores.client.params_builder import ClientParametersBuilder
 from digitalhub.utils.exceptions import BackendError
 from digitalhub.utils.generic_utils import dump_json
 
 
-class ClientDHCore(Client):
+class Client:
     """
     DHCore client for remote DigitalHub Core backend communication.
 
@@ -27,13 +26,11 @@ class ClientDHCore(Client):
     JSON serialization.
     """
 
-    def __init__(self, config: dict | None = None) -> None:
-        super().__init__()
-
+    def __init__(self) -> None:
         # API, key and parameters builders
-        self._api_builder: ClientDHCoreApiBuilder = ClientDHCoreApiBuilder()
-        self._key_builder: ClientDHCoreKeyBuilder = ClientDHCoreKeyBuilder()
-        self._params_builder: ClientDHCoreParametersBuilder = ClientDHCoreParametersBuilder()
+        self._api_builder: ClientApiBuilder = ClientApiBuilder()
+        self._key_builder: ClientKeyBuilder = ClientKeyBuilder()
+        self._params_builder: ClientParametersBuilder = ClientParametersBuilder()
 
         # HTTP request handling
         self._http_handler = HttpRequestHandler()
@@ -239,23 +236,68 @@ class ClientDHCore(Client):
         return objects
 
     ##############################
-    # Interface methods
+    # Build methods
     ##############################
 
-    @staticmethod
-    def is_local() -> bool:
+    def build_api(self, category: str, operation: str, **kwargs) -> str:
         """
-        Check if this client operates locally.
+        Build the API for the client.
 
-        Used to distinguish between ClientDHCore (remote) and ClientLocal
-        implementations.
+        Parameters
+        ----------
+        category : str
+            API category.
+        operation : str
+            API operation.
+        **kwargs : dict
+            Additional parameters.
 
         Returns
         -------
-        bool
-            False, indicating this client communicates with remote DHCore backend.
+        str
+            API formatted.
         """
-        return False
+        return self._api_builder.build_api(category, operation, **kwargs)
+
+    def build_key(self, category: str, *args, **kwargs) -> str:
+        """
+        Build the key for the client.
+
+        Parameters
+        ----------
+        category : str
+            Key category.
+        *args : tuple
+            Additional arguments.
+        **kwargs : dict
+            Additional parameters.
+
+        Returns
+        -------
+        str
+            Key formatted.
+        """
+        return self._key_builder.build_key(category, *args, **kwargs)
+
+    def build_parameters(self, category: str, operation: str, **kwargs) -> dict:
+        """
+        Build the parameters for the client call.
+
+        Parameters
+        ----------
+        category : str
+            API category.
+        operation : str
+            API operation.
+        **kwargs : dict
+            Parameters to build.
+
+        Returns
+        -------
+        dict
+            Parameters formatted.
+        """
+        return self._params_builder.build_parameters(category, operation, **kwargs)
 
     ##############################
     # Utility methods

@@ -6,8 +6,8 @@ from __future__ import annotations
 
 from requests import request
 
-from digitalhub.stores.client.dhcore.configurator import ClientDHCoreConfigurator
-from digitalhub.stores.client.dhcore.response_processor import ResponseProcessor
+from digitalhub.stores.client.configurator import ClientConfigurator
+from digitalhub.stores.client.response_processor import ResponseProcessor
 from digitalhub.utils.exceptions import BackendError
 
 # Default timeout for requests (in seconds)
@@ -25,7 +25,7 @@ class HttpRequestHandler:
     """
 
     def __init__(self) -> None:
-        self._configurator = ClientDHCoreConfigurator()
+        self._configurator = ClientConfigurator()
         self._response_processor = ResponseProcessor()
 
     def prepare_request(self, method: str, api: str, **kwargs) -> dict:

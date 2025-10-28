@@ -56,7 +56,7 @@ class MaterialEntity(VersionedEntity):
         """
         # Evaluate files info list length
         files = None
-        if self.status.files is not None and len(self.status.files) > 5 and not self._context().local:
+        if self.status.files is not None and len(self.status.files) > 5:
             files = self.status.files
             self.status.files = []
 
@@ -222,7 +222,7 @@ class MaterialEntity(VersionedEntity):
         """
         Get files info from backend.
         """
-        if not self._context().local and not self.status.files:
+        if not self.status.files:
             files = context_processor.read_files_info(
                 project=self.project,
                 entity_type=self.ENTITY_TYPE,

@@ -13,7 +13,7 @@ from digitalhub.entities._processors.utils import (
     parse_identifier,
 )
 from digitalhub.factory.entity import entity_factory
-from digitalhub.stores.client._base.enums import ApiCategories, BackendOperations
+from digitalhub.stores.client.enums import ApiCategories, BackendOperations
 
 if typing.TYPE_CHECKING:
     from digitalhub.context.context import Context
