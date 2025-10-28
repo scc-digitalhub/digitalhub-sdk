@@ -15,7 +15,8 @@
     "name": "artifact3",
     "project": "demo-etl",
     "spec": {
-      "path": "http://example.com/artifact.csv"
+      "path": "http://example.com/artifact.csv",
+      "src_path": "/data/artifact.csv"
     },
     "status": {
       "files": [],

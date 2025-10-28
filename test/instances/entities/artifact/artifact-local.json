@@ -16,7 +16,8 @@
     "name": "artifact1",
     "project": "demo-etl",
     "spec": {
-      "path": "./dir/file.txt"
+      "path": "./dir/file.txt",
+      "src_path": "/data/artifact.csv"
     },
     "status": {
       "files": [],

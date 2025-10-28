@@ -15,7 +15,8 @@
     "name": "artifact4",
     "project": "demo-etl",
     "spec": {
-      "path": "sql://db/schema/table"
+      "path": "sql://db/schema/table",
+      "src_path": "/data/artifact.csv"
     },
     "status": {
       "files": [],
