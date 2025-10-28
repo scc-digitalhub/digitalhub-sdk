@@ -13,6 +13,10 @@
   "spec": {
     "path": "s3://datalake/demo-mlflow/model/model-mlflow/d873199e-e49b-4d51-8f49-125939acc366/",
     "framework": "sklearn",
+    "algorithm": "SVC",
+    "model_config": {
+      "model_type": "classification"
+    },
     "parameters": {
       "error_score": "nan",
       "cv": "None",

@@ -236,7 +236,7 @@ class Project(Entity):
             Exported filepath.
         """
         obj = self._refresh_to_dict()
-        pth = Path(self.spec.context) / f"{self.ENTITY_TYPE}s-{self.name}.yaml"
+        pth = Path(self.spec.source) / f"{self.ENTITY_TYPE}s-{self.name}.yaml"
         obj = self._export_not_embedded(obj)
         write_yaml(pth, obj)
         return str(pth)

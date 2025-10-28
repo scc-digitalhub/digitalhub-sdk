@@ -34,8 +34,8 @@ def setup_project(project: Project, setup_kwargs: dict | None = None) -> Project
         Set up project.
     """
     setup_kwargs = setup_kwargs if setup_kwargs is not None else {}
-    check_pth = Path(project.spec.context, CHECK_FILENAME)
-    setup_pth = Path(project.spec.context, SETUP_MODULE)
+    check_pth = Path(project.spec.source, CHECK_FILENAME)
+    setup_pth = Path(project.spec.source, SETUP_MODULE)
     if setup_pth.exists() and not check_pth.exists():
         setup_fnc = import_function(setup_pth, SETUP_FUNCTION)
         project = setup_fnc(project, **setup_kwargs)

@@ -17,7 +17,13 @@
     "spec": {
       "path": "s3://my-bucket/my-model.pt",
       "framework": "pytorch",
-      "algorithm": "neural-network"
+      "algorithm": "neural-network",
+      "parameters": {
+        "input_size": 128,
+        "output_size": 10,
+        "num_layers": 3,
+        "activation_function": "relu"
+      }
     },
     "status": {
       "files": [],

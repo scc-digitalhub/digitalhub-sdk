@@ -246,7 +246,9 @@
           "project": "demo-etl",
           "user": "digitalhubdev"
         }
-      ]
+      ],
+      "config": {},
+      "source": "./"
     },
     "status": {
       "state": "CREATED"

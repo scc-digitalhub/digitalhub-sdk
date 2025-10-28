@@ -33,8 +33,6 @@ class Context:
         The client instance (local or remote) associated with the project.
     config : dict
         Project configuration profile.
-    local : bool
-        Whether the client is local or remote.
     root : Path
         The local context project path.
     is_running : bool
@@ -47,7 +45,7 @@ class Context:
         self.name: str = project.name
         self.client: Client = project._client
         self.config: dict = project.spec.config
-        self.root: Path = Path(project.spec.context)
+        self.root: Path = Path(project.spec.source)
         self.root.mkdir(parents=True, exist_ok=True)
 
         self.is_running: bool = False
