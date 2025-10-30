@@ -223,7 +223,7 @@ class ClientConfigurator:
         if not self.refreshable_auth_types():
             raise ClientError(f"Auth type {self._auth_type} does not support refresh.")
 
-        if (client_id := creds.get(CredentialsVars.DHCORE_CLIENT_ID.value)) is None:
+        if (client_id := creds.get(ConfigurationVars.DHCORE_CLIENT_ID.value)) is None:
             raise ClientError("Client id not set.")
 
         # Handling of token refresh
@@ -278,10 +278,10 @@ class ClientConfigurator:
         str
             Token endpoint URL for credential refresh.
         """
-        # Get issuer endpoint
         config = configurator.get_configuration()
-        endpoint_issuer = config.get(ConfigurationVars.DHCORE_ISSUER.value)
-        if endpoint_issuer is None:
+
+        # Get issuer endpoint
+        if (endpoint_issuer := config.get(ConfigurationVars.DHCORE_ISSUER.value)) is None:
             raise ClientError("Issuer endpoint not set.")
 
         # Standard issuer endpoint path

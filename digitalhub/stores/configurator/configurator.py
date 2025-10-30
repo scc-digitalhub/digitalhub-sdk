@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 from digitalhub.stores.configurator.handler import ConfigurationHandler
-from digitalhub.stores.configurator.retry import RetryHandler
 
 
 class Configurator:
@@ -15,7 +14,6 @@ class Configurator:
 
     def __init__(self):
         self._handler = ConfigurationHandler()
-        self._retry = RetryHandler()
         self._reload_from_env = False
 
     ##############################
