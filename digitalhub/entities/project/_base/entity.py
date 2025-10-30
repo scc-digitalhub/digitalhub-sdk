@@ -106,7 +106,6 @@ class Project(Entity):
         spec: ProjectSpec,
         status: ProjectStatus,
         user: str | None = None,
-        local: bool = False,
     ) -> None:
         super().__init__(kind, metadata, spec, status, user)
         self.spec: ProjectSpec
