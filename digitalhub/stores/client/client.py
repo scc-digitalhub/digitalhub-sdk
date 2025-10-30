@@ -307,5 +307,4 @@ class Client:
         """
         Manually trigger OAuth2 token refresh.
         """
-        self._http_handler._configurator.check_config()
         self._http_handler._configurator.refresh_credentials()

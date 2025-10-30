@@ -96,7 +96,7 @@ from digitalhub.entities.workflow.crud import (
     update_workflow,
 )
 from digitalhub.stores.client.utils import refresh_token
-from digitalhub.stores.credentials.api import get_current_profile, set_current_profile
+from digitalhub.stores.configurator.api import get_current_profile, set_current_profile
 from digitalhub.utils.store_utils import get_s3_client, get_sql_engine
 
 try:

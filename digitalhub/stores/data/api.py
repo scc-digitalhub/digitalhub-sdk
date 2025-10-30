@@ -7,7 +7,7 @@ from __future__ import annotations
 import typing
 
 from digitalhub.context.api import get_context
-from digitalhub.stores.credentials.handler import creds_handler
+from digitalhub.stores.configurator.configurator import configurator
 from digitalhub.stores.data.builder import store_builder
 from digitalhub.stores.data.enums import StoreEnv
 
@@ -41,9 +41,7 @@ def get_default_store(project: str) -> str:
     if store is not None:
         return store
 
-    store = creds_handler.load_from_env([var]).get(var)
-    if store is None:
-        store = creds_handler.load_from_file([var]).get(var)
+    store = configurator.get_configuration().get(var)
 
     if store is None or store == "":
         raise ValueError(
