@@ -10,8 +10,8 @@ from digitalhub.entities.dataitem.table.builder import DataitemTableBuilder
 from digitalhub.entities.model.mlflow.builder import ModelModelBuilder
 from digitalhub.entities.project._base.builder import ProjectProjectBuilder
 from digitalhub.entities.secret._base.builder import SecretSecretBuilder
-from digitalhub.entities.trigger.scheduler.builder import TriggerSchedulerBuilder
 from digitalhub.entities.trigger.lifecycle.builder import TriggerLifecycleBuilder
+from digitalhub.entities.trigger.scheduler.builder import TriggerSchedulerBuilder
 
 entity_builders: tuple = (
     (ProjectProjectBuilder.ENTITY_KIND, ProjectProjectBuilder),

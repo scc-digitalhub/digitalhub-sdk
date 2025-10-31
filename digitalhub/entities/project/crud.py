@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.entities._commons.enums import EntityTypes, EntityKinds
+from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
 from digitalhub.entities._processors.processors import base_processor, context_processor
 from digitalhub.entities.project.utils import setup_project
 from digitalhub.utils.exceptions import BackendError
