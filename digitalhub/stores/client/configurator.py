@@ -189,6 +189,9 @@ class ClientConfigurator:
         """
         Refresh authentication tokens using OAuth2 flows.
         """
+        if not self.refreshable_auth_types():
+            raise ClientError(f"Auth type {self._auth_type} does not support refresh.")
+
         # Get credentials and configuration
         creds = configurator.get_config_creds()
 
@@ -220,9 +223,6 @@ class ClientConfigurator:
         creds : dict
             Available credential values.
         """
-        if not self.refreshable_auth_types():
-            raise ClientError(f"Auth type {self._auth_type} does not support refresh.")
-
         if (client_id := creds.get(ConfigurationVars.DHCORE_CLIENT_ID.value)) is None:
             raise ClientError("Client id not set.")
 
