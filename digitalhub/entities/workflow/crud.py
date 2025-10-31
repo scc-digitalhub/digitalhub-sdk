@@ -289,7 +289,6 @@ def delete_workflow(
     entity_id: str | None = None,
     delete_all_versions: bool = False,
     cascade: bool = True,
-    **kwargs,
 ) -> dict:
     """
     Delete object from backend.
@@ -307,8 +306,6 @@ def delete_workflow(
         If True, use entity name instead of entity key as identifier.
     cascade : bool
         Cascade delete.
-    **kwargs : dict
-        Parameters to pass to the API call.
 
     Returns
     -------

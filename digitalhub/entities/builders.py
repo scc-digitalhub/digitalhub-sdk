@@ -11,6 +11,7 @@ from digitalhub.entities.model.mlflow.builder import ModelModelBuilder
 from digitalhub.entities.project._base.builder import ProjectProjectBuilder
 from digitalhub.entities.secret._base.builder import SecretSecretBuilder
 from digitalhub.entities.trigger.scheduler.builder import TriggerSchedulerBuilder
+from digitalhub.entities.trigger.lifecycle.builder import TriggerLifecycleBuilder
 
 entity_builders: tuple = (
     (ProjectProjectBuilder.ENTITY_KIND, ProjectProjectBuilder),
@@ -20,6 +21,7 @@ entity_builders: tuple = (
     (DataitemTableBuilder.ENTITY_KIND, DataitemTableBuilder),
     (ModelModelBuilder.ENTITY_KIND, ModelModelBuilder),
     (TriggerSchedulerBuilder.ENTITY_KIND, TriggerSchedulerBuilder),
+    (TriggerLifecycleBuilder.ENTITY_KIND, TriggerLifecycleBuilder),
 )
 
 ##############################
