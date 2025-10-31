@@ -136,7 +136,7 @@ class ClientConfigurator:
         # Therefore, we change the origin to file, where the refresh token is written.
         # We also try to fetch the PAT from both env and file
         if self._auth_type == AuthType.EXCHANGE.value:
-            self.refresh_credentials(retry=True)
+            self.refresh_credentials()
 
     def refreshable_auth_types(self) -> bool:
         """
