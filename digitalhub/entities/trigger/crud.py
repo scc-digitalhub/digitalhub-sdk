@@ -41,6 +41,12 @@ def new_trigger(
         Object name.
     kind : str
         Kind the object.
+    task : str
+        Task string.
+    function : str
+        Function string.
+    workflow : str
+        Workflow string.
     uuid : str
         ID of the object.
     description : str
@@ -63,18 +69,31 @@ def new_trigger(
     >>>                   kind="trigger",
     >>>                   name="my-trigger",)
     """
-    if workflow is None and function is None:
-        raise ValueError("Workflow or function must be provided")
+    if workflow is None:
+        if function is None:
+            raise ValueError("Workflow or function must be provided")
+        executable_type = "function"
+        executable = function
+    else:
+        executable_type = "workflow"
+        executable = workflow
+
+    # Prepare kwargs
     if kwargs is None:
         kwargs = {}
+    kwargs["task"] = task
+    kwargs[executable_type] = executable
+
+    # Template handling
     if template is None:
         template = {}
+    if not isinstance(template, dict):
+        raise ValueError("Template must be a dictionary")
     template["task"] = task
-    if workflow is not None:
-        template["workflow"] = workflow
-    if function is not None:
-        template["function"] = function
+    template[executable_type] = executable
+    template["local_execution"] = False
     kwargs["template"] = template
+
     return context_processor.create_context_entity(
         project=project,
         name=name,
