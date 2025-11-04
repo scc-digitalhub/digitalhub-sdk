@@ -462,8 +462,8 @@ class ExecutableEntity(VersionedEntity):
     def trigger(
         self,
         action: str,
-        trigger_kind: str,
-        trigger_name: str,
+        kind: str,
+        name: str,
         template: dict | None = None,
         **kwargs,
     ) -> Trigger:
@@ -474,9 +474,9 @@ class ExecutableEntity(VersionedEntity):
         ----------
         action : str
             Action to execute.
-        trigger_kind : str
+        kind : str
             Trigger kind.
-        trigger_name : str
+        name : str
             Trigger name.
         template : dict
             Template for the trigger.
@@ -500,8 +500,8 @@ class ExecutableEntity(VersionedEntity):
 
         # Override kwargs
         kwargs["project"] = self.project
-        kwargs["kind"] = trigger_kind
-        kwargs["name"] = trigger_name
+        kwargs["kind"] = kind
+        kwargs["name"] = name
 
         # Template handling
         if template is None:
