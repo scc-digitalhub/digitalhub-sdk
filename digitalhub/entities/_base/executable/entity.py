@@ -573,7 +573,7 @@ class ExecutableEntity(VersionedEntity):
             Creation date filter.
         updated : str
             Update date filter.
-        version : str
+        versions : str
             Object version, default is latest.
         task : str
             Task string filter.
