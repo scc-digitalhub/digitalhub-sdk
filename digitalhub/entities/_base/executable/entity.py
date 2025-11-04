@@ -553,7 +553,7 @@ class ExecutableEntity(VersionedEntity):
         user: str | None = None,
         created: str | None = None,
         updated: str | None = None,
-        version: str | None = None,
+        versions: str | None = None,
         task: str | None = None,
     ) -> list[Trigger]:
         """
@@ -590,7 +590,7 @@ class ExecutableEntity(VersionedEntity):
             user=user,
             created=created,
             updated=updated,
-            version=version,
+            versions=versions,
             task=task,
         )
 

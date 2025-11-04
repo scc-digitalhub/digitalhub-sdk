@@ -190,7 +190,7 @@ def list_triggers(
     state: str | None = None,
     created: str | None = None,
     updated: str | None = None,
-    version: str | None = None,
+    versions: str | None = None,
     task: str | None = None,
 ) -> list[Trigger]:
     """
@@ -214,7 +214,7 @@ def list_triggers(
         Creation date filter.
     updated : str
         Update date filter.
-    version : str
+    versions : str
         Object version, default is latest.
     task : str
         Task string filter.
@@ -238,7 +238,7 @@ def list_triggers(
         state=state,
         created=created,
         updated=updated,
-        version=version,
+        versions=versions,
         task=task,
     )
 

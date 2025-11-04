@@ -167,7 +167,7 @@ def list_projects() -> list[Project]:
     list
         List of objects.
     """
-    return base_processor.list_project_entities()
+    return base_processor.list_project_entities(ENTITY_TYPE)
 
 
 def get_or_create_project(

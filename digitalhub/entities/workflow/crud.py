@@ -155,7 +155,7 @@ def list_workflows(
     state: str | None = None,
     created: str | None = None,
     updated: str | None = None,
-    version: str | None = None,
+    versions: str | None = None,
 ) -> list[Workflow]:
     """
     List all latest version objects from backend.
@@ -178,7 +178,7 @@ def list_workflows(
         Creation date filter.
     updated : str
         Update date filter.
-    version : str
+    versions : str
         Object version, default is latest.
 
     Returns
@@ -200,7 +200,7 @@ def list_workflows(
         state=state,
         created=created,
         updated=updated,
-        version=version,
+        versions=versions,
     )
 
 
