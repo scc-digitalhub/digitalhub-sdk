@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import typing
+import warnings
 
 from digitalhub.entities._commons.utils import is_valid_key, sanitize_unversioned_key
 from digitalhub.entities._processors.utils import (
@@ -646,7 +647,13 @@ class ContextEntityCRUDProcessor:
             The post-processed entity with additional data loaded.
         """
         if hasattr(entity.status, "metrics"):
-            entity._get_metrics()
+            try:
+                entity._get_metrics()
+            except Exception as e:
+                warnings.warn(f"Failed to get metrics for entity {entity.ENTITY_TYPE}: {e}")
         if hasattr(entity.status, "files"):
-            entity._get_files_info()
+            try:
+                entity._get_files_info()
+            except Exception as e:
+                warnings.warn(f"Failed to get files info for entity {entity.ENTITY_TYPE}: {e}")
         return entity
