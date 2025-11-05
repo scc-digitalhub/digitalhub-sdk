@@ -204,7 +204,7 @@ class ContextEntitySpecialOpsProcessor:
             entity_type=entity_type,
             entity_id=entity_id,
         )
-        context.client.create_object(api, **kwargs)
+        context.client.create_object(api, obj={}, **kwargs)
 
     def resume_entity(
         self,
@@ -238,7 +238,7 @@ class ContextEntitySpecialOpsProcessor:
             entity_type=entity_type,
             entity_id=entity_id,
         )
-        context.client.create_object(api, **kwargs)
+        context.client.create_object(api, obj={}, **kwargs)
 
     def read_files_info(
         self,
