@@ -8,8 +8,8 @@ import typing
 
 from digitalhub.context.api import get_context
 from digitalhub.stores.configurator.configurator import configurator
-from digitalhub.stores.data.builder import store_builder
 from digitalhub.stores.configurator.enums import ConfigurationVars
+from digitalhub.stores.data.builder import store_builder
 
 if typing.TYPE_CHECKING:
     from digitalhub.stores.data._base.store import Store
