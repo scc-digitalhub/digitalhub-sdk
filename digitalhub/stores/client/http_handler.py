@@ -90,7 +90,7 @@ class HttpRequestHandler:
         except BackendError as e:
             # Handle authentication errors with token refresh
             if response.status_code == 401 and refresh and self._configurator.refreshable_auth_types():
-                self._configurator.refresh_credentials(retry=True)
+                self._configurator.refresh_credentials()
                 kwargs = self._configurator.get_auth_parameters(kwargs)
                 return self._execute_request(method, url, refresh=False, **kwargs)
             raise e
