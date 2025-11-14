@@ -102,22 +102,6 @@ class ClientConfigurator:
         return self._sanitize_endpoint(endpoint)
 
     ##############################
-    # Origin methods
-    ##############################
-
-    def change_origin(self) -> None:
-        """
-        Switch credential source and re-evaluate authentication type.
-
-        Changes between environment and file credential sources, then re-evaluates
-        authentication type based on the new credentials.
-        """
-        super().change_origin()
-
-        # Re-evaluate the auth type
-        self.set_auth_type()
-
-    ##############################
     # Auth methods
     ##############################
 
