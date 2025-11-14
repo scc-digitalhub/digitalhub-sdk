@@ -94,7 +94,13 @@ class ContextEntityCRUDProcessor:
             obj = _entity
         else:
             context = get_context(kwargs["project"])
+            entity_kind = kwargs.get("kind")
             obj: ContextEntity = entity_factory.build_entity_from_params(**kwargs)
+            legit_type = entity_factory.get_entity_type_from_kind(entity_kind)
+            if obj.ENTITY_TYPE != legit_type:
+                raise ValueError(
+                    f"Entity kind '{entity_kind}' does not match expected type '{obj.ENTITY_TYPE}'.",
+                )
         new_obj = self._create_context_entity(context, obj.ENTITY_TYPE, obj.to_dict())
         return entity_factory.build_entity_from_dict(new_obj)
 

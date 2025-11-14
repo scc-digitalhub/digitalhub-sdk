@@ -60,7 +60,13 @@ class ContextEntityMaterialProcessor:
         """
         source: SourcesOrListOfSources = kwargs.pop("source")
         context = get_context(kwargs["project"])
+        entity_kind = kwargs.get("kind")
         obj = entity_factory.build_entity_from_params(**kwargs)
+        legit_type = entity_factory.get_entity_type_from_kind(entity_kind)
+        if obj.ENTITY_TYPE != legit_type:
+            raise ValueError(
+                f"Entity kind '{entity_kind}' does not match expected type '{obj.ENTITY_TYPE}'.",
+            )
         if context.is_running:
             obj.add_relationship(Relationship.PRODUCEDBY.value, context.get_run_ctx())
 
