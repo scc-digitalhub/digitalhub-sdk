@@ -46,7 +46,7 @@ class ContextEntityMaterialProcessor:
             Parameters for entity creation including:
             - 'source': file source(s) to upload
             - 'project': project name
-            - other entity-specific parameters
+            - 'drop_existing': whether to drop existing entity with the same name
 
         Returns
         -------
@@ -63,6 +63,15 @@ class ContextEntityMaterialProcessor:
         obj = entity_factory.build_entity_from_params(**kwargs)
         if context.is_running:
             obj.add_relationship(Relationship.PRODUCEDBY.value, context.get_run_ctx())
+
+        drop_existing: bool = kwargs.pop("drop_existing", False)
+        if drop_existing:
+            crud_processor.delete_context_entity(
+                    kwargs["name"],
+                    project=kwargs["project"],
+                    entity_type=obj.ENTITY_TYPE,
+                    delete_all_versions=True,
+                )
 
         new_obj: MaterialEntity = crud_processor._create_context_entity(context, obj.ENTITY_TYPE, obj.to_dict())
         new_obj = entity_factory.build_entity_from_dict(new_obj)

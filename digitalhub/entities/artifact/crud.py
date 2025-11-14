@@ -84,6 +84,7 @@ def log_artifact(
     name: str,
     kind: str,
     source: SourcesOrListOfSources,
+    drop_existing: bool = False,
     path: str | None = None,
     **kwargs,
 ) -> Artifact:
@@ -100,6 +101,8 @@ def log_artifact(
         Kind the object.
     source : SourcesOrListOfSources
         Artifact location on local path.
+    drop_existing : bool
+        Whether to drop existing entity with the same name.
     path : str
         Destination path of the artifact. If not provided, it's generated.
     **kwargs : dict
@@ -124,6 +127,7 @@ def log_artifact(
         project=project,
         name=name,
         kind=kind,
+        drop_existing=drop_existing,
         **kwargs,
     )
 

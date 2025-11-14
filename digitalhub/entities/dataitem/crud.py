@@ -84,6 +84,7 @@ def log_dataitem(
     name: str,
     kind: str,
     source: SourcesOrListOfSources | None = None,
+    drop_existing: bool = False,
     data: Any | None = None,
     path: str | None = None,
     file_format: str | None = None,
@@ -104,6 +105,8 @@ def log_dataitem(
         Kind the object.
     source : SourcesOrListOfSources
         Dataitem location on local path.
+    drop_existing : bool
+        Whether to drop existing entity with the same name.
     data : Any
         Dataframe to log. Alternative to source.
     path : str
@@ -149,6 +152,7 @@ def log_dataitem(
         project=project,
         name=name,
         kind=kind,
+        drop_existing=drop_existing,
         **kwargs,
     )
     obj = post_process(obj, data)
