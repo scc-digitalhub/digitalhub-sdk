@@ -73,11 +73,11 @@ class ContextEntityMaterialProcessor:
         drop_existing: bool = kwargs.pop("drop_existing", False)
         if drop_existing:
             crud_processor.delete_context_entity(
-                    kwargs["name"],
-                    project=kwargs["project"],
-                    entity_type=obj.ENTITY_TYPE,
-                    delete_all_versions=True,
-                )
+                kwargs["name"],
+                project=kwargs["project"],
+                entity_type=obj.ENTITY_TYPE,
+                delete_all_versions=True,
+            )
 
         new_obj: MaterialEntity = crud_processor._create_context_entity(context, obj.ENTITY_TYPE, obj.to_dict())
         new_obj = entity_factory.build_entity_from_dict(new_obj)
