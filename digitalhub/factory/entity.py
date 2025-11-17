@@ -187,9 +187,9 @@ class EntityFactory:
         """
         return self._call_builder_method(kind, "get_action_from_task_kind", task_kind)
 
-    def get_task_kind_from_action(self, kind: str, action: str) -> list[str]:
+    def get_task_kind_from_action(self, kind: str, action: str) -> str:
         """
-        Get task kinds from action.
+        Get task kind from action.
 
         Parameters
         ----------
@@ -200,8 +200,8 @@ class EntityFactory:
 
         Returns
         -------
-        list of str
-            Task kinds.
+        str
+            Task kind.
         """
         return self._call_builder_method(kind, "get_task_kind_from_action", action)
 

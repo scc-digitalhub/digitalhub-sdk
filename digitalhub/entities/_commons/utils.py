@@ -5,11 +5,15 @@
 from __future__ import annotations
 
 import re
-from collections import namedtuple
+from dataclasses import dataclass
 
 from digitalhub.entities._commons.enums import EntityTypes
 
-KindAction = namedtuple("KindAction", ["kind", "action"])
+
+@dataclass
+class KindAction:
+    kind: str
+    action: str
 
 
 KEY_PATTERN_WITH_ID = "store://([^/]+)/([^/]+)/([^/]+)/([^:]+):(.+)"

@@ -49,13 +49,13 @@ class RuntimeEntityBuilder:
             if i.kind is None:
                 raise EntityError(f"{attribute} must be a list of KindAction with kind set")
 
-    def get_action_from_task_kind(self, task_kind: str) -> str:
+    def get_action_from_task_kind(self, kind: str) -> str:
         """
         Get action from task kind.
 
         Parameters
         ----------
-        task_kind : str
+        kind : str
             Task kind.
 
         Returns
@@ -64,14 +64,14 @@ class RuntimeEntityBuilder:
             Action.
         """
         for task in self.TASKS_KINDS:
-            if task.kind == task_kind:
+            if task.kind == kind:
                 return task.action
-        msg = f"Task kind {task_kind} not allowed."
+        msg = f"Task kind {kind} not allowed."
         raise EntityError(msg)
 
-    def get_task_kind_from_action(self, action: str) -> list[str]:
+    def get_task_kind_from_action(self, action: str) -> str:
         """
-        Get task kinds from action.
+        Get task kind from action.
 
         Parameters
         ----------
@@ -80,8 +80,8 @@ class RuntimeEntityBuilder:
 
         Returns
         -------
-        list[str]
-            Task kinds.
+        str
+            Task kind.
         """
         for task in self.TASKS_KINDS:
             if task.action == action:

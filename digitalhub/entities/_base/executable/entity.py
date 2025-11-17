@@ -121,22 +121,24 @@ class ExecutableEntity(VersionedEntity):
             if task_obj.spec.function == self._get_executable_string():
                 self._tasks[task_obj.kind] = task_obj
 
-    def new_task(self, kind: str, **kwargs) -> Task:
+    def new_task(self, action: str, **kwargs) -> Task:
         """
         Create new task. If the task already exists, update it.
 
         Parameters
         ----------
-        kind : str
-            Kind the object.
+        action : str
+            Action name.
         **kwargs : dict
-            Keyword arguments.
+            Task spec keyword arguments.
 
         Returns
         -------
         Task
             New task.
         """
+        # Get task kind from action
+        kind = entity_factory.get_task_kind_from_action(self.kind, action)
         self._raise_if_exists(kind)
 
         # Override kwargs
@@ -151,25 +153,22 @@ class ExecutableEntity(VersionedEntity):
         self._tasks[kind] = task
         return task
 
-    def get_task(self, kind: str) -> Task:
+    def get_task(self, action: str) -> Task:
         """
         Get task.
 
         Parameters
         ----------
-        kind : str
-            Kind the object.
+        action : str
+            Action name.
 
         Returns
         -------
         Task
             Task.
-
-        Raises
-        ------
-        EntityError
-            If task is not created.
         """
+        # Get task kind from action
+        kind = entity_factory.get_task_kind_from_action(self.kind, action)
         try:
             return self._tasks[kind]
         except KeyError:
@@ -237,22 +236,24 @@ class ExecutableEntity(VersionedEntity):
         kwargs[self.ENTITY_TYPE] = self._get_executable_string()
         return list_tasks(self.project, **kwargs)
 
-    def update_task(self, kind: str, **kwargs) -> Task:
+    def update_task(self, action: str, **kwargs) -> Task:
         """
         Update task.
 
         Parameters
         ----------
-        kind : str
-            Kind the object.
+        action : str
+            Action name.
         **kwargs : dict
-            Keyword arguments.
+            Task spec keyword arguments.
 
         Returns
         -------
         Task
             Task.
         """
+        # Get task kind from action
+        kind = entity_factory.get_task_kind_from_action(self.kind, action)
         self._raise_if_not_exists(kind)
 
         # Update kwargs
@@ -267,14 +268,14 @@ class ExecutableEntity(VersionedEntity):
         self._tasks[kind] = task
         return task
 
-    def delete_task(self, kind: str, cascade: bool = True) -> dict:
+    def delete_task(self, action: str, cascade: bool = True) -> dict:
         """
         Delete task.
 
         Parameters
         ----------
-        kind : str
-            Kind the object.
+        action : str
+            Action name.
         cascade : bool
             Flag to determine if cascade deletion must be performed.
 
@@ -283,9 +284,45 @@ class ExecutableEntity(VersionedEntity):
         dict
             Response from backend.
         """
+        # Get task kind from action
+        kind = entity_factory.get_task_kind_from_action(self.kind, action)
         resp = delete_task(self._tasks[kind].key, cascade=cascade)
         self._tasks.pop(kind, None)
         return resp
+
+    def set_task(self, action: str, **kwargs) -> Task:
+        """
+        Set task.
+
+        Parameters
+        ----------
+        action : str
+            Action name.
+        **kwargs : dict
+            Task spec keyword arguments.
+
+        Returns
+        -------
+        Task
+            Task.
+        """
+        # Get task kind from action
+        kind = entity_factory.get_task_kind_from_action(self.kind, action)
+
+        if self._tasks.get(kind) is None:
+            self.new_task(kind, **kwargs)
+            return self._tasks[kind]
+
+        # Override kwargs
+        kwargs["project"] = self.project
+        kwargs[self.ENTITY_TYPE] = self._get_executable_string()
+        kwargs["kind"] = kind
+
+        # Create object instance
+        task: Task = entity_factory.build_entity_from_params(**kwargs)
+        task.save(update=True)
+        self._tasks[kind] = task
+        return task
 
     def _get_task_from_backend(self, kind: str) -> list:
         """
