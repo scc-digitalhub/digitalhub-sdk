@@ -481,6 +481,7 @@ class Project(Entity):
         name: str,
         kind: str,
         source: str,
+        drop_existing: bool = False,
         path: str | None = None,
         **kwargs,
     ) -> Artifact:
@@ -495,6 +496,8 @@ class Project(Entity):
             Kind the object.
         source : str
             Artifact location on local path.
+        drop_existing : bool
+            Whether to drop existing entity with the same name.
         path : str
             Destination path of the artifact. If not provided, it's generated.
         **kwargs : dict
@@ -516,6 +519,7 @@ class Project(Entity):
             name=name,
             kind=kind,
             source=source,
+            drop_existing=drop_existing,
             path=path,
             **kwargs,
         )
@@ -799,6 +803,7 @@ class Project(Entity):
         kind: str,
         source: str | None = None,
         data: Any | None = None,
+        drop_existing: bool = False,
         extension: str | None = None,
         path: str | None = None,
         **kwargs,
@@ -817,9 +822,11 @@ class Project(Entity):
         extension : str
             Extension of the dataitem.
         source : str
-            Dataitem location on local path.
+            Dataitem location on local path. Alternative to data.
         data : Any
             Dataframe to log. Alternative to source.
+        drop_existing : bool
+            Whether to drop existing entity with the same name.
         extension : str
             Extension of the output dataframe.
         path : str
@@ -845,6 +852,7 @@ class Project(Entity):
             path=path,
             source=source,
             data=data,
+            drop_existing=drop_existing,
             extension=extension,
             **kwargs,
         )
@@ -1128,6 +1136,7 @@ class Project(Entity):
         name: str,
         kind: str,
         source: str,
+        drop_existing: bool = False,
         path: str | None = None,
         **kwargs,
     ) -> Model:
@@ -1142,6 +1151,8 @@ class Project(Entity):
             Kind the object.
         source : str
             Model location on local path.
+        drop_existing : bool
+            Whether to drop existing entity with the same name.
         path : str
             Destination path of the model. If not provided, it's generated.
         **kwargs : dict
@@ -1163,6 +1174,7 @@ class Project(Entity):
             name=name,
             kind=kind,
             source=source,
+            drop_existing=drop_existing,
             path=path,
             **kwargs,
         )

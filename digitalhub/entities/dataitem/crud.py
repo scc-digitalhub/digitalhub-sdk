@@ -84,8 +84,8 @@ def log_dataitem(
     name: str,
     kind: str,
     source: SourcesOrListOfSources | None = None,
-    drop_existing: bool = False,
     data: Any | None = None,
+    drop_existing: bool = False,
     path: str | None = None,
     file_format: str | None = None,
     read_df_params: dict | None = None,
@@ -104,11 +104,11 @@ def log_dataitem(
     kind : str
         Kind the object.
     source : SourcesOrListOfSources
-        Dataitem location on local path.
-    drop_existing : bool
-        Whether to drop existing entity with the same name.
+        Dataitem location on local path. Alternative to data.
     data : Any
         Dataframe to log. Alternative to source.
+    drop_existing : bool
+        Whether to drop existing entity with the same name.
     path : str
         Destination path of the dataitem. If not provided, it's generated.
     file_format : str
