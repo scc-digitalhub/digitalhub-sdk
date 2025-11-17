@@ -30,12 +30,19 @@ entity_builders: tuple = (
 
 
 try:
+    from digitalhub.entities.dataitem.vectortable.builder import DataitemVectorTableBuilder
+
+    entity_builders += ((DataitemVectorTableBuilder.ENTITY_KIND, DataitemVectorTableBuilder),)
+except ImportError:
+    ...
+
+
+try:
     from digitalhub.entities.dataitem.iceberg.builder import DataitemIcebergBuilder
 
     entity_builders += ((DataitemIcebergBuilder.ENTITY_KIND, DataitemIcebergBuilder),)
 except ImportError:
     ...
-
 
 try:
     from digitalhub.entities.model.model.builder import ModelMlflowBuilder

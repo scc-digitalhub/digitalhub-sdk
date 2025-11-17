@@ -74,6 +74,7 @@ class EntityKinds(Enum):
     DATAITEM_DATAITEM = "dataitem"
     DATAITEM_TABLE = "table"
     DATAITEM_ICEBERG = "iceberg"
+    DATAITEM_VECTORTABLE = "vectortable"
     MODEL_MODEL = "model"
     MODEL_MLFLOW = "mlflow"
     MODEL_HUGGINGFACE = "huggingface"
