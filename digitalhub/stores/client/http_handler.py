@@ -130,3 +130,28 @@ class HttpRequestHandler:
         """
         endpoint = self._configurator.get_endpoint()
         return f"{endpoint}/{api.removeprefix('/')}"
+
+    ###############################
+    # Utility methods
+    ###############################
+
+    def refresh_token(self) -> None:
+        """
+        Manually trigger OAuth2 token refresh.
+        """
+        self._configurator.refresh_credentials()
+
+    def get_credentials_and_config(self) -> dict:
+        """
+        Get current authentication credentials and configuration.
+
+        Returns
+        -------
+        dict
+            Current authentication credentials and configuration.
+        """
+        creds = self._configurator.get_credentials_and_config()
+
+        # Test connection to ensure validity
+        self.prepare_request("GET", "/api/auth")
+        return creds

@@ -383,3 +383,18 @@ class ClientConfigurator:
         for key in required_keys:
             if current_keys.get(key) is None:
                 raise ClientError(f"Required configuration key '{key}' is missing.")
+
+    ###############################
+    # Utility methods
+    ###############################
+
+    def get_credentials_and_config(self) -> dict:
+        """
+        Get current authentication credentials and configuration.
+
+        Returns
+        -------
+        dict
+            Current authentication credentials and configuration.
+        """
+        return configurator.get_config_creds()
