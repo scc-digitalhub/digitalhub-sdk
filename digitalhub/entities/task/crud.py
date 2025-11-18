@@ -61,6 +61,7 @@ def new_task(
         kind=kind,
         uuid=uuid,
         labels=labels,
+        entity_type=ENTITY_TYPE,
         function=function,
         workflow=workflow,
         **kwargs,

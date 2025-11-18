@@ -68,6 +68,7 @@ def new_function(
         description=description,
         labels=labels,
         embedded=embedded,
+        entity_type=ENTITY_TYPE,
         **kwargs,
     )
 

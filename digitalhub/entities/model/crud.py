@@ -127,6 +127,7 @@ def log_model(
         name=name,
         kind=kind,
         drop_existing=drop_existing,
+        entity_type=ENTITY_TYPE,
         **kwargs,
     )
 

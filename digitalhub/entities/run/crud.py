@@ -63,6 +63,7 @@ def new_run(
         labels=labels,
         task=task,
         local_execution=local_execution,
+        entity_type=ENTITY_TYPE,
         **kwargs,
     )
 

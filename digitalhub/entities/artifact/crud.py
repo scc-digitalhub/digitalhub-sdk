@@ -74,6 +74,7 @@ def new_artifact(
         description=description,
         labels=labels,
         embedded=embedded,
+        entity_type=ENTITY_TYPE,
         path=path,
         **kwargs,
     )
@@ -128,6 +129,7 @@ def log_artifact(
         name=name,
         kind=kind,
         drop_existing=drop_existing,
+        entity_type=ENTITY_TYPE,
         **kwargs,
     )
 

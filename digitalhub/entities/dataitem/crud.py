@@ -74,6 +74,7 @@ def new_dataitem(
         description=description,
         labels=labels,
         embedded=embedded,
+        entity_type=ENTITY_TYPE,
         path=path,
         **kwargs,
     )
@@ -152,6 +153,7 @@ def log_dataitem(
         project=project,
         name=name,
         kind=kind,
+        entity_type=ENTITY_TYPE,
         drop_existing=drop_existing,
         **kwargs,
     )

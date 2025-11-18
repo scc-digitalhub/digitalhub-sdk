@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from digitalhub.stores.configurator.handler import ConfigurationHandler
+from digitalhub.utils.logger import LOGGER
 
 
 class Configurator:
@@ -61,11 +62,13 @@ class Configurator:
         # Compare cached and file credentials.
         # If different, reload in cache.
         if current_creds != reread_creds:
+            LOGGER.info("Credentials changed on file, reloading...")
             self.reload_credentials()
             return True
 
         # Check if we need to reload from env only
         if not self._reload_from_env:
+            LOGGER.info("Reloading credentials from environment variables...")
             self._handler.reload_credentials_from_env()
             self._reload_from_env = True
             return True

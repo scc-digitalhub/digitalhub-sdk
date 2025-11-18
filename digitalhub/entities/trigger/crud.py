@@ -102,6 +102,7 @@ def new_trigger(
         description=description,
         labels=labels,
         embedded=embedded,
+        entity_type=ENTITY_TYPE,
         **kwargs,
     )
 

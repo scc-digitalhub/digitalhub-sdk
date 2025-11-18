@@ -71,6 +71,7 @@ def new_secret(
         description=description,
         labels=labels,
         embedded=embedded,
+        entity_type=ENTITY_TYPE,
         **kwargs,
     )
     obj.set_secret_value(value=secret_value)

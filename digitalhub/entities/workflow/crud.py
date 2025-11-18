@@ -67,6 +67,7 @@ def new_workflow(
         description=description,
         labels=labels,
         embedded=embedded,
+        entity_type=ENTITY_TYPE,
         **kwargs,
     )
 
