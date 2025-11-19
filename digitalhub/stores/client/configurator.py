@@ -221,44 +221,39 @@ class ClientConfigurator:
         # Execute the appropriate auth flow
         response = self._evaluate_auth_flow(url, creds)
 
-        # Evaluate a retry
-        self._evaluate_retry(response)
-
         # Raise an error if the response indicates failure
         response.raise_for_status()
 
         # Export new credentials to file
         self._export_new_creds(response.json())
 
-    def _evaluate_retry(self, response: Response) -> None:
-        """
-        Evaluate the status of retry lifecycle.
-        """
-        if response.status_code not in (400, 401, 403):
-            return
-        if configurator.eval_retry():
-            self.refresh_credentials()
-        else:
-            raise ClientError(
-            "Failed to refresh credentials after retry"
-            " (checked credentials from file and env)."
-            " Please check your credentials"
-            " (refresh tokens, password, etc.)."
-        )
+        configurator.reload_credentials()
 
-    def evaluate_retry(self, status_code: int) -> bool:
+    def evaluate_refresh(self) -> bool:
         """
-        Evaluate credentials reload based on retry logic.
+        Check if token refresh should be attempted.
 
         Returns
         -------
         bool
-            True if a retry action was performed, otherwise False.
+            True if token refresh is applicable, otherwise False.
         """
-        if status_code == 401:
+        from warnings import warn
+
+        try:
             self.refresh_credentials()
             return True
-        return False
+        except Exception:
+            if not configurator.eval_retry():
+                warn(
+                    "Failed to refresh credentials after retry"
+                    " (checked credentials from file and env)."
+                    " Please check your credentials"
+                    " and make sure they are up to date."
+                    " (refresh tokens, password, etc.)."
+                )
+                return False
+            return self.evaluate_refresh()
 
     def _get_refresh_endpoint(self) -> str:
         """
@@ -387,7 +382,6 @@ class ClientConfigurator:
             if key.removeprefix(prefix) in response:
                 response[key] = response.pop(key.removeprefix(prefix))
         configurator.write_file(response)
-        configurator.reload_credentials()
 
     def _validate(self) -> None:
         """

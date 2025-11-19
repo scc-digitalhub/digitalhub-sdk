@@ -85,7 +85,7 @@ class HttpRequestHandler:
             return self._response_processor.process(response)
         except BackendError as e:
             # Handle authentication errors with token refresh
-            if self._configurator.evaluate_retry(response.status_code):
+            if response.status_code == 401 and self._configurator.evaluate_refresh():
                 kwargs = self._configurator.get_auth_parameters(kwargs)
                 return self._execute_request(method, url, **kwargs)
             raise e
