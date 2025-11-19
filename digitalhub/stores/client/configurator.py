@@ -5,9 +5,9 @@
 from __future__ import annotations
 
 import typing
+from warnings import warn
 
 from requests import request
-from warnings import warn
 
 from digitalhub.stores.client.enums import AuthType
 from digitalhub.stores.configurator.configurator import configurator

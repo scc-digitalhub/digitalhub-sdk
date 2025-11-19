@@ -134,7 +134,7 @@ class HttpRequestHandler:
         """
         Manually trigger OAuth2 token refresh.
         """
-        self._configurator.refresh_credentials()
+        self._configurator.evaluate_refresh()
 
     def get_credentials_and_config(self) -> dict:
         """
