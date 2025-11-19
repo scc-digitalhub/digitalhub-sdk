@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import typing
+from warnings import warn
 
 from requests import request
 
@@ -102,22 +103,6 @@ class ClientConfigurator:
         return self._sanitize_endpoint(endpoint)
 
     ##############################
-    # Origin methods
-    ##############################
-
-    def change_origin(self) -> None:
-        """
-        Switch credential source and re-evaluate authentication type.
-
-        Changes between environment and file credential sources, then re-evaluates
-        authentication type based on the new credentials.
-        """
-        super().change_origin()
-
-        # Re-evaluate the auth type
-        self.set_auth_type()
-
-    ##############################
     # Auth methods
     ##############################
 
@@ -185,33 +170,6 @@ class ClientConfigurator:
             kwargs["auth"] = (user, password)
         return kwargs
 
-    def refresh_credentials(self) -> None:
-        """
-        Refresh authentication tokens using OAuth2 flows.
-        """
-        if not self.refreshable_auth_types():
-            raise ClientError(f"Auth type {self._auth_type} does not support refresh.")
-
-        # Get credentials and configuration
-        creds = configurator.get_config_creds()
-
-        # Get token refresh from creds
-        if (url := creds.get(ConfigurationVars.OAUTH2_TOKEN_ENDPOINT.value)) is None:
-            url = self._get_refresh_endpoint()
-        url = self._sanitize_endpoint(url)
-
-        # Execute the appropriate auth flow
-        response = self._evaluate_auth_flow(url, creds)
-
-        # Evaluate a retry
-        self._evaluate_retry(response)
-
-        # Raise an error if the response indicates failure
-        response.raise_for_status()
-
-        # Export new credentials to file
-        self._export_new_creds(response.json())
-
     def _evaluate_auth_flow(self, url: str, creds: dict) -> Response:
         """
         Evaluate the auth flow to execute.
@@ -246,20 +204,55 @@ class ClientConfigurator:
             scope="credentials",
         )
 
-    def _evaluate_retry(self, response: Response) -> None:
+    def refresh_credentials(self) -> None:
         """
-        Evaluate the status of retry lifecycle.
+        Refresh authentication tokens using OAuth2 flows.
         """
-        if response.status_code not in (400, 401, 403):
-            return
-        if configurator.eval_retry():
+        if not self.refreshable_auth_types():
+            raise ClientError(f"Auth type {self._auth_type} does not support refresh.")
+
+        # Get credentials and configuration
+        creds = configurator.get_config_creds()
+
+        # Get token refresh from creds
+        if (url := creds.get(ConfigurationVars.OAUTH2_TOKEN_ENDPOINT.value)) is None:
+            url = self._get_refresh_endpoint()
+        url = self._sanitize_endpoint(url)
+
+        # Execute the appropriate auth flow
+        response = self._evaluate_auth_flow(url, creds)
+
+        # Raise an error if the response indicates failure
+        response.raise_for_status()
+
+        # Export new credentials to file
+        self._export_new_creds(response.json())
+
+        configurator.reload_credentials()
+
+    def evaluate_refresh(self) -> bool:
+        """
+        Check if token refresh should be attempted.
+
+        Returns
+        -------
+        bool
+            True if token refresh is applicable, otherwise False.
+        """
+        try:
             self.refresh_credentials()
-        raise ClientError(
-            "Failed to refresh credentials after retry"
-            " (checked credentials from file and env)."
-            " Please check your credentials"
-            " (refresh tokens, password, etc.)."
-        )
+            return True
+        except Exception:
+            if not configurator.eval_retry():
+                warn(
+                    "Failed to refresh credentials after retry"
+                    " (checked credentials from file and env)."
+                    " Please check your credentials"
+                    " and make sure they are up to date."
+                    " (refresh tokens, password, etc.)."
+                )
+                return False
+            return self.evaluate_refresh()
 
     def _get_refresh_endpoint(self) -> str:
         """
@@ -388,7 +381,6 @@ class ClientConfigurator:
             if key.removeprefix(prefix) in response:
                 response[key] = response.pop(key.removeprefix(prefix))
         configurator.write_file(response)
-        configurator.reload_credentials()
 
     def _validate(self) -> None:
         """
@@ -399,3 +391,18 @@ class ClientConfigurator:
         for key in required_keys:
             if current_keys.get(key) is None:
                 raise ClientError(f"Required configuration key '{key}' is missing.")
+
+    ###############################
+    # Utility methods
+    ###############################
+
+    def get_credentials_and_config(self) -> dict:
+        """
+        Get current authentication credentials and configuration.
+
+        Returns
+        -------
+        dict
+            Current authentication credentials and configuration.
+        """
+        return configurator.get_config_creds()
