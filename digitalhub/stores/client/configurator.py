@@ -7,6 +7,7 @@ from __future__ import annotations
 import typing
 
 from requests import request
+from warnings import warn
 
 from digitalhub.stores.client.enums import AuthType
 from digitalhub.stores.configurator.configurator import configurator
@@ -238,8 +239,6 @@ class ClientConfigurator:
         bool
             True if token refresh is applicable, otherwise False.
         """
-        from warnings import warn
-
         try:
             self.refresh_credentials()
             return True
