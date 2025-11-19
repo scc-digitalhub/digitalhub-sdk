@@ -16,6 +16,7 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities.function._base.spec import FunctionSpec
     from digitalhub.entities.function._base.status import FunctionStatus
     from digitalhub.entities.run._base.entity import Run
+    from digitalhub.entities.task._base.entity import Task
 
 
 class Function(ExecutableEntity):
@@ -74,14 +75,11 @@ class Function(ExecutableEntity):
         Run
             Run instance.
         """
-        # Get task and run kind
-        task_kind = entity_factory.get_task_kind_from_action(self.kind, action)
-        run_kind = entity_factory.get_run_kind_from_action(self.kind, action)
-
         # Create or update new task
-        task = self._get_or_create_task(task_kind)
+        task: Task = self._get_or_create_task(action)
 
         # Run function from task
+        run_kind = entity_factory.get_run_kind_from_action(self.kind, action)
         run = task.run(run_kind, save=False, local_execution=local_execution, **kwargs)
 
         # Set as run's parent

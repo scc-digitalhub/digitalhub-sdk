@@ -13,6 +13,7 @@ from digitalhub.factory.entity import entity_factory
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.entity.metadata import Metadata
     from digitalhub.entities.run._base.entity import Run
+    from digitalhub.entities.task._base.entity import Task
     from digitalhub.entities.workflow._base.spec import WorkflowSpec
     from digitalhub.entities.workflow._base.status import WorkflowStatus
 
@@ -70,14 +71,11 @@ class Workflow(ExecutableEntity):
         Run
             Run instance.
         """
-        # Get task and run kind
-        task_kind = entity_factory.get_task_kind_from_action(self.kind, action)
-        run_kind = entity_factory.get_run_kind_from_action(self.kind, action)
-
         # Create or update new task
-        task = self._get_or_create_task(task_kind)
+        task: Task = self._get_or_create_task(action)
 
         # Run task
+        run_kind = entity_factory.get_run_kind_from_action(self.kind, action)
         run = task.run(run_kind, save=False, local_execution=False, **kwargs)
 
         # Set as run's parent
