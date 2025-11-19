@@ -5,9 +5,10 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
+
+RESOURCE_REGEX = r"[\d]+|^([0-9])+([a-zA-Z])+$"
 
 
 class VolumeType(Enum):
@@ -26,9 +27,9 @@ class SpecEmptyDir(BaseModel):
     Spec empty dir model.
     """
 
-    size_limit: Optional[str] = None
+    size_limit: str | None = None
 
-    medium: Optional[str] = None
+    medium: str | None = None
 
 
 class SpecPVC(BaseModel):
@@ -36,7 +37,7 @@ class SpecPVC(BaseModel):
     Spec PVC model.
     """
 
-    size: Optional[str] = None
+    size: str | None = None
 
 
 class SpecEphemeral(BaseModel):
@@ -44,7 +45,7 @@ class SpecEphemeral(BaseModel):
     Ephemeral volume model.
     """
 
-    size: Optional[str] = None
+    size: str | None = None
 
 
 class SharedVolumeSpec(BaseModel):
@@ -52,7 +53,7 @@ class SharedVolumeSpec(BaseModel):
     Shared volume spec model.
     """
 
-    size: Optional[str] = None
+    size: str | None = None
 
 
 class Volume(BaseModel):
@@ -71,7 +72,7 @@ class Volume(BaseModel):
     mount_path: str
     """Volume mount path inside the container."""
 
-    spec: Optional[Union[SpecEmptyDir, SpecPVC, SpecEphemeral, SharedVolumeSpec]] = None
+    spec: SpecEmptyDir | SpecPVC | SpecEphemeral | SharedVolumeSpec | None = None
     """Volume spec."""
 
 
@@ -80,13 +81,13 @@ class Resource(BaseModel):
     Resource model.
     """
 
-    cpu: Optional[str] = Field(default=None, pattern=r"[\d]+|^([0-9])+([a-zA-Z])+$")
+    cpu: str | None = Field(default=None, pattern=RESOURCE_REGEX)
     """CPU resource model."""
 
-    mem: Optional[str] = Field(default=None, pattern=r"[\d]+|^([0-9])+([a-zA-Z])+$")
+    mem: str | None = Field(default=None, pattern=RESOURCE_REGEX)
     """Memory resource model."""
 
-    gpu: Optional[str] = Field(default=None, pattern=r"[\d]+|^([0-9])+([a-zA-Z])+$")
+    gpu: str | None = Field(default=None, pattern=RESOURCE_REGEX)
     """GPU resource model."""
 
 
@@ -107,19 +108,19 @@ class K8s(BaseModel):
     Kubernetes resource model.
     """
 
-    volumes: Optional[list[Volume]] = None
+    volumes: list[Volume] | None = None
     """List of volumes."""
 
-    resources: Optional[Resource] = None
+    resources: Resource | None = None
     """Resources restrictions."""
 
-    envs: Optional[list[Env]] = None
+    envs: list[Env] | None = None
     """Env variables."""
 
-    secrets: Optional[list[str]] = None
+    secrets: list[str] | None = None
     """List of secret names."""
 
-    profile: Optional[str] = None
+    profile: str | None = None
     """Profile template."""
 
 

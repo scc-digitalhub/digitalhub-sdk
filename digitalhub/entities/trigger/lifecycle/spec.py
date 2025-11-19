@@ -35,7 +35,7 @@ class TriggerValidatorLifecycle(TriggerValidator):
     TriggerValidatorLifecycle validator.
     """
 
-    key: str = Field(pattern=regexp)
+    key: str | None = Field(pattern=regexp)
     """Entity key."""
 
     states: list[str] = None

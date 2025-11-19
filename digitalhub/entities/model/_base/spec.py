@@ -4,8 +4,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 from digitalhub.entities._base.material.spec import MaterialSpec, MaterialValidator
 
 
@@ -32,11 +30,11 @@ class ModelValidator(MaterialValidator):
     ModelValidator validator.
     """
 
-    framework: Optional[str] = None
+    framework: str | None = None
     """Model framework (e.g. 'pytorch')."""
 
-    algorithm: Optional[str] = None
+    algorithm: str | None = None
     """Model algorithm (e.g. 'resnet')."""
 
-    parameters: Optional[dict] = None
+    parameters: dict | None = None
     """Model validator."""

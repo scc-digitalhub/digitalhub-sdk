@@ -8,7 +8,6 @@ from datetime import datetime
 from hashlib import sha256
 from mimetypes import guess_type
 from pathlib import Path
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -33,12 +32,12 @@ class FileInfo(BaseModel):
         Last modified date/time in ISO format.
     """
 
-    path: Optional[str] = None
-    name: Optional[str] = None
-    content_type: Optional[str] = None
-    size: Optional[int] = None
-    hash: Optional[str] = None
-    last_modified: Optional[str] = None
+    path: str | None = None
+    name: str | None = None
+    content_type: str | None = None
+    size: int | None = None
+    hash: str | None = None
+    last_modified: str | None = None
 
     def to_dict(self) -> dict:
         """

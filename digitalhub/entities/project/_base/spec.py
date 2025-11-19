@@ -4,8 +4,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 from digitalhub.entities._base.entity.spec import Spec, SpecValidator
 from digitalhub.entities.project._base.models import ProfileConfig
 
@@ -40,23 +38,23 @@ class ProjectValidator(SpecValidator):
     ProjectValidator validator.
     """
 
-    source: Optional[str] = None
+    source: str | None = None
     """The project's source."""
 
-    functions: Optional[list] = None
+    functions: list | None = None
     """List of project's functions."""
 
-    artifacts: Optional[list] = None
+    artifacts: list | None = None
     """List of project's artifacts."""
 
-    workflows: Optional[list] = None
+    workflows: list | None = None
     """List of project's workflows."""
 
-    dataitems: Optional[list] = None
+    dataitems: list | None = None
     """List of project's dataitems."""
 
-    models: Optional[list] = None
+    models: list | None = None
     """List of project's models."""
 
-    config: Optional[ProfileConfig] = None
+    config: ProfileConfig | None = None
     """Project's config."""

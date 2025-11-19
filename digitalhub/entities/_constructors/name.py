@@ -18,7 +18,7 @@ class NameValidator(BaseModel):
     Validate name format.
     """
 
-    name: str = Field(min_length=1, max_length=256, pattern=NAME_REGEX)
+    name: str | None = Field(min_length=1, max_length=256, pattern=NAME_REGEX)
 
 
 def build_name(name: str) -> str:

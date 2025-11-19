@@ -4,8 +4,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 from digitalhub.entities._base.entity.spec import Spec, SpecValidator
 from digitalhub.entities.task._base.models import K8s
 
@@ -43,8 +41,8 @@ class RunValidator(SpecValidator, K8s):
     """
 
     # Task parameters
-    function: Optional[str] = None
-    workflow: Optional[str] = None
+    function: str | None = None
+    workflow: str | None = None
 
     # Run parameters
     task: str
