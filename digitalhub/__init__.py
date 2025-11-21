@@ -59,7 +59,6 @@ from digitalhub.entities.run.crud import delete_run, get_run, import_run, list_r
 from digitalhub.entities.secret.crud import (
     delete_secret,
     get_secret,
-    get_secret_versions,
     import_secret,
     list_secrets,
     load_secret,
@@ -78,7 +77,6 @@ from digitalhub.entities.task.crud import (
 from digitalhub.entities.trigger.crud import (
     delete_trigger,
     get_trigger,
-    get_trigger_versions,
     import_trigger,
     list_triggers,
     load_trigger,

@@ -286,4 +286,5 @@ def delete_task(
         project=project,
         entity_id=entity_id,
         cascade=cascade,
+        unversioned=True,
     )

@@ -147,41 +147,6 @@ def get_trigger(
     )
 
 
-def get_trigger_versions(
-    identifier: str,
-    project: str | None = None,
-) -> list[Trigger]:
-    """
-    Get object versions from backend.
-
-    Parameters
-    ----------
-    identifier : str
-        Entity key (store://...) or entity name.
-    project : str
-        Project name.
-
-    Returns
-    -------
-    list[Trigger]
-        List of object instances.
-
-    Examples
-    --------
-    Using entity key:
-    >>> objs = get_trigger_versions("store://my-trigger-key")
-
-    Using entity name:
-    >>> objs = get_trigger_versions("my-trigger-name",
-    >>>                            project="my-project")
-    """
-    return context_processor.read_context_entity_versions(
-        identifier=identifier,
-        entity_type=ENTITY_TYPE,
-        project=project,
-    )
-
-
 def list_triggers(
     project: str,
     q: str | None = None,

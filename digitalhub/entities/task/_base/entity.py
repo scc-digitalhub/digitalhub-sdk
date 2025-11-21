@@ -76,6 +76,7 @@ class Task(UnversionedEntity):
             task=self._get_task_string(),
             kind=run_kind,
             local_execution=local_execution,
+            entity_type=EntityTypes.RUN.value,
             **kwargs,
         )
 

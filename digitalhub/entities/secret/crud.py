@@ -127,41 +127,6 @@ def get_secret(
     )
 
 
-def get_secret_versions(
-    identifier: str,
-    project: str | None = None,
-) -> list[Secret]:
-    """
-    Get object versions from backend.
-
-    Parameters
-    ----------
-    identifier : str
-        Entity key (store://...) or entity name.
-    project : str
-        Project name.
-
-    Returns
-    -------
-    list[Secret]
-        List of object instances.
-
-    Examples
-    --------
-    Using entity key:
-    >>> objs = get_secret_versions("store://my-secret-key")
-
-    Using entity name:
-    >>> objs = get_secret_versions("my-secret-name",
-    >>>                            project="my-project")
-    """
-    return context_processor.read_context_entity_versions(
-        identifier=identifier,
-        entity_type=ENTITY_TYPE,
-        project=project,
-    )
-
-
 def list_secrets(project: str) -> list[Secret]:
     """
     List all latest version objects from backend.

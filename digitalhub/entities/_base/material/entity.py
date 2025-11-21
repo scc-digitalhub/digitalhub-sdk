@@ -11,6 +11,7 @@ from digitalhub.entities._base.material.utils import refresh_decorator
 from digitalhub.entities._base.versioned.entity import VersionedEntity
 from digitalhub.entities._processors.processors import context_processor
 from digitalhub.stores.data.api import get_store
+from digitalhub.utils.exceptions import BackendError
 from digitalhub.utils.types import SourcesOrListOfSources
 
 if typing.TYPE_CHECKING:
@@ -169,6 +170,19 @@ class MaterialEntity(VersionedEntity):
     #  Public Helpers
     ##############################
 
+    @property
+    def files(self) -> list[dict]:
+        """
+        Get files info list.
+
+        Returns
+        -------
+        list[dict]
+            Files info list.
+        """
+        self._get_files_info()
+        return self.status.files
+
     def add_files_info(self, files: list[dict]) -> None:
         """
         Add a file to the status.
@@ -223,9 +237,12 @@ class MaterialEntity(VersionedEntity):
         Get files info from backend.
         """
         if not self.status.files:
-            files = context_processor.read_files_info(
-                project=self.project,
-                entity_type=self.ENTITY_TYPE,
-                entity_id=self.id,
-            )
+            try:
+                files = context_processor.read_files_info(
+                    project=self.project,
+                    entity_type=self.ENTITY_TYPE,
+                    entity_id=self.id,
+                )
+            except BackendError:
+                files = []
             self.add_files_info(files)

@@ -292,4 +292,5 @@ def delete_run(
         entity_type=ENTITY_TYPE,
         project=project,
         entity_id=entity_id,
+        unversioned=True,
     )

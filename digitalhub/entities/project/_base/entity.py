@@ -56,7 +56,6 @@ from digitalhub.entities.run.crud import delete_run, get_run, list_runs
 from digitalhub.entities.secret.crud import (
     delete_secret,
     get_secret,
-    get_secret_versions,
     import_secret,
     list_secrets,
     new_secret,
@@ -2028,33 +2027,6 @@ class Project(Entity):
         )
         self.refresh()
         return obj
-
-    def get_secret_versions(
-        self,
-        identifier: str,
-    ) -> list[Secret]:
-        """
-        Get object versions from backend.
-
-        Parameters
-        ----------
-        identifier : str
-            Entity key (store://...) or entity name.
-
-        Returns
-        -------
-        list[Secret]
-            List of object instances.
-
-        Examples
-        --------
-        Using entity key:
-        >>> obj = project.get_secret_versions("store://my-secret-key")
-
-        Using entity name:
-        >>> obj = project.get_secret_versions("my-secret-name")
-        """
-        return get_secret_versions(identifier, project=self.name)
 
     def list_secrets(self) -> list[Secret]:
         """

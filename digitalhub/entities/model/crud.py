@@ -73,6 +73,7 @@ def new_model(
         description=description,
         labels=labels,
         embedded=embedded,
+        entity_type=ENTITY_TYPE,
         path=path,
         **kwargs,
     )
