@@ -18,6 +18,7 @@ from digitalhub.utils.logger import LOGGER
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.entity.metadata import Metadata
+    from digitalhub.entities.logs._base.entity import Log
     from digitalhub.entities.run._base.spec import RunSpec
     from digitalhub.entities.run._base.status import RunStatus
     from digitalhub.runtimes._base import Runtime
@@ -124,14 +125,14 @@ class Run(UnversionedEntity):
                     LOGGER.info(f"Run {self.id} finished in {current:.2f} seconds.")
                 return self
 
-    def logs(self) -> dict:
+    def logs(self) -> list[Log]:
         """
         Get run logs.
 
         Returns
         -------
-        dict
-            Run logs.
+        list[Log]
+            List of run logs.
         """
         return context_processor.read_run_logs(self.project, self.ENTITY_TYPE, self.id)
 

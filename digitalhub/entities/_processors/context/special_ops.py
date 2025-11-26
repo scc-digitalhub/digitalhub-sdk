@@ -7,12 +7,15 @@ from __future__ import annotations
 import typing
 from typing import Any
 
+from digitalhub.entities._commons.enums import EntityKinds
 from digitalhub.entities._processors.utils import get_context
+from digitalhub.factory.entity import entity_factory
 from digitalhub.stores.client.enums import ApiCategories, BackendOperations
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.context.entity import ContextEntity
     from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
+    from digitalhub.entities.log._base.entity import Log
 
 
 class ContextEntitySpecialOpsProcessor:
@@ -139,7 +142,7 @@ class ContextEntitySpecialOpsProcessor:
         entity_type: str,
         entity_id: str,
         **kwargs,
-    ) -> dict:
+    ) -> list[Log]:
         """
         Read execution logs from the backend.
 
@@ -159,7 +162,7 @@ class ContextEntitySpecialOpsProcessor:
 
         Returns
         -------
-        dict
+        list[Log]
             Log data retrieved from the backend.
         """
         context = get_context(project)
@@ -170,7 +173,15 @@ class ContextEntitySpecialOpsProcessor:
             entity_type=entity_type,
             entity_id=entity_id,
         )
-        return context.client.read_object(api, **kwargs)
+        objects: list[dict] = context.client.read_object(api, **kwargs)
+        logs = []
+        for o in objects:
+            content = o.pop("content", None)
+            o["kind"] = EntityKinds.LOG_LOG.value
+            entity: Log = entity_factory.build_entity_from_dict(o)
+            entity.set_content(content)
+            logs.append(entity)
+        return logs
 
     def stop_entity(
         self,

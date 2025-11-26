@@ -22,6 +22,7 @@ class EntityTypes(Enum):
     TASK = "task"
     RUN = "run"
     TRIGGER = "trigger"
+    LOG = "log"
 
 
 class Relationship(Enum):
@@ -82,3 +83,4 @@ class EntityKinds(Enum):
     SECRET_SECRET = "secret"
     TRIGGER_SCHEDULER = "scheduler"
     TRIGGER_LIFECYCLE = "lifecycle"
+    LOG_LOG = "log"

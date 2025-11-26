@@ -568,7 +568,7 @@ class ContextEntityCRUDProcessor:
             entity_id=entity_id,
         )
 
-        unversioned : bool = kwargs.pop("unversioned", False)
+        unversioned: bool = kwargs.pop("unversioned", False)
         delete_all_versions: bool = kwargs.pop("delete_all_versions", False)
 
         if unversioned:
@@ -641,7 +641,10 @@ class ContextEntityCRUDProcessor:
             **kwargs,
         )
 
-    def _post_process_get(self, entity: ContextEntity,) -> ContextEntity:
+    def _post_process_get(
+        self,
+        entity: ContextEntity,
+    ) -> ContextEntity:
         """
         Post-process a retrieved context entity.
 

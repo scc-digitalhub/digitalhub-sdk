@@ -7,6 +7,7 @@ from __future__ import annotations
 from digitalhub.entities.artifact.artifact.builder import ArtifactArtifactBuilder
 from digitalhub.entities.dataitem.dataitem.builder import DataitemDataitemBuilder
 from digitalhub.entities.dataitem.table.builder import DataitemTableBuilder
+from digitalhub.entities.log._base.builder import LogLogBuilder
 from digitalhub.entities.model.mlflow.builder import ModelModelBuilder
 from digitalhub.entities.project._base.builder import ProjectProjectBuilder
 from digitalhub.entities.secret._base.builder import SecretSecretBuilder
@@ -22,6 +23,7 @@ entity_builders: tuple = (
     (ModelModelBuilder.ENTITY_KIND, ModelModelBuilder),
     (TriggerSchedulerBuilder.ENTITY_KIND, TriggerSchedulerBuilder),
     (TriggerLifecycleBuilder.ENTITY_KIND, TriggerLifecycleBuilder),
+    (LogLogBuilder.ENTITY_KIND, LogLogBuilder),
 )
 
 ##############################
