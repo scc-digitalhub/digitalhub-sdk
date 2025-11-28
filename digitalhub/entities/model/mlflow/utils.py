@@ -53,7 +53,7 @@ def from_mlflow_run(run_id: str) -> dict:
     # Extract spec
     data = run.data
     parameters = data.params
-    source_path = urlparse(run.info.artifact_uri).path
+    source_path = urlparse(run.info.artifact_uri).path + "/model"
     model_uri = f"runs:/{run_id}/model"
     model = mlflow.pyfunc.load_model(model_uri=model_uri)
     model_config = model.model_config
