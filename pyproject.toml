@@ -38,9 +38,13 @@ dependencies = [
 full = [
     "mlflow",
     "pandas",
+    "polars",
 ]
 pandas = [
     "pandas",
+]
+polars = [
+    "polars",
 ]
 mlflow = [
     "mlflow",
