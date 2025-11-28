@@ -71,7 +71,7 @@ from digitalhub.entities.workflow.crud import (
     update_workflow,
 )
 from digitalhub.factory.entity import entity_factory
-from digitalhub.stores.client.builder import get_client
+from digitalhub.stores.client.base.factory import get_client
 from digitalhub.utils.exceptions import BackendError, EntityAlreadyExistsError, EntityError
 from digitalhub.utils.io_utils import write_yaml
 from digitalhub.utils.uri_utils import has_local_scheme
@@ -699,6 +699,7 @@ class Project(Entity):
         identifier: str,
         entity_id: str | None = None,
         delete_all_versions: bool = False,
+        cascade: bool = True,
     ) -> None:
         """
         Delete object from backend.
@@ -711,6 +712,8 @@ class Project(Entity):
             Entity ID.
         delete_all_versions : bool
             Delete all versions of the named entity. If True, use entity name instead of entity key as identifier.
+        cascade : bool
+            Flag to determine if related entities should be deleted.
 
         Returns
         -------
@@ -731,6 +734,7 @@ class Project(Entity):
             project=self.name,
             entity_id=entity_id,
             delete_all_versions=delete_all_versions,
+            cascade=cascade,
         )
         self.refresh()
 
@@ -1032,6 +1036,7 @@ class Project(Entity):
         identifier: str,
         entity_id: str | None = None,
         delete_all_versions: bool = False,
+        cascade: bool = True,
     ) -> None:
         """
         Delete object from backend.
@@ -1044,6 +1049,8 @@ class Project(Entity):
             Entity ID.
         delete_all_versions : bool
             Delete all versions of the named entity. If True, use entity name instead of entity key as identifier.
+        cascade : bool
+            Flag to determine if related entities should be deleted.
 
         Returns
         -------
@@ -1065,6 +1072,7 @@ class Project(Entity):
             project=self.name,
             entity_id=entity_id,
             delete_all_versions=delete_all_versions,
+            cascade=cascade,
         )
         self.refresh()
 
@@ -1354,6 +1362,7 @@ class Project(Entity):
         identifier: str,
         entity_id: str | None = None,
         delete_all_versions: bool = False,
+        cascade: bool = True,
     ) -> None:
         """
         Delete object from backend.
@@ -1366,6 +1375,8 @@ class Project(Entity):
             Entity ID.
         delete_all_versions : bool
             Delete all versions of the named entity. If True, use entity name instead of entity key as identifier.
+        cascade : bool
+            Flag to determine if related entities should be deleted.
 
         Returns
         -------
@@ -1379,14 +1390,15 @@ class Project(Entity):
 
         Otherwise:
         >>> project.delete_model("my-model-name",
-        >>>                         project="my-project",
-        >>>                         delete_all_versions=True)
+        >>>                       project="my-project",
+        >>>                       delete_all_versions=True)
         """
         delete_model(
             identifier=identifier,
             project=self.name,
             entity_id=entity_id,
             delete_all_versions=delete_all_versions,
+            cascade=cascade,
         )
         self.refresh()
 

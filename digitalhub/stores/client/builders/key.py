@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from digitalhub.stores.client.enums import ApiCategories
+from digitalhub.stores.client.common.enums import ApiCategories
 
 
 class ClientKeyBuilder:

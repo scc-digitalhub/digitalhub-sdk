@@ -5,12 +5,12 @@
 from __future__ import annotations
 
 from configparser import ConfigParser
-from pathlib import Path
 
+from digitalhub.stores.client.common.config import get_client_config
 from digitalhub.utils.exceptions import ClientError
 
 # File where to write credementials
-ENV_FILE = Path.home() / ".dhcore.ini"
+ENV_FILE = get_client_config().config_file_path
 
 
 def load_file() -> ConfigParser:

@@ -7,8 +7,8 @@ from __future__ import annotations
 import typing
 
 from digitalhub.context.api import get_context
-from digitalhub.stores.configurator.configurator import configurator
-from digitalhub.stores.configurator.enums import ConfigurationVars
+from digitalhub.stores.client.auth.enums import ConfigurationVars
+from digitalhub.stores.client.base.factory import get_client
 from digitalhub.stores.data.builder import store_builder
 
 if typing.TYPE_CHECKING:
@@ -41,7 +41,7 @@ def get_default_store(project: str) -> str:
     if store is not None:
         return store
 
-    store = configurator.get_configuration().get(var)
+    store = get_client().get_credentials_and_config().get(var)
 
     if store is None or store == "":
         raise ValueError(

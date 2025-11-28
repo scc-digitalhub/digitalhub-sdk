@@ -7,8 +7,8 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from digitalhub.stores.configurator.enums import ConfigurationVars, CredentialsVars, SetCreds
-from digitalhub.stores.configurator.ini_module import (
+from digitalhub.stores.client.auth.enums import ConfigurationVars, CredentialsVars, SetCreds
+from digitalhub.stores.client.auth.ini_module import (
     load_file,
     load_key,
     load_profile,
@@ -18,7 +18,7 @@ from digitalhub.stores.configurator.ini_module import (
 from digitalhub.utils.generic_utils import list_enum
 
 
-class ConfigurationHandler:
+class ConfigLoader:
     """
     Handler for loading and writing configuration variables.
     """

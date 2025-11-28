@@ -9,8 +9,8 @@ import typing
 from digitalhub.context.builder import context_builder
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.factory.entity import entity_factory
-from digitalhub.stores.client.builder import get_client
-from digitalhub.stores.client.enums import ApiCategories, BackendOperations
+from digitalhub.stores.client.base.factory import get_client
+from digitalhub.stores.client.common.enums import ApiCategories, BackendOperations
 from digitalhub.utils.exceptions import ContextError, EntityNotExistsError
 
 if typing.TYPE_CHECKING:

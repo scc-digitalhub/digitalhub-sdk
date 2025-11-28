@@ -8,12 +8,12 @@ import typing
 
 from digitalhub.context.api import delete_context
 from digitalhub.factory.entity import entity_factory
-from digitalhub.stores.client.builder import get_client
-from digitalhub.stores.client.enums import ApiCategories, BackendOperations
+from digitalhub.stores.client.base.factory import get_client
+from digitalhub.stores.client.common.enums import ApiCategories, BackendOperations
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.project._base.entity import Project
-    from digitalhub.stores.client.client import Client
+    from digitalhub.stores.client.base.client import Client
 
 
 class BaseEntityCRUDProcessor:

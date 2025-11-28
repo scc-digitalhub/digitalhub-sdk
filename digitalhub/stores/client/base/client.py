@@ -6,11 +6,17 @@ from __future__ import annotations
 
 from typing import Any
 
-from digitalhub.stores.client.api_builder import ClientApiBuilder
-from digitalhub.stores.client.header_manager import HeaderManager
-from digitalhub.stores.client.http_handler import HttpRequestHandler
-from digitalhub.stores.client.key_builder import ClientKeyBuilder
-from digitalhub.stores.client.params_builder import ClientParametersBuilder
+from digitalhub.stores.client.auth.client_configurator import ClientConfigurator
+from digitalhub.stores.client.builders.api import ClientApiBuilder
+from digitalhub.stores.client.builders.key import ClientKeyBuilder
+from digitalhub.stores.client.builders.params import ClientParametersBuilder
+from digitalhub.stores.client.common.utils import (
+    increment_page_number,
+    read_page_number,
+    set_json_content_type,
+    set_pagination,
+)
+from digitalhub.stores.client.http.handler import HttpRequestHandler
 from digitalhub.utils.exceptions import BackendError
 from digitalhub.utils.generic_utils import dump_json
 
@@ -24,16 +30,45 @@ class Client:
     with refresh), and Personal Access Token exchange. Automatically handles
     API version compatibility, pagination, token refresh, error parsing, and
     JSON serialization.
+
+    Supports dependency injection for testing and customization. All dependencies
+    are optional and will be created with default implementations if not provided.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        configurator: ClientConfigurator | None = None,
+        api_builder: ClientApiBuilder | None = None,
+        key_builder: ClientKeyBuilder | None = None,
+        params_builder: ClientParametersBuilder | None = None,
+        http_handler: HttpRequestHandler | None = None,
+    ) -> None:
+        """
+        Initialize DHCore client with optional dependency injection.
+
+        Parameters
+        ----------
+        configurator : ClientConfigurator
+            Configurator for credentials and authentication. If None, creates default instance.
+        api_builder : ClientApiBuilder
+            Builder for API endpoints. If None, creates default instance.
+        key_builder : ClientKeyBuilder
+            Builder for entity keys. If None, creates default instance.
+        params_builder : ClientParametersBuilder
+            Builder for request parameters. If None, creates default instance.
+        http_handler : HttpRequestHandler
+            Handler for HTTP requests. If None, creates default instance using configurator.
+        """
+        # Configurator
+        self._configurator = configurator if configurator is not None else ClientConfigurator()
+
         # API, key and parameters builders
-        self._api_builder: ClientApiBuilder = ClientApiBuilder()
-        self._key_builder: ClientKeyBuilder = ClientKeyBuilder()
-        self._params_builder: ClientParametersBuilder = ClientParametersBuilder()
+        self._api_builder = api_builder if api_builder is not None else ClientApiBuilder()
+        self._key_builder = key_builder if key_builder is not None else ClientKeyBuilder()
+        self._params_builder = params_builder if params_builder is not None else ClientParametersBuilder()
 
         # HTTP request handling
-        self._http_handler = HttpRequestHandler()
+        self._http_handler = http_handler if http_handler is not None else HttpRequestHandler(self._configurator)
 
     ##############################
     # CRUD methods
@@ -59,9 +94,9 @@ class Client:
         dict
             Created object as returned by the backend.
         """
-        kwargs = HeaderManager.set_json_content_type(**kwargs)
+        kwargs = set_json_content_type(**kwargs)
         kwargs["data"] = dump_json(obj)
-        return self._http_handler.prepare_request("POST", api, **kwargs)
+        return self._http_handler.execute_request("POST", api, **kwargs)
 
     def read_object(self, api: str, **kwargs) -> dict:
         """
@@ -88,7 +123,7 @@ class Client:
         EntityNotExistsError
             If the requested object does not exist.
         """
-        return self._http_handler.prepare_request("GET", api, **kwargs)
+        return self._http_handler.execute_request("GET", api, **kwargs)
 
     def update_object(self, api: str, obj: Any, **kwargs) -> dict:
         """
@@ -110,9 +145,9 @@ class Client:
         dict
             Updated object as returned by the backend.
         """
-        kwargs = HeaderManager.set_json_content_type(**kwargs)
+        kwargs = set_json_content_type(**kwargs)
         kwargs["data"] = dump_json(obj)
-        return self._http_handler.prepare_request("PUT", api, **kwargs)
+        return self._http_handler.execute_request("PUT", api, **kwargs)
 
     def delete_object(self, api: str, **kwargs) -> dict:
         """
@@ -133,7 +168,7 @@ class Client:
         dict
             Deletion result from backend or {"deleted": bool} wrapper.
         """
-        resp = self._http_handler.prepare_request("DELETE", api, **kwargs)
+        resp = self._http_handler.execute_request("DELETE", api, **kwargs)
         if isinstance(resp, bool):
             resp = {"deleted": resp}
         return resp
@@ -158,17 +193,17 @@ class Client:
         list[dict]
             List containing all objects from all pages.
         """
-        kwargs = self._params_builder.set_pagination(partial=True, **kwargs)
+        kwargs = set_pagination(partial=True, **kwargs)
 
         objects = []
         while True:
-            resp = self._http_handler.prepare_request("GET", api, **kwargs)
+            resp = self._http_handler.execute_request("GET", api, **kwargs)
             contents = resp["content"]
             total_pages = resp["totalPages"]
             objects.extend(contents)
-            if not contents or self._params_builder.read_page_number(**kwargs) >= (total_pages - 1):
+            if not contents or read_page_number(**kwargs) >= (total_pages - 1):
                 break
-            self._params_builder.increment_page_number(**kwargs)
+            increment_page_number(**kwargs)
 
         return objects
 
@@ -217,16 +252,16 @@ class Client:
         list[dict]
             List of matching objects with search highlights removed.
         """
-        kwargs = self._params_builder.set_pagination(**kwargs)
+        kwargs = set_pagination(**kwargs)
         objects_with_highlights: list[dict] = []
         while True:
-            resp = self._http_handler.prepare_request("GET", api, **kwargs)
+            resp = self._http_handler.execute_request("GET", api, **kwargs)
             contents = resp["content"]
             total_pages = resp["totalPages"]
             objects_with_highlights.extend(contents)
-            if not contents or self._params_builder.read_page_number(**kwargs) >= (total_pages - 1):
+            if not contents or read_page_number(**kwargs) >= (total_pages - 1):
                 break
-            self._params_builder.increment_page_number(**kwargs)
+            increment_page_number(**kwargs)
 
         objects = []
         for obj in objects_with_highlights:
@@ -300,23 +335,51 @@ class Client:
         return self._params_builder.build_parameters(category, operation, **kwargs)
 
     ##############################
-    # Utility methods
+    # Facade methods
     ##############################
+
+    def eval_retry(self) -> None:
+        """
+        Evaluate the status of retry lifecycle.
+        """
+        self._configurator.evaluate_refresh()
 
     def refresh_token(self) -> None:
         """
         Manually trigger OAuth2 token refresh.
         """
-        self._http_handler.refresh_token()
+        self._configurator.evaluate_refresh()
 
     def get_credentials_and_config(self) -> dict:
         """
         Get current authentication credentials and configuration.
-        Eventually refreshes token if expired.
+        Eventually refreshes tokens if expired.
 
         Returns
         -------
         dict
             Current authentication credentials and configuration.
         """
-        return self._http_handler.get_credentials_and_config()
+        return self._configurator.get_credentials_and_config()
+
+    def set_current_profile(self, profile: str) -> None:
+        """
+        Set the current credentials profile.
+
+        Parameters
+        ----------
+        profile : str
+            Name of the credentials profile to set.
+        """
+        self._configurator.set_current_profile(profile)
+
+    def get_current_profile(self) -> str:
+        """
+        Get the name of the current credentials profile.
+
+        Returns
+        -------
+        str
+            Name of the current credentials profile.
+        """
+        return self._configurator.get_current_profile()

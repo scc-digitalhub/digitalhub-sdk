@@ -10,7 +10,7 @@ from typing import Any
 from digitalhub.entities._commons.enums import EntityKinds
 from digitalhub.entities._processors.utils import get_context
 from digitalhub.factory.entity import entity_factory
-from digitalhub.stores.client.enums import ApiCategories, BackendOperations
+from digitalhub.stores.client.common.enums import ApiCategories, BackendOperations
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.context.entity import ContextEntity

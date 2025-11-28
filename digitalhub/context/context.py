@@ -10,12 +10,12 @@ from pathlib import Path
 
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.runtimes.enums import RuntimeEnvVar
-from digitalhub.stores.client.enums import ApiCategories, BackendOperations
+from digitalhub.stores.client.common.enums import ApiCategories, BackendOperations
 from digitalhub.utils.exceptions import BackendError
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.project._base.entity import Project
-    from digitalhub.stores.client.client import Client
+    from digitalhub.stores.client.base.client import Client
 
 
 class Context:

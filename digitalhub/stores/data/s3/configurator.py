@@ -6,8 +6,8 @@ from __future__ import annotations
 
 from botocore.config import Config
 
-from digitalhub.stores.configurator.configurator import configurator
-from digitalhub.stores.configurator.enums import ConfigurationVars, CredentialsVars
+from digitalhub.stores.client.auth.enums import ConfigurationVars, CredentialsVars
+from digitalhub.stores.client.base.factory import get_client
 
 
 class S3StoreConfigurator:
@@ -36,7 +36,7 @@ class S3StoreConfigurator:
         dict
             A dictionary containing the S3 credentials.
         """
-        creds = configurator.get_config_creds()
+        creds = get_client().get_credentials_and_config()
         return {
             "endpoint_url": creds[ConfigurationVars.S3_ENDPOINT_URL.value],
             "aws_access_key_id": creds[CredentialsVars.S3_ACCESS_KEY_ID.value],
@@ -57,7 +57,7 @@ class S3StoreConfigurator:
             CredentialsVars.S3_ACCESS_KEY_ID.value,
             CredentialsVars.S3_SECRET_ACCESS_KEY.value,
         ]
-        current_keys = configurator.get_config_creds()
+        current_keys = get_client().get_credentials_and_config()
         missing_keys = []
         for key in required_keys:
             if key not in current_keys or current_keys[key] is None:
@@ -74,4 +74,4 @@ class S3StoreConfigurator:
         bool
             True if a retry action was performed, otherwise False.
         """
-        return configurator.eval_retry()
+        return get_client().eval_retry()

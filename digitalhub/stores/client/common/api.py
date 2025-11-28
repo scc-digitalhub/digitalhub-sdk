@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from digitalhub.stores.client.builder import get_client
+from digitalhub.stores.client.base.factory import get_client
 
 
 def refresh_token() -> None:
@@ -33,3 +33,27 @@ def get_credentials_and_config() -> dict:
         Current client credentials and configuration details.
     """
     return get_client().get_credentials_and_config()
+
+
+def set_current_profile(profile: str) -> None:
+    """
+    Set the current credentials profile.
+
+    Parameters
+    ----------
+    profile : str
+        Name of the credentials profile to set.
+    """
+    get_client().set_current_profile(profile)
+
+
+def get_current_profile() -> str:
+    """
+    Get the name of the current credentials profile.
+
+    Returns
+    -------
+    str
+        Name of the current credentials profile.
+    """
+    return get_client().get_current_profile()

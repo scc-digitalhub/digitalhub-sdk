@@ -32,8 +32,8 @@ class SqlStore(Store):
     SQL-based data store implementation for database operations.
 
     Provides functionality for reading, writing, and managing data in SQL
-    databases. Implements the Store interface with SQL-specific operations
-    including table downloads, DataFrame operations, and query execution.
+    databases. Implements the Store interface and provides methods to fetch and persist
+    artifacts on SQL based storage.
 
     Attributes
     ----------

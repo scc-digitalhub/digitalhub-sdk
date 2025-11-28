@@ -4,11 +4,12 @@
 
 from __future__ import annotations
 
-from digitalhub.stores.client.enums import ApiCategories, BackendOperations
+from digitalhub.stores.client.common.config import get_client_config
+from digitalhub.stores.client.common.enums import ApiCategories, BackendOperations
 from digitalhub.utils.exceptions import BackendError
 
-API_BASE = "/api/v1"
-API_CONTEXT = f"{API_BASE}/-"
+API_BASE = get_client_config().api_base
+API_CONTEXT = get_client_config().api_context
 
 
 class ClientApiBuilder:

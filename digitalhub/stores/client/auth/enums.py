@@ -7,22 +7,6 @@ from __future__ import annotations
 from enum import Enum
 
 
-class CredsOrigin(Enum):
-    """
-    Credential origins for configuration.
-
-    Attributes
-    ----------
-    ENV : str
-        Credentials from environment variables.
-    FILE : str
-        Credentials from configuration file.
-    """
-
-    ENV = "env"
-    FILE = "file"
-
-
 class SetCreds(Enum):
     """
     Supported credential environments.

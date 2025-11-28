@@ -4,8 +4,8 @@
 
 from __future__ import annotations
 
-from digitalhub.stores.configurator.configurator import configurator
-from digitalhub.stores.configurator.enums import ConfigurationVars, CredentialsVars
+from digitalhub.stores.client.auth.enums import ConfigurationVars, CredentialsVars
+from digitalhub.stores.client.base.factory import get_client
 
 
 class SqlStoreConfigurator:
@@ -56,7 +56,7 @@ class SqlStoreConfigurator:
             ConfigurationVars.DB_PORT.value,
             ConfigurationVars.DB_DATABASE.value,
         ]
-        creds = configurator.get_config_creds()
+        creds = get_client().get_credentials_and_config()
         return {key: creds.get(key) for key in keys}
 
     def eval_retry(self) -> bool:
@@ -68,7 +68,7 @@ class SqlStoreConfigurator:
         bool
             True if a retry should be attempted, False otherwise.
         """
-        return configurator.eval_retry()
+        return get_client().eval_retry()
 
     def _validate(self) -> None:
         """
@@ -81,7 +81,7 @@ class SqlStoreConfigurator:
             CredentialsVars.DB_USERNAME.value,
             CredentialsVars.DB_PASSWORD.value,
         ]
-        current_keys = configurator.get_config_creds()
+        current_keys = get_client().get_credentials_and_config()
         missing_keys = []
         for key in required_keys:
             if key not in current_keys or current_keys[key] is None:
