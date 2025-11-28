@@ -48,7 +48,7 @@ class HttpRequestHandler:
         dict
             Response from the API call.
         """
-        full_kwargs = self._configurator.get_auth_parameters(**kwargs)
+        full_kwargs = self._configurator.get_auth_parameters(kwargs)
         url = f"{self._configurator.get_endpoint()}{api}"
         return self._execute_request(method, url, **full_kwargs)
 
