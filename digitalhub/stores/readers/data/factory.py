@@ -133,3 +133,15 @@ try:
 
 except ImportError:
     pass
+
+try:
+    from digitalhub.stores.readers.data.polars.builder import ReaderBuilderPolars
+
+    factory.add_builder(
+        ReaderBuilderPolars.ENGINE,
+        ReaderBuilderPolars.DATAFRAME_CLASS,
+        ReaderBuilderPolars(),
+    )
+
+except ImportError:
+    pass
