@@ -56,7 +56,10 @@ def from_mlflow_run(run_id: str) -> dict:
     source_path = urlparse(run.info.artifact_uri).path + "/model"
     model_uri = f"runs:/{run_id}/model"
     model = mlflow.pyfunc.load_model(model_uri=model_uri)
-    model_config = model.model_config
+    try:
+        model_config = model.model_config
+    except Exception:
+        model_config = {}
     flavor = None
     for f in model.metadata.flavors:
         if f != "python_function":
@@ -64,27 +67,33 @@ def from_mlflow_run(run_id: str) -> dict:
             break
 
     # Extract signature
-    mlflow_signature = model.metadata.signature
-    signature = Signature(
-        inputs=mlflow_signature.inputs.to_json() if mlflow_signature.inputs else None,
-        outputs=mlflow_signature.outputs.to_json() if mlflow_signature.outputs else None,
-        params=mlflow_signature.params.to_json() if mlflow_signature.params else None,
-    ).to_dict()
+    try:
+        mlflow_signature = model.metadata.signature
+        signature = Signature(
+            inputs=mlflow_signature.inputs.to_json() if mlflow_signature.inputs else None,
+            outputs=mlflow_signature.outputs.to_json() if mlflow_signature.outputs else None,
+            params=mlflow_signature.params.to_json() if mlflow_signature.params else None,
+        ).to_dict()
+    except Exception:
+        signature = None
 
     # Extract datasets
     datasets = []
-    if run.inputs and run.inputs.dataset_inputs:
-        datasets = [
-            Dataset(
-                name=d.dataset.name,
-                digest=d.dataset.digest,
-                profile=d.dataset.profile,
-                dataset_schema=d.dataset.schema,
-                source=d.dataset.source,
-                source_type=d.dataset.source_type,
-            ).to_dict()
-            for d in run.inputs.dataset_inputs
-        ]
+    try:
+        if run.inputs and run.inputs.dataset_inputs:
+            datasets = [
+                Dataset(
+                    name=d.dataset.name,
+                    digest=d.dataset.digest,
+                    profile=d.dataset.profile,
+                    dataset_schema=d.dataset.schema,
+                    source=d.dataset.source,
+                    source_type=d.dataset.source_type,
+                ).to_dict()
+                for d in run.inputs.dataset_inputs
+            ]
+    except Exception:
+        datasets = []
 
     # Create model params
     model_params = {}

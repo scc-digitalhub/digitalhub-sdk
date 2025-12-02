@@ -36,14 +36,14 @@ dependencies = [
 
 [project.optional-dependencies]
 full = [
-    "mlflow",
+    "mlflow<=2.5",
     "pandas",
 ]
 pandas = [
     "pandas",
 ]
 mlflow = [
-    "mlflow",
+    "mlflow<=2.5",
 ]
 dev = [
     "bumpver",
