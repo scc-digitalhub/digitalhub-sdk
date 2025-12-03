@@ -696,6 +696,7 @@ class Project(Entity):
         identifier: str,
         entity_id: str | None = None,
         delete_all_versions: bool = False,
+        cascade: bool = False,
     ) -> None:
         """
         Delete object from backend.
@@ -708,6 +709,8 @@ class Project(Entity):
             Entity ID.
         delete_all_versions : bool
             Delete all versions of the named entity. If True, use entity name instead of entity key as identifier.
+        cascade : bool
+            Cascade delete related entities.
 
         Returns
         -------
@@ -728,6 +731,7 @@ class Project(Entity):
             project=self.name,
             entity_id=entity_id,
             delete_all_versions=delete_all_versions,
+            cascade=cascade,
         )
         self.refresh()
 
@@ -1025,6 +1029,7 @@ class Project(Entity):
         identifier: str,
         entity_id: str | None = None,
         delete_all_versions: bool = False,
+        cascade: bool = False,
     ) -> None:
         """
         Delete object from backend.
@@ -1037,6 +1042,8 @@ class Project(Entity):
             Entity ID.
         delete_all_versions : bool
             Delete all versions of the named entity. If True, use entity name instead of entity key as identifier.
+        cascade : bool
+            Cascade delete related entities.
 
         Returns
         -------
@@ -1058,6 +1065,7 @@ class Project(Entity):
             project=self.name,
             entity_id=entity_id,
             delete_all_versions=delete_all_versions,
+            cascade=cascade,
         )
         self.refresh()
 
@@ -1343,6 +1351,7 @@ class Project(Entity):
         identifier: str,
         entity_id: str | None = None,
         delete_all_versions: bool = False,
+        cascade: bool = False,
     ) -> None:
         """
         Delete object from backend.
@@ -1355,6 +1364,8 @@ class Project(Entity):
             Entity ID.
         delete_all_versions : bool
             Delete all versions of the named entity. If True, use entity name instead of entity key as identifier.
+        cascade : bool
+            Cascade delete related entities.
 
         Returns
         -------
@@ -1376,6 +1387,7 @@ class Project(Entity):
             project=self.name,
             entity_id=entity_id,
             delete_all_versions=delete_all_versions,
+            cascade=cascade,
         )
         self.refresh()
 
