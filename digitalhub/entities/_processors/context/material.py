@@ -66,9 +66,19 @@ class ContextEntityMaterialProcessor:
             raise ValueError(
                 f"Entity kind '{entity_kind}' does not match expected type '{entity_type}'.",
             )
-        obj = entity_factory.build_entity_from_params(**kwargs)
+        obj: MaterialEntity = entity_factory.build_entity_from_params(**kwargs)
         if context.is_running:
             obj.add_relationship(Relationship.PRODUCEDBY.value, context.get_run_ctx())
+            run_key = context.get_run_ctx()
+            run = crud_processor.read_unversioned_entity(run_key)
+            if hasattr(run, "add_output"):
+                run.add_output(obj.name, obj.key)
+                crud_processor.update_context_entity(
+                    run.project,
+                    run.ENTITY_TYPE,
+                    run.id,
+                    run.to_dict(),
+                )
 
         drop_existing: bool = kwargs.pop("drop_existing", False)
         if drop_existing:
