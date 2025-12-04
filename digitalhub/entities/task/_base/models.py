@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from enum import Enum
+from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -81,13 +82,13 @@ class Resource(BaseModel):
     Resource model.
     """
 
-    cpu: str | None = Field(default=None, pattern=RESOURCE_REGEX)
+    cpu: Annotated[str, Field(pattern=RESOURCE_REGEX)] | int | None = None
     """CPU resource model."""
 
-    mem: str | None = Field(default=None, pattern=RESOURCE_REGEX)
+    mem: Annotated[str, Field(pattern=RESOURCE_REGEX)] | int | None = None
     """Memory resource model."""
 
-    gpu: str | None = Field(default=None, pattern=RESOURCE_REGEX)
+    gpu: Annotated[str, Field(pattern=RESOURCE_REGEX)] | int | None = None
     """GPU resource model."""
 
 
