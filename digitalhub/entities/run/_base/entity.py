@@ -291,7 +291,7 @@ class Run(UnversionedEntity):
         """
         Start run execution.
         """
-        self._context().set_run(f"{self.key}:{self.id}")
+        self._context().set_run(self)
         if self.spec.local_execution:
             if not self._is_ready_to_run():
                 raise EntityError("Run is not in a state to run.")

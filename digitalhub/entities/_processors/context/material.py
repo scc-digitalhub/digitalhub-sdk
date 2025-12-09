@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.entities._commons.enums import Relationship, State
+from digitalhub.entities._commons.enums import State
 from digitalhub.entities._processors.utils import get_context
 from digitalhub.factory.entity import entity_factory
 from digitalhub.utils.exceptions import EntityError
@@ -59,27 +59,24 @@ class ContextEntityMaterialProcessor:
             If file upload fails during the process.
         """
         source: SourcesOrListOfSources = kwargs.pop("source")
-        context = get_context(kwargs["project"])
         entity_kind = kwargs.get("kind")
+
+        # Validate entity type
         entity_type = kwargs.pop("entity_type")
         if entity_type != entity_factory.get_entity_type_from_kind(entity_kind):
             raise ValueError(
                 f"Entity kind '{entity_kind}' does not match expected type '{entity_type}'.",
             )
-        obj: MaterialEntity = entity_factory.build_entity_from_params(**kwargs)
-        if context.is_running:
-            obj.add_relationship(Relationship.PRODUCEDBY.value, context.get_run_ctx())
-            run_key = context.get_run_ctx()
-            run = crud_processor.read_unversioned_entity(run_key)
-            if hasattr(run, "add_output"):
-                run.add_output(obj.name, obj.key)
-                crud_processor.update_context_entity(
-                    run.project,
-                    run.ENTITY_TYPE,
-                    run.id,
-                    run.to_dict(),
-                )
 
+        # Build initial entity object
+        obj: MaterialEntity = entity_factory.build_entity_from_params(**kwargs)
+
+        # Register entity in context if running
+        context = get_context(kwargs["project"])
+        if context.is_running:
+            obj = context.register_entity(obj)
+
+        # Handle existing entity drop
         drop_existing: bool = kwargs.pop("drop_existing", False)
         if drop_existing:
             crud_processor.delete_context_entity(
@@ -89,9 +86,11 @@ class ContextEntityMaterialProcessor:
                 delete_all_versions=True,
             )
 
+        # Create entity in backend
         new_obj: MaterialEntity = crud_processor._create_context_entity(context, obj.ENTITY_TYPE, obj.to_dict())
         new_obj = entity_factory.build_entity_from_dict(new_obj)
 
+        # Update status to UPLOADING before upload
         new_obj.status.state = State.UPLOADING.value
         new_obj = self._update_material_entity(crud_processor, new_obj)
 
