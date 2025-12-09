@@ -11,19 +11,21 @@ from digitalhub.entities.log._base.builder import LogLogBuilder
 from digitalhub.entities.model.mlflow.builder import ModelModelBuilder
 from digitalhub.entities.project._base.builder import ProjectProjectBuilder
 from digitalhub.entities.secret._base.builder import SecretSecretBuilder
+from digitalhub.entities.trigger.automl.builder import TriggerAutomlBuilder
 from digitalhub.entities.trigger.lifecycle.builder import TriggerLifecycleBuilder
 from digitalhub.entities.trigger.scheduler.builder import TriggerSchedulerBuilder
 
 entity_builders: tuple = (
-    (ProjectProjectBuilder.ENTITY_KIND, ProjectProjectBuilder),
-    (SecretSecretBuilder.ENTITY_KIND, SecretSecretBuilder),
     (ArtifactArtifactBuilder.ENTITY_KIND, ArtifactArtifactBuilder),
     (DataitemDataitemBuilder.ENTITY_KIND, DataitemDataitemBuilder),
     (DataitemTableBuilder.ENTITY_KIND, DataitemTableBuilder),
-    (ModelModelBuilder.ENTITY_KIND, ModelModelBuilder),
-    (TriggerSchedulerBuilder.ENTITY_KIND, TriggerSchedulerBuilder),
-    (TriggerLifecycleBuilder.ENTITY_KIND, TriggerLifecycleBuilder),
     (LogLogBuilder.ENTITY_KIND, LogLogBuilder),
+    (ModelModelBuilder.ENTITY_KIND, ModelModelBuilder),
+    (ProjectProjectBuilder.ENTITY_KIND, ProjectProjectBuilder),
+    (SecretSecretBuilder.ENTITY_KIND, SecretSecretBuilder),
+    (TriggerAutomlBuilder.ENTITY_KIND, TriggerAutomlBuilder),
+    (TriggerLifecycleBuilder.ENTITY_KIND, TriggerLifecycleBuilder),
+    (TriggerSchedulerBuilder.ENTITY_KIND, TriggerSchedulerBuilder),
 )
 
 ##############################

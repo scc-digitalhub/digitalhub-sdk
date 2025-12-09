@@ -83,4 +83,5 @@ class EntityKinds(Enum):
     SECRET_SECRET = "secret"
     TRIGGER_SCHEDULER = "scheduler"
     TRIGGER_LIFECYCLE = "lifecycle"
+    TRIGGER_AUTOML = "automl"
     LOG_LOG = "log"
