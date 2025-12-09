@@ -99,7 +99,8 @@ class Context:
         obj : ContextEntity
             The logged item to add.
         """
-        obj.add_relationship(Relationship.PRODUCEDBY.value, self.run.key)
+        id_ = self.run.key + ":" + self.run.id
+        obj.add_relationship(Relationship.PRODUCEDBY.value, id_)
         self.logged[obj.name] = obj.key
         return obj
 
