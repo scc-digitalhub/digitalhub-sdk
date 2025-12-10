@@ -101,6 +101,7 @@ class ContextEntityCRUDProcessor:
                     f"Entity kind '{entity_kind}' does not match expected type '{entity_type}'.",
                 )
             obj: ContextEntity = entity_factory.build_entity_from_params(**kwargs)
+            obj._post_create_hook_before_save()
         new_obj = self._create_context_entity(context, obj.ENTITY_TYPE, obj.to_dict())
         return entity_factory.build_entity_from_dict(new_obj)
 

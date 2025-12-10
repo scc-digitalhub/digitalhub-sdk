@@ -112,6 +112,14 @@ class Entity(Base):
         """
         return {k: v for k, v in super().to_dict().items() if k in self._obj_attr}
 
+    def _post_create_hook_before_save(self) -> None:
+        """
+        Hook method called after the creation of the entity but before saving
+        in Core.
+        Can be overridden in subclasses to implement custom behavior.
+        """
+        pass
+
     def __repr__(self) -> str:
         """
         Return string representation of the entity object.
