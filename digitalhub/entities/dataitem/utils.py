@@ -22,9 +22,6 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities.dataitem._base.entity import Dataitem
 
 
-DEFAULT_EXTENSION = FileExtensions.PARQUET.value
-
-
 def eval_source(
     source: SourcesOrListOfSources | None = None,
     data: Any | None = None,
@@ -76,7 +73,7 @@ def eval_source(
 
     if kind == EntityKinds.DATAITEM_TABLE.value:
         ctx = get_context(project)
-        pth = ctx.root / f"{slugify_string(name)}.{DEFAULT_EXTENSION}"
+        pth = ctx.root / f"{slugify_string(name)}.{FileExtensions.PARQUET.value}"
         reader = get_reader_by_object(data)
         reader.write_parquet(data, pth)
         return str(pth)

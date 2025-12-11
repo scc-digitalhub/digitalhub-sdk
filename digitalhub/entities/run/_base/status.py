@@ -5,9 +5,10 @@
 from __future__ import annotations
 
 from digitalhub.entities._base.entity.status import Status
+from digitalhub.entities._base.metrics.status import MetricsStatus
 
 
-class RunStatus(Status):
+class RunStatus(MetricsStatus, Status):
     """
     RunStatus status.
     """
@@ -21,5 +22,11 @@ class RunStatus(Status):
         metrics: dict | None = None,
         **kwargs,
     ) -> None:
-        super().__init__(state, message, transitions, k8s, **kwargs)
-        self.metrics = metrics if metrics is not None else {}
+        super().__init__(
+            state=state,
+            message=message,
+            transitions=transitions,
+            k8s=k8s,
+            metrics=metrics,
+            **kwargs,
+        )

@@ -96,7 +96,7 @@ class EntityBuilder:
         """
         return build_metadata(**kwargs)
 
-    def build_spec(self, validate: bool = True, **kwargs) -> Spec:
+    def build_spec(self, **kwargs) -> Spec:
         """
         Build entity spec object.
 
@@ -113,7 +113,6 @@ class EntityBuilder:
         return build_spec(
             self.ENTITY_SPEC_CLASS,
             self.ENTITY_SPEC_VALIDATOR,
-            validate=validate,
             **kwargs,
         )
 
@@ -156,7 +155,7 @@ class EntityBuilder:
         """
 
     @abstractmethod
-    def from_dict(self, obj: dict, validate: bool = True) -> Entity:
+    def from_dict(self, obj: dict) -> Entity:
         """
         Build entity object from dictionary.
         """

@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 
 from digitalhub.entities._constructors._resources import ADJECTIVES, ANIMALS
 
-NAME_REGEX = r"^[a-zA-Z0-9._+-]+$"
+NAME_REGEX = r"^[a-zA-Z0-9.+-]+$"
 
 
 class NameValidator(BaseModel):
@@ -18,7 +18,7 @@ class NameValidator(BaseModel):
     Validate name format.
     """
 
-    name: str | None = Field(min_length=1, max_length=256, pattern=NAME_REGEX)
+    name: str = Field(min_length=1, max_length=256, pattern=NAME_REGEX)
 
 
 def build_name(name: str) -> str:

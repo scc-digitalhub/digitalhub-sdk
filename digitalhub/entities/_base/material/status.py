@@ -17,6 +17,7 @@ class MaterialStatus(Status):
         state: str,
         message: str | None = None,
         files: list[dict] | None = None,
+        **kwargs,
     ) -> None:
-        super().__init__(state, message)
+        super().__init__(state=state, message=message, **kwargs)
         self.files = files if files is not None else []

@@ -216,7 +216,8 @@ class ContextEntityCRUDProcessor:
             **kwargs,
         )
         entity = entity_factory.build_entity_from_dict(obj)
-        return self._post_process_get(entity)
+        entity._post_read_hook()
+        return entity
 
     def read_unversioned_entity(
         self,
@@ -641,27 +642,3 @@ class ContextEntityCRUDProcessor:
             entity_id,
             **kwargs,
         )
-
-    def _post_process_get(
-        self,
-        entity: ContextEntity,
-    ) -> ContextEntity:
-        """
-        Post-process a retrieved context entity.
-
-        Applies additional processing to entities after retrieval,
-        including loading metrics and file information if available.
-
-        Parameters
-        ----------
-        entity : ContextEntity
-            The entity to post-process.
-
-        Returns
-        -------
-        ContextEntity
-            The post-processed entity with additional data loaded.
-        """
-        if hasattr(entity.status, "metrics"):
-            entity._get_metrics()
-        return entity

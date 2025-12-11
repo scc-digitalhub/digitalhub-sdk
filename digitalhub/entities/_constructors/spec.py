@@ -10,7 +10,7 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities._base.entity.spec import Spec, SpecValidator
 
 
-def build_spec(spec_cls: Spec, spec_validator: SpecValidator, validate: bool = True, **kwargs) -> Spec:
+def build_spec(spec_cls: Spec, spec_validator: SpecValidator, **kwargs) -> Spec:
     """
     Build entity spec object. This method is used to build entity
     specifications and is used to validate the parameters passed
@@ -22,8 +22,6 @@ def build_spec(spec_cls: Spec, spec_validator: SpecValidator, validate: bool = T
         Spec class.
     spec_validator : SpecValidator
         Spec validator class.
-    validate : bool
-        Flag to determine if validate kwargs.
     **kwargs : dict
         Keyword arguments for the constructor.
 
@@ -32,6 +30,5 @@ def build_spec(spec_cls: Spec, spec_validator: SpecValidator, validate: bool = T
     Spec
         Spec object.
     """
-    if validate:
-        kwargs = spec_validator(**kwargs).to_dict()
+    kwargs = spec_validator(**kwargs).to_dict()
     return spec_cls(**kwargs)

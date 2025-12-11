@@ -17,6 +17,7 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities._base.executable.entity import ExecutableEntity
     from digitalhub.entities._base.material.entity import MaterialEntity
     from digitalhub.entities._base.unversioned.entity import UnversionedEntity
+    from digitalhub.entities.log._base.entity import Log
 
 
 class ContextEntityOperationsProcessor:
@@ -264,7 +265,7 @@ class ContextEntityOperationsProcessor:
         entity_type: str,
         entity_id: str,
         **kwargs,
-    ) -> dict:
+    ) -> list[Log]:
         """Read execution logs from the backend."""
         return self.special_ops_processor.read_run_logs(
             project=project,

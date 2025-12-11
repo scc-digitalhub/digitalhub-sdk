@@ -79,7 +79,7 @@ class ProjectProjectBuilder(EntityBuilder):
             status=status,
         )
 
-    def from_dict(self, obj: dict, validate: bool = True) -> Project:
+    def from_dict(self, obj: dict) -> Project:
         """
         Create a new object from dictionary.
 
@@ -87,18 +87,16 @@ class ProjectProjectBuilder(EntityBuilder):
         ----------
         obj : dict
             Dictionary to create object from.
-        validate : bool
-            Flag to indicate if arguments must be validated.
 
         Returns
         -------
         Project
             Object instance.
         """
-        parsed_dict = self._parse_dict(obj, validate=validate)
+        parsed_dict = self._parse_dict(obj)
         return self.build_entity(**parsed_dict)
 
-    def _parse_dict(self, obj: dict, validate: bool = True) -> dict:
+    def _parse_dict(self, obj: dict) -> dict:
         """
         Get dictionary and parse it to a valid entity dictionary.
 
@@ -117,7 +115,7 @@ class ProjectProjectBuilder(EntityBuilder):
         name = self.build_name(obj.get("name"))
         kind = obj.get("kind")
         metadata = self.build_metadata(**obj.get("metadata", {}))
-        spec = self.build_spec(validate=validate, **obj.get("spec", {}))
+        spec = self.build_spec(**obj.get("spec", {}))
         status = self.build_status(**obj.get("status", {}))
         user = obj.get("user")
         return {
