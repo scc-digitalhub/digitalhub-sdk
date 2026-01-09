@@ -7,69 +7,69 @@ from __future__ import annotations
 import typing
 from pathlib import Path
 from typing import Any
+from warnings import warn
 
 from digitalhub.context.api import build_context
+from digitalhub.entities import (
+    delete_artifact,
+    delete_dataitem,
+    delete_function,
+    delete_model,
+    delete_run,
+    delete_secret,
+    delete_workflow,
+    get_artifact,
+    get_artifact_versions,
+    get_dataitem,
+    get_dataitem_versions,
+    get_function,
+    get_function_versions,
+    get_model,
+    get_model_versions,
+    get_run,
+    get_secret,
+    get_workflow,
+    get_workflow_versions,
+    import_artifact,
+    import_dataitem,
+    import_function,
+    import_model,
+    import_secret,
+    import_workflow,
+    list_artifacts,
+    list_dataitems,
+    list_functions,
+    list_models,
+    list_runs,
+    list_secrets,
+    list_workflows,
+    log_artifact,
+    log_dataitem,
+    log_generic_artifact,
+    log_generic_dataitem,
+    log_generic_model,
+    log_huggingface,
+    log_mlflow,
+    log_model,
+    log_sklearn,
+    log_table,
+    new_artifact,
+    new_dataitem,
+    new_function,
+    new_model,
+    new_secret,
+    new_workflow,
+    update_artifact,
+    update_dataitem,
+    update_function,
+    update_model,
+    update_secret,
+    update_workflow,
+)
 from digitalhub.entities._base.entity.entity import Entity
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._constructors.uuid import build_uuid
 from digitalhub.entities._processors.processors import base_processor, context_processor
-from digitalhub.entities.artifact.crud import (
-    delete_artifact,
-    get_artifact,
-    get_artifact_versions,
-    import_artifact,
-    list_artifacts,
-    log_artifact,
-    new_artifact,
-    update_artifact,
-)
-from digitalhub.entities.dataitem.crud import (
-    delete_dataitem,
-    get_dataitem,
-    get_dataitem_versions,
-    import_dataitem,
-    list_dataitems,
-    log_dataitem,
-    new_dataitem,
-    update_dataitem,
-)
-from digitalhub.entities.function.crud import (
-    delete_function,
-    get_function,
-    get_function_versions,
-    import_function,
-    list_functions,
-    new_function,
-    update_function,
-)
-from digitalhub.entities.model.crud import (
-    delete_model,
-    get_model,
-    get_model_versions,
-    import_model,
-    list_models,
-    log_model,
-    new_model,
-    update_model,
-)
-from digitalhub.entities.run.crud import delete_run, get_run, list_runs
-from digitalhub.entities.secret.crud import (
-    delete_secret,
-    get_secret,
-    import_secret,
-    list_secrets,
-    new_secret,
-    update_secret,
-)
-from digitalhub.entities.workflow.crud import (
-    delete_workflow,
-    get_workflow,
-    get_workflow_versions,
-    import_workflow,
-    list_workflows,
-    new_workflow,
-    update_workflow,
-)
 from digitalhub.factory.entity import entity_factory
 from digitalhub.stores.client.base.factory import get_client
 from digitalhub.utils.exceptions import BackendError, EntityAlreadyExistsError, EntityError
@@ -525,6 +525,29 @@ class Project(Entity):
         self.refresh()
         return obj
 
+    def log_generic_artifact(
+        self,
+        name: str,
+        source: str,
+        drop_existing: bool = False,
+        path: str | None = None,
+        **kwargs,
+    ) -> Artifact:
+        """
+        Create and upload a generic artifact.
+        """
+        warn("This method will become log_artifact in 0.16")
+        obj = log_generic_artifact(
+            project=self.name,
+            name=name,
+            source=source,
+            drop_existing=drop_existing,
+            path=path,
+            **kwargs,
+        )
+        self.refresh()
+        return obj
+
     def get_artifact(
         self,
         identifier: str,
@@ -862,6 +885,58 @@ class Project(Entity):
         self.refresh()
         return obj
 
+    def log_generic_dataitem(
+        self,
+        name: str,
+        source: str | None = None,
+        drop_existing: bool = False,
+        path: str | None = None,
+        **kwargs,
+    ) -> Dataitem:
+        """
+        Create and upload a generic dataitem.
+        """
+        obj = log_generic_dataitem(
+            project=self.name,
+            name=name,
+            source=source,
+            drop_existing=drop_existing,
+            path=path,
+            **kwargs,
+        )
+        self.refresh()
+        return obj
+
+    def log_table(
+        self,
+        name: str,
+        source: str | None = None,
+        data: Any | None = None,
+        drop_existing: bool = False,
+        path: str | None = None,
+        file_format: str | None = None,
+        read_df_params: dict | None = None,
+        engine: str | None = None,
+        **kwargs,
+    ) -> Dataitem:
+        """
+        Create and upload a table dataitem.
+        """
+        obj = log_table(
+            project=self.name,
+            name=name,
+            path=path,
+            source=source,
+            data=data,
+            drop_existing=drop_existing,
+            file_format=file_format,
+            read_df_params=read_df_params,
+            engine=engine,
+            **kwargs,
+        )
+        self.refresh()
+        return obj
+
     def get_dataitem(
         self,
         identifier: str,
@@ -1180,6 +1255,95 @@ class Project(Entity):
             project=self.name,
             name=name,
             kind=kind,
+            source=source,
+            drop_existing=drop_existing,
+            path=path,
+            **kwargs,
+        )
+        self.refresh()
+        return obj
+
+    def log_generic_model(
+        self,
+        name: str,
+        source: str,
+        drop_existing: bool = False,
+        path: str | None = None,
+        **kwargs,
+    ) -> Model:
+        """
+        Create and upload a generic model.
+        """
+        warn("This method will become log_model in 0.16")
+        obj = log_generic_model(
+            project=self.name,
+            name=name,
+            source=source,
+            drop_existing=drop_existing,
+            path=path,
+            **kwargs,
+        )
+        self.refresh()
+        return obj
+
+    def log_mlflow(
+        self,
+        name: str,
+        source: str,
+        drop_existing: bool = False,
+        path: str | None = None,
+        **kwargs,
+    ) -> Model:
+        """
+        Create and upload a MLflow model.
+        """
+        obj = log_mlflow(
+            project=self.name,
+            name=name,
+            source=source,
+            drop_existing=drop_existing,
+            path=path,
+            **kwargs,
+        )
+        self.refresh()
+        return obj
+
+    def log_sklearn(
+        self,
+        name: str,
+        source: str,
+        drop_existing: bool = False,
+        path: str | None = None,
+        **kwargs,
+    ) -> Model:
+        """
+        Create and upload a scikit-learn model.
+        """
+        obj = log_sklearn(
+            project=self.name,
+            name=name,
+            source=source,
+            drop_existing=drop_existing,
+            path=path,
+            **kwargs,
+        )
+        self.refresh()
+        return obj
+
+    def log_huggingface(
+        self,
+        name: str,
+        source: str,
+        drop_existing: bool = False,
+        path: str | None = None,
+        **kwargs,
+    ) -> Model:
+        """
+        Create and upload a Huggingface model.
+        """
+        obj = log_huggingface(
+            project=self.name,
+            name=name,
             source=source,
             drop_existing=drop_existing,
             path=path,

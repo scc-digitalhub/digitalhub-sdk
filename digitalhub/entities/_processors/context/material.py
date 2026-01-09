@@ -9,12 +9,14 @@ import typing
 from digitalhub.entities._commons.enums import State
 from digitalhub.entities._processors.utils import get_context
 from digitalhub.factory.entity import entity_factory
+from digitalhub.utils.enums import FileExtensions
 from digitalhub.utils.exceptions import EntityError
-from digitalhub.utils.types import SourcesOrListOfSources
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.material.entity import MaterialEntity
     from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
+    from digitalhub.entities.dataitem.table.entity import DataitemTable
+    from digitalhub.utils.types import Dataframe, SourcesOrListOfSources
 
 
 class ContextEntityMaterialProcessor:
@@ -59,6 +61,73 @@ class ContextEntityMaterialProcessor:
             If file upload fails during the process.
         """
         source: SourcesOrListOfSources = kwargs.pop("source")
+        return self._log_entity_with_upload(
+            crud_processor,
+            upload_fn=lambda obj: obj.upload(source),
+            **kwargs,
+        )
+
+    def log_dataitem_table(
+        self,
+        crud_processor: ContextEntityCRUDProcessor,
+        **kwargs,
+    ) -> DataitemTable:
+        """
+        Create a table dataitem entity in the backend and upload associated files.
+
+        Parameters
+        ----------
+        crud_processor : ContextEntityCRUDProcessor
+            The CRUD processor instance for entity operations.
+        **kwargs : dict
+            Parameters for entity creation including:
+            - 'data': dataframe to upload
+            - 'project': project name
+            - 'drop_existing': whether to drop existing entity with the same name
+
+        Returns
+        -------
+        DataitemTable
+            The created table dataitem entity with uploaded files.
+        """
+        data: Dataframe = kwargs.pop("data")
+        return self._log_entity_with_upload(
+            crud_processor,
+            upload_fn=lambda obj: obj.write_df(data, extension=FileExtensions.PARQUET.value),
+            **kwargs,
+        )
+
+    def _log_entity_with_upload(
+        self,
+        crud_processor: ContextEntityCRUDProcessor,
+        upload_fn: typing.Callable[[MaterialEntity], None],
+        **kwargs,
+    ) -> MaterialEntity:
+        """
+        Create an entity in the backend and execute upload operation.
+
+        Common logic for creating material entities with file upload,
+        handling status transitions and error management.
+
+        Parameters
+        ----------
+        crud_processor : ContextEntityCRUDProcessor
+            The CRUD processor instance for entity operations.
+        upload_fn : Callable[[MaterialEntity], None]
+            Function to execute for uploading data to the entity.
+        **kwargs : dict
+            Parameters for entity creation.
+
+        Returns
+        -------
+        MaterialEntity
+            The created material entity with uploaded files.
+
+        Raises
+        ------
+        EntityError
+            If file upload fails during the process.
+        """
         entity_kind = kwargs.get("kind")
 
         # Validate entity type
@@ -96,7 +165,7 @@ class ContextEntityMaterialProcessor:
 
         # Handle file upload
         try:
-            new_obj.upload(source)
+            upload_fn(new_obj)
             uploaded = True
             msg = None
         except Exception as e:

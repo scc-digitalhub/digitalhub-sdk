@@ -6,4 +6,22 @@ from __future__ import annotations
 
 from typing import Union
 
-SourcesOrListOfSources = Union[str, list[str]]
+_dataframe_types = []
+
+try:
+    from pandas import DataFrame as PandasDataFrame
+
+    _dataframe_types.append(PandasDataFrame)
+except ImportError:
+    pass
+
+try:
+    from polars import DataFrame as PolarsDataFrame
+
+    _dataframe_types.append(PolarsDataFrame)
+except ImportError:
+    pass
+
+SourcesOrListOfSources = str | list[str]
+
+Dataframe = Union[tuple(_dataframe_types)]  # type: ignore

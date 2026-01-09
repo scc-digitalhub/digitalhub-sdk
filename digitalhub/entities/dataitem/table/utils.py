@@ -4,120 +4,136 @@
 
 from __future__ import annotations
 
-from digitalhub.utils.generic_utils import dump_json
+import typing
+
+from digitalhub.entities._commons.enums import EntityTypes
+from digitalhub.entities._commons.utils import build_log_path_from_filename, build_log_path_from_source
+from digitalhub.entities._constructors.uuid import build_uuid
+from digitalhub.stores.data.api import get_store
+from digitalhub.stores.readers.data.api import get_reader_by_engine, get_reader_by_object
+from digitalhub.utils.file_utils import eval_local_source
+
+if typing.TYPE_CHECKING:
+    from digitalhub.entities.dataitem._base.entity import Dataitem
+    from digitalhub.utils.types import Dataframe, SourcesOrListOfSources
 
 
-def prepare_data(data: list[list], columnar: bool = False) -> list[list]:
+def read_data_sample(
+    source: SourcesOrListOfSources,
+    file_format: str | None = None,
+    read_df_params: dict | None = None,
+    engine: str | None = None,
+) -> Dataframe:  # type: ignore
     """
-    Prepare data.
+    Evaluate and load data from source or return provided data.
 
     Parameters
     ----------
-    data : list
-        Data.
-    columnar : bool | None
-        If data are arranged in columns. If False, data are arranged in rows.
+    source : SourcesOrListOfSources
+        The source specification(s) to load data from.
+    file_format : str
+        The file format specification for reading the source (e.g., 'parquet', 'csv').
+    engine : str
+        The engine to use for reading the data (e.g., 'pandas', 'polars').
 
     Returns
     -------
-    list[list]
-        Prepared data.
+    Dataframe
+        Loaded data object.
     """
-    # Reduce data to 10 rows
-    if not columnar:
-        if len(data) > 10:
-            data = data[:10]
+    eval_local_source(source)
+    if read_df_params is None or not isinstance(read_df_params, dict):
+        read_df_params = {}
+    reader = get_reader_by_engine(engine)
+    read_df_params[reader.get_limit_arg_name()] = 10
+    return get_store(source).read_df(
+        source,
+        file_format=file_format,
+        engine=engine,
+        **read_df_params,
+    )
+
+
+def process_data_kwargs(
+    project: str,
+    name: str,
+    data: Dataframe,  # type: ignore
+    path: str | None = None,
+    source: SourcesOrListOfSources | None = None,
+    filename: str | None = None,
+    **kwargs,
+) -> dict:
+    """
+    Process and enhance specification parameters for dataitem creation.
+
+    Parameters
+    ----------
+    project : str
+        The name of the project.
+    name : str
+        The name of the dataitem entity.
+    kind : str
+        The kind of dataitem being created (e.g., 'table').
+    path : str
+        The destination path for the dataitem entity.
+        If None, a path will be automatically generated.
+    data : Dataframe
+        The data object for schema extraction and processing.
+        Used as an alternative to source for table dataitems.
+    source
+    **kwargs : dict
+        Additional specification parameters to be processed
+        and passed to the dataitem creation.
+
+    Returns
+    -------
+    dict
+        The enhanced specification parameters for dataitem creation.
+    """
+    if (source is None) == (filename is None):
+        raise ValueError("Either source or filename must be provided.")
+    if source is None:
+        fn = build_log_path_from_filename
+        arg = filename
     else:
-        data = [d[:10] for d in data]
+        fn = build_log_path_from_source
+        arg = source
 
-    # Transpose data if needed
-    if not columnar:
-        data = list(map(list, list(zip(*data))))
+    if path is None:
+        uuid = build_uuid()
+        kwargs["uuid"] = uuid
+        kwargs["path"] = fn(project, EntityTypes.DATAITEM.value, name, uuid, arg)
 
-    return data
+    kwargs["schema"] = get_reader_by_object(data).get_schema(data)
+    return kwargs
 
 
-def prepare_preview(columns: list, data: list[list]) -> list[dict]:
+def post_process(
+    obj: Dataitem,
+    data: Dataframe,  # type: ignore
+) -> Dataitem:
     """
-    Get preview.
+    Post-process dataitem object with additional metadata and previews.
+
+    Enhances the dataitem object with additional information extracted
+    from the data. For table dataitems, generates and stores a data
+    preview in the object's status.
 
     Parameters
     ----------
-    data : pd.DataFrame
-        Data.
+    obj : Dataitem
+        The dataitem object to post-process and enhance.
+    data : Dataframe
+        The data object used to generate previews and extract
+        additional metadata information.
 
     Returns
     -------
-    list[dict]
-        Preview.
+    Dataitem
+        The enhanced dataitem object with updated status information
+        and saved changes.
     """
-    if len(columns) != len(data):
-        raise ValueError("Column names and data must have the same length")
-    preview = [{"name": column, "value": values} for column, values in zip(columns, data)]
-    return filter_memoryview(preview)
-
-
-def filter_memoryview(data: list[dict]) -> list[dict]:
-    """
-    Find memoryview values.
-
-    Parameters
-    ----------
-    data : list[dict]
-        Data.
-
-    Returns
-    -------
-    list[dict]
-        Preview.
-    """
-    key_to_filter = []
-    for i in data:
-        if any(isinstance(v, memoryview) for v in i["value"]):
-            key_to_filter.append(i["name"])
-    for i in key_to_filter:
-        data = [d for d in data if d["name"] != i]
-    return data
-
-
-def check_preview_size(preview: dict) -> dict:
-    """
-    Check preview size. If it's too big, return empty dict.
-
-    Parameters
-    ----------
-    preview : dict
-        Preview.
-
-    Returns
-    -------
-    dict
-        Preview.
-    """
-    if len(dump_json(preview)) >= 64000:
-        return {}
-    return preview
-
-
-def finalize_preview(preview: list[dict] | None = None, rows_count: int | None = None) -> dict:
-    """
-    Finalize preview.
-
-    Parameters
-    ----------
-    preview : list[dict]
-        Preview.
-    rows_count : int
-        Row count.
-
-    Returns
-    -------
-    dict
-        Data preview.
-    """
-    data: dict[str, list[dict] | int] = {}
-    if preview is not None:
-        data["cols"] = preview
-    if rows_count is not None:
-        data["rows"] = rows_count
-    return data
+    reader = get_reader_by_object(data)
+    obj.status.preview = reader.get_preview(data)
+    obj.save(update=True)
+    return obj

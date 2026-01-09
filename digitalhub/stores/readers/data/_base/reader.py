@@ -84,3 +84,10 @@ class DataframeReader:
         """
         Concatenate a list of DataFrames.
         """
+
+    @staticmethod
+    @abstractmethod
+    def get_limit_arg_name() -> str:
+        """
+        Get limit argument name for read methods.
+        """

@@ -11,8 +11,8 @@ from typing import IO, Any
 import polars as pl
 from polars.exceptions import ComputeError
 
-from digitalhub.entities.dataitem.table.utils import check_preview_size, finalize_preview, prepare_data, prepare_preview
 from digitalhub.stores.readers.data._base.reader import DataframeReader
+from digitalhub.utils.data_utils import check_preview_size, finalize_preview, prepare_data, prepare_preview
 from digitalhub.utils.enums import FileExtensions
 from digitalhub.utils.exceptions import ReaderError
 from digitalhub.utils.generic_utils import CustomJsonEncoder
@@ -22,6 +22,8 @@ class DataframeReaderPolars(DataframeReader):
     """
     Polars reader class.
     """
+
+    ROW_LIMIT_ARG = "n_rows"
 
     ##############################
     # Read methods
@@ -250,6 +252,18 @@ class DataframeReaderPolars(DataframeReader):
         finalizes = finalize_preview(preview, df.height)
         serialized = _serialize_deserialize_preview(finalizes)
         return check_preview_size(serialized)
+
+    @staticmethod
+    def get_limit_arg_name() -> str:
+        """
+        Get limit argument name for read methods.
+
+        Returns
+        -------
+        str
+            The limit argument name.
+        """
+        return "n_rows"
 
 
 class PolarsJsonEncoder(CustomJsonEncoder):

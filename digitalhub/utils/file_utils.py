@@ -11,6 +11,8 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
+from digitalhub.utils.uri_utils import has_local_scheme
+
 
 class FileInfo(BaseModel):
     """
@@ -270,3 +272,54 @@ def eval_py_type(source: str) -> bool:
     extension = source.endswith(".py")
     mime_py = get_file_mime_type(source) == "text/x-python"
     return extension or mime_py
+
+
+def eval_local_source(source: str | list[str]) -> None:
+    """
+    Evaluate if source is local.
+
+    Parameters
+    ----------
+    source : str | list[str]
+        Source(s).
+    """
+    if isinstance(source, list):
+        if not source:
+            raise ValueError("Empty list of sources.")
+        source_is_local = all(has_local_scheme(s) for s in source)
+        for s in source:
+            if Path(s).is_dir():
+                raise ValueError(f"Invalid source path: {s}. List of paths must be list of files, not directories.")
+    else:
+        source_is_local = has_local_scheme(source)
+
+    if not source_is_local:
+        raise ValueError("Invalid source path. Source must be a local path.")
+
+
+def eval_zip_sources(source: str | list[str]) -> bool:
+    """
+    Evaluate zip sources.
+
+    Parameters
+    ----------
+    source : str | list[str]
+        Source(s).
+
+    Returns
+    -------
+    bool
+        True if source is zip.
+    """
+    if isinstance(source, list):
+        if len(source) > 1:
+            return False
+        path = source[0]
+    else:
+        if Path(source).is_dir():
+            return False
+        path = source
+
+    if not eval_zip_type(path):
+        return False
+    return True

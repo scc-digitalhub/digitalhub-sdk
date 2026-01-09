@@ -8,7 +8,10 @@ from digitalhub.entities.artifact.artifact.builder import ArtifactArtifactBuilde
 from digitalhub.entities.dataitem.dataitem.builder import DataitemDataitemBuilder
 from digitalhub.entities.dataitem.table.builder import DataitemTableBuilder
 from digitalhub.entities.log._base.builder import LogLogBuilder
+from digitalhub.entities.model.huggingface.builder import ModelHuggingfaceBuilder
 from digitalhub.entities.model.mlflow.builder import ModelModelBuilder
+from digitalhub.entities.model.model.builder import ModelMlflowBuilder
+from digitalhub.entities.model.sklearn.builder import ModelSklearnBuilder
 from digitalhub.entities.project._base.builder import ProjectProjectBuilder
 from digitalhub.entities.secret._base.builder import SecretSecretBuilder
 from digitalhub.entities.trigger.automl.builder import TriggerAutomlBuilder
@@ -20,51 +23,13 @@ entity_builders: tuple = (
     (DataitemDataitemBuilder.ENTITY_KIND, DataitemDataitemBuilder),
     (DataitemTableBuilder.ENTITY_KIND, DataitemTableBuilder),
     (LogLogBuilder.ENTITY_KIND, LogLogBuilder),
+    (ModelHuggingfaceBuilder.ENTITY_KIND, ModelHuggingfaceBuilder),
+    (ModelMlflowBuilder.ENTITY_KIND, ModelMlflowBuilder),
     (ModelModelBuilder.ENTITY_KIND, ModelModelBuilder),
+    (ModelSklearnBuilder.ENTITY_KIND, ModelSklearnBuilder),
     (ProjectProjectBuilder.ENTITY_KIND, ProjectProjectBuilder),
     (SecretSecretBuilder.ENTITY_KIND, SecretSecretBuilder),
     (TriggerAutomlBuilder.ENTITY_KIND, TriggerAutomlBuilder),
     (TriggerLifecycleBuilder.ENTITY_KIND, TriggerLifecycleBuilder),
     (TriggerSchedulerBuilder.ENTITY_KIND, TriggerSchedulerBuilder),
 )
-
-##############################
-#  Add custom entities here
-##############################
-
-
-try:
-    from digitalhub.entities.dataitem.vectortable.builder import DataitemVectorTableBuilder
-
-    entity_builders += ((DataitemVectorTableBuilder.ENTITY_KIND, DataitemVectorTableBuilder),)
-except ImportError:
-    ...
-
-
-try:
-    from digitalhub.entities.dataitem.iceberg.builder import DataitemIcebergBuilder
-
-    entity_builders += ((DataitemIcebergBuilder.ENTITY_KIND, DataitemIcebergBuilder),)
-except ImportError:
-    ...
-
-try:
-    from digitalhub.entities.model.model.builder import ModelMlflowBuilder
-
-    entity_builders += ((ModelMlflowBuilder.ENTITY_KIND, ModelMlflowBuilder),)
-except ImportError:
-    ...
-
-try:
-    from digitalhub.entities.model.sklearn.builder import ModelSklearnBuilder
-
-    entity_builders += ((ModelSklearnBuilder.ENTITY_KIND, ModelSklearnBuilder),)
-except ImportError:
-    ...
-
-try:
-    from digitalhub.entities.model.huggingface.builder import ModelHuggingfaceBuilder
-
-    entity_builders += ((ModelHuggingfaceBuilder.ENTITY_KIND, ModelHuggingfaceBuilder),)
-except ImportError:
-    ...

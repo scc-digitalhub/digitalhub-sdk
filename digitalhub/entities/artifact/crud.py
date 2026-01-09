@@ -5,11 +5,11 @@
 from __future__ import annotations
 
 import typing
+from warnings import warn
 
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._processors.processors import context_processor
-from digitalhub.entities.artifact._base.entity import Artifact
-from digitalhub.entities.artifact.utils import eval_source, process_kwargs
+from digitalhub.entities.artifact.artifact.crud import log_generic_artifact
 from digitalhub.utils.types import SourcesOrListOfSources
 
 if typing.TYPE_CHECKING:
@@ -121,15 +121,13 @@ def log_artifact(
     >>>                    kind="artifact",
     >>>                    source="./local-path")
     """
-    eval_source(source)
-    kwargs = process_kwargs(project, name, source=source, path=path, **kwargs)
-    return context_processor.log_material_entity(
-        source=source,
+    warn("log_artifact in version 0.16 wil log an artifact of kind 'artifact'.")
+    return log_generic_artifact(
         project=project,
         name=name,
-        kind=kind,
+        source=source,
         drop_existing=drop_existing,
-        entity_type=ENTITY_TYPE,
+        path=path,
         **kwargs,
     )
 

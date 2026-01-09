@@ -5,15 +5,18 @@
 from __future__ import annotations
 
 import typing
+from warnings import warn
 
-from digitalhub.entities._commons.enums import EntityTypes
+from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
 from digitalhub.entities._processors.processors import context_processor
-from digitalhub.entities.model.utils import eval_source, process_kwargs
-from digitalhub.utils.types import SourcesOrListOfSources
+from digitalhub.entities.model.huggingface.crud import log_huggingface
+from digitalhub.entities.model.mlflow.crud import log_mlflow
+from digitalhub.entities.model.model.crud import log_generic_model
+from digitalhub.entities.model.sklearn.crud import log_sklearn
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.model._base.entity import Model
-
+    from digitalhub.utils.types import SourcesOrListOfSources
 
 ENTITY_TYPE = EntityTypes.MODEL.value
 
@@ -120,17 +123,22 @@ def log_model(
     >>>                 kind="model",
     >>>                 source="./local-path")
     """
-    eval_source(source)
-    kwargs = process_kwargs(project, name, source=source, path=path, **kwargs)
-    return context_processor.log_material_entity(
-        source=source,
-        project=project,
-        name=name,
-        kind=kind,
-        drop_existing=drop_existing,
-        entity_type=ENTITY_TYPE,
-        **kwargs,
+    warn(
+        "log_model will in version 0.16 log a model of kind 'model'. "
+        "To log a model of a specific kind, use the log_<kind> methods (e.g. log_sklearn, log_mlflow)."
     )
+    kwargs["project"] = project
+    kwargs["name"] = name
+    kwargs["source"] = source
+    kwargs["drop_existing"] = drop_existing
+    kwargs["path"] = path
+    if kind == EntityKinds.MODEL_HUGGINGFACE.value:
+        return log_huggingface(**kwargs)
+    elif kind == EntityKinds.MODEL_MLFLOW.value:
+        return log_mlflow(**kwargs)
+    elif kind == EntityKinds.MODEL_SKLEARN.value:
+        return log_sklearn(**kwargs)
+    return log_generic_model(**kwargs)
 
 
 def get_model(

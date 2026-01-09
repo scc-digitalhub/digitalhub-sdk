@@ -5,16 +5,16 @@
 from __future__ import annotations
 
 import typing
-from typing import Any
+from warnings import warn
 
-from digitalhub.entities._commons.enums import EntityTypes
+from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
 from digitalhub.entities._processors.processors import context_processor
-from digitalhub.entities.dataitem.utils import clean_tmp_path, eval_data, eval_source, post_process, process_kwargs
-from digitalhub.utils.types import SourcesOrListOfSources
+from digitalhub.entities.dataitem.dataitem.crud import log_generic_dataitem
+from digitalhub.entities.dataitem.table.crud import log_table
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.dataitem._base.entity import Dataitem
-
+    from digitalhub.utils.types import Dataframe, SourcesOrListOfSources
 
 ENTITY_TYPE = EntityTypes.DATAITEM.value
 
@@ -85,7 +85,7 @@ def log_dataitem(
     name: str,
     kind: str,
     source: SourcesOrListOfSources | None = None,
-    data: Any | None = None,
+    data: Dataframe | None = None,  # type: ignore
     drop_existing: bool = False,
     path: str | None = None,
     file_format: str | None = None,
@@ -106,7 +106,7 @@ def log_dataitem(
         Kind the object.
     source : SourcesOrListOfSources
         Dataitem location on local path. Alternative to data.
-    data : Any
+    data : Dataframe
         Dataframe to log. Alternative to source.
     drop_existing : bool
         Whether to drop existing entity with the same name.
@@ -133,34 +133,33 @@ def log_dataitem(
     >>>                    kind="table",
     >>>                    data=df)
     """
-    cleanup = False
-    if data is not None:
-        cleanup = True
-
-    source = eval_source(source, data, kind, name, project)
-    data = eval_data(kind, source, data, file_format, read_df_params, engine)
-    kwargs = process_kwargs(
-        project,
-        name,
-        kind,
+    warn(
+        "log_dataitem in version 0.16 will log a dataitem of kind 'dataitem'. "
+        "To log a dataitem of a specific kind, use the log_<kind> methods (e.g. log_table)."
+    )
+    if kind == EntityKinds.DATAITEM_TABLE.value:
+        return log_table(
+            project=project,
+            name=name,
+            source=source,
+            data=data,
+            drop_existing=drop_existing,
+            path=path,
+            file_format=file_format,
+            read_df_params=read_df_params,
+            engine=engine,
+            **kwargs,
+        )
+    if source is None:
+        raise ValueError("Source must be provided for non-table dataitems.")
+    return log_generic_dataitem(
+        project=project,
+        name=name,
         source=source,
-        data=data,
+        drop_existing=drop_existing,
         path=path,
         **kwargs,
     )
-    obj = context_processor.log_material_entity(
-        source=source,
-        project=project,
-        name=name,
-        kind=kind,
-        entity_type=ENTITY_TYPE,
-        drop_existing=drop_existing,
-        **kwargs,
-    )
-    obj = post_process(obj, data)
-    if cleanup:
-        clean_tmp_path(source)
-    return obj
 
 
 def get_dataitem(

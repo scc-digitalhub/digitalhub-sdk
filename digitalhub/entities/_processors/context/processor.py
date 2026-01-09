@@ -17,6 +17,7 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities._base.executable.entity import ExecutableEntity
     from digitalhub.entities._base.material.entity import MaterialEntity
     from digitalhub.entities._base.unversioned.entity import UnversionedEntity
+    from digitalhub.entities.dataitem.table.entity import DataitemTable
     from digitalhub.entities.log._base.entity import Log
 
 
@@ -57,6 +58,16 @@ class ContextEntityOperationsProcessor:
     ) -> MaterialEntity:
         """Create a material entity in the backend and upload associated files."""
         return self.material_processor.log_material_entity(self.crud_processor, **kwargs)
+
+    def log_dataitem_table(
+        self,
+        **kwargs,
+    ) -> DataitemTable:
+        """Create a dataitem table entity in the backend and upload associated files."""
+        return self.material_processor.log_dataitem_table(
+            crud_processor=self.crud_processor,
+            **kwargs,
+        )
 
     def read_context_entity(
         self,

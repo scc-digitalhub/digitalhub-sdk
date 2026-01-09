@@ -6,8 +6,10 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from pathlib import Path
 
 from digitalhub.entities._commons.enums import EntityTypes
+from digitalhub.utils.file_utils import eval_zip_sources
 
 
 @dataclass
@@ -178,3 +180,110 @@ def map_actions(kind_action_list: list[tuple[str, str]]) -> list[KindAction]:
         Returns the task actions as KindAction namedtuples.
     """
     return [KindAction(kind, action) for (kind, action) in kind_action_list]
+
+
+def build_log_path_from_source(
+    project: str,
+    entity_type: str,
+    name: str,
+    uuid: str,
+    source: str | list[str],
+) -> str:
+    """
+    Build log path.
+
+    Parameters
+    ----------
+    project : str
+        Project name.
+    entity_type : str
+        Entity type.
+    name : str
+        Object name.
+    uuid : str
+        Object UUID.
+    source : str | list[str]
+        Source(s).
+
+    Returns
+    -------
+    str
+        Log path.
+    """
+    path = _get_base_path(project, entity_type, name, uuid)
+
+    prefix = "zip+" if eval_zip_sources(source) else ""
+    path = f"{prefix}{path}"
+
+    if isinstance(source, list) and len(source) >= 1:
+        if len(source) > 1:
+            path += "/"
+        else:
+            path += f"/{Path(source[0]).name}"
+    elif Path(source).is_dir():
+        path += "/"
+    elif Path(source).is_file():
+        path += f"/{Path(source).name}"
+
+    return path
+
+
+def build_log_path_from_filename(
+    project: str,
+    entity_type: str,
+    name: str,
+    uuid: str,
+    filename: str,
+) -> str:
+    """
+    Build log path.
+
+    Parameters
+    ----------
+    project : str
+        Project name.
+    entity_type : str
+        Entity type.
+    name : str
+        Object name.
+    uuid : str
+        Object UUID.
+    filename : str
+        Filename.
+
+    Returns
+    -------
+    str
+        Log path.
+    """
+    return _get_base_path(project, entity_type, name, uuid) + f"/{filename}"
+
+
+def _get_base_path(
+    project: str,
+    entity_type: str,
+    name: str,
+    uuid: str,
+) -> str:
+    """
+    Utils to get base path.
+
+    Parameters
+    ----------
+    project : str
+        Project name.
+    entity_type : str
+        Entity type.
+    name : str
+        Object name.
+    uuid : str
+        Object UUID.
+
+    Returns
+    -------
+    str
+        Base path.
+    """
+    from digitalhub.stores.data.api import get_default_store
+
+    return f"{get_default_store(project)}/{project}/{entity_type}/{name}/{uuid}"
