@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import typing
+from warnings import warn
 
 from digitalhub.entities._commons.enums import EntityKinds
 from digitalhub.entities.dataitem._base.crud import log_base_dataitem
@@ -51,6 +52,7 @@ def log_generic_dataitem(
     >>>                         name="my-generic-dataitem",
     >>>                         source="./local-path")
     """
+    warn("This method will become log_dataitem in 0.16")
     return log_base_dataitem(
         project=project,
         name=name,

@@ -7,7 +7,6 @@ from __future__ import annotations
 import typing
 from pathlib import Path
 from typing import Any
-from warnings import warn
 
 from digitalhub.context.api import build_context
 from digitalhub.entities import (
@@ -536,7 +535,6 @@ class Project(Entity):
         """
         Create and upload a generic artifact.
         """
-        warn("This method will become log_artifact in 0.16")
         obj = log_generic_artifact(
             project=self.name,
             name=name,
@@ -1274,7 +1272,6 @@ class Project(Entity):
         """
         Create and upload a generic model.
         """
-        warn("This method will become log_model in 0.16")
         obj = log_generic_model(
             project=self.name,
             name=name,

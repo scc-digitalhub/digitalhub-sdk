@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import typing
+from warnings import warn
 
 from digitalhub.entities._commons.enums import EntityKinds
 from digitalhub.entities.model._base.crud import log_base_model
@@ -51,6 +52,7 @@ def log_generic_model(
     >>>                         name="my-generic-model",
     >>>                         source="./local-path")
     """
+    warn("This method will become log_model in 0.16")
     return log_base_model(
         project=project,
         name=name,

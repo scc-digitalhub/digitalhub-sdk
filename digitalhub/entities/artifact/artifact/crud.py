@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import typing
+from warnings import warn
 
 from digitalhub.entities._commons.enums import EntityKinds
 from digitalhub.entities.artifact._base.crud import log_base_artifact
@@ -51,6 +52,7 @@ def log_generic_artifact(
     >>>                            name="my-generic-artifact",
     >>>                            source="./local-path")
     """
+    warn("This method will become log_artifact in 0.16")
     return log_base_artifact(
         project=project,
         name=name,
