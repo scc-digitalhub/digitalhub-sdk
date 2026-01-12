@@ -358,7 +358,6 @@ class ContextEntityCRUDProcessor:
         objects = []
         for o in objs:
             entity: ContextEntity = entity_factory.build_entity_from_dict(o)
-            entity = self._post_process_get(entity)
             objects.append(entity)
         return objects
 
@@ -436,7 +435,6 @@ class ContextEntityCRUDProcessor:
         objects = []
         for o in objs:
             entity: ContextEntity = entity_factory.build_entity_from_dict(o)
-            entity = self._post_process_get(entity)
             objects.append(entity)
         return objects
 
