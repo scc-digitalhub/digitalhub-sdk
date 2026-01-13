@@ -5,9 +5,9 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Optional, Union
+from typing import Annotated, Optional, Union
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, StringConstraints
 
 
 class VolumeType(Enum):
@@ -92,13 +92,15 @@ class Resource(BaseModel):
     Resource model.
     """
 
-    cpu: Optional[Union[str, int]] = Field(default=None, pattern=r"[\d]+|^([0-9])+([a-zA-Z])+$")
+    _quantity_str = Annotated[str, StringConstraints(pattern=r"[\d]+|^([0-9])+([a-zA-Z])+$")]
+
+    cpu: Optional[Union[_quantity_str, int]] = None
     """CPU resource model."""
 
-    mem: Optional[Union[str, int]] = Field(default=None, pattern=r"[\d]+|^([0-9])+([a-zA-Z])+$")
+    mem: Optional[Union[_quantity_str, int]] = None
     """Memory resource model."""
 
-    gpu: Optional[Union[str, int]] = Field(default=None, pattern=r"[\d]+|^([0-9])+([a-zA-Z])+$")
+    gpu: Optional[Union[_quantity_str, int]] = None
     """GPU resource model."""
 
 
