@@ -35,7 +35,7 @@ class ClientConfig:
     # Pagination defaults
     default_page_start: int = 0
     default_page_size: int = 25
-    default_sort: str = "metadata.updated,DESC"
+    default_sort: str = "created,DESC"
 
     # API level defaults
     max_api_level: int = 20
