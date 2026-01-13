@@ -36,7 +36,6 @@ dependencies = [
 
 [project.optional-dependencies]
 full = [
-    "mlflow",
     "pandas",
     "polars",
 ]
@@ -45,9 +44,6 @@ pandas = [
 ]
 polars = [
     "polars",
-]
-mlflow = [
-    "mlflow",
 ]
 dev = [
     "bumpver",

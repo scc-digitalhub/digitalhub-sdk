@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import Union
+from typing import Union, Any
 
 _dataframe_types = []
 
@@ -21,6 +21,10 @@ try:
     _dataframe_types.append(PolarsDataFrame)
 except ImportError:
     pass
+
+
+if not _dataframe_types:
+    _dataframe_types.append(Any)
 
 SourcesOrListOfSources = str | list[str]
 
