@@ -10,7 +10,7 @@ from digitalhub.stores.client.enums import ApiCategories, BackendOperations
 
 DEFAULT_START_PAGE = 0
 DEFAULT_SIZE = 25
-DEFAULT_SORT = "metadata.updated,DESC"
+DEFAULT_SORT = "created,DESC"
 
 
 class ClientParametersBuilder:
