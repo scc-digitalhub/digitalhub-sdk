@@ -92,13 +92,13 @@ class Resource(BaseModel):
     Resource model.
     """
 
-    cpu: Optional[str] = Field(default=None, pattern=r"[\d]+|^([0-9])+([a-zA-Z])+$")
+    cpu: Optional[Union[str, int]] = Field(default=None, pattern=r"[\d]+|^([0-9])+([a-zA-Z])+$")
     """CPU resource model."""
 
-    mem: Optional[str] = Field(default=None, pattern=r"[\d]+|^([0-9])+([a-zA-Z])+$")
+    mem: Optional[Union[str, int]] = Field(default=None, pattern=r"[\d]+|^([0-9])+([a-zA-Z])+$")
     """Memory resource model."""
 
-    gpu: Optional[str] = Field(default=None, pattern=r"[\d]+|^([0-9])+([a-zA-Z])+$")
+    gpu: Optional[Union[str, int]] = Field(default=None, pattern=r"[\d]+|^([0-9])+([a-zA-Z])+$")
     """GPU resource model."""
 
 
