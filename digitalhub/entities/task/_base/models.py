@@ -91,13 +91,10 @@ class Resource(BaseModel):
     """
     Resource model.
     """
-
-    _quantity_str = Annotated[str, StringConstraints(pattern=r"[\d]+|^([0-9])+([a-zA-Z])+$")]
-
-    cpu: Optional[Union[_quantity_str, int]] = None
+    cpu: Optional[Union[Annotated[str, StringConstraints(pattern=r"[\d]+|^([0-9])+([a-zA-Z])+$")], int]] = None
     """CPU resource model."""
 
-    mem: Optional[Union[_quantity_str, int]] = None
+    mem: Optional[Union[Annotated[str, StringConstraints(pattern=r"[\d]+|^([0-9])+([a-zA-Z])+$")], int]] = None
     """Memory resource model."""
 
     gpu: Optional[Union[_quantity_str, int]] = None
