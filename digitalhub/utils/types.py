@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import Union, Any
+from typing import Any, Union
 
 _dataframe_types = []
 
