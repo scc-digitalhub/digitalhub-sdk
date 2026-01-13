@@ -13,6 +13,7 @@ from digitalhub.entities._commons.metrics import MetricType, set_metrics, valida
 from digitalhub.entities._processors.processors import context_processor
 from digitalhub.factory.entity import entity_factory
 from digitalhub.factory.runtime import runtime_factory
+from digitalhub.utils.generic_utils import decode_base64_string
 from digitalhub.utils.exceptions import EntityError
 from digitalhub.utils.logger import LOGGER
 
@@ -124,16 +125,22 @@ class Run(UnversionedEntity):
                     LOGGER.info(f"Run {self.id} finished in {current:.2f} seconds.")
                 return self
 
-    def logs(self) -> dict:
+    def logs(self) -> list[dict]:
         """
         Get run logs.
 
         Returns
         -------
-        dict
+        list[dict]
             Run logs.
         """
-        return context_processor.read_run_logs(self.project, self.ENTITY_TYPE, self.id)
+        logs_list = context_processor.read_run_logs(self.project, self.ENTITY_TYPE, self.id)
+        logs = []
+        for log in logs_list:
+            if "content" in log:
+                log["content"] = decode_base64_string(log["content"])
+            logs.append(log)
+        return logs
 
     def stop(self) -> None:
         """
