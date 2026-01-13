@@ -97,7 +97,7 @@ class Resource(BaseModel):
     mem: Optional[Union[Annotated[str, StringConstraints(pattern=r"[\d]+|^([0-9])+([a-zA-Z])+$")], int]] = None
     """Memory resource model."""
 
-    gpu: Optional[Union[_quantity_str, int]] = None
+    gpu: Optional[Union[Annotated[str, StringConstraints(pattern=r"[\d]+|^([0-9])+([a-zA-Z])+$")], int]] = None
     """GPU resource model."""
 
 
