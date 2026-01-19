@@ -4,10 +4,14 @@
 
 from __future__ import annotations
 
+import typing
 from enum import Enum
 
 from digitalhub import entities
 from digitalhub.entities._commons.enums import EntityTypes
+
+if typing.TYPE_CHECKING:
+    from digitalhub.entities._base.context.entity import ContextEntity
 
 
 class OpType(str, Enum):
@@ -136,7 +140,7 @@ class EntityCRUD:
         kwargs.setdefault("project", self.project_name)
         return kwargs
 
-    def _call_op(self, op_type: OpType, *args, **kwargs):
+    def _call_op(self, op_type: OpType, *args, **kwargs) -> typing.Any:
         """
         Call an operation by type.
 
@@ -159,79 +163,63 @@ class EntityCRUD:
             raise AttributeError(f"Operation '{op_type.value}' not available for {self.entity_type.value}")
         return op(*args, **self._inject_project(kwargs))
 
-    def new(self, **kwargs):
+    def new(self, **kwargs) -> ContextEntity:
         """Create a new entity."""
         return self._call_op(OpType.NEW, **kwargs)
 
-    def log(self, **kwargs):
+    def log(self, **kwargs) -> ContextEntity:
         """Create and upload an entity."""
         return self._call_op(OpType.LOG, **kwargs)
 
-    def log_generic(self, **kwargs):
+    def log_generic(self, **kwargs) -> ContextEntity:
         """Create and upload a generic entity."""
         return self._call_op(OpType.LOG_GENERIC, **kwargs)
 
-    def log_table(self, **kwargs):
+    def log_table(self, **kwargs) -> ContextEntity:
         """Create and upload a table dataitem."""
         return self._call_op(OpType.LOG_TABLE, **kwargs)
 
-    def log_mlflow(self, **kwargs):
+    def log_mlflow(self, **kwargs) -> ContextEntity:
         """Create and upload a MLflow model."""
         return self._call_op(OpType.LOG_MLFLOW, **kwargs)
 
-    def log_sklearn(self, **kwargs):
+    def log_sklearn(self, **kwargs) -> ContextEntity:
         """Create and upload a scikit-learn model."""
         return self._call_op(OpType.LOG_SKLEARN, **kwargs)
 
-    def log_huggingface(self, **kwargs):
+    def log_huggingface(self, **kwargs) -> ContextEntity:
         """Create and upload a Huggingface model."""
         return self._call_op(OpType.LOG_HUGGINGFACE, **kwargs)
 
-    def get(self, identifier: str, **kwargs):
+    def get(self, *args, **kwargs) -> ContextEntity:
         """Get entity from backend."""
-        return self._call_op(OpType.GET, identifier, **kwargs)
+        return self._call_op(OpType.GET, *args, **kwargs)
 
-    def get_versions(self, identifier: str, **kwargs):
+    def get_versions(self, *args, **kwargs) -> list[ContextEntity]:
         """Get entity versions from backend."""
-        return self._call_op(OpType.GET_VERSIONS, identifier, **kwargs)
+        return self._call_op(OpType.GET_VERSIONS, *args, **kwargs)
 
-    def list(self, **kwargs):
+    def list(self, **kwargs) -> list[ContextEntity]:
         """List all latest version entities from backend."""
-        # list() is special - project is first positional arg
-        kwargs = self._inject_project(kwargs)
-        return self._ops[OpType.LIST](kwargs.pop("project"), **kwargs)
+        return self._ops[OpType.LIST](self.project_name, **kwargs)
 
-    def import_entity(self, file: str | None = None, key: str | None = None, **kwargs):
+    def import_entity(self, **kwargs) -> ContextEntity:
         """Import entity from a YAML file or key."""
-        return self._call_op(OpType.IMPORT, file, key, **self._inject_project(kwargs))
+        kwargs["context"] = self.project_name
+        return self._ops[OpType.IMPORT](**kwargs)
 
-    def update(self, entity):
+    def update(self, *args) -> ContextEntity:
         """Update entity."""
-        return self._ops[OpType.UPDATE](entity)
+        return self._ops[OpType.UPDATE](*args)
 
-    def delete(self, identifier: str, **kwargs):
+    def delete(self, *args, **kwargs) -> dict:
         """Delete entity from backend."""
-        return self._call_op(OpType.DELETE, identifier, **kwargs)
+        return self._call_op(OpType.DELETE, *args, **kwargs)
 
 
 class CRUDManager:
     """
     Manager for CRUD operations on all entity types.
-
-    Provides convenient access to CRUD operations for artifacts, dataitems,
-    models, functions, workflows, secrets, and runs within a project.
-
-    Parameters
-    ----------
-    project_name : str
-        Name of the project.
-
-    Examples
-    --------
-    >>> manager = CRUDManager("my-project")
-    >>> artifact = manager.artifact.new(name="my-artifact", kind="artifact")
-    >>> artifacts = manager.artifact.list()
-    >>> model = manager.model.log_mlflow(name="my-model", source="path/to/model")
     """
 
     def __init__(self, project_name: str) -> None:

@@ -515,25 +515,11 @@ class Project(Entity):
         reset_id: bool = True,
     ) -> Artifact:
         """
-        Import object into backend from a YAML file or key.
+        Import artifact into backend from a YAML file or key.
 
-        Parameters
-        ----------
-        file : str
-            Path to YAML file.
-        key : str
-            Entity key (store://...).
-        reset_id : bool
-            Flag to determine if the ID of context entities should be reset.
-
-        Returns
+        See also
         -------
-        Artifact
-            Object instance.
-
-        Examples
-        --------
-        >>> obj = project.import_artifact("my-artifact.yaml")
+        digitalhub.import_artifact
         """
         return self.crud.artifact.import_entity(file=file, key=key, reset_id=reset_id)
 
@@ -543,21 +529,11 @@ class Project(Entity):
         entity: Artifact,
     ) -> Artifact:
         """
-        Update object.
+        Update artifact.
 
-        Parameters
-        ----------
-        entity : Artifact
-            Object to update.
-
-        Returns
+        See also
         -------
-        Artifact
-            Entity updated.
-
-        Examples
-        --------
-        >>> obj = project.update_artifact(obj)
+        digitalhub.update_artifact
         """
         self._validate_entity_project(entity.project)
         return self.crud.artifact.update(entity)
@@ -571,32 +547,11 @@ class Project(Entity):
         cascade: bool = True,
     ) -> None:
         """
-        Delete object from backend.
+        Delete artifact from backend.
 
-        Parameters
-        ----------
-        identifier : str
-            Entity key (store://...) or entity name.
-        entity_id : str
-            Entity ID.
-        delete_all_versions : bool
-            Delete all versions of the named entity. If True, use entity name instead of entity key as identifier.
-        cascade : bool
-            Flag to determine if related entities should be deleted.
-
-        Returns
+        See also
         -------
-        dict
-            Response from backend.
-
-        Examples
-        --------
-        If delete_all_versions is False:
-        >>> project.delete_artifact("store://my-artifact-key")
-
-        Otherwise:
-        >>> project.delete_artifact("my-artifact-name",
-        >>>                         delete_all_versions=True)
+        digitalhub.delete_artifact
         """
         self.crud.artifact.delete(
             identifier=identifier,
