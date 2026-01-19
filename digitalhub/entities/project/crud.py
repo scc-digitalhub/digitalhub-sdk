@@ -284,9 +284,10 @@ def search_entity(
     updated: str | None = None,
     description: str | None = None,
     labels: list[str] | None = None,
-) -> list[ContextEntity]:
+) -> tuple[list[ContextEntity], list[dict]]:
     """
-    Search objects from backend.
+    Search objects from backend. It returns both existing entities
+    and deleted entities.
 
     Parameters
     ----------
@@ -311,7 +312,7 @@ def search_entity(
 
     Returns
     -------
-    list[ContextEntity]
+    list[ContextEntity|dict]
         List of object instances.
     """
     return context_processor.search_entity(

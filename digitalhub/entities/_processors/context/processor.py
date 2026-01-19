@@ -395,7 +395,7 @@ class ContextEntityOperationsProcessor:
         description: str | None = None,
         labels: list[str] | None = None,
         **kwargs,
-    ) -> list[ContextEntity]:
+    ) -> tuple[list[ContextEntity], list[dict]]:
         """Search for entities in the backend using various criteria."""
         return self.special_ops_processor.search_entity(
             crud_processor=self.crud_processor,

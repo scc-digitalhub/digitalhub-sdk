@@ -138,7 +138,7 @@ class Project(Entity):
         description: str | None = None,
         labels: list[str] | None = None,
         **kwargs,
-    ) -> list[ContextEntity]:
+    ) -> tuple[list[ContextEntity], list[dict]]:
         """
         Search objects from backend.
 

@@ -11,6 +11,7 @@ from digitalhub.entities._commons.enums import EntityKinds
 from digitalhub.entities._processors.utils import get_context
 from digitalhub.factory.entity import entity_factory
 from digitalhub.stores.client.common.enums import ApiCategories, BackendOperations
+from digitalhub.utils.exceptions import BackendError
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.context.entity import ContextEntity
@@ -425,7 +426,7 @@ class ContextEntitySpecialOpsProcessor:
         description: str | None = None,
         labels: list[str] | None = None,
         **kwargs,
-    ) -> list[ContextEntity]:
+    ) -> tuple[list[ContextEntity], list[dict]]:
         """
         Search for entities in the backend using various criteria.
 
@@ -461,8 +462,10 @@ class ContextEntitySpecialOpsProcessor:
 
         Returns
         -------
-        list[ContextEntity]
-            List of matching entity instances from the search.
+        tuple[list[ContextEntity], list[dict]]
+            List of matching entity instances from the search. The living
+            entities are returned as ContextEntity objects, while any
+            entities that could not be read are returned as raw dictionaries.
         """
         context = get_context(project)
         kwargs = context.client.build_parameters(
@@ -484,4 +487,12 @@ class ContextEntitySpecialOpsProcessor:
             project=context.name,
         )
         entities_dict = context.client.read_object(api, **kwargs)
-        return [crud_processor.read_context_entity(entity["key"]) for entity in entities_dict["content"]]
+        living_entities = []
+        dead_entities = []
+        for entity in entities_dict["content"]:
+            try:
+                living_entity = crud_processor.read_context_entity(entity["key"])
+                living_entities.append(living_entity)
+            except BackendError:
+                dead_entities.append(entity)
+        return living_entities, dead_entities
