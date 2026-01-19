@@ -103,7 +103,7 @@ def import_project(
     reset_id: bool = False,
 ) -> Project:
     """
-    Import object from a YAML file and create a new object into the backend.
+    Import object into backend from a YAML file or key.
 
     Parameters
     ----------

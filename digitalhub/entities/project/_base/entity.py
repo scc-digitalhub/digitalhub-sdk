@@ -5,70 +5,16 @@
 from __future__ import annotations
 
 import typing
+from functools import wraps
 from pathlib import Path
 from typing import Any
 
 from digitalhub.context.api import build_context
-from digitalhub.entities import (
-    delete_artifact,
-    delete_dataitem,
-    delete_function,
-    delete_model,
-    delete_run,
-    delete_secret,
-    delete_workflow,
-    get_artifact,
-    get_artifact_versions,
-    get_dataitem,
-    get_dataitem_versions,
-    get_function,
-    get_function_versions,
-    get_model,
-    get_model_versions,
-    get_run,
-    get_secret,
-    get_workflow,
-    get_workflow_versions,
-    import_artifact,
-    import_dataitem,
-    import_function,
-    import_model,
-    import_secret,
-    import_workflow,
-    list_artifacts,
-    list_dataitems,
-    list_functions,
-    list_models,
-    list_runs,
-    list_secrets,
-    list_workflows,
-    log_artifact,
-    log_dataitem,
-    log_generic_artifact,
-    log_generic_dataitem,
-    log_generic_model,
-    log_huggingface,
-    log_mlflow,
-    log_model,
-    log_sklearn,
-    log_table,
-    new_artifact,
-    new_dataitem,
-    new_function,
-    new_model,
-    new_secret,
-    new_workflow,
-    update_artifact,
-    update_dataitem,
-    update_function,
-    update_model,
-    update_secret,
-    update_workflow,
-)
 from digitalhub.entities._base.entity.entity import Entity
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._constructors.uuid import build_uuid
 from digitalhub.entities._processors.processors import base_processor, context_processor
+from digitalhub.entities.project._base.crud_manager import CRUDManager
 from digitalhub.factory.entity import entity_factory
 from digitalhub.stores.client.base.factory import get_client
 from digitalhub.utils.exceptions import BackendError, EntityAlreadyExistsError, EntityError
@@ -87,6 +33,18 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities.run._base.entity import Run
     from digitalhub.entities.secret._base.entity import Secret
     from digitalhub.entities.workflow._base.entity import Workflow
+
+
+def _auto_refresh(method):
+    """Decorator to automatically refresh project after method execution."""
+
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        result = method(self, *args, **kwargs)
+        self.refresh()
+        return result
+
+    return wrapper
 
 
 class Project(Entity):
@@ -120,6 +78,9 @@ class Project(Entity):
 
         # Set context
         build_context(self)
+
+        # Set CRUD manager
+        self.crud = CRUDManager(self.name)
 
     ##############################
     #  Save / Refresh / Export
@@ -181,33 +142,11 @@ class Project(Entity):
         """
         Search objects from backend.
 
-        Parameters
-        ----------
-        query : str
-            Search query.
-        entity_types : list[str]
-            Entity types.
-        name : str
-            Entity name.
-        kind : str
-            Entity kind.
-        created : str
-            Entity creation date.
-        updated : str
-            Entity update date.
-        description : str
-            Entity description.
-        labels : list[str]
-            Entity labels.
-        **kwargs : dict
-            Parameters to pass to the API call.
-
-            Returns
-            -------
-            list[ContextEntity]
-                List of object instances.
+        See also
+        --------
+        digitalhub.search_entity
         """
-        objs = context_processor.search_entity(
+        return context_processor.search_entity(
             self.name,
             query=query,
             entity_types=entity_types,
@@ -219,8 +158,6 @@ class Project(Entity):
             labels=labels,
             **kwargs,
         )
-        self.refresh()
-        return objs
 
     def export(self) -> str:
         """
@@ -412,10 +349,23 @@ class Project(Entity):
             f"{EntityTypes.WORKFLOW.value}s",
         ]
 
+    def _validate_entity_project(self, project: str) -> None:
+        """
+        Validate that entity belongs to this project.
+
+        Parameters
+        ----------
+        project : str
+            Project name of the entity.
+        """
+        if project != self.name:
+            raise ValueError(f"Entity to update is not in project {self.name}.")
+
     ##############################
     #  Artifacts
     ##############################
 
+    @_auto_refresh
     def new_artifact(
         self,
         name: str,
@@ -428,40 +378,13 @@ class Project(Entity):
         **kwargs,
     ) -> Artifact:
         """
-        Create a new object.
+        Create a new artifact.
 
-        Parameters
-        ----------
-        name : str
-            Object name.
-        kind : str
-            Kind the object.
-        uuid : str
-            ID of the object.
-        description : str
-            Description of the object (human readable).
-        labels : list[str]
-            List of labels.
-        embedded : bool
-            Flag to determine if object spec must be embedded in project spec.
-        path : str
-            Object path on local file system or remote storage. It is also the destination path of upload() method.
-        **kwargs : dict
-            Spec keyword arguments.
-
-        Returns
+        See also
         -------
-        Artifact
-            Object instance.
-
-        Examples
-        --------
-        >>> obj = project.new_artifact(name="my-artifact",
-        >>>                            kind="artifact",
-        >>>                            path="s3://my-bucket/my-key")
+        digitalhub.new_artifact
         """
-        obj = new_artifact(
-            project=self.name,
+        return self.crud.artifact.new(
             name=name,
             kind=kind,
             uuid=uuid,
@@ -471,9 +394,8 @@ class Project(Entity):
             path=path,
             **kwargs,
         )
-        self.refresh()
-        return obj
 
+    @_auto_refresh
     def log_artifact(
         self,
         name: str,
@@ -484,36 +406,13 @@ class Project(Entity):
         **kwargs,
     ) -> Artifact:
         """
-        Create and upload an object.
+        Create and upload an artifact.
 
-        Parameters
-        ----------
-        name : str
-            Object name.
-        kind : str
-            Kind the object.
-        source : str
-            Artifact location on local path.
-        drop_existing : bool
-            Whether to drop existing entity with the same name.
-        path : str
-            Destination path of the artifact. If not provided, it's generated.
-        **kwargs : dict
-            New artifact spec parameters.
-
-        Returns
+        See also
         -------
-        Artifact
-            Object instance.
-
-        Examples
-        --------
-        >>> obj = project.log_artifact(name="my-artifact",
-        >>>                            kind="artifact",
-        >>>                            source="./local-path")
+        digitalhub.log_artifact
         """
-        obj = log_artifact(
-            project=self.name,
+        return self.crud.artifact.log(
             name=name,
             kind=kind,
             source=source,
@@ -521,9 +420,8 @@ class Project(Entity):
             path=path,
             **kwargs,
         )
-        self.refresh()
-        return obj
 
+    @_auto_refresh
     def log_generic_artifact(
         self,
         name: str,
@@ -534,82 +432,52 @@ class Project(Entity):
     ) -> Artifact:
         """
         Create and upload a generic artifact.
+
+        See also
+        -------
+        digitalhub.log_generic_artifact
         """
-        obj = log_generic_artifact(
-            project=self.name,
+        return self.crud.artifact.log_generic(
             name=name,
             source=source,
             drop_existing=drop_existing,
             path=path,
             **kwargs,
         )
-        self.refresh()
-        return obj
 
+    @_auto_refresh
     def get_artifact(
         self,
         identifier: str,
         entity_id: str | None = None,
     ) -> Artifact:
         """
-        Get object from backend.
+        Get artifact from backend.
 
-        Parameters
-        ----------
-        identifier : str
-            Entity key (store://...) or entity name.
-        entity_id : str
-            Entity ID.
-
-        Returns
+        See also
         -------
-        Artifact
-            Object instance.
-
-        Examples
-        --------
-        Using entity key:
-        >>> obj = project.get_artifact("store://my-artifact-key")
-
-        Using entity name:
-        >>> obj = project.get_artifact("my-artifact-name"
-        >>>                            entity_id="my-artifact-id")
+        digitalhub.get_artifact
         """
-        obj = get_artifact(
+        return self.crud.artifact.get(
             identifier=identifier,
-            project=self.name,
             entity_id=entity_id,
         )
-        self.refresh()
-        return obj
 
+    @_auto_refresh
     def get_artifact_versions(
         self,
         identifier: str,
     ) -> list[Artifact]:
         """
-        Get object versions from backend.
+        Get artifact versions from backend.
 
-        Parameters
-        ----------
-        identifier : str
-            Entity key (store://...) or entity name.
-
-        Returns
+        See also
         -------
-        list[Artifact]
-            List of object instances.
-
-        Examples
-        --------
-        Using entity key:
-        >>> obj = project.get_artifact_versions("store://my-artifact-key")
-
-        Using entity name:
-        >>> obj = project.get_artifact_versions("my-artifact-name")
+        digitalhub.get_artifact_versions
         """
-        return get_artifact_versions(identifier, project=self.name)
+        return self.crud.artifact.get_versions(identifier=identifier)
 
+    @_auto_refresh
     def list_artifacts(
         self,
         q: str | None = None,
@@ -622,38 +490,13 @@ class Project(Entity):
         versions: str | None = None,
     ) -> list[Artifact]:
         """
-        List all latest version objects from backend.
+        List all latest version artifacts from backend.
 
-        Parameters
-        ----------
-        q : str
-            Query string to filter objects.
-        name : str
-            Object name.
-        kind : str
-            Kind of the object.
-        user : str
-            User that created the object.
-        state : str
-            Object state.
-        created : str
-            Creation date filter.
-        updated : str
-            Update date filter.
-        version : str
-            Object version, default is latest.
-
-        Returns
+        See also
         -------
-        list[Artifact]
-            List of object instances.
-
-        Examples
-        --------
-        >>> objs = project.list_artifacts()
+        digitalhub.list_artifacts
         """
-        return list_artifacts(
-            self.name,
+        return self.crud.artifact.list(
             q=q,
             name=name,
             kind=kind,
@@ -664,6 +507,7 @@ class Project(Entity):
             versions=versions,
         )
 
+    @_auto_refresh
     def import_artifact(
         self,
         file: str | None = None,
@@ -671,7 +515,7 @@ class Project(Entity):
         reset_id: bool = True,
     ) -> Artifact:
         """
-        Import object from a YAML file and create a new object into the backend.
+        Import object into backend from a YAML file or key.
 
         Parameters
         ----------
@@ -691,11 +535,15 @@ class Project(Entity):
         --------
         >>> obj = project.import_artifact("my-artifact.yaml")
         """
-        return import_artifact(file, key, reset_id, self.name)
+        return self.crud.artifact.import_entity(file=file, key=key, reset_id=reset_id)
 
-    def update_artifact(self, entity: Artifact) -> Artifact:
+    @_auto_refresh
+    def update_artifact(
+        self,
+        entity: Artifact,
+    ) -> Artifact:
         """
-        Update object. Note that object spec are immutable.
+        Update object.
 
         Parameters
         ----------
@@ -711,10 +559,10 @@ class Project(Entity):
         --------
         >>> obj = project.update_artifact(obj)
         """
-        if entity.project != self.name:
-            raise ValueError(f"Entity {entity.name} is not in project {self.name}.")
-        return update_artifact(entity)
+        self._validate_entity_project(entity.project)
+        return self.crud.artifact.update(entity)
 
+    @_auto_refresh
     def delete_artifact(
         self,
         identifier: str,
@@ -750,19 +598,18 @@ class Project(Entity):
         >>> project.delete_artifact("my-artifact-name",
         >>>                         delete_all_versions=True)
         """
-        delete_artifact(
+        self.crud.artifact.delete(
             identifier=identifier,
-            project=self.name,
             entity_id=entity_id,
             delete_all_versions=delete_all_versions,
             cascade=cascade,
         )
-        self.refresh()
 
     ##############################
     #  Dataitems
     ##############################
 
+    @_auto_refresh
     def new_dataitem(
         self,
         name: str,
@@ -775,40 +622,13 @@ class Project(Entity):
         **kwargs,
     ) -> Dataitem:
         """
-        Create a new object.
+        Create a new dataitem.
 
-        Parameters
-        ----------
-        name : str
-            Object name.
-        kind : str
-            Kind the object.
-        uuid : str
-            ID of the object.
-        description : str
-            Description of the object (human readable).
-        labels : list[str]
-            List of labels.
-        embedded : bool
-            Flag to determine if object spec must be embedded in project spec.
-        path : str
-            Object path on local file system or remote storage. It is also the destination path of upload() method.
-        **kwargs : dict
-            Spec keyword arguments.
-
-        Returns
+        See also
         -------
-        Dataitem
-            Object instance.
-
-        Examples
-        --------
-        >>> obj = project.new_dataitem(name="my-dataitem",
-        >>>                            kind="dataitem",
-        >>>                            path="s3://my-bucket/my-key")
+        digitalhub.new_dataitem
         """
-        obj = new_dataitem(
-            project=self.name,
+        return self.crud.dataitem.new(
             name=name,
             kind=kind,
             uuid=uuid,
@@ -818,9 +638,8 @@ class Project(Entity):
             path=path,
             **kwargs,
         )
-        self.refresh()
-        return obj
 
+    @_auto_refresh
     def log_dataitem(
         self,
         name: str,
@@ -833,44 +652,13 @@ class Project(Entity):
         **kwargs,
     ) -> Dataitem:
         """
-        Create and upload an object.
+        Create and upload a dataitem.
 
-        Parameters
-        ----------
-        name : str
-            Object name.
-        kind : str
-            Kind the object.
-        data : Any
-            Dataframe to log.
-        extension : str
-            Extension of the dataitem.
-        source : str
-            Dataitem location on local path. Alternative to data.
-        data : Any
-            Dataframe to log. Alternative to source.
-        drop_existing : bool
-            Whether to drop existing entity with the same name.
-        extension : str
-            Extension of the output dataframe.
-        path : str
-            Destination path of the dataitem. If not provided, it's generated.
-        **kwargs : dict
-            New dataitem spec parameters.
-
-        Returns
+        See also
         -------
-        Dataitem
-            Object instance.
-
-        Examples
-        --------
-        >>> obj = project.log_dataitem(name="my-dataitem",
-        >>>                            kind="table",
-        >>>                            data=df)
+        digitalhub.log_dataitem
         """
-        obj = log_dataitem(
-            project=self.name,
+        return self.crud.dataitem.log(
             name=name,
             kind=kind,
             path=path,
@@ -880,9 +668,8 @@ class Project(Entity):
             extension=extension,
             **kwargs,
         )
-        self.refresh()
-        return obj
 
+    @_auto_refresh
     def log_generic_dataitem(
         self,
         name: str,
@@ -893,17 +680,18 @@ class Project(Entity):
     ) -> Dataitem:
         """
         Create and upload a generic dataitem.
+
+        See also
+        -------
+        digitalhub.log_generic_dataitem
         """
-        obj = log_generic_dataitem(
-            project=self.name,
+        return self.crud.dataitem.log_generic(
             name=name,
             source=source,
             drop_existing=drop_existing,
             path=path,
             **kwargs,
         )
-        self.refresh()
-        return obj
 
     def log_table(
         self,
@@ -919,9 +707,12 @@ class Project(Entity):
     ) -> Dataitem:
         """
         Create and upload a table dataitem.
+
+        See also
+        -------
+        digitalhub.log_table
         """
-        obj = log_table(
-            project=self.name,
+        return self.crud.dataitem.log_table(
             name=name,
             path=path,
             source=source,
@@ -932,73 +723,40 @@ class Project(Entity):
             engine=engine,
             **kwargs,
         )
-        self.refresh()
-        return obj
 
+    @_auto_refresh
     def get_dataitem(
         self,
         identifier: str,
         entity_id: str | None = None,
     ) -> Dataitem:
         """
-        Get object from backend.
+        Get dataitem from backend.
 
-        Parameters
-        ----------
-        identifier : str
-            Entity key (store://...) or entity name.
-        entity_id : str
-            Entity ID.
-
-        Returns
+        See also
         -------
-        Dataitem
-            Object instance.
-
-        Examples
-        --------
-        Using entity key:
-        >>> obj = project.get_dataitem("store://my-dataitem-key")
-
-        Using entity name:
-        >>> obj = project.get_dataitem("my-dataitem-name"
-        >>>                            entity_id="my-dataitem-id")
+        digitalhub.get_dataitem
         """
-        obj = get_dataitem(
+        return self.crud.dataitem.get(
             identifier=identifier,
-            project=self.name,
             entity_id=entity_id,
         )
-        self.refresh()
-        return obj
 
+    @_auto_refresh
     def get_dataitem_versions(
         self,
         identifier: str,
     ) -> list[Dataitem]:
         """
-        Get object versions from backend.
+        Get dataitem versions from backend.
 
-        Parameters
-        ----------
-        identifier : str
-            Entity key (store://...) or entity name.
-
-        Returns
+        See also
         -------
-        list[Dataitem]
-            List of object instances.
-
-        Examples
-        --------
-        Using entity key:
-        >>> obj = project.get_dataitem_versions("store://my-dataitem-key")
-
-        Using entity name:
-        >>> obj = project.get_dataitem_versions("my-dataitem-name")
+        digitalhub.get_dataitem_versions
         """
-        return get_dataitem_versions(identifier, project=self.name)
+        return self.crud.dataitem.get_versions(identifier=identifier)
 
+    @_auto_refresh
     def list_dataitems(
         self,
         q: str | None = None,
@@ -1011,38 +769,13 @@ class Project(Entity):
         versions: str | None = None,
     ) -> list[Dataitem]:
         """
-        List all latest version objects from backend.
+        List all latest version dataitems from backend.
 
-        Parameters
-        ----------
-        q : str
-            Query string to filter objects.
-        name : str
-            Object name.
-        kind : str
-            Kind of the object.
-        user : str
-            User that created the object.
-        state : str
-            Object state.
-        created : str
-            Creation date filter.
-        updated : str
-            Update date filter.
-        version : str
-            Object version, default is latest.
-
-        Returns
+        See also
         -------
-        list[Dataitem]
-            List of object instances.
-
-        Examples
-        --------
-        >>> objs = project.list_dataitems()
+        digitalhub.list_dataitems
         """
-        return list_dataitems(
-            self.name,
+        return self.crud.dataitem.list(
             q=q,
             name=name,
             kind=kind,
@@ -1053,6 +786,7 @@ class Project(Entity):
             versions=versions,
         )
 
+    @_auto_refresh
     def import_dataitem(
         self,
         file: str | None = None,
@@ -1060,50 +794,30 @@ class Project(Entity):
         reset_id: bool = True,
     ) -> Dataitem:
         """
-        Import object from a YAML file and create a new object into the backend.
+        Import dataitem into backend from a YAML file or key.
 
-        Parameters
-        ----------
-        file : str
-            Path to YAML file.
-        key : str
-            Entity key (store://...).
-        reset_id : bool
-            Flag to determine if the ID of context entities should be reset.
-
-        Returns
+        See also
         -------
-        Dataitem
-            Object instance.
-
-        Examples
-        --------
-        >>> obj = project.import_dataitem("my-dataitem.yaml")
+        digitalhub.import_dataitem
         """
-        return import_dataitem(file, key, reset_id, self.name)
+        return self.crud.dataitem.import_entity(file=file, key=key, reset_id=reset_id)
 
-    def update_dataitem(self, entity: Dataitem) -> Dataitem:
+    @_auto_refresh
+    def update_dataitem(
+        self,
+        entity: Dataitem,
+    ) -> Dataitem:
         """
-        Update object. Note that object spec are immutable.
+        Update dataitem.
 
-        Parameters
-        ----------
-        entity : Dataitem
-            Object to update.
-
-        Returns
+        See also
         -------
-        Dataitem
-            Entity updated.
-
-        Examples
-        --------
-        >>> obj = project.update_dataitem(obj)
+        digitalhub.update_dataitem
         """
-        if entity.project != self.name:
-            raise ValueError(f"Entity {entity.name} is not in project {self.name}.")
-        return update_dataitem(entity)
+        self._validate_entity_project(entity.project)
+        return self.crud.dataitem.update(entity)
 
+    @_auto_refresh
     def delete_dataitem(
         self,
         identifier: str,
@@ -1112,47 +826,24 @@ class Project(Entity):
         cascade: bool = True,
     ) -> None:
         """
-        Delete object from backend.
+        Delete dataitem from backend.
 
-        Parameters
-        ----------
-        identifier : str
-            Entity key (store://...) or entity name.
-        entity_id : str
-            Entity ID.
-        delete_all_versions : bool
-            Delete all versions of the named entity. If True, use entity name instead of entity key as identifier.
-        cascade : bool
-            Flag to determine if related entities should be deleted.
-
-        Returns
+        See also
         -------
-        dict
-            Response from backend.
-
-        Examples
-        --------
-        If delete_all_versions is False:
-        >>> project.delete_dataitem("store://my-dataitem-key")
-
-        Otherwise:
-        >>> project.delete_dataitem("my-dataitem-name",
-        >>>                         project="my-project",
-        >>>                         delete_all_versions=True)
+        digitalhub.delete_dataitem
         """
-        delete_dataitem(
+        self.crud.dataitem.delete(
             identifier=identifier,
-            project=self.name,
             entity_id=entity_id,
             delete_all_versions=delete_all_versions,
             cascade=cascade,
         )
-        self.refresh()
 
     ##############################
     #  Models
     ##############################
 
+    @_auto_refresh
     def new_model(
         self,
         name: str,
@@ -1165,40 +856,13 @@ class Project(Entity):
         **kwargs,
     ) -> Model:
         """
-        Create a new object.
+        Create a new model.
 
-        Parameters
-        ----------
-        name : str
-            Object name.
-        kind : str
-            Kind the object.
-        uuid : str
-            ID of the object.
-        description : str
-            Description of the object (human readable).
-        labels : list[str]
-            List of labels.
-        embedded : bool
-            Flag to determine if object spec must be embedded in project spec.
-        path : str
-            Object path on local file system or remote storage. It is also the destination path of upload() method.
-        **kwargs : dict
-            Spec keyword arguments.
-
-        Returns
+        See also
         -------
-        Model
-            Object instance.
-
-        Examples
-        --------
-        >>> obj = project.new_model(name="my-model",
-        >>>                            kind="model",
-        >>>                            path="s3://my-bucket/my-key")
+        digitalhub.new_model
         """
-        obj = new_model(
-            project=self.name,
+        return self.crud.model.new(
             name=name,
             kind=kind,
             uuid=uuid,
@@ -1208,9 +872,8 @@ class Project(Entity):
             path=path,
             **kwargs,
         )
-        self.refresh()
-        return obj
 
+    @_auto_refresh
     def log_model(
         self,
         name: str,
@@ -1221,36 +884,13 @@ class Project(Entity):
         **kwargs,
     ) -> Model:
         """
-        Create and upload an object.
+        Create and upload a model.
 
-        Parameters
-        ----------
-        name : str
-            Object name.
-        kind : str
-            Kind the object.
-        source : str
-            Model location on local path.
-        drop_existing : bool
-            Whether to drop existing entity with the same name.
-        path : str
-            Destination path of the model. If not provided, it's generated.
-        **kwargs : dict
-            New model spec parameters.
-
-        Returns
+        See also
         -------
-        Model
-            Object instance.
-
-        Examples
-        --------
-        >>> obj = project.log_model(name="my-model",
-        >>>                            kind="model",
-        >>>                            source="./local-path")
+        digitalhub.log_model
         """
-        obj = log_model(
-            project=self.name,
+        return self.crud.model.log(
             name=name,
             kind=kind,
             source=source,
@@ -1258,9 +898,8 @@ class Project(Entity):
             path=path,
             **kwargs,
         )
-        self.refresh()
-        return obj
 
+    @_auto_refresh
     def log_generic_model(
         self,
         name: str,
@@ -1271,17 +910,18 @@ class Project(Entity):
     ) -> Model:
         """
         Create and upload a generic model.
+
+        See also
+        -------
+        digitalhub.log_generic_model
         """
-        obj = log_generic_model(
-            project=self.name,
+        return self.crud.model.log_generic(
             name=name,
             source=source,
             drop_existing=drop_existing,
             path=path,
             **kwargs,
         )
-        self.refresh()
-        return obj
 
     def log_mlflow(
         self,
@@ -1293,17 +933,18 @@ class Project(Entity):
     ) -> Model:
         """
         Create and upload a MLflow model.
+
+        See also
+        -------
+        digitalhub.log_mlflow
         """
-        obj = log_mlflow(
-            project=self.name,
+        return self.crud.model.log_mlflow(
             name=name,
             source=source,
             drop_existing=drop_existing,
             path=path,
             **kwargs,
         )
-        self.refresh()
-        return obj
 
     def log_sklearn(
         self,
@@ -1315,17 +956,18 @@ class Project(Entity):
     ) -> Model:
         """
         Create and upload a scikit-learn model.
+
+        See also
+        -------
+        digitalhub.log_sklearn
         """
-        obj = log_sklearn(
-            project=self.name,
+        return self.crud.model.log_sklearn(
             name=name,
             source=source,
             drop_existing=drop_existing,
             path=path,
             **kwargs,
         )
-        self.refresh()
-        return obj
 
     def log_huggingface(
         self,
@@ -1337,82 +979,52 @@ class Project(Entity):
     ) -> Model:
         """
         Create and upload a Huggingface model.
+
+        See also
+        -------
+        digitalhub.log_huggingface
         """
-        obj = log_huggingface(
-            project=self.name,
+        return self.crud.model.log_huggingface(
             name=name,
             source=source,
             drop_existing=drop_existing,
             path=path,
             **kwargs,
         )
-        self.refresh()
-        return obj
 
+    @_auto_refresh
     def get_model(
         self,
         identifier: str,
         entity_id: str | None = None,
     ) -> Model:
         """
-        Get object from backend.
+        Get model from backend.
 
-        Parameters
-        ----------
-        identifier : str
-            Entity key (store://...) or entity name.
-        entity_id : str
-            Entity ID.
-
-        Returns
+        See also
         -------
-        Model
-            Object instance.
-
-        Examples
-        --------
-        Using entity key:
-        >>> obj = project.get_model("store://my-model-key")
-
-        Using entity name:
-        >>> obj = project.get_model("my-model-name"
-        >>>                            entity_id="my-model-id")
+        digitalhub.get_model
         """
-        obj = get_model(
+        return self.crud.model.get(
             identifier=identifier,
-            project=self.name,
             entity_id=entity_id,
         )
-        self.refresh()
-        return obj
 
+    @_auto_refresh
     def get_model_versions(
         self,
         identifier: str,
     ) -> list[Model]:
         """
-        Get object versions from backend.
+        Get model versions from backend.
 
-        Parameters
-        ----------
-        identifier : str
-            Entity key (store://...) or entity name.
-
-        Returns
+        See also
         -------
-        list[Model]
-            List of object instances.
-
-        Examples
-        --------
-        Using entity key:
-        >>> obj = project.get_model_versions("store://my-model-key")
-
-        Using entity name:
-        >>> obj = project.get_model_versions("my-model-name")
+        digitalhub.get_model_versions
         """
-        return get_model_versions(identifier, project=self.name)
+        return self.crud.model.get_versions(identifier=identifier)
 
+    @_auto_refresh
     def list_models(
         self,
         q: str | None = None,
@@ -1425,38 +1037,13 @@ class Project(Entity):
         versions: str | None = None,
     ) -> list[Model]:
         """
-        List all latest version objects from backend.
+        List all latest version models from backend.
 
-        Parameters
-        ----------
-        q : str
-            Query string to filter objects.
-        name : str
-            Object name.
-        kind : str
-            Kind of the object.
-        user : str
-            User that created the object.
-        state : str
-            Object state.
-        created : str
-            Creation date filter.
-        updated : str
-            Update date filter.
-        version : str
-            Object version, default is latest.
-
-        Returns
+        See also
         -------
-        list[Model]
-            List of object instances.
-
-        Examples
-        --------
-        >>> objs = project.list_models()
+        digitalhub.list_models
         """
-        return list_models(
-            self.name,
+        return self.crud.model.list(
             q=q,
             name=name,
             kind=kind,
@@ -1467,6 +1054,7 @@ class Project(Entity):
             versions=versions,
         )
 
+    @_auto_refresh
     def import_model(
         self,
         file: str | None = None,
@@ -1474,50 +1062,30 @@ class Project(Entity):
         reset_id: bool = True,
     ) -> Model:
         """
-        Import object from a YAML file and create a new object into the backend.
+        Import model into backend from a YAML file or key.
 
-        Parameters
-        ----------
-        file : str
-            Path to YAML file.
-        key : str
-            Entity key (store://...).
-        reset_id : bool
-            Flag to determine if the ID of context entities should be reset.
-
-        Returns
+        See also
         -------
-        Model
-            Object instance.
-
-        Examples
-        --------
-        >>> obj = project.import_model("my-model.yaml")
+        digitalhub.import_model
         """
-        return import_model(file, key, reset_id, self.name)
+        return self.crud.model.import_entity(file=file, key=key, reset_id=reset_id)
 
-    def update_model(self, entity: Model) -> Model:
+    @_auto_refresh
+    def update_model(
+        self,
+        entity: Model,
+    ) -> Model:
         """
-        Update object. Note that object spec are immutable.
+        Update model.
 
-        Parameters
-        ----------
-        entity : Model
-            Object to update.
-
-        Returns
+        See also
         -------
-        Model
-            Entity updated.
-
-        Examples
-        --------
-        >>> obj = project.update_model(obj)
+        digitalhub.update_model
         """
-        if entity.project != self.name:
-            raise ValueError(f"Entity {entity.name} is not in project {self.name}.")
-        return update_model(entity)
+        self._validate_entity_project(entity.project)
+        return self.crud.model.update(entity)
 
+    @_auto_refresh
     def delete_model(
         self,
         identifier: str,
@@ -1526,47 +1094,24 @@ class Project(Entity):
         cascade: bool = True,
     ) -> None:
         """
-        Delete object from backend.
+        Delete model from backend.
 
-        Parameters
-        ----------
-        identifier : str
-            Entity key (store://...) or entity name.
-        entity_id : str
-            Entity ID.
-        delete_all_versions : bool
-            Delete all versions of the named entity. If True, use entity name instead of entity key as identifier.
-        cascade : bool
-            Flag to determine if related entities should be deleted.
-
-        Returns
+        See also
         -------
-        dict
-            Response from backend.
-
-        Examples
-        --------
-        If delete_all_versions is False:
-        >>> project.delete_model("store://my-model-key")
-
-        Otherwise:
-        >>> project.delete_model("my-model-name",
-        >>>                       project="my-project",
-        >>>                       delete_all_versions=True)
+        digitalhub.delete_model
         """
-        delete_model(
+        self.crud.model.delete(
             identifier=identifier,
-            project=self.name,
             entity_id=entity_id,
             delete_all_versions=delete_all_versions,
             cascade=cascade,
         )
-        self.refresh()
 
     ##############################
     #  Functions
     ##############################
 
+    @_auto_refresh
     def new_function(
         self,
         name: str,
@@ -1578,39 +1123,13 @@ class Project(Entity):
         **kwargs,
     ) -> Function:
         """
-        Create a new object.
+        Create a new function.
 
-        Parameters
-        ----------
-        name : str
-            Object name.
-        kind : str
-            Kind the object.
-        uuid : str
-            ID of the object.
-        description : str
-            Description of the object (human readable).
-        labels : list[str]
-            List of labels.
-        embedded : bool
-            Flag to determine if object spec must be embedded in project spec.
-        **kwargs : dict
-            Spec keyword arguments.
-
-        Returns
+        See also
         -------
-        Function
-            Object instance.
-
-        Examples
-        --------
-        >>> obj = project.new_function(name="my-function",
-        >>>                            kind="python",
-        >>>                            code_src="function.py",
-        >>>                            handler="function-handler")
+        digitalhub.new_function
         """
-        obj = new_function(
-            project=self.name,
+        return self.crud.function.new(
             name=name,
             kind=kind,
             uuid=uuid,
@@ -1619,73 +1138,40 @@ class Project(Entity):
             embedded=embedded,
             **kwargs,
         )
-        self.refresh()
-        return obj
 
+    @_auto_refresh
     def get_function(
         self,
         identifier: str,
         entity_id: str | None = None,
     ) -> Function:
         """
-        Get object from backend.
+        Get function from backend.
 
-        Parameters
-        ----------
-        identifier : str
-            Entity key (store://...) or entity name.
-        entity_id : str
-            Entity ID.
-
-        Returns
+        See also
         -------
-        Function
-            Object instance.
-
-        Examples
-        --------
-        Using entity key:
-        >>> obj = project.get_function("store://my-function-key")
-
-        Using entity name:
-        >>> obj = project.get_function("my-function-name"
-        >>>                            entity_id="my-function-id")
+        digitalhub.get_function
         """
-        obj = get_function(
+        return self.crud.function.get(
             identifier=identifier,
-            project=self.name,
             entity_id=entity_id,
         )
-        self.refresh()
-        return obj
 
+    @_auto_refresh
     def get_function_versions(
         self,
         identifier: str,
     ) -> list[Function]:
         """
-        Get object versions from backend.
+        Get function versions from backend.
 
-        Parameters
-        ----------
-        identifier : str
-            Entity key (store://...) or entity name.
-
-        Returns
+        See also
         -------
-        list[Function]
-            List of object instances.
-
-        Examples
-        --------
-        Using entity key:
-        >>> obj = project.get_function_versions("store://my-function-key")
-
-        Using entity name:
-        >>> obj = project.get_function_versions("my-function-name")
+        digitalhub.get_function_versions
         """
-        return get_function_versions(identifier, project=self.name)
+        return self.crud.function.get_versions(identifier=identifier)
 
+    @_auto_refresh
     def list_functions(
         self,
         q: str | None = None,
@@ -1698,38 +1184,13 @@ class Project(Entity):
         versions: str | None = None,
     ) -> list[Function]:
         """
-        List all latest version objects from backend.
+        List all latest version functions from backend.
 
-        Parameters
-        ----------
-        q : str
-            Query string to filter objects.
-        name : str
-            Object name.
-        kind : str
-            Kind of the object.
-        user : str
-            User that created the object.
-        state : str
-            Object state.
-        created : str
-            Creation date filter.
-        updated : str
-            Update date filter.
-        version : str
-            Object version, default is latest.
-
-        Returns
+        See also
         -------
-        list[Function]
-            List of object instances.
-
-        Examples
-        --------
-        >>> objs = project.list_functions()
+        digitalhub.list_functions
         """
-        return list_functions(
-            self.name,
+        return self.crud.function.list(
             q=q,
             name=name,
             kind=kind,
@@ -1740,6 +1201,7 @@ class Project(Entity):
             versions=versions,
         )
 
+    @_auto_refresh
     def import_function(
         self,
         file: str | None = None,
@@ -1747,50 +1209,30 @@ class Project(Entity):
         reset_id: bool = True,
     ) -> Function:
         """
-        Import object from a YAML file and create a new object into the backend.
+        Import function into backend from a YAML file or key.
 
-        Parameters
-        ----------
-        file : str
-            Path to YAML file.
-        key : str
-            Entity key (store://...).
-        reset_id : bool
-            Flag to determine if the ID of context entities should be reset.
-
-        Returns
+        See also
         -------
-        Function
-            Object instance.
-
-        Examples
-        --------
-        >>> obj = project.import_function("my-function.yaml")
+        digitalhub.import_function
         """
-        return import_function(file, key, reset_id, self.name)
+        return self.crud.function.import_entity(file=file, key=key, reset_id=reset_id)
 
-    def update_function(self, entity: Function) -> Function:
+    @_auto_refresh
+    def update_function(
+        self,
+        entity: Function,
+    ) -> Function:
         """
-        Update object. Note that object spec are immutable.
+        Update function.
 
-        Parameters
-        ----------
-        entity : Function
-            Object to update.
-
-        Returns
+        See also
         -------
-        Function
-            Entity updated.
-
-        Examples
-        --------
-        >>> obj = project.update_function(obj)
+        digitalhub.update_function
         """
-        if entity.project != self.name:
-            raise ValueError(f"Entity {entity.name} is not in project {self.name}.")
-        return update_function(entity)
+        self._validate_entity_project(entity.project)
+        return self.crud.function.update(entity)
 
+    @_auto_refresh
     def delete_function(
         self,
         identifier: str,
@@ -1799,46 +1241,24 @@ class Project(Entity):
         cascade: bool = True,
     ) -> None:
         """
-        Delete object from backend.
+        Delete function from backend.
 
-        Parameters
-        ----------
-        identifier : str
-            Entity key (store://...) or entity name.
-        entity_id : str
-            Entity ID.
-        delete_all_versions : bool
-            Delete all versions of the named entity. If True, use entity name instead of entity key as identifier.
-        cascade : bool
-            Cascade delete.
-
-        Returns
+        See also
         -------
-        dict
-            Response from backend.
-
-        Examples
-        --------
-        If delete_all_versions is False:
-        >>> project.delete_function("store://my-function-key")
-
-        Otherwise:
-        >>> project.delete_function("my-function-name",
-        >>>                         delete_all_versions=True)
+        digitalhub.delete_function
         """
-        delete_function(
+        self.crud.function.delete(
             identifier=identifier,
-            project=self.name,
             entity_id=entity_id,
             delete_all_versions=delete_all_versions,
             cascade=cascade,
         )
-        self.refresh()
 
     ##############################
     #  Workflows
     ##############################
 
+    @_auto_refresh
     def new_workflow(
         self,
         name: str,
@@ -1850,39 +1270,13 @@ class Project(Entity):
         **kwargs,
     ) -> Workflow:
         """
-        Create a new object.
+        Create a new workflow.
 
-        Parameters
-        ----------
-        name : str
-            Object name.
-        kind : str
-            Kind the object.
-        uuid : str
-            ID of the object.
-        description : str
-            Description of the object (human readable).
-        labels : list[str]
-            List of labels.
-        embedded : bool
-            Flag to determine if object spec must be embedded in project spec.
-        **kwargs : dict
-            Spec keyword arguments.
-
-        Returns
+        See also
         -------
-        Workflow
-            Object instance.
-
-        Examples
-        --------
-        >>> obj = project.new_workflow(name="my-workflow",
-        >>>                            kind="kfp",
-        >>>                            code_src="pipeline.py",
-        >>>                            handler="pipeline-handler")
+        digitalhub.new_workflow
         """
-        obj = new_workflow(
-            project=self.name,
+        return self.crud.workflow.new(
             name=name,
             kind=kind,
             uuid=uuid,
@@ -1891,73 +1285,40 @@ class Project(Entity):
             embedded=embedded,
             **kwargs,
         )
-        self.refresh()
-        return obj
 
+    @_auto_refresh
     def get_workflow(
         self,
         identifier: str,
         entity_id: str | None = None,
     ) -> Workflow:
         """
-        Get object from backend.
+        Get workflow from backend.
 
-        Parameters
-        ----------
-        identifier : str
-            Entity key (store://...) or entity name.
-        entity_id : str
-            Entity ID.
-
-        Returns
+        See also
         -------
-        Workflow
-            Object instance.
-
-        Examples
-        --------
-        Using entity key:
-        >>> obj = project.get_workflow("store://my-workflow-key")
-
-        Using entity name:
-        >>> obj = project.get_workflow("my-workflow-name"
-        >>>                            entity_id="my-workflow-id")
+        digitalhub.get_workflow
         """
-        obj = get_workflow(
+        return self.crud.workflow.get(
             identifier=identifier,
-            project=self.name,
             entity_id=entity_id,
         )
-        self.refresh()
-        return obj
 
+    @_auto_refresh
     def get_workflow_versions(
         self,
         identifier: str,
     ) -> list[Workflow]:
         """
-        Get object versions from backend.
+        Get workflow versions from backend.
 
-        Parameters
-        ----------
-        identifier : str
-            Entity key (store://...) or entity name.
-
-        Returns
+        See also
         -------
-        list[Workflow]
-            List of object instances.
-
-        Examples
-        --------
-        Using entity key:
-        >>> obj = project.get_workflow_versions("store://my-workflow-key")
-
-        Using entity name:
-        >>> obj = project.get_workflow_versions("my-workflow-name")
+        digitalhub.get_workflow_versions
         """
-        return get_workflow_versions(identifier, project=self.name)
+        return self.crud.workflow.get_versions(identifier=identifier)
 
+    @_auto_refresh
     def list_workflows(
         self,
         q: str | None = None,
@@ -1970,38 +1331,13 @@ class Project(Entity):
         versions: str | None = None,
     ) -> list[Workflow]:
         """
-        List all latest version objects from backend.
+        List all latest version workflows from backend.
 
-        Parameters
-        ----------
-        q : str
-            Query string to filter objects.
-        name : str
-            Object name.
-        kind : str
-            Kind of the object.
-        user : str
-            User that created the object.
-        state : str
-            Object state.
-        created : str
-            Creation date filter.
-        updated : str
-            Update date filter.
-        version : str
-            Object version, default is latest.
-
-        Returns
+        See also
         -------
-        list[Workflow]
-            List of object instances.
-
-        Examples
-        --------
-        >>> objs = project.list_workflows()
+        digitalhub.list_workflows
         """
-        return list_workflows(
-            self.name,
+        return self.crud.workflow.list(
             q=q,
             name=name,
             kind=kind,
@@ -2012,6 +1348,7 @@ class Project(Entity):
             versions=versions,
         )
 
+    @_auto_refresh
     def import_workflow(
         self,
         file: str | None = None,
@@ -2019,50 +1356,30 @@ class Project(Entity):
         reset_id: bool = True,
     ) -> Workflow:
         """
-        Import object from a YAML file and create a new object into the backend.
+        Import workflow into backend from a YAML file or key.
 
-        Parameters
-        ----------
-        file : str
-            Path to YAML file.
-        key : str
-            Entity key (store://...).
-        reset_id : bool
-            Flag to determine if the ID of context entities should be reset.
-
-        Returns
+        See also
         -------
-        Workflow
-            Object instance.
-
-        Examples
-        --------
-        >>> obj = project.import_workflow("my-workflow.yaml")
+        digitalhub.import_workflow
         """
-        return import_workflow(file, key, reset_id, self.name)
+        return self.crud.workflow.import_entity(file=file, key=key, reset_id=reset_id)
 
-    def update_workflow(self, entity: Workflow) -> Workflow:
+    @_auto_refresh
+    def update_workflow(
+        self,
+        entity: Workflow,
+    ) -> Workflow:
         """
-        Update object. Note that object spec are immutable.
+        Update workflow.
 
-        Parameters
-        ----------
-        entity : Workflow
-            Object to update.
-
-        Returns
+        See also
         -------
-        Workflow
-            Entity updated.
-
-        Examples
-        --------
-        >>> obj = project.update_workflow(obj)
+        digitalhub.update_workflow
         """
-        if entity.project != self.name:
-            raise ValueError(f"Entity {entity.name} is not in project {self.name}.")
-        return update_workflow(entity)
+        self._validate_entity_project(entity.project)
+        return self.crud.workflow.update(entity)
 
+    @_auto_refresh
     def delete_workflow(
         self,
         identifier: str,
@@ -2071,46 +1388,24 @@ class Project(Entity):
         cascade: bool = True,
     ) -> None:
         """
-        Delete object from backend.
+        Delete workflow from backend.
 
-        Parameters
-        ----------
-        identifier : str
-            Entity key (store://...) or entity name.
-        entity_id : str
-            Entity ID.
-        delete_all_versions : bool
-            Delete all versions of the named entity. If True, use entity name instead of entity key as identifier.
-        cascade : bool
-            Cascade delete.
-
-        Returns
+        See also
         -------
-        dict
-            Response from backend.
-
-        Examples
-        --------
-        If delete_all_versions is False:
-        >>> project.delete_workflow("store://my-workflow-key")
-
-        Otherwise:
-        >>> project.delete_workflow("my-workflow-name",
-        >>>                         delete_all_versions=True)
+        digitalhub.delete_workflow
         """
-        delete_workflow(
+        self.crud.workflow.delete(
             identifier=identifier,
-            project=self.name,
             entity_id=entity_id,
             delete_all_versions=delete_all_versions,
             cascade=cascade,
         )
-        self.refresh()
 
     ##############################
     #  Secrets
     ##############################
 
+    @_auto_refresh
     def new_secret(
         self,
         name: str,
@@ -2122,37 +1417,13 @@ class Project(Entity):
         **kwargs,
     ) -> Secret:
         """
-        Create a new object.
+        Create a new secret.
 
-        Parameters
-        ----------
-        name : str
-            Object name.
-        uuid : str
-            ID of the object.
-        description : str
-            Description of the object (human readable).
-        labels : list[str]
-            List of labels.
-        embedded : bool
-            Flag to determine if object spec must be embedded in project spec.
-        secret_value : str
-            Value of the secret.
-        **kwargs : dict
-            Spec keyword arguments.
-
-        Returns
+        See also
         -------
-        Secret
-            Object instance.
-
-        Examples
-        --------
-        >>> obj = project.new_secret(name="my-secret",
-        >>>                          secret_value="my-secret-value")
+        digitalhub.new_secret
         """
-        obj = new_secret(
-            project=self.name,
+        return self.crud.secret.new(
             name=name,
             uuid=uuid,
             description=description,
@@ -2161,66 +1432,39 @@ class Project(Entity):
             secret_value=secret_value,
             **kwargs,
         )
-        self.refresh()
-        return obj
 
+    @_auto_refresh
     def get_secret(
         self,
         identifier: str,
         entity_id: str | None = None,
     ) -> Secret:
         """
-        Get object from backend.
+        Get secret from backend.
 
-        Parameters
-        ----------
-        identifier : str
-            Entity key (store://...) or entity name.
-        entity_id : str
-            Entity ID.
-
-        Returns
+        See also
         -------
-        Secret
-            Object instance.
-
-        Examples
-        --------
-        Using entity key:
-        >>> obj = project.get_secret("store://my-secret-key")
-
-        Using entity name:
-        >>> obj = project.get_secret("my-secret-name"
-        >>>                          entity_id="my-secret-id")
+        digitalhub.get_secret
         """
-        obj = get_secret(
+        return self.crud.secret.get(
             identifier=identifier,
-            project=self.name,
             entity_id=entity_id,
         )
-        self.refresh()
-        return obj
 
-    def list_secrets(self) -> list[Secret]:
+    @_auto_refresh
+    def list_secrets(
+        self,
+    ) -> list[Secret]:
         """
-        List all latest version objects from backend.
+        List all latest version secrets from backend.
 
-        Parameters
-        ----------
-        **kwargs : dict
-            Parameters to pass to the API call.
-
-        Returns
+        See also
         -------
-        list[Secret]
-            List of object instances.
-
-        Examples
-        --------
-        >>> objs = project.list_secrets()
+        digitalhub.list_secrets
         """
-        return list_secrets(self.name)
+        return self.crud.secret.list()
 
+    @_auto_refresh
     def import_secret(
         self,
         file: str | None = None,
@@ -2228,50 +1472,30 @@ class Project(Entity):
         reset_id: bool = True,
     ) -> Secret:
         """
-        Import object from a YAML file and create a new object into the backend.
+        Import secret into backend from a YAML file or key.
 
-        Parameters
-        ----------
-        file : str
-            Path to YAML file.
-        key : str
-            Entity key (store://...).
-        reset_id : bool
-            Flag to determine if the ID of context entities should be reset.
-
-        Returns
+        See also
         -------
-        Secret
-            Object instance.
-
-        Examples
-        --------
-        >>> obj = project.import_secret("my-secret.yaml")
+        digitalhub.import_secret
         """
-        return import_secret(file, key, reset_id, self.name)
+        return self.crud.secret.import_entity(file=file, key=key, reset_id=reset_id)
 
-    def update_secret(self, entity: Secret) -> Secret:
+    @_auto_refresh
+    def update_secret(
+        self,
+        entity: Secret,
+    ) -> Secret:
         """
-        Update object. Note that object spec are immutable.
+        Update secret.
 
-        Parameters
-        ----------
-        entity : Secret
-            Object to update.
-
-        Returns
+        See also
         -------
-        Secret
-            Entity updated.
-
-        Examples
-        --------
-        >>> obj = project.update_secret(obj)
+        digitalhub.update_secret
         """
-        if entity.project != self.name:
-            raise ValueError(f"Entity {entity.name} is not in project {self.name}.")
-        return update_secret(entity)
+        self._validate_entity_project(entity.project)
+        return self.crud.secret.update(entity)
 
+    @_auto_refresh
     def delete_secret(
         self,
         identifier: str,
@@ -2279,75 +1503,39 @@ class Project(Entity):
         delete_all_versions: bool = False,
     ) -> None:
         """
-        Delete object from backend.
+        Delete secret from backend.
 
-        Parameters
-        ----------
-        identifier : str
-            Entity key (store://...) or entity name.
-        entity_id : str
-            Entity ID.
-        delete_all_versions : bool
-            Delete all versions of the named entity. If True, use entity name instead of entity key as identifier.
-
-        Returns
+        See also
         -------
-        dict
-            Response from backend.
-
-        Examples
-        --------
-        If delete_all_versions is False:
-        >>> project.delete_secret("store://my-secret-key")
-
-        Otherwise:
-        >>> project.delete_secret("my-secret-name",
-        >>>                       delete_all_versions=True)
+        digitalhub.delete_secret
         """
-        delete_secret(
+        self.crud.secret.delete(
             identifier=identifier,
-            project=self.name,
             entity_id=entity_id,
             delete_all_versions=delete_all_versions,
         )
-        self.refresh()
 
     ##############################
     #  Runs
     ##############################
 
+    @_auto_refresh
     def get_run(
         self,
         identifier: str,
     ) -> Run:
         """
-        Get object from backend.
+        Get run from backend.
 
-        Parameters
-        ----------
-        identifier : str
-            Entity key (store://...) or entity ID.
-
-        Returns
+        See also
         -------
-        Run
-            Object instance.
-
-        Examples
-        --------
-        Using entity key:
-        >>> obj = project.get_run("store://my-secret-key")
-
-        Using entity ID:
-        >>> obj = project.get_run("123")
+        digitalhub.get_run
         """
-        obj = get_run(
+        return self.crud.run.get(
             identifier=identifier,
-            project=self.name,
         )
-        self.refresh()
-        return obj
 
+    @_auto_refresh
     def list_runs(
         self,
         q: str | None = None,
@@ -2363,44 +1551,13 @@ class Project(Entity):
         action: str | None = None,
     ) -> list[Run]:
         """
-        List all latest objects from backend.
+        List all latest runs from backend.
 
-        Parameters
-        ----------
-        q : str
-            Query string to filter objects.
-        name : str
-            Object name.
-        kind : str
-            Kind of the object.
-        user : str
-            User that created the object.
-        state : str
-            Object state.
-        created : str
-            Creation date filter.
-        updated : str
-            Update date filter.
-        function : str
-            Function key filter.
-        workflow : str
-            Workflow key filter.
-        task : str
-            Task string filter.
-        action : str
-            Action name filter.
-
-        Returns
+        See also
         -------
-        list[Run]
-            List of object instances.
-
-        Examples
-        --------
-        >>> objs = project.list_runs()
+        digitalhub.list_runs
         """
-        return list_runs(
-            self.name,
+        return self.crud.run.list(
             q=q,
             name=name,
             kind=kind,
@@ -2414,6 +1571,7 @@ class Project(Entity):
             action=action,
         )
 
+    @_auto_refresh
     def delete_run(
         self,
         identifier: str,
@@ -2422,29 +1580,14 @@ class Project(Entity):
         """
         Delete run from backend.
 
-        Parameters
-        ----------
-        identifier : str
-            Entity key (store://...) or entity name.
-        entity_id : str
-            Entity ID.
-
-        Returns
+        See also
         -------
-        dict
-            Response from backend.
-
-        Examples
-        --------
-        >>> project.delete_run("store://my-run-key")
-
+        digitalhub.delete_run
         """
-        delete_run(
+        self.crud.run.delete(
             identifier=identifier,
-            project=self.name,
             entity_id=entity_id,
         )
-        self.refresh()
 
     ##############################
     #  Project methods
