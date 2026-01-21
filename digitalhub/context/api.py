@@ -18,7 +18,7 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities.project._base.entity import Project
 
 
-def build_context(project: Project, overwrite: bool = False) -> Context:
+def build_context(project: Project) -> Context:
     """
     Build a new context for a project.
 
@@ -29,15 +29,13 @@ def build_context(project: Project, overwrite: bool = False) -> Context:
     ----------
     project : Project
         The project object used to build the context.
-    overwrite : bool
-        If True, overwrites existing context if it exists. Default is False.
 
     Returns
     -------
     Context
         The newly created or existing context instance.
     """
-    return context_builder.build(project, overwrite)
+    return context_builder.build(project)
 
 
 def get_context(project: str) -> Context:
@@ -57,6 +55,10 @@ def get_context(project: str) -> Context:
     try:
         return context_builder.get(project)
     except ContextError:
+        # Don't try to fetch from remote if context is being initialized
+        # This prevents infinite recursion during context initialization
+        if context_builder.is_initializing(project):
+            raise
         try:
             return get_context_from_remote(project)
         except EntityNotExistsError as e:

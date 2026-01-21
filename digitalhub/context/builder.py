@@ -16,21 +16,13 @@ if typing.TYPE_CHECKING:
 class ContextBuilder:
     """
     A builder class for managing project contexts.
-
-    This class implements the builder pattern to create and manage Context instances.
-    It maintains a registry of project contexts, allowing multiple projects to be
-    used simultaneously by storing them with their respective names.
-
-    Attributes
-    ----------
-    _instances : dict[str, Context]
-        Internal registry mapping project names to their Context instances.
     """
 
     def __init__(self) -> None:
         self._instances: dict[str, Context] = {}
+        self._initializing: set[str] = set()
 
-    def build(self, project: Project, overwrite: bool = False) -> Context:
+    def build(self, project: Project) -> Context:
         """
         Add a project as context and return the created Context instance.
 
@@ -38,16 +30,26 @@ class ContextBuilder:
         ----------
         project : Project
             The project instance to create a context for.
-        overwrite : bool
-            If True, overwrites existing context if project name already exists. Default is False.
 
         Returns
         -------
         Context
             The newly created or existing Context instance.
         """
-        if (project.name not in self._instances) or overwrite:
-            self._instances[project.name] = Context(project)
+        if project.name not in self._instances:
+            # Mark context as being initialized to prevent recursion
+            self._initializing.add(project.name)
+            try:
+                # Create context without registering it yet to avoid recursion
+                ctx = Context.__new__(Context)
+                # Register context before initialization to prevent recursion
+                # when _search_run_ctx() creates a Run that calls _context()
+                self._instances[project.name] = ctx
+                # Now initialize the context
+                ctx.__init__(project)
+            finally:
+                # Remove from initializing set once done
+                self._initializing.discard(project.name)
         return self._instances[project.name]
 
     def get(self, project: str) -> Context:
@@ -73,6 +75,22 @@ class ContextBuilder:
             return self._instances[project]
         except KeyError:
             raise ContextError(f"Context '{project}' not found. Get or create a project named '{project}'.")
+
+    def is_initializing(self, project: str) -> bool:
+        """
+        Check if a context is currently being initialized.
+
+        Parameters
+        ----------
+        project : str
+            The name of the project to check.
+
+        Returns
+        -------
+        bool
+            True if the context is being initialized, False otherwise.
+        """
+        return project in self._initializing
 
     def remove(self, project: str) -> None:
         """
