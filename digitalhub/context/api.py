@@ -55,10 +55,6 @@ def get_context(project: str) -> Context:
     try:
         return context_builder.get(project)
     except ContextError:
-        # Don't try to fetch from remote if context is being initialized
-        # This prevents infinite recursion during context initialization
-        if context_builder.is_initializing(project):
-            raise
         try:
             return get_context_from_remote(project)
         except EntityNotExistsError as e:

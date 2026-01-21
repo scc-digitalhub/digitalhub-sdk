@@ -20,7 +20,6 @@ class ContextBuilder:
 
     def __init__(self) -> None:
         self._instances: dict[str, Context] = {}
-        self._initializing: set[str] = set()
 
     def build(self, project: Project) -> Context:
         """
@@ -37,19 +36,12 @@ class ContextBuilder:
             The newly created or existing Context instance.
         """
         if project.name not in self._instances:
-            # Mark context as being initialized to prevent recursion
-            self._initializing.add(project.name)
-            try:
-                # Create context without registering it yet to avoid recursion
-                ctx = Context.__new__(Context)
-                # Register context before initialization to prevent recursion
-                # when _search_run_ctx() creates a Run that calls _context()
-                self._instances[project.name] = ctx
-                # Now initialize the context
-                ctx.__init__(project)
-            finally:
-                # Remove from initializing set once done
-                self._initializing.discard(project.name)
+            # Create context without registering it yet to avoid recursion
+            # then register it before initialization to prevent recursion
+            # finally initialize it
+            ctx = Context.__new__(Context)
+            self._instances[project.name] = ctx
+            ctx.__init__(project)
         return self._instances[project.name]
 
     def get(self, project: str) -> Context:
