@@ -91,6 +91,9 @@ class Resource(BaseModel):
     gpu: Annotated[str, Field(pattern=RESOURCE_REGEX)] | int | None = None
     """GPU resource model."""
 
+    disk: Annotated[str, Field(pattern=RESOURCE_REGEX)] | int | None = None
+    """Space for mounted default disk."""
+
 
 class Env(BaseModel):
     """
