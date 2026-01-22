@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+from pandas import DataFrame
+
 from digitalhub.stores.readers.data._base.builder import ReaderBuilder
 from digitalhub.stores.readers.data.pandas.reader import DataframeReaderPandas
 
@@ -14,7 +16,7 @@ class ReaderBuilderPandas(ReaderBuilder):
     """
 
     ENGINE = "pandas"
-    DATAFRAME_CLASS = "pandas.core.frame.DataFrame"
+    DATAFRAME_CLASS = DataFrame
 
     def build(self, **kwargs) -> DataframeReaderPandas:
         """

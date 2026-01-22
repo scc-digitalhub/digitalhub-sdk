@@ -11,6 +11,7 @@ from digitalhub.utils.exceptions import BuilderError
 if typing.TYPE_CHECKING:
     from digitalhub.stores.readers.data._base.builder import ReaderBuilder
     from digitalhub.stores.readers.data._base.reader import DataframeReader
+    from digitalhub.utils.types import Dataframe
 
 
 class ReaderFactory:
@@ -19,43 +20,45 @@ class ReaderFactory:
     """
 
     def __init__(self) -> None:
-        self._engine_builders: dict[str, ReaderBuilder] = None
-        self._dataframe_builders: dict[str, ReaderBuilder] = None
+        self._builders: dict[str, ReaderBuilder] = None
         self._default: str = None
 
-    def add_builder(self, engine: str, dataframe: str, builder: ReaderBuilder) -> None:
+    def add_builder(
+        self,
+        engine: str,
+        builder: ReaderBuilder,
+    ) -> None:
         """
         Add a builder to the factory.
 
         Parameters
         ----------
-        name : str
-            Reader name.
-        builder : DataframeReader
-            Builder object.
+        engine : str
+            Engine name.
+        builder : ReaderBuilder
+            Builder instance.
         """
-        if self._engine_builders is None:
-            self._engine_builders = {}
-        if engine in self._engine_builders:
+        if self._builders is None:
+            self._builders = {}
+        if engine in self._builders:
             raise BuilderError(f"Builder for engine '{engine}' already exists.")
-        self._engine_builders[engine] = builder
+        self._builders[engine] = builder
 
-        if self._dataframe_builders is None:
-            self._dataframe_builders = {}
-        if dataframe in self._dataframe_builders:
-            raise BuilderError(f"Builder for dataframe '{dataframe}' already exists.")
-        self._dataframe_builders[dataframe] = builder
-
-    def build(self, engine: str | None = None, dataframe: str | None = None, **kwargs) -> DataframeReader:
+    def build(
+        self,
+        engine: str | None = None,
+        dataframe: Dataframe | None = None,  # type: ignore
+        **kwargs,
+    ) -> DataframeReader:
         """
         Build reader object.
 
         Parameters
         ----------
-        engine : str | None
+        engine : str
             Engine name.
-        dataframe : str | None
-            Dataframe name.
+        dataframe : Dataframe
+            Dataframe type.
         **kwargs : dict
             Keyword arguments.
 
@@ -67,8 +70,11 @@ class ReaderFactory:
         if (engine is None) == (dataframe is None):
             raise BuilderError("Either engine or dataframe must be provided.")
         if engine is not None:
-            return self._engine_builders[engine].build(**kwargs)
-        return self._dataframe_builders[dataframe].build(**kwargs)
+            return self._builders[engine].build(**kwargs)
+        for builder in self._builders.values():
+            if isinstance(dataframe, builder.DATAFRAME_CLASS):
+                return builder.build(**kwargs)
+        raise KeyError(f"No builder found for dataframe type '{dataframe}'.")
 
     def list_supported_engines(self) -> list[str]:
         """
@@ -79,18 +85,18 @@ class ReaderFactory:
         list[str]
             List of supported engines.
         """
-        return list(self._engine_builders.keys())
+        return list(self._builders.keys())
 
-    def list_supported_dataframes(self) -> list[str]:
+    def list_supported_dataframes(self) -> list[Dataframe]:  # type: ignore
         """
         List supported dataframes.
 
         Returns
         -------
-        list[str]
+        list[Dataframe]
             List of supported dataframes.
         """
-        return list(self._dataframe_builders.keys())
+        return [i.DATAFRAME_CLASS for i in self._builders.values()]
 
     def set_default(self, engine: str) -> None:
         """
@@ -101,7 +107,7 @@ class ReaderFactory:
         engine : str
             Engine name.
         """
-        if engine not in self._engine_builders:
+        if engine not in self._builders:
             raise BuilderError(f"Engine {engine} not found.")
         self._default = engine
 
@@ -126,7 +132,6 @@ try:
 
     factory.add_builder(
         ReaderBuilderPandas.ENGINE,
-        ReaderBuilderPandas.DATAFRAME_CLASS,
         ReaderBuilderPandas(),
     )
     factory.set_default(ReaderBuilderPandas.ENGINE)
@@ -139,7 +144,6 @@ try:
 
     factory.add_builder(
         ReaderBuilderPolars.ENGINE,
-        ReaderBuilderPolars.DATAFRAME_CLASS,
         ReaderBuilderPolars(),
     )
 

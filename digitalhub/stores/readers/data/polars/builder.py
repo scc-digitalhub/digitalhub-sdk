@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+from polars import DataFrame
+
 from digitalhub.stores.readers.data._base.builder import ReaderBuilder
 from digitalhub.stores.readers.data.polars.reader import DataframeReaderPolars
 
@@ -14,7 +16,7 @@ class ReaderBuilderPolars(ReaderBuilder):
     """
 
     ENGINE = "polars"
-    DATAFRAME_CLASS = "polars.dataframe.frame.DataFrame"
+    DATAFRAME_CLASS = DataFrame
 
     def build(self, **kwargs) -> DataframeReaderPolars:
         """

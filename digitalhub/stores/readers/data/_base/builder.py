@@ -11,11 +11,12 @@ from digitalhub.utils.exceptions import BuilderError
 
 if typing.TYPE_CHECKING:
     from digitalhub.stores.readers.data._base.reader import DataframeReader
+    from digitalhub.utils.types import Dataframe
 
 
 class ReaderBuilder:
-    ENGINE = None
-    DATAFRAME_CLASS = None
+    ENGINE: str = None
+    DATAFRAME_CLASS: Dataframe = None  # type: ignore
 
     def __init__(self):
         if self.ENGINE is None:
@@ -27,4 +28,10 @@ class ReaderBuilder:
     def build(self, **kwargs) -> DataframeReader:
         """
         Build reader object.
+        """
+
+    @abstractmethod
+    def map_dataframe_name(self, dataframe: Dataframe) -> str:  # type: ignore
+        """
+        Map dataframe type to engine name.
         """

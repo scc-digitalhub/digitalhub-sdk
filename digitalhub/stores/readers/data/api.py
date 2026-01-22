@@ -5,13 +5,13 @@
 from __future__ import annotations
 
 import typing
-from typing import Any
 
 from digitalhub.stores.readers.data.factory import factory
 from digitalhub.utils.exceptions import ReaderError
 
 if typing.TYPE_CHECKING:
     from digitalhub.stores.readers.data._base.reader import DataframeReader
+    from digitalhub.utils.types import Dataframe
 
 
 def get_reader_by_engine(engine: str | None = None) -> DataframeReader:
@@ -38,14 +38,14 @@ def get_reader_by_engine(engine: str | None = None) -> DataframeReader:
         raise ReaderError(msg)
 
 
-def get_reader_by_object(obj: Any) -> DataframeReader:
+def get_reader_by_object(obj: Dataframe) -> DataframeReader:  # type: ignore
     """
     Get Dataframe reader by object.
 
     Parameters
     ----------
-    obj : Any
-        Object to get reader from.
+    obj : Dataframe
+        Dataframe object.
 
     Returns
     -------
@@ -53,11 +53,10 @@ def get_reader_by_object(obj: Any) -> DataframeReader:
         Reader object.
     """
     try:
-        obj_name = f"{obj.__class__.__module__}.{obj.__class__.__name__}"
-        return factory.build(dataframe=obj_name)
+        return factory.build(dataframe=obj)
     except KeyError:
-        types = factory.list_supported_dataframes()
-        msg = f"Unsupported dataframe type: '{obj}'. Supported types: {types}"
+        types = factory.list_supported_engines()
+        msg = f"Unsupported dataframe type: '{obj}'. Supported dataframes: {types}"
         raise ReaderError(msg)
 
 
@@ -73,13 +72,13 @@ def get_supported_engines() -> list[str]:
     return factory.list_supported_engines()
 
 
-def get_supported_dataframes() -> list[str]:
+def get_supported_dataframes() -> list[Dataframe]:  # type: ignore
     """
     Get supported dataframes.
 
     Returns
     -------
-    list
+    list[Dataframe]
         List of supported dataframes.
     """
     return factory.list_supported_dataframes()
