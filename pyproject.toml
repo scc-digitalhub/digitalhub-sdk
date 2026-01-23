@@ -37,10 +37,10 @@ dependencies = [
 [project.optional-dependencies]
 full = [
     "mlflow==2.19",
-    "pandas",
+    "pandas<3",
 ]
 pandas = [
-    "pandas",
+    "pandas<3",
 ]
 mlflow = [
     "mlflow==2.19",
