@@ -4,12 +4,7 @@
 
 from __future__ import annotations
 
-import typing
-
 from digitalhub.utils.generic_utils import dump_json
-
-if typing.TYPE_CHECKING:
-    pass
 
 
 def prepare_data(data: list[list], columnar: bool = False) -> list[list]:
