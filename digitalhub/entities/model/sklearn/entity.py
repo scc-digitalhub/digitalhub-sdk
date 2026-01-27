@@ -12,6 +12,7 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities._base.entity.metadata import Metadata
     from digitalhub.entities.model.sklearn.spec import ModelSpecSklearn
     from digitalhub.entities.model.sklearn.status import ModelStatusSklearn
+    from digitalhub.entities._base.extensions.entity import Extension
 
 
 class ModelSklearn(Model):
@@ -28,9 +29,10 @@ class ModelSklearn(Model):
         metadata: Metadata,
         spec: ModelSpecSklearn,
         status: ModelStatusSklearn,
+        extensions: list[Extension],
         user: str | None = None,
     ) -> None:
-        super().__init__(project, name, uuid, kind, metadata, spec, status, user)
+        super().__init__(project, name, uuid, kind, metadata, spec, status, extensions, user)
 
         self.spec: ModelSpecSklearn
         self.status: ModelStatusSklearn

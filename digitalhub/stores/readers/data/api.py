@@ -72,7 +72,7 @@ def get_supported_engines() -> list[str]:
     return factory.list_supported_engines()
 
 
-def get_supported_dataframes() -> list[Dataframe]: # type: ignore
+def get_supported_dataframes() -> list[Dataframe]:  # type: ignore
     """
     Get supported dataframes.
 

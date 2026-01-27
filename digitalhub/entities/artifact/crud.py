@@ -28,6 +28,7 @@ def new_artifact(
     labels: list[str] | None = None,
     embedded: bool = False,
     path: str | None = None,
+    extensions: list[dict] | None = None,
     **kwargs,
 ) -> Artifact:
     """
@@ -51,6 +52,8 @@ def new_artifact(
         Flag to determine if object spec must be embedded in project spec.
     path : str
         Object path on local file system or remote storage. It is also the destination path of upload() method.
+    extensions : list[dict]
+        List of extensions.
     **kwargs : dict
         Spec keyword arguments.
 
@@ -76,6 +79,7 @@ def new_artifact(
         embedded=embedded,
         entity_type=ENTITY_TYPE,
         path=path,
+        extensions=extensions,
         **kwargs,
     )
 

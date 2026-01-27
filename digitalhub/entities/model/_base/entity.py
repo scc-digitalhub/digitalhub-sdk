@@ -14,6 +14,7 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities._base.entity.metadata import Metadata
     from digitalhub.entities.model._base.spec import ModelSpec
     from digitalhub.entities.model._base.status import ModelStatus
+    from digitalhub.entities._base.extensions.entity import Extension
 
 
 class Model(MaterialEntity, MetricsEntity):
@@ -32,8 +33,9 @@ class Model(MaterialEntity, MetricsEntity):
         metadata: Metadata,
         spec: ModelSpec,
         status: ModelStatus,
+        extensions: list[Extension],
         user: str | None = None,
     ) -> None:
-        super().__init__(project, name, uuid, kind, metadata, spec, status, user)
+        super().__init__(project, name, uuid, kind, metadata, spec, status, extensions, user)
         self.spec: ModelSpec
         self.status: ModelStatus

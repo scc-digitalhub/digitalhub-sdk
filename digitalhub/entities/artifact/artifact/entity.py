@@ -12,6 +12,7 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities._base.entity.metadata import Metadata
     from digitalhub.entities.artifact.artifact.spec import ArtifactSpecArtifact
     from digitalhub.entities.artifact.artifact.status import ArtifactStatusArtifact
+    from digitalhub.entities._base.extensions.entity import Extension
 
 
 class ArtifactArtifact(Artifact):
@@ -28,9 +29,10 @@ class ArtifactArtifact(Artifact):
         metadata: Metadata,
         spec: ArtifactSpecArtifact,
         status: ArtifactStatusArtifact,
+            extensions: list[Extension],
         user: str | None = None,
     ) -> None:
-        super().__init__(project, name, uuid, kind, metadata, spec, status, user)
+        super().__init__(project, name, uuid, kind, metadata, spec, status, extensions, user)
 
         self.spec: ArtifactSpecArtifact
         self.status: ArtifactStatusArtifact

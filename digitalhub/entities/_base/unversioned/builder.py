@@ -40,8 +40,6 @@ class UnversionedBuilder(EntityBuilder):
 
         Parameters
         ----------
-        entity : str
-            Entity type.
         obj : dict
             Dictionary to parse.
 

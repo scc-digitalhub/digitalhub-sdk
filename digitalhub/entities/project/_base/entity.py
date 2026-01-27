@@ -375,6 +375,7 @@ class Project(Entity):
         labels: list[str] | None = None,
         embedded: bool = False,
         path: str | None = None,
+        extensions: list[dict] | None = None,
         **kwargs,
     ) -> Artifact:
         """
@@ -392,6 +393,7 @@ class Project(Entity):
             labels=labels,
             embedded=embedded,
             path=path,
+            extensions=extensions,
             **kwargs,
         )
 
@@ -574,6 +576,7 @@ class Project(Entity):
         labels: list[str] | None = None,
         embedded: bool = False,
         path: str | None = None,
+        extensions: list[dict] | None = None,
         **kwargs,
     ) -> Dataitem:
         """
@@ -591,6 +594,7 @@ class Project(Entity):
             labels=labels,
             embedded=embedded,
             path=path,
+            extensions=extensions,
             **kwargs,
         )
 
@@ -808,6 +812,7 @@ class Project(Entity):
         labels: list[str] | None = None,
         embedded: bool = False,
         path: str | None = None,
+        extensions: list[dict] | None = None,
         **kwargs,
     ) -> Model:
         """
@@ -825,6 +830,7 @@ class Project(Entity):
             labels=labels,
             embedded=embedded,
             path=path,
+            extensions=extensions,
             **kwargs,
         )
 

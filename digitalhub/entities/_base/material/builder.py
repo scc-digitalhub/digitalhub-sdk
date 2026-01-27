@@ -9,15 +9,15 @@ import typing
 from digitalhub.entities._base.entity.builder import EntityBuilder
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities._base.versioned.entity import VersionedEntity
+    from digitalhub.entities._base.material.entity import MaterialEntity
 
 
-class VersionedBuilder(EntityBuilder):
+class MaterialBuilder(EntityBuilder):
     """
-    Versioned builder.
+    Material builder.
     """
 
-    def from_dict(self, obj: dict) -> VersionedEntity:
+    def from_dict(self, obj: dict) -> MaterialEntity:
         """
         Create a new object from dictionary.
 
@@ -28,7 +28,7 @@ class VersionedBuilder(EntityBuilder):
 
         Returns
         -------
-        VersionedEntity
+        MaterialEntity
             Object instance.
         """
         parsed_dict = self._parse_dict(obj)
@@ -55,6 +55,7 @@ class VersionedBuilder(EntityBuilder):
         metadata = self.build_metadata(**obj.get("metadata", {}))
         spec = self.build_spec(**obj.get("spec", {}))
         status = self.build_status(**obj.get("status", {}))
+        extensions = self.build_extensions(obj.get("extensions", []))
         user = obj.get("user")
         return {
             "project": project,
@@ -64,5 +65,6 @@ class VersionedBuilder(EntityBuilder):
             "metadata": metadata,
             "spec": spec,
             "status": status,
+            "extensions": extensions,
             "user": user,
         }

@@ -12,6 +12,7 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities._base.entity.metadata import Metadata
     from digitalhub.entities.model.mlflow.spec import ModelSpecMlflow
     from digitalhub.entities.model.mlflow.status import ModelStatusMlflow
+    from digitalhub.entities._base.extensions.entity import Extension
 
 
 class ModelMlflow(Model):
@@ -28,9 +29,10 @@ class ModelMlflow(Model):
         metadata: Metadata,
         spec: ModelSpecMlflow,
         status: ModelStatusMlflow,
+        extensions: list[Extension],
         user: str | None = None,
     ) -> None:
-        super().__init__(project, name, uuid, kind, metadata, spec, status, user)
+        super().__init__(project, name, uuid, kind, metadata, spec, status, extensions, user)
 
         self.spec: ModelSpecMlflow
         self.status: ModelStatusMlflow

@@ -7,6 +7,7 @@ from __future__ import annotations
 import typing
 from pathlib import Path
 
+from digitalhub.entities._base.extensions.entity import Extension
 from digitalhub.entities._base.material.utils import refresh_decorator
 from digitalhub.entities._base.versioned.entity import VersionedEntity
 from digitalhub.entities._processors.processors import context_processor
@@ -35,11 +36,16 @@ class MaterialEntity(VersionedEntity):
         metadata: Metadata,
         spec: MaterialSpec,
         status: MaterialStatus,
+        extensions: list[Extension],
         user: str | None = None,
     ) -> None:
         super().__init__(project, name, uuid, kind, metadata, spec, status, user)
         self.spec: MaterialSpec
         self.status: MaterialStatus
+        self.extensions: list[Extension] = extensions
+
+        # Attributes to be included in __repr__
+        self._obj_attr.extend(["extensions"])
 
     def save(self, update: bool = False) -> MaterialEntity:
         """

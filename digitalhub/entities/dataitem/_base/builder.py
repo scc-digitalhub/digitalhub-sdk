@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.entities._base.versioned.builder import VersionedBuilder
+from digitalhub.entities._base.material.builder import MaterialBuilder
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.utils.exceptions import EntityError
 
@@ -14,7 +14,7 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities.dataitem._base.entity import Dataitem
 
 
-class DataitemBuilder(VersionedBuilder):
+class DataitemBuilder(MaterialBuilder):
     """
     Dataitem builder.
     """
@@ -29,6 +29,7 @@ class DataitemBuilder(VersionedBuilder):
         uuid: str | None = None,
         description: str | None = None,
         labels: list[str] | None = None,
+        extensions: list[dict] | None = None,
         embedded: bool = False,
         path: str | None = None,
         **kwargs,
@@ -50,6 +51,8 @@ class DataitemBuilder(VersionedBuilder):
             Description of the object (human readable).
         labels : list[str]
             List of labels.
+        extensions : list[dict]
+            List of extension dictionaries.
         embedded : bool
             Flag to determine if object spec must be embedded in project spec.
         path : str
@@ -79,6 +82,7 @@ class DataitemBuilder(VersionedBuilder):
             **kwargs,
         )
         status = self.build_status()
+        extensions = self.build_extensions(extensions)
         return self.build_entity(
             project=project,
             name=name,
@@ -87,4 +91,5 @@ class DataitemBuilder(VersionedBuilder):
             metadata=metadata,
             spec=spec,
             status=status,
+            extensions=extensions,
         )
