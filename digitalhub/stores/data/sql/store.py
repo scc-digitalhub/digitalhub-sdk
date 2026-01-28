@@ -224,7 +224,7 @@ class SqlStore(Store):
         sql_engine = self._check_factory(schema=schema)
         return reader.read_table(query, sql_engine)
 
-    def write_df(self, df: Any, dst: str, extension: str | None = None, **kwargs) -> str:
+    def write_df(self, df: Any, dst: str, extension: str | None = None, **kwargs,) -> str:
         """
         Write a DataFrame to a SQL database table.
 

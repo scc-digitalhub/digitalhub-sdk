@@ -12,9 +12,9 @@ from digitalhub.entities._commons.enums import EntityTypes
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.entity.metadata import Metadata
+    from digitalhub.entities._base.extensions.entity import Extension
     from digitalhub.entities.model._base.spec import ModelSpec
     from digitalhub.entities.model._base.status import ModelStatus
-    from digitalhub.entities._base.extensions.entity import Extension
 
 
 class Model(MaterialEntity, MetricsEntity):

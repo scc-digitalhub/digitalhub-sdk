@@ -353,7 +353,7 @@ class S3Store(Store):
         key = self._get_key(src)
         self._download_file(key, filename, client, bucket)
 
-    def get_s3_client(self, file: bool = True) -> S3Client:
+    def get_s3_client(self) -> S3Client:
         """
         Get an S3 client object.
 
@@ -367,11 +367,7 @@ class S3Store(Store):
         S3Client
             Returns a client object that interacts with the S3 storage service.
         """
-        if file:
-            cfg = self._configurator.get_file_config()
-        else:
-            cfg = self._configurator.get_env_config()
-        return self._get_client(cfg)
+        return self._get_client(self._configurator.get_client_config())
 
     ##############################
     # Private I/O methods

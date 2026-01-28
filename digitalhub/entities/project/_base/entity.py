@@ -652,6 +652,7 @@ class Project(Entity):
             **kwargs,
         )
 
+    @_auto_refresh
     def log_table(
         self,
         name: str,
@@ -681,6 +682,27 @@ class Project(Entity):
             read_df_params=read_df_params,
             engine=engine,
             **kwargs,
+        )
+
+    @_auto_refresh
+    def log_croissant(
+        self,
+        name: str,
+        source: str | None = None,
+        drop_existing: bool = False,
+        path: str | None = None,) -> Dataitem:
+        """
+        Create and upload a croissant dataitem.
+
+        See also
+        -------
+        digitalhub.log_croissant
+        """
+        return self.crud.dataitem.log_croissant(
+            name=name,
+            source=source,
+            drop_existing=drop_existing,
+            path=path,
         )
 
     @_auto_refresh
@@ -884,6 +906,7 @@ class Project(Entity):
             **kwargs,
         )
 
+    @_auto_refresh
     def log_mlflow(
         self,
         name: str,
@@ -907,6 +930,7 @@ class Project(Entity):
             **kwargs,
         )
 
+    @_auto_refresh
     def log_sklearn(
         self,
         name: str,
@@ -930,6 +954,7 @@ class Project(Entity):
             **kwargs,
         )
 
+    @_auto_refresh
     def log_huggingface(
         self,
         name: str,

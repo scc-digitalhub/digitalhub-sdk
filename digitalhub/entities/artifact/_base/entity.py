@@ -11,9 +11,9 @@ from digitalhub.entities._commons.enums import EntityTypes
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.entity.metadata import Metadata
+    from digitalhub.entities._base.extensions.entity import Extension
     from digitalhub.entities.artifact._base.spec import ArtifactSpec
     from digitalhub.entities.artifact._base.status import ArtifactStatus
-    from digitalhub.entities._base.extensions.entity import Extension
 
 
 class Artifact(MaterialEntity):

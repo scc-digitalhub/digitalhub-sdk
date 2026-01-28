@@ -14,6 +14,7 @@ from digitalhub.entities.artifact.crud import (
     new_artifact,
     update_artifact,
 )
+from digitalhub.entities.dataitem.croissant.crud import log_croissant
 from digitalhub.entities.dataitem.crud import (
     delete_dataitem,
     get_dataitem,
@@ -22,11 +23,11 @@ from digitalhub.entities.dataitem.crud import (
     list_dataitems,
     load_dataitem,
     log_dataitem,
-    log_table,
     new_dataitem,
     update_dataitem,
 )
 from digitalhub.entities.dataitem.dataitem.crud import log_generic_dataitem
+from digitalhub.entities.dataitem.table.crud import log_table
 from digitalhub.entities.function.crud import (
     delete_function,
     get_function,

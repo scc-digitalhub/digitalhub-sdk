@@ -10,9 +10,9 @@ from digitalhub.entities.model._base.entity import Model
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.entity.metadata import Metadata
+    from digitalhub.entities._base.extensions.entity import Extension
     from digitalhub.entities.model.huggingface.spec import ModelSpecHuggingface
     from digitalhub.entities.model.huggingface.status import ModelStatusHuggingface
-    from digitalhub.entities._base.extensions.entity import Extension
 
 
 class ModelHuggingface(Model):

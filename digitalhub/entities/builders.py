@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from digitalhub.entities.artifact.artifact.builder import ArtifactArtifactBuilder
+from digitalhub.entities.dataitem.croissant.builder import DataitemCroissantBuilder
 from digitalhub.entities.dataitem.dataitem.builder import DataitemDataitemBuilder
 from digitalhub.entities.dataitem.table.builder import DataitemTableBuilder
 from digitalhub.entities.log._base.builder import LogLogBuilder
@@ -22,6 +23,7 @@ entity_builders: tuple = (
     (ArtifactArtifactBuilder.ENTITY_KIND, ArtifactArtifactBuilder),
     (DataitemDataitemBuilder.ENTITY_KIND, DataitemDataitemBuilder),
     (DataitemTableBuilder.ENTITY_KIND, DataitemTableBuilder),
+    (DataitemCroissantBuilder.ENTITY_KIND, DataitemCroissantBuilder),
     (LogLogBuilder.ENTITY_KIND, LogLogBuilder),
     (ModelHuggingfaceBuilder.ENTITY_KIND, ModelHuggingfaceBuilder),
     (ModelMlflowBuilder.ENTITY_KIND, ModelMlflowBuilder),

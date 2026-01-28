@@ -10,9 +10,9 @@ from digitalhub.entities.dataitem._base.entity import Dataitem
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.entity.metadata import Metadata
+    from digitalhub.entities._base.extensions.entity import Extension
     from digitalhub.entities.dataitem.dataitem.spec import DataitemSpecDataitem
     from digitalhub.entities.dataitem.dataitem.status import DataitemStatusDataitem
-    from digitalhub.entities._base.extensions.entity import Extension
 
 
 class DataitemDataitem(Dataitem):

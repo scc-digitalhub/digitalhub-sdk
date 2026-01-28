@@ -11,9 +11,10 @@ from digitalhub.entities._commons.enums import EntityTypes
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.entity.metadata import Metadata
+    from digitalhub.entities._base.extensions.entity import Extension
     from digitalhub.entities.dataitem._base.spec import DataitemSpec
     from digitalhub.entities.dataitem._base.status import DataitemStatus
-    from digitalhub.entities._base.extensions.entity import Extension
+
 
 class Dataitem(MaterialEntity):
     """

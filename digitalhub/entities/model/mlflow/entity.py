@@ -10,9 +10,9 @@ from digitalhub.entities.model._base.entity import Model
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.entity.metadata import Metadata
+    from digitalhub.entities._base.extensions.entity import Extension
     from digitalhub.entities.model.mlflow.spec import ModelSpecMlflow
     from digitalhub.entities.model.mlflow.status import ModelStatusMlflow
-    from digitalhub.entities._base.extensions.entity import Extension
 
 
 class ModelMlflow(Model):
