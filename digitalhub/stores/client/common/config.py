@@ -39,7 +39,7 @@ class ClientConfig:
 
     # API level defaults
     max_api_level: int = 20
-    min_api_level: int = 14
+    min_api_level: int = 15
     lib_version: int = 15
 
     # Configuration file path
