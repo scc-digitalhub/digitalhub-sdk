@@ -28,11 +28,6 @@ def get_default_store(project: str) -> str:
     -------
     str
         The default store URI.
-
-    Raises
-    ------
-    ValueError
-        If no default store is found.
     """
     var = ConfigurationVars.DEFAULT_FILES_STORE.value
 

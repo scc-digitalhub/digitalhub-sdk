@@ -109,11 +109,6 @@ class Store:
         ----------
         src : str
             The source path.
-
-        Raises
-        ------
-        StoreError
-            If the source is not a local path.
         """
         if not has_local_scheme(src):
             raise StoreError(f"Source '{src}' is not a local path.")
@@ -126,11 +121,6 @@ class Store:
         ----------
         dst : str
             The destination path.
-
-        Raises
-        ------
-        StoreError
-            If the destination is not a local path.
         """
         if not has_local_scheme(dst):
             raise StoreError(f"Destination '{dst}' is not a local path.")
@@ -145,11 +135,6 @@ class Store:
             Destination path as filename.
         overwrite : bool
             Specify if overwrite an existing file.
-
-        Raises
-        ------
-        StoreError
-            If destination path exists and overwrite is False.
         """
         if dst.exists() and not overwrite:
             raise StoreError(f"Destination {str(dst)} already exists.")

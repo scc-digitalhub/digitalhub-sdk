@@ -24,11 +24,6 @@ class RuntimeBuilder:
     ----------
     RUNTIME_CLASS : Runtime
         The Runtime class to be instantiated by this builder.
-
-    Raises
-    ------
-    BuilderError
-        If RUNTIME_CLASS is not set in the implementing class.
     """
 
     RUNTIME_CLASS: Runtime = None
@@ -36,11 +31,6 @@ class RuntimeBuilder:
     def __init__(self) -> None:
         """
         Initialize a RuntimeBuilder instance.
-
-        Raises
-        ------
-        BuilderError
-            If RUNTIME_CLASS is not set in the implementing class.
         """
         if self.RUNTIME_CLASS is None:
             raise BuilderError("RUNTIME_CLASS must be set")

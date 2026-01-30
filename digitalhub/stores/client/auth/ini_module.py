@@ -21,11 +21,6 @@ def load_file() -> ConfigParser:
     -------
     ConfigParser
         Parsed configuration file object.
-
-    Raises
-    ------
-    ClientError
-        If the file cannot be read.
     """
     try:
         file = ConfigParser()
@@ -91,12 +86,6 @@ def write_config(creds: dict, environment: str) -> None:
         Dictionary of credentials to write.
     environment : str
         Name of the credentials profile/environment.
-
-
-    Raises
-    ------
-    ClientError
-        If the file cannot be written.
     """
     try:
         cfg = load_file()
@@ -156,12 +145,6 @@ def set_current_profile(environment: str) -> None:
     ----------
     environment : str
         Name of the credentials profile to set as current.
-
-
-    Raises
-    ------
-    ClientError
-        If the file cannot be written.
     """
     try:
         cfg = load_file()

@@ -98,6 +98,11 @@ class Context:
         ----------
         obj : ContextEntity
             The logged item to add.
+
+        Returns
+        -------
+        ContextEntity
+            The registered entity with the relationship set.
         """
         id_ = self.run.key + ":" + self.run.id
         obj.add_relationship(Relationship.PRODUCEDBY.value, id_)

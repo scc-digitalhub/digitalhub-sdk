@@ -56,11 +56,6 @@ class TokenRefreshService:
 
         Exchanges personal access tokens or refreshes OAuth2 tokens depending
         on the current authentication type. Persists new credentials to file.
-
-        Raises
-        ------
-        ClientError
-            If authentication type doesn't support refresh or refresh fails.
         """
         if not self._authentication_handler.is_refreshable():
             raise ClientError(f"Auth type {self._authentication_handler.auth_type} does not support refresh.")
@@ -128,11 +123,6 @@ class TokenRefreshService:
         -------
         Response
             HTTP response from token endpoint.
-
-        Raises
-        ------
-        ClientError
-            If client_id is not configured.
         """
         if (client_id := creds.get(ConfigurationVars.DHCORE_CLIENT_ID.value)) is None:
             raise ClientError("Client id not set.")
@@ -170,11 +160,6 @@ class TokenRefreshService:
         -------
         str
             Token endpoint URL for credential refresh.
-
-        Raises
-        ------
-        ClientError
-            If issuer endpoint is not configured.
         """
         config = self._credential_manager.get_configuration()
 

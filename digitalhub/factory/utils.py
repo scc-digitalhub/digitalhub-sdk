@@ -25,13 +25,6 @@ def import_module(package: str) -> ModuleType:
     -------
     ModuleType
         The imported module object.
-
-    Raises
-    ------
-    ModuleNotFoundError
-        If the specified package cannot be found.
-    RuntimeError
-        If any other error occurs during import.
     """
     try:
         return importlib.import_module(package)
@@ -52,11 +45,6 @@ def list_runtimes() -> list[str]:
     -------
     list of str
         List of runtime package names.
-
-    Raises
-    ------
-    RuntimeError
-        If an error occurs while scanning for runtime packages.
     """
     try:
         runtimes: list[str] = []

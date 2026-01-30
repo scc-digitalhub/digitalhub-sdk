@@ -47,11 +47,6 @@ def parse_identifier(
     tuple[str, str, str | None, str | None, str | None]
         A tuple containing (project_name, entity_type, entity_kind,
         entity_name, entity_id) parsed from the identifier.
-
-    Raises
-    ------
-    ValueError
-        If identifier is not a full key and project or entity_type is None.
     """
     if not is_valid_key(identifier):
         if project is None or entity_type is None:
@@ -83,11 +78,6 @@ def get_context_from_identifier(
     -------
     Context
         The context instance associated with the identified project.
-
-    Raises
-    ------
-    EntityError
-        If identifier is not a full key and project parameter is None.
     """
     if not is_valid_key(identifier):
         if project is None:

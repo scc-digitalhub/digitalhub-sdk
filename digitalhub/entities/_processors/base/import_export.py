@@ -50,11 +50,6 @@ class BaseEntityImportExportProcessor:
         -------
         Project
             The imported and created project entity.
-
-        Raises
-        ------
-        EntityError
-            If the project already exists in the backend.
         """
         obj: dict = read_yaml(file)
         obj["status"] = {}

@@ -57,32 +57,11 @@ class ContextBuilder:
         -------
         Context
             The context instance associated with the project.
-
-        Raises
-        ------
-        ContextError
-            If no context exists for the specified project name.
         """
         try:
             return self._instances[project]
         except KeyError:
             raise ContextError(f"Context '{project}' not found. Get or create a project named '{project}'.")
-
-    def is_initializing(self, project: str) -> bool:
-        """
-        Check if a context is currently being initialized.
-
-        Parameters
-        ----------
-        project : str
-            The name of the project to check.
-
-        Returns
-        -------
-        bool
-            True if the context is being initialized, False otherwise.
-        """
-        return project in self._initializing
 
     def remove(self, project: str) -> None:
         """
@@ -92,11 +71,6 @@ class ContextBuilder:
         ----------
         project : str
             The name of the project whose context should be removed.
-            This method does not return anything.
-
-        Notes
-        -----
-        If the project does not exist in the registry, this method silently does nothing.
         """
         self._instances.pop(project, None)
 

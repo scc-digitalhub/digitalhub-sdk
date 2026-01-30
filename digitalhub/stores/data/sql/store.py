@@ -18,7 +18,7 @@ from digitalhub.stores.data._base.store import Store
 from digitalhub.stores.data.sql.configurator import SqlStoreConfigurator
 from digitalhub.stores.readers.data.api import get_reader_by_object
 from digitalhub.utils.exceptions import ConfigError, StoreError
-from digitalhub.utils.types import SourcesOrListOfSources
+from digitalhub.utils.types import Dataframe, SourcesOrListOfSources
 
 if typing.TYPE_CHECKING:
     from sqlalchemy.engine.row import Row
@@ -78,12 +78,6 @@ class SqlStore(Store):
         -------
         str
             The absolute path of the downloaded Parquet file.
-
-        Raises
-        ------
-        StoreError
-            If the destination path has an invalid extension or if
-            file operations fail.
         """
         table_name = self._get_table_name(src) + ".parquet"
         # Case where dst is not provided
@@ -115,11 +109,6 @@ class SqlStore(Store):
     ) -> list[tuple[str, str]]:
         """
         Upload artifacts to SQL storage.
-
-        Raises
-        ------
-        StoreError
-            Always raised as SQL store does not support direct upload.
         """
         raise StoreError("SQL store does not support upload.")
 
@@ -148,7 +137,7 @@ class SqlStore(Store):
         file_format: str | None = None,
         engine: str | None = None,
         **kwargs,
-    ) -> Any:
+    ) -> Dataframe:  # type: ignore
         """
         Read a DataFrame from a SQL table.
 
@@ -170,13 +159,8 @@ class SqlStore(Store):
 
         Returns
         -------
-        Any
-            DataFrame object containing the table data.
-
-        Raises
-        ------
-        StoreError
-            If a list of paths is provided (only single path supported).
+        Dataframe
+            DataFrame object.
         """
         if isinstance(path, list):
             raise StoreError("SQL store can only read a single DataFrame at a time.")
@@ -196,7 +180,7 @@ class SqlStore(Store):
         query: str,
         path: str,
         engine: str | None = None,
-    ) -> Any:
+    ) -> Dataframe:  # type: ignore
         """
         Execute a custom SQL query and return results as a DataFrame.
 
@@ -224,7 +208,13 @@ class SqlStore(Store):
         sql_engine = self._check_factory(schema=schema)
         return reader.read_table(query, sql_engine)
 
-    def write_df(self, df: Any, dst: str, extension: str | None = None, **kwargs,) -> str:
+    def write_df(
+        self,
+        df: Any,
+        dst: str,
+        extension: str | None = None,
+        **kwargs,
+    ) -> str:
         """
         Write a DataFrame to a SQL database table.
 
@@ -420,12 +410,6 @@ class SqlStore(Store):
         dict
             Dictionary containing parsed components with keys:
             'database', 'schema', and 'table'.
-
-        Raises
-        ------
-        ValueError
-            If the path format is invalid or doesn't follow the
-            expected SQL URI structure.
         """
         # Parse path
         err_msg = "Invalid SQL path. Must be sql://<database>/<schema>/<table> or sql://<database>/<table>"
@@ -490,11 +474,6 @@ class SqlStore(Store):
         ----------
         engine : Engine
             The SQLAlchemy engine to test for connectivity.
-
-        Raises
-        ------
-        ConfigError
-            If database connection cannot be established.
         """
         try:
             engine.connect()

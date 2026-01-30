@@ -206,11 +206,6 @@ class BaseEntityOperationsProcessor:
         -------
         Project
             The imported and created project entity.
-
-        Raises
-        ------
-        EntityError
-            If the project already exists in the backend.
         """
         return self.import_export_processor.import_project_entity(self.crud_processor, file, **kwargs)
 
@@ -290,10 +285,5 @@ class BaseEntityOperationsProcessor:
             - 'user': username to share with/unshare from
             - 'unshare': boolean flag for unsharing (default False)
             - 'local': boolean flag for local backend
-
-        Raises
-        ------
-        ValueError
-            If trying to unshare from a user who doesn't have access.
         """
         return self.special_ops_processor.share_project_entity(entity_type, entity_name, **kwargs)

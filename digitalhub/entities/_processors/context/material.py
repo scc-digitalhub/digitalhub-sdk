@@ -54,11 +54,6 @@ class ContextEntityMaterialProcessor:
         -------
         MaterialEntity
             The created material entity with uploaded files.
-
-        Raises
-        ------
-        EntityError
-            If file upload fails during the process.
         """
         source: SourcesOrListOfSources = kwargs.pop("source")
         return self._log_entity_with_upload(
@@ -90,7 +85,7 @@ class ContextEntityMaterialProcessor:
         DataitemTable
             The created table dataitem entity with uploaded files.
         """
-        data: Dataframe = kwargs.pop("data")
+        data: Dataframe = kwargs.pop("data")  # type: ignore
         return self._log_entity_with_upload(
             crud_processor,
             upload_fn=lambda obj: obj.write_df(data, extension=FileExtensions.PARQUET.value),
@@ -122,11 +117,6 @@ class ContextEntityMaterialProcessor:
         -------
         MaterialEntity
             The created material entity with uploaded files.
-
-        Raises
-        ------
-        EntityError
-            If file upload fails during the process.
         """
         entity_kind = kwargs.get("kind")
 

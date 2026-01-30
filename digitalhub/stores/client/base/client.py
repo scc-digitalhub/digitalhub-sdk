@@ -115,13 +115,6 @@ class Client:
         -------
         dict
             Retrieved object as returned by the backend.
-
-        Raises
-        ------
-        BackendError
-            If the backend returns an error response.
-        EntityNotExistsError
-            If the requested object does not exist.
         """
         return self._http_handler.execute_request("GET", api, **kwargs)
 

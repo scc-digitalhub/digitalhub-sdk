@@ -77,11 +77,6 @@ def parse_entity_key(key: str) -> tuple[str, str, str, str | None, str]:
     tuple[str, str, str, str | None, str]
         A tuple containing (project, entity_type, kind, name, uuid).
         The name component is None for tasks and runs.
-
-    Raises
-    ------
-    ValueError
-        If the key format is invalid or cannot be parsed.
     """
     if not is_valid_key(key):
         raise ValueError("Invalid entity key format.")
@@ -129,11 +124,6 @@ def get_entity_type_from_key(key: str) -> str:
     -------
     str
         The entity type extracted from the key.
-
-    Raises
-    ------
-    ValueError
-        If the key format is invalid or cannot be parsed.
     """
     _, entity_type, _, _, _ = parse_entity_key(key)
     return entity_type
@@ -155,11 +145,6 @@ def get_project_from_key(key: str) -> str:
     -------
     str
         The project name extracted from the key.
-
-    Raises
-    ------
-    ValueError
-        If the key format is invalid or cannot be parsed.
     """
     project, _, _, _, _ = parse_entity_key(key)
     return project

@@ -11,7 +11,7 @@ from digitalhub.stores.data._base.store import Store
 from digitalhub.stores.readers.data.api import get_reader_by_object
 from digitalhub.utils.exceptions import StoreError
 from digitalhub.utils.file_utils import get_file_info_from_local
-from digitalhub.utils.types import SourcesOrListOfSources
+from digitalhub.utils.types import Dataframe, SourcesOrListOfSources
 
 
 class LocalStore(Store):
@@ -52,11 +52,6 @@ class LocalStore(Store):
     def upload(self, src: SourcesOrListOfSources, dst: str) -> list[tuple[str, str]]:
         """
         Upload an artifact to storage.
-
-        Raises
-        ------
-        StoreError
-            This method is not implemented.
         """
         raise StoreError("Local store does not support upload.")
 
@@ -90,7 +85,7 @@ class LocalStore(Store):
         file_format: str | None = None,
         engine: str | None = None,
         **kwargs,
-    ) -> Any:
+    ) -> Dataframe:  # type: ignore
         """
         Read DataFrame from path.
 
@@ -107,7 +102,7 @@ class LocalStore(Store):
 
         Returns
         -------
-        Any
+        Dataframe
             DataFrame.
         """
         reader = self._get_reader(engine)

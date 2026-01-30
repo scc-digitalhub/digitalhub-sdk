@@ -46,11 +46,6 @@ class BuilderRegistry:
             The unique identifier for the builder.
         builder : type[EntityBuilder] | type[RuntimeEntityBuilder]
             The builder class to register. It will be instantiated immediately.
-
-        Raises
-        ------
-        BuilderError
-            If a builder with the same name already exists.
         """
         if name in self._entity_builders:
             raise BuilderError(f"Builder {name} already exists.")
@@ -66,11 +61,6 @@ class BuilderRegistry:
             The unique identifier for the builder.
         builder : type[RuntimeBuilder]
             The builder class to register. It will be instantiated immediately.
-
-        Raises
-        ------
-        BuilderError
-            If a builder with the same name already exists.
         """
         if name in self._runtime_builders:
             raise BuilderError(f"Builder {name} already exists.")
@@ -89,11 +79,6 @@ class BuilderRegistry:
         -------
         EntityBuilder | RuntimeEntityBuilder
             The builder instance.
-
-        Raises
-        ------
-        BuilderError
-            If no builder exists for the specified kind.
         """
         if not self._entities_registered:
             self._ensure_entities_registered()
@@ -117,11 +102,6 @@ class BuilderRegistry:
         -------
         RuntimeBuilder
             The builder instance.
-
-        Raises
-        ------
-        BuilderError
-            If no builder exists for the specified kind.
         """
         if kind not in self._runtime_builders:
             if not self._runtimes_registered:
@@ -145,9 +125,6 @@ class BuilderRegistry:
     def _register_entities(self) -> None:
         """
         Register core entity builders into the registry.
-
-        Imports the core entities module and registers all entity
-        builders with the registry.
         """
         try:
             module = import_module(FactoryEnum.REG_ENTITIES.value)
@@ -174,9 +151,6 @@ class BuilderRegistry:
     def _register_runtimes_entities(self) -> None:
         """
         Register all runtime builders and their entities into the registry.
-
-        Imports each runtime package and registers its entity and runtime
-        builders with the registry.
         """
         try:
             for package in list_runtimes():

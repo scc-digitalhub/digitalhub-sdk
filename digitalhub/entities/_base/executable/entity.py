@@ -359,11 +359,6 @@ class ExecutableEntity(VersionedEntity):
         ----------
         action : str
             Action name.
-
-        Raises
-        ------
-        EntityError
-            If task already exists.
         """
         if self._check_task_in_backend(action):
             raise EntityError(f"Task '{action}' already exists.")
@@ -376,11 +371,6 @@ class ExecutableEntity(VersionedEntity):
         ----------
         action : str
             Action name.
-
-        Raises
-        ------
-        EntityError
-            If task does not exist.
         """
         if self._tasks.get(action) is None:
             raise EntityError(f"Task '{action}' does not exist.")

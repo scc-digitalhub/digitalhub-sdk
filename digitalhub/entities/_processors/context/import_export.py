@@ -55,11 +55,6 @@ class ContextEntityImportExportProcessor:
         -------
         ContextEntity
             The imported and created context entity.
-
-        Raises
-        ------
-        EntityError
-            If the entity already exists in the backend.
         """
         if (file is None) == (key is None):
             raise ValueError("Provide key or file, not both or none.")
@@ -117,11 +112,6 @@ class ContextEntityImportExportProcessor:
         -------
         ExecutableEntity
             The imported and created executable entity.
-
-        Raises
-        ------
-        EntityError
-            If the entity already exists in the backend.
         """
         if (file is None) == (key is None):
             raise ValueError("Provide key or file, not both or none.")

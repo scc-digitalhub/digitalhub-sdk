@@ -86,11 +86,6 @@ class ClientApiBuilder:
         -------
         str
             The formatted context API endpoint.
-
-        Raises
-        ------
-        BackendError
-            If the operation is not supported for the entity type.
         """
         project = kwargs["project"]
         if operation == BackendOperations.SEARCH.value:

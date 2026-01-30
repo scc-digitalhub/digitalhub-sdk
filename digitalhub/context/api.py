@@ -65,7 +65,6 @@ def get_context_from_remote(project: str) -> Context:
     """
     Fetch project context from remote backend and create local context.
 
-
     Parameters
     ----------
     project : str

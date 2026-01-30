@@ -41,11 +41,6 @@ class ConfigManager:
         -------
         str
             DHCore backend endpoint URL.
-
-        Raises
-        ------
-        KeyError
-            If endpoint not configured in current credential source.
         """
         config = self.get_configuration()
         endpoint = config[ConfigurationVars.DHCORE_ENDPOINT.value]

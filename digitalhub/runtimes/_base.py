@@ -58,11 +58,6 @@ class Runtime:
         -------
         str
             The validated action name to execute.
-
-        Raises
-        ------
-        RuntimeError
-            If the run specification is malformed or task is not allowed.
         """
         try:
             task_kind = run["spec"]["task"].split(":")[0]
@@ -96,11 +91,6 @@ class Runtime:
         -------
         Any
             Function return value.
-
-        Raises
-        ------
-        RuntimeError
-            If any exception occurs during function execution.
         """
         try:
             return func(*args, **kwargs)

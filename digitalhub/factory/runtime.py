@@ -15,9 +15,6 @@ if typing.TYPE_CHECKING:
 class RuntimeFactory:
     """
     Factory for creating and managing runtime builders.
-
-    This class handles the creation of runtimes through their respective builders,
-    using a centralized registry.
     """
 
     def build_runtime(self, kind_to_build_from: str, project: str) -> Runtime:

@@ -207,18 +207,13 @@ def sanitize_endpoint(endpoint: str | None = None) -> str | None:
 
     Parameters
     ----------
-    endpoint : str
+    endpoint : str or None
         Endpoint URL to sanitize.
 
     Returns
     -------
     str or None
         Sanitized URL or None if input was None.
-
-    Raises
-    ------
-    ClientError
-        If endpoint lacks http:// or https:// scheme.
     """
     if endpoint is None:
         return

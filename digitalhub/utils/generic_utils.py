@@ -199,11 +199,6 @@ def import_function(path: Path, handler: str) -> Callable:
     -------
     Callable
         The imported function.
-
-    Raises
-    ------
-    RuntimeError
-        If the module or function cannot be loaded or is not callable.
     """
     spec = imputil.spec_from_file_location(path.stem, path)
     if spec is None:

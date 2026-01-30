@@ -19,7 +19,7 @@ from digitalhub.stores.data.s3.configurator import S3StoreConfigurator
 from digitalhub.stores.readers.data.api import get_reader_by_object
 from digitalhub.utils.exceptions import ConfigError, StoreError
 from digitalhub.utils.file_utils import get_file_info_from_s3, get_file_mime_type
-from digitalhub.utils.types import SourcesOrListOfSources
+from digitalhub.utils.types import Dataframe, SourcesOrListOfSources
 
 # Type aliases
 S3Client = Type["botocore.client.S3"]
@@ -234,7 +234,7 @@ class S3Store(Store):
         file_format: str | None = None,
         engine: str | None = None,
         **kwargs,
-    ) -> Any:
+    ) -> Dataframe:  # type: ignore
         """
         Read DataFrame from path.
 
@@ -251,7 +251,7 @@ class S3Store(Store):
 
         Returns
         -------
-        Any
+        Dataframe
             DataFrame.
         """
         reader = self._get_reader(engine)
@@ -284,7 +284,7 @@ class S3Store(Store):
         self,
         query: str,
         engine: str | None = None,
-    ) -> Any:
+    ) -> Dataframe:  # type: ignore
         """
         Query data from database.
 
@@ -297,7 +297,7 @@ class S3Store(Store):
 
         Returns
         -------
-        Any
+        Dataframe
             DataFrame.
         """
         raise StoreError("S3 store does not support query.")
@@ -672,11 +672,6 @@ class S3Store(Store):
             S3 client object.
         bucket : str
             Name of the S3 bucket.
-
-        Raises
-        ------
-        ConfigError
-            If access to the specified bucket is not available.
         """
         try:
             client.head_bucket(Bucket=bucket)

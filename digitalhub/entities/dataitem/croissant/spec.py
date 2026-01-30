@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-
 from digitalhub.entities.dataitem._base.spec import DataitemSpec, DataitemValidator
 
 

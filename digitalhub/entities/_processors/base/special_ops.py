@@ -67,11 +67,6 @@ class BaseEntitySpecialOpsProcessor:
             - 'user': username to share with/unshare from
             - 'unshare': boolean flag for unsharing (default False)
             - 'local': boolean flag for local backend
-
-        Raises
-        ------
-        ValueError
-            If trying to unshare from a user who doesn't have access.
         """
         client = get_client()
         api = client.build_api(

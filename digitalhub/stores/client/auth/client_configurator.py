@@ -56,11 +56,6 @@ class ClientConfigurator:
         -------
         str
             DHCore backend endpoint URL.
-
-        Raises
-        ------
-        KeyError
-            If endpoint not configured in current credential source.
         """
         return self._cfg_manager.get_endpoint()
 

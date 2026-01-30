@@ -267,11 +267,6 @@ class EntityFactory:
         -------
         str
             The kind of the entity.
-
-        Raises
-        ------
-        BuilderError
-            If 'kind' is not found in parameters.
         """
         try:
             return kwargs["kind"]

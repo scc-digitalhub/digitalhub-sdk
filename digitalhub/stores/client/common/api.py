@@ -13,12 +13,6 @@ def refresh_token() -> None:
 
     Uses the refresh token stored in client configuration to obtain a new
     access token. Requires OAuth2 authentication configuration.
-
-
-    Raises
-    ------
-    ClientError
-        If client not properly configured or token refresh fails.
     """
     get_client().refresh_token()
 

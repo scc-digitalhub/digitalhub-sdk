@@ -43,7 +43,9 @@ def prepare_preview(columns: list, data: list[list]) -> list[dict]:
 
     Parameters
     ----------
-    data : pd.DataFrame
+    columns : list
+        Column names.
+    data : list[list]
         Data.
 
     Returns

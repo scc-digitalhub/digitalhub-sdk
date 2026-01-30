@@ -690,7 +690,8 @@ class Project(Entity):
         name: str,
         source: str | None = None,
         drop_existing: bool = False,
-        path: str | None = None,) -> Dataitem:
+        path: str | None = None,
+    ) -> Dataitem:
         """
         Create and upload a croissant dataitem.
 

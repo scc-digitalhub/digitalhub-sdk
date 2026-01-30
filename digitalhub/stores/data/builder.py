@@ -55,14 +55,6 @@ class StoreBuilder:
             The unique identifier for the store type (e.g., 's3', 'sql').
         store : Store
             The store class to register for this type.
-        configurator : Configurator
-            The configurator class for store configuration.
-            If None, the store will be instantiated without configuration.
-
-        Raises
-        ------
-        StoreError
-            If the store type is already registered in the builder.
         """
         if store_type not in self._builders:
             self._builders[store_type] = store
@@ -88,11 +80,6 @@ class StoreBuilder:
         -------
         Store
             The store instance appropriate for handling the given URI.
-
-        Raises
-        ------
-        KeyError
-            If no store is registered for the URI scheme.
         """
         store_type = map_uri_scheme(uri)
 

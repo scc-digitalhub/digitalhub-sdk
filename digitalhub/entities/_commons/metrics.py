@@ -43,11 +43,6 @@ def validate_metric_value(value: Any) -> MetricType:
     -------
     MetricType
         The validated metric value.
-
-    Raises
-    ------
-    ValueError
-        If the value cannot be converted to a valid metric type.
     """
     try:
         return Metric(value=value).value

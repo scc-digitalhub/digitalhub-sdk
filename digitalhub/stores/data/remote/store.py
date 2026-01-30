@@ -11,7 +11,7 @@ import requests
 
 from digitalhub.stores.data._base.store import Store
 from digitalhub.utils.exceptions import StoreError
-from digitalhub.utils.types import SourcesOrListOfSources
+from digitalhub.utils.types import Dataframe, SourcesOrListOfSources
 
 
 class RemoteStore(Store):
@@ -64,11 +64,6 @@ class RemoteStore(Store):
     def upload(self, src: SourcesOrListOfSources, dst: str) -> list[tuple[str, str]]:
         """
         Upload an artifact to storage.
-
-        Raises
-        ------
-        StoreError
-            This method is not implemented.
         """
         raise StoreError("Remote HTTP store does not support upload.")
 
@@ -102,7 +97,7 @@ class RemoteStore(Store):
         file_format: str | None = None,
         engine: str | None = None,
         **kwargs,
-    ) -> Any:
+    ) -> Dataframe:  # type: ignore
         """
         Read DataFrame from path.
 
@@ -119,7 +114,7 @@ class RemoteStore(Store):
 
         Returns
         -------
-        Any
+        Dataframe
             DataFrame.
         """
         reader = self._get_reader(engine)
@@ -152,11 +147,6 @@ class RemoteStore(Store):
         """
         Method to write a dataframe to a file. Note that this method is not implemented
         since the remote store is not meant to write dataframes.
-
-        Raises
-        ------
-        NotImplementedError
-            This method is not implemented.
         """
         raise NotImplementedError("Remote store does not support write_df.")
 
@@ -173,11 +163,6 @@ class RemoteStore(Store):
         ----------
         src : str
             The source location.
-
-        Raises
-        ------
-        HTTPError
-            If an error occurs while checking the source.
         """
         r = requests.head(src, timeout=60)
         r.raise_for_status()
