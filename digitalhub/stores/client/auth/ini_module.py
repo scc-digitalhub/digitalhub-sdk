@@ -13,6 +13,18 @@ from digitalhub.utils.exceptions import ClientError
 ENV_FILE = get_client_config().config_file_path
 
 
+def file_exists() -> bool:
+    """
+    Check if the .dhcore.ini file exists.
+
+    Returns
+    -------
+    bool
+        True if the file exists, False otherwise.
+    """
+    return ENV_FILE.exists()
+
+
 def load_file() -> ConfigParser:
     """
     Load the credentials configuration from the .dhcore.ini file.

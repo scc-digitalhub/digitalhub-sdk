@@ -9,6 +9,7 @@ from typing import Any
 
 from digitalhub.stores.client.auth.enums import ConfigurationVars, CredentialsVars, SetCreds
 from digitalhub.stores.client.auth.ini_module import (
+    file_exists,
     load_file,
     load_key,
     load_profile,
@@ -27,6 +28,7 @@ class ConfigLoader:
         self._current_profile = self._read_current_profile()
         self._configuration: dict[str, Any] = self.load_configuration()
         self._credentials: dict[str, Any] = self.load_credentials()
+        self._write_file()
 
     @staticmethod
     def _read_env(variables: list) -> dict:
@@ -64,6 +66,14 @@ class ConfigLoader:
         """
         file = load_file()
         return {var: load_key(file, profile, var) for var in variables}
+
+    def _write_file(self) -> None:
+        """
+        Write current configuration and credentials to the .dhcore file
+        if file does not exist yet.
+        """
+        if not file_exists():
+            self.write_file({**self._configuration, **self._credentials})
 
     ##############################
     # Configuration methods

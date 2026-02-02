@@ -48,6 +48,7 @@ class ClientConfig:
     # API structure
     api_base: str = "/api/v1"
     api_context: str = "/api/v1/-"
+    api_auth_check: str = "/api/auth"
 
     ##################################
     # AUTHENTICATION
@@ -65,6 +66,9 @@ class ClientConfig:
     # Prefixes vars
     dhcore: str = "dhcore_"
     oauth2: str = "oauth2_"
+
+    # Apis
+    well_known_path: str = "/.well-known/openid-configuration"
 
 
 # Global default configuration instance

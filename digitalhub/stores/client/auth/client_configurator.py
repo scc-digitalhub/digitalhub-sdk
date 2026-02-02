@@ -144,7 +144,7 @@ class ClientConfigurator:
         dict
             Current authentication credentials and configuration.
         """
-        url = self.get_endpoint() + "/api/auth"
+        url = self.get_endpoint() + get_client_config().api_auth_check
 
         # Handle authentication errors with token refresh
         kwargs = self.get_auth_parameters({})
