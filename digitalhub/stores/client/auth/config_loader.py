@@ -73,7 +73,8 @@ class ConfigLoader:
         if file does not exist yet.
         """
         if not file_exists():
-            self.write_file({**self._configuration, **self._credentials})
+            variables = {k: v for k, v in {**self._configuration, **self._credentials}.items() if v is not None}
+            self.write_file(variables)
 
     ##############################
     # Configuration methods
