@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from pydantic import ValidationError
 
-from digitalhub.entities._base.entity.metadata import Metadata, RelationshipValidator
+from digitalhub.entities._base.metadata.entity import Metadata, RelationshipValidator
 from digitalhub.utils.exceptions import BuilderError
 from digitalhub.utils.generic_utils import get_timestamp
 

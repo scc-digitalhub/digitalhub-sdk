@@ -17,7 +17,7 @@ from digitalhub.utils.exceptions import EntityError
 from digitalhub.utils.logger import LOGGER
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities._base.entity.metadata import Metadata
+    from digitalhub.entities._base.metadata.entity import Metadata
     from digitalhub.entities.log._base.entity import Log
     from digitalhub.entities.run._base.spec import RunSpec
     from digitalhub.entities.run._base.status import RunStatus

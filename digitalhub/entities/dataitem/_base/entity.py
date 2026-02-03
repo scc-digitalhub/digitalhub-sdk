@@ -10,8 +10,6 @@ from digitalhub.entities._base.material.entity import MaterialEntity
 from digitalhub.entities._commons.enums import EntityTypes
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities._base.entity.metadata import Metadata
-    from digitalhub.entities._base.extensions.entity import Extension
     from digitalhub.entities.dataitem._base.spec import DataitemSpec
     from digitalhub.entities.dataitem._base.status import DataitemStatus
 
@@ -23,18 +21,7 @@ class Dataitem(MaterialEntity):
 
     ENTITY_TYPE = EntityTypes.DATAITEM.value
 
-    def __init__(
-        self,
-        project: str,
-        name: str,
-        uuid: str,
-        kind: str,
-        metadata: Metadata,
-        spec: DataitemSpec,
-        status: DataitemStatus,
-        extensions: list[Extension],
-        user: str | None = None,
-    ) -> None:
-        super().__init__(project, name, uuid, kind, metadata, spec, status, extensions, user)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
         self.spec: DataitemSpec
         self.status: DataitemStatus

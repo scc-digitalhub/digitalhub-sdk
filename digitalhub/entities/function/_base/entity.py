@@ -9,10 +9,10 @@ from concurrent.futures import ThreadPoolExecutor
 
 from digitalhub.entities._base.executable.entity import ExecutableEntity
 from digitalhub.entities._commons.enums import EntityTypes, Relationship
+from digitalhub.entities._commons.utils import refresh_decorator
 from digitalhub.factory.entity import entity_factory
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities._base.entity.metadata import Metadata
     from digitalhub.entities.function._base.spec import FunctionSpec
     from digitalhub.entities.function._base.status import FunctionStatus
     from digitalhub.entities.run._base.entity import Run
@@ -26,18 +26,8 @@ class Function(ExecutableEntity):
 
     ENTITY_TYPE = EntityTypes.FUNCTION.value
 
-    def __init__(
-        self,
-        project: str,
-        name: str,
-        uuid: str,
-        kind: str,
-        metadata: Metadata,
-        spec: FunctionSpec,
-        status: FunctionStatus,
-        user: str | None = None,
-    ) -> None:
-        super().__init__(project, name, uuid, kind, metadata, spec, status, user)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
         self.spec: FunctionSpec
         self.status: FunctionStatus
@@ -46,6 +36,7 @@ class Function(ExecutableEntity):
     #  Function Methods
     ##############################
 
+    @refresh_decorator
     def run(
         self,
         action: str,

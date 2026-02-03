@@ -11,9 +11,9 @@ from digitalhub.utils.exceptions import BuilderError
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.entity.entity import Entity
-    from digitalhub.entities._base.entity.metadata import Metadata
     from digitalhub.entities._base.entity.spec import Spec, SpecValidator
     from digitalhub.entities._base.entity.status import Status
+    from digitalhub.entities._base.metadata.entity import Metadata
 
 
 class EntityFactory:
@@ -118,6 +118,24 @@ class EntityFactory:
             Metadata object.
         """
         return self._call_builder_method(kind_to_build_from, "build_metadata", **kwargs)
+
+    def build_extension(self, kind_to_build_from: str, **kwargs) -> dict:
+        """
+        Build an entity extensions.
+
+        Parameters
+        ----------
+        kind_to_build_from : str
+            Entity type.
+        **kwargs
+            Additional extensions parameters.
+
+        Returns
+        -------
+        dict
+            Extensions dictionary.
+        """
+        return self._call_builder_method(kind_to_build_from, "build_extension", **kwargs)
 
     def build_status(self, kind_to_build_from: str, **kwargs) -> Status:
         """

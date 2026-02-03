@@ -17,10 +17,10 @@ from digitalhub.utils.exceptions import BuilderError
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.entity.entity import Entity
-    from digitalhub.entities._base.entity.metadata import Metadata
     from digitalhub.entities._base.entity.spec import Spec, SpecValidator
     from digitalhub.entities._base.entity.status import Status
     from digitalhub.entities._base.extensions.entity import Extension
+    from digitalhub.entities._base.metadata.entity import Metadata
 
 
 class EntityBuilder:
@@ -134,7 +134,7 @@ class EntityBuilder:
         """
         return build_status(self.ENTITY_STATUS_CLASS, **kwargs)
 
-    def build_extensions(self, extensions: list[dict]) -> list[Extension]:
+    def build_extension(self, extensions: list[dict]) -> list[Extension]:
         """
         Build entity extensions.
 

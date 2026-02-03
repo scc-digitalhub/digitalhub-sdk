@@ -11,7 +11,6 @@ from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._processors.processors import context_processor
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities._base.entity.metadata import Metadata
     from digitalhub.entities.secret._base.spec import SecretSpec
     from digitalhub.entities.secret._base.status import SecretStatus
 
@@ -23,18 +22,8 @@ class Secret(VersionedEntity):
 
     ENTITY_TYPE = EntityTypes.SECRET.value
 
-    def __init__(
-        self,
-        project: str,
-        name: str,
-        uuid: str,
-        kind: str,
-        metadata: Metadata,
-        spec: SecretSpec,
-        status: SecretStatus,
-        user: str | None = None,
-    ) -> None:
-        super().__init__(project, name, uuid, kind, metadata, spec, status, user)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
         self.spec: SecretSpec
         self.status: SecretStatus
 

@@ -8,10 +8,10 @@ import typing
 
 from digitalhub.entities._base.executable.entity import ExecutableEntity
 from digitalhub.entities._commons.enums import EntityTypes, Relationship
+from digitalhub.entities._commons.utils import refresh_decorator
 from digitalhub.factory.entity import entity_factory
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities._base.entity.metadata import Metadata
     from digitalhub.entities.run._base.entity import Run
     from digitalhub.entities.task._base.entity import Task
     from digitalhub.entities.workflow._base.spec import WorkflowSpec
@@ -25,18 +25,8 @@ class Workflow(ExecutableEntity):
 
     ENTITY_TYPE = EntityTypes.WORKFLOW.value
 
-    def __init__(
-        self,
-        project: str,
-        name: str,
-        uuid: str,
-        kind: str,
-        metadata: Metadata,
-        spec: WorkflowSpec,
-        status: WorkflowStatus,
-        user: str | None = None,
-    ) -> None:
-        super().__init__(project, name, uuid, kind, metadata, spec, status, user)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
         self.spec: WorkflowSpec
         self.status: WorkflowStatus
@@ -45,6 +35,7 @@ class Workflow(ExecutableEntity):
     #  Workflow Methods
     ##############################
 
+    @refresh_decorator
     def run(
         self,
         action: str,

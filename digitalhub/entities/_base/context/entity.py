@@ -13,9 +13,9 @@ from digitalhub.utils.io_utils import write_yaml
 
 if typing.TYPE_CHECKING:
     from digitalhub.context.context import Context
-    from digitalhub.entities._base.entity.metadata import Metadata
     from digitalhub.entities._base.entity.spec import Spec
     from digitalhub.entities._base.entity.status import Status
+    from digitalhub.entities._base.metadata.entity import Metadata
 
 
 class ContextEntity(Entity):

@@ -10,8 +10,6 @@ from digitalhub.entities._base.material.entity import MaterialEntity
 from digitalhub.entities._commons.enums import EntityTypes
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities._base.entity.metadata import Metadata
-    from digitalhub.entities._base.extensions.entity import Extension
     from digitalhub.entities.artifact._base.spec import ArtifactSpec
     from digitalhub.entities.artifact._base.status import ArtifactStatus
 
@@ -27,19 +25,8 @@ class Artifact(MaterialEntity):
 
     ENTITY_TYPE = EntityTypes.ARTIFACT.value
 
-    def __init__(
-        self,
-        project: str,
-        name: str,
-        uuid: str,
-        kind: str,
-        metadata: Metadata,
-        spec: ArtifactSpec,
-        status: ArtifactStatus,
-        extensions: list[Extension],
-        user: str | None = None,
-    ) -> None:
-        super().__init__(project, name, uuid, kind, metadata, spec, status, extensions, user)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
         self.spec: ArtifactSpec
         self.status: ArtifactStatus

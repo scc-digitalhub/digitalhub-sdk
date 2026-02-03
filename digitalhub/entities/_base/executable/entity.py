@@ -17,9 +17,7 @@ from digitalhub.factory.entity import entity_factory
 from digitalhub.utils.exceptions import EntityAlreadyExistsError, EntityError
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities._base.entity.metadata import Metadata
-    from digitalhub.entities._base.entity.spec import Spec, SpecValidator
-    from digitalhub.entities._base.entity.status import Status
+    from digitalhub.entities._base.entity.spec import SpecValidator
     from digitalhub.entities.run._base.entity import Run
     from digitalhub.entities.task._base.entity import Task
     from digitalhub.entities.trigger._base.entity import Trigger
@@ -30,18 +28,8 @@ class ExecutableEntity(VersionedEntity):
     A class representing an entity that can be executed.
     """
 
-    def __init__(
-        self,
-        project: str,
-        name: str,
-        uuid: str,
-        kind: str,
-        metadata: Metadata,
-        spec: Spec,
-        status: Status,
-        user: str | None = None,
-    ) -> None:
-        super().__init__(project, name, uuid, kind, metadata, spec, status, user)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
         # Initialize tasks
         self._tasks: dict[str, Task] = {}

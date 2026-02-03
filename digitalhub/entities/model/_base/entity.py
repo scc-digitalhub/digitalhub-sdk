@@ -11,8 +11,6 @@ from digitalhub.entities._base.metrics.entity import MetricsEntity
 from digitalhub.entities._commons.enums import EntityTypes
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities._base.entity.metadata import Metadata
-    from digitalhub.entities._base.extensions.entity import Extension
     from digitalhub.entities.model._base.spec import ModelSpec
     from digitalhub.entities.model._base.status import ModelStatus
 
@@ -24,18 +22,7 @@ class Model(MaterialEntity, MetricsEntity):
 
     ENTITY_TYPE = EntityTypes.MODEL.value
 
-    def __init__(
-        self,
-        project: str,
-        name: str,
-        uuid: str,
-        kind: str,
-        metadata: Metadata,
-        spec: ModelSpec,
-        status: ModelStatus,
-        extensions: list[Extension],
-        user: str | None = None,
-    ) -> None:
-        super().__init__(project, name, uuid, kind, metadata, spec, status, extensions, user)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
         self.spec: ModelSpec
         self.status: ModelStatus

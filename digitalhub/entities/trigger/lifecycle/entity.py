@@ -9,7 +9,6 @@ import typing
 from digitalhub.entities.trigger._base.entity import Trigger
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities._base.entity.metadata import Metadata
     from digitalhub.entities.trigger.lifecycle.spec import TriggerSpecLifecycle
     from digitalhub.entities.trigger.lifecycle.status import TriggerStatusLifecycle
 
@@ -19,18 +18,8 @@ class TriggerLifecycle(Trigger):
     TriggerLifecycle class.
     """
 
-    def __init__(
-        self,
-        project: str,
-        name: str,
-        uuid: str,
-        kind: str,
-        metadata: Metadata,
-        spec: TriggerSpecLifecycle,
-        status: TriggerStatusLifecycle,
-        user: str | None = None,
-    ) -> None:
-        super().__init__(project, name, uuid, kind, metadata, spec, status, user)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
         self.spec: TriggerSpecLifecycle
         self.status: TriggerStatusLifecycle

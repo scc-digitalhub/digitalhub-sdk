@@ -11,7 +11,6 @@ from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.utils.generic_utils import decode_base64_string
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities._base.entity.metadata import Metadata
     from digitalhub.entities.log._base.spec import LogSpec
     from digitalhub.entities.log._base.status import LogStatus
 
@@ -23,18 +22,8 @@ class Log(VersionedEntity):
 
     ENTITY_TYPE = EntityTypes.LOG.value
 
-    def __init__(
-        self,
-        project: str,
-        name: str,
-        uuid: str,
-        kind: str,
-        metadata: Metadata,
-        spec: LogSpec,
-        status: LogStatus,
-        user: str | None = None,
-    ) -> None:
-        super().__init__(project, name, uuid, kind, metadata, spec, status, user)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
         self.spec: LogSpec
         self.status: LogStatus
         self._content: str | None = None

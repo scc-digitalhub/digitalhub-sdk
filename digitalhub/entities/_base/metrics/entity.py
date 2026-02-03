@@ -11,8 +11,6 @@ from digitalhub.entities._commons.metrics import MetricType, set_metrics, valida
 from digitalhub.entities._processors.processors import context_processor
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities._base.entity.metadata import Metadata
-    from digitalhub.entities._base.entity.spec import Spec
     from digitalhub.entities._base.metrics.status import MetricsStatus
 
 
@@ -21,16 +19,8 @@ class MetricsEntity(ContextEntity):
     Mixin class for entities with metrics.
     """
 
-    def __init__(
-        self,
-        project: str,
-        kind: str,
-        metadata: Metadata,
-        spec: Spec,
-        status: MetricsStatus,
-        user: str | None = None,
-    ) -> None:
-        super().__init__(project, kind, metadata, spec, status, user)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
         self.status: MetricsStatus
 
     @property

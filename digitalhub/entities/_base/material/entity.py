@@ -8,17 +8,17 @@ import typing
 from pathlib import Path
 
 from digitalhub.entities._base.extensions.entity import Extension
-from digitalhub.entities._base.material.utils import refresh_decorator
 from digitalhub.entities._base.versioned.entity import VersionedEntity
+from digitalhub.entities._commons.utils import refresh_decorator
 from digitalhub.entities._processors.processors import context_processor
 from digitalhub.stores.data.api import get_store
 from digitalhub.utils.exceptions import BackendError
 from digitalhub.utils.types import SourcesOrListOfSources
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities._base.entity.metadata import Metadata
     from digitalhub.entities._base.material.spec import MaterialSpec
     from digitalhub.entities._base.material.status import MaterialStatus
+    from digitalhub.entities._base.metadata.entity import Metadata
 
 
 class MaterialEntity(VersionedEntity):
@@ -171,6 +171,42 @@ class MaterialEntity(VersionedEntity):
         # Update files info
         files_info = store.get_file_info(self.spec.path, paths)
         self._update_files_info(files_info)
+
+    ##############################
+    # Extensions
+    ##############################
+
+    def get_extension(self, name: str) -> Extension | None:
+        """
+        Get extension by name.
+
+        Parameters
+        ----------
+        name : str
+            Extension name.
+
+        Returns
+        -------
+        Extension | None
+            Extension if found, else None.
+        """
+        for ext in self.extensions:
+            if ext.name == name:
+                return ext
+        return None
+
+    def add_extension(self, extension: dict) -> None:
+        """
+        Add an extension.
+
+        Parameters
+        ----------
+        extension : dict
+            Extension to add.
+        """
+        ext_obj = Extension.from_dict(extension)
+        if self.get_extension(ext_obj.name) is None:
+            self.extensions.append(ext_obj)
 
     ##############################
     #  Public Helpers

@@ -82,7 +82,7 @@ class ModelBuilder(MaterialBuilder):
             **kwargs,
         )
         status = self.build_status()
-        extensions = self.build_extensions(extensions)
+        extensions = self.build_extension(extensions)
         return self.build_entity(
             project=project,
             name=name,

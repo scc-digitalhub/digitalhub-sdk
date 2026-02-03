@@ -7,14 +7,12 @@ from __future__ import annotations
 import typing
 from typing import Any
 
-from digitalhub.entities._base.material.utils import refresh_decorator
+from digitalhub.entities._commons.utils import refresh_decorator
 from digitalhub.entities.dataitem._base.entity import Dataitem
 from digitalhub.stores.data.api import get_store
 from digitalhub.utils.uri_utils import has_sql_scheme
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities._base.entity.metadata import Metadata
-    from digitalhub.entities._base.extensions.entity import Extension
     from digitalhub.entities.dataitem.table.spec import DataitemSpecTable
     from digitalhub.entities.dataitem.table.status import DataitemStatusTable
 
@@ -24,19 +22,8 @@ class DataitemTable(Dataitem):
     DataitemTable class.
     """
 
-    def __init__(
-        self,
-        project: str,
-        name: str,
-        uuid: str,
-        kind: str,
-        metadata: Metadata,
-        spec: DataitemSpecTable,
-        status: DataitemStatusTable,
-        extensions: list[Extension],
-        user: str | None = None,
-    ) -> None:
-        super().__init__(project, name, uuid, kind, metadata, spec, status, extensions, user)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
         self.spec: DataitemSpecTable
         self.status: DataitemStatusTable

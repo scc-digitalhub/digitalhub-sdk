@@ -9,8 +9,6 @@ import typing
 from digitalhub.entities.model._base.entity import Model
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities._base.entity.metadata import Metadata
-    from digitalhub.entities._base.extensions.entity import Extension
     from digitalhub.entities.model.mlflow.spec import ModelSpecMlflow
     from digitalhub.entities.model.mlflow.status import ModelStatusMlflow
 
@@ -20,19 +18,8 @@ class ModelMlflow(Model):
     ModelMlflow class.
     """
 
-    def __init__(
-        self,
-        project: str,
-        name: str,
-        uuid: str,
-        kind: str,
-        metadata: Metadata,
-        spec: ModelSpecMlflow,
-        status: ModelStatusMlflow,
-        extensions: list[Extension],
-        user: str | None = None,
-    ) -> None:
-        super().__init__(project, name, uuid, kind, metadata, spec, status, extensions, user)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
         self.spec: ModelSpecMlflow
         self.status: ModelStatusMlflow

@@ -10,9 +10,9 @@ from abc import abstractmethod
 from digitalhub.entities._base._base.entity import Base
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities._base.entity.metadata import Metadata
     from digitalhub.entities._base.entity.spec import Spec
     from digitalhub.entities._base.entity.status import Status
+    from digitalhub.entities._base.metadata.entity import Metadata
 
 
 class Entity(Base):

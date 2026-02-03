@@ -12,7 +12,7 @@ from digitalhub.entities._processors.processors import context_processor
 from digitalhub.factory.entity import entity_factory
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities._base.entity.metadata import Metadata
+    from digitalhub.entities._base.metadata.entity import Metadata
     from digitalhub.entities.run._base.entity import Run
     from digitalhub.entities.task._base.spec import TaskSpec
     from digitalhub.entities.task._base.status import TaskStatus

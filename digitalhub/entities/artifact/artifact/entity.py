@@ -9,8 +9,6 @@ import typing
 from digitalhub.entities.artifact._base.entity import Artifact
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities._base.entity.metadata import Metadata
-    from digitalhub.entities._base.extensions.entity import Extension
     from digitalhub.entities.artifact.artifact.spec import ArtifactSpecArtifact
     from digitalhub.entities.artifact.artifact.status import ArtifactStatusArtifact
 
@@ -20,19 +18,8 @@ class ArtifactArtifact(Artifact):
     ArtifactArtifact class.
     """
 
-    def __init__(
-        self,
-        project: str,
-        name: str,
-        uuid: str,
-        kind: str,
-        metadata: Metadata,
-        spec: ArtifactSpecArtifact,
-        status: ArtifactStatusArtifact,
-        extensions: list[Extension],
-        user: str | None = None,
-    ) -> None:
-        super().__init__(project, name, uuid, kind, metadata, spec, status, extensions, user)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
         self.spec: ArtifactSpecArtifact
         self.status: ArtifactStatusArtifact

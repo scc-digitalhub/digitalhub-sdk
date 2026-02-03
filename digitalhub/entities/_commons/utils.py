@@ -7,8 +7,10 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Callable
 
 from digitalhub.entities._commons.enums import EntityTypes
+from digitalhub.utils.exceptions import BackendError
 from digitalhub.utils.file_utils import eval_zip_sources
 
 
@@ -272,3 +274,29 @@ def _get_base_path(
     from digitalhub.stores.data.api import get_default_store
 
     return f"{get_default_store(project)}/{project}/{entity_type}/{name}/{uuid}"
+
+
+def refresh_decorator(fn: Callable) -> Callable:
+    """
+    Refresh decorator.
+
+    Parameters
+    ----------
+    fn : Callable
+        Function to decorate.
+
+    Returns
+    -------
+    Callable
+        Decorated function.
+    """
+
+    def wrapper(self, *args, **kwargs):
+        # Prevent rising error if entity is not yet created in backend
+        try:
+            self.refresh()
+        except BackendError:
+            pass
+        return fn(self, *args, **kwargs)
+
+    return wrapper

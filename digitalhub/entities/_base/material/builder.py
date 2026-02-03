@@ -55,7 +55,7 @@ class MaterialBuilder(EntityBuilder):
         metadata = self.build_metadata(**obj.get("metadata", {}))
         spec = self.build_spec(**obj.get("spec", {}))
         status = self.build_status(**obj.get("status", {}))
-        extensions = self.build_extensions(obj.get("extensions", []))
+        extensions = self.build_extension(obj.get("extensions", []))
         user = obj.get("user")
         return {
             "project": project,

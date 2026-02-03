@@ -23,7 +23,7 @@ from digitalhub.utils.uri_utils import has_local_scheme
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.context.entity import ContextEntity
-    from digitalhub.entities._base.entity.metadata import Metadata
+    from digitalhub.entities._base.metadata.entity import Metadata
     from digitalhub.entities.artifact._base.entity import Artifact
     from digitalhub.entities.dataitem._base.entity import Dataitem
     from digitalhub.entities.function._base.entity import Function
