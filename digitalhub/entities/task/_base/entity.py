@@ -12,7 +12,6 @@ from digitalhub.entities._processors.processors import context_processor
 from digitalhub.factory.entity import entity_factory
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities._base.metadata.entity import Metadata
     from digitalhub.entities.run._base.entity import Run
     from digitalhub.entities.task._base.spec import TaskSpec
     from digitalhub.entities.task._base.status import TaskStatus
@@ -25,17 +24,8 @@ class Task(UnversionedEntity):
 
     ENTITY_TYPE = EntityTypes.TASK.value
 
-    def __init__(
-        self,
-        project: str,
-        uuid: str,
-        kind: str,
-        metadata: Metadata,
-        spec: TaskSpec,
-        status: TaskStatus,
-        user: str | None = None,
-    ) -> None:
-        super().__init__(project, uuid, kind, metadata, spec, status, user)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
         self.spec: TaskSpec
         self.status: TaskStatus
 
