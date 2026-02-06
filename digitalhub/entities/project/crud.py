@@ -191,8 +191,6 @@ def get_or_create_project(
         Folder where the project will saves its context locally.
     setup_kwargs : dict
         Setup keyword arguments passed to setup_project() function.
-    **kwargs : dict
-        Keyword arguments.
 
     Returns
     -------

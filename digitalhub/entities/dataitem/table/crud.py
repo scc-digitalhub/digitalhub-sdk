@@ -42,8 +42,6 @@ def log_table(
         Project name.
     name : str
         Object name.
-    kind : str
-        Kind the object.
     source : SourcesOrListOfSources
         Dataitem location on local path. Alternative to data.
     data : Dataframe
