@@ -141,7 +141,11 @@ class MaterialEntity(VersionedEntity):
         return store.download(self.spec.path, dst, overwrite=overwrite)
 
     @refresh_decorator
-    def upload(self, source: SourcesOrListOfSources) -> None:
+    def upload(
+        self,
+        source: SourcesOrListOfSources,
+        keep_dir_structure: bool = False,
+    ) -> None:
         """
         Upload object from given local path to spec path destination.
         Source must be a local path. If the path is a folder, destination
@@ -152,6 +156,9 @@ class MaterialEntity(VersionedEntity):
         ----------
         source : str | list[str]
             Local filepath, directory or list of filepaths.
+        keep_dir_structure : bool
+            Flag to indicate whether to keep the directory structure when uploading
+            from a list of files.
 
         Examples
         --------
@@ -166,7 +173,11 @@ class MaterialEntity(VersionedEntity):
         """
         # Get store and upload object
         store = get_store(self.spec.path)
-        paths = store.upload(source, self.spec.path)
+        paths = store.upload(
+            source,
+            self.spec.path,
+            keep_dir_structure=keep_dir_structure,
+        )
 
         # Update files info
         files_info = store.get_file_info(self.spec.path, paths)

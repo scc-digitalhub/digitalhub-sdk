@@ -44,6 +44,7 @@ class Store:
         self,
         src: SourcesOrListOfSources,
         dst: str,
+        keep_dir_structure: bool = False,
     ) -> list[tuple[str, str]]:
         """
         Method to upload material entity to storage.

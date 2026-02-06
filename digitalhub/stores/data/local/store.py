@@ -49,7 +49,12 @@ class LocalStore(Store):
         """
         raise StoreError("Local store does not support download.")
 
-    def upload(self, src: SourcesOrListOfSources, dst: str) -> list[tuple[str, str]]:
+    def upload(
+        self,
+        src: SourcesOrListOfSources,
+        dst: str,
+        keep_dir_structure: bool = False,
+    ) -> list[tuple[str, str]]:
         """
         Upload an artifact to storage.
         """

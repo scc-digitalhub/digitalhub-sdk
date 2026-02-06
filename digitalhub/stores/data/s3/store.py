@@ -111,6 +111,7 @@ class S3Store(Store):
         self,
         src: SourcesOrListOfSources,
         dst: str,
+        keep_dir_structure: bool = False,
     ) -> list[tuple[str, str]]:
         """
         Upload an artifact to storage.
@@ -158,7 +159,7 @@ class S3Store(Store):
 
         # List of files
         elif src_is_list:
-            return self._upload_file_list(src, key, client, bucket)
+            return self._upload_file_list(src, key, client, bucket, keep_dir_structure=keep_dir_structure)
 
         # Single file
         return self._upload_single_file(src, key, client, bucket)
@@ -476,6 +477,7 @@ class S3Store(Store):
         dst: str,
         client: S3Client,
         bucket: str,
+        keep_dir_structure: bool = False,
     ) -> list[tuple[str, str]]:
         """
         Upload list of files to storage.
@@ -490,6 +492,8 @@ class S3Store(Store):
             The S3 client object.
         bucket : str
             The name of the S3 bucket.
+        keep_dir_structure : bool
+            Whether to keep the directory structure of the source files.
 
         Returns
         -------
@@ -499,7 +503,10 @@ class S3Store(Store):
         files = src
         keys = []
         for i in files:
-            keys.append(f"{dst}{Path(i).name}")
+            if keep_dir_structure:
+                keys.append(f"{dst}{i}")
+            else:
+                keys.append(f"{dst}{Path(i).name}")
         if len(set(keys)) != len(keys):
             raise StoreError("Keys must be unique (Select files with different names, otherwise upload a directory).")
 

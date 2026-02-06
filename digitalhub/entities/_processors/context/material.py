@@ -56,9 +56,10 @@ class ContextEntityMaterialProcessor:
             The created material entity with uploaded files.
         """
         source: SourcesOrListOfSources = kwargs.pop("source")
+        keep_dir_structure = kwargs.get("keep_dir_structure", False)
         return self._log_entity_with_upload(
             crud_processor,
-            upload_fn=lambda obj: obj.upload(source),
+            upload_fn=lambda obj: obj.upload(source, keep_dir_structure=keep_dir_structure),
             **kwargs,
         )
 

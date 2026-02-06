@@ -8,7 +8,6 @@ import typing
 
 from digitalhub.entities._base.executable.entity import ExecutableEntity
 from digitalhub.entities._commons.enums import EntityTypes, Relationship
-from digitalhub.entities._commons.utils import refresh_decorator
 from digitalhub.factory.entity import entity_factory
 
 if typing.TYPE_CHECKING:
@@ -35,7 +34,6 @@ class Workflow(ExecutableEntity):
     #  Workflow Methods
     ##############################
 
-    @refresh_decorator
     def run(
         self,
         action: str,

@@ -61,7 +61,12 @@ class RemoteStore(Store):
 
         return self._download_file(root, dst, overwrite)
 
-    def upload(self, src: SourcesOrListOfSources, dst: str) -> list[tuple[str, str]]:
+    def upload(
+        self,
+        src: SourcesOrListOfSources,
+        dst: str,
+        keep_dir_structure: bool = False,
+    ) -> list[tuple[str, str]]:
         """
         Upload an artifact to storage.
         """

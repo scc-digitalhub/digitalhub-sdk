@@ -24,6 +24,7 @@ class OpType(str, Enum):
     LOG_MLFLOW = "log_mlflow"
     LOG_SKLEARN = "log_sklearn"
     LOG_HUGGINGFACE = "log_huggingface"
+    LOG_CROISSANT = "log_croissant"
     GET = "get"
     GET_VERSIONS = "get_versions"
     LIST = "list"
@@ -50,6 +51,7 @@ OPS_REGISTRY = {
         OpType.LOG: entities.log_dataitem,
         OpType.LOG_GENERIC: entities.log_generic_dataitem,
         OpType.LOG_TABLE: entities.log_table,
+        OpType.LOG_CROISSANT: entities.log_croissant,
         OpType.GET: entities.get_dataitem,
         OpType.GET_VERSIONS: entities.get_dataitem_versions,
         OpType.LIST: entities.list_dataitems,
@@ -178,6 +180,10 @@ class EntityCRUD:
     def log_table(self, **kwargs) -> ContextEntity:
         """Create and upload a table dataitem."""
         return self._call_op(OpType.LOG_TABLE, **kwargs)
+
+    def log_croissant(self, **kwargs) -> ContextEntity:
+        """Create and upload a Croissant model."""
+        return self._call_op(OpType.LOG_CROISSANT, **kwargs)
 
     def log_mlflow(self, **kwargs) -> ContextEntity:
         """Create and upload a MLflow model."""

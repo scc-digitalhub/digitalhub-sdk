@@ -59,6 +59,7 @@ from digitalhub.entities import (
     load_trigger,
     load_workflow,
     log_artifact,
+    log_croissant,
     log_dataitem,
     log_generic_artifact,
     log_generic_dataitem,

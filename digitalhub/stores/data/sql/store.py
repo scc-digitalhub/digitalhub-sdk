@@ -106,6 +106,7 @@ class SqlStore(Store):
         self,
         src: SourcesOrListOfSources,
         dst: str,
+        keep_dir_structure: bool = False,
     ) -> list[tuple[str, str]]:
         """
         Upload artifacts to SQL storage.
