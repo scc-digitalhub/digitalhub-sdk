@@ -13,6 +13,7 @@ from digitalhub.entities.dataitem._base.crud import log_base_dataitem
 from digitalhub.entities.dataitem.croissant.utils import (
     get_croissant_dataset,
     get_files_from_croissant,
+    get_metadata_fields_from_croissant,
     validate_croissant_file,
     validate_output_path,
 )
@@ -84,4 +85,13 @@ def log_croissant(
         **kwargs,
     )
     os.chdir(current_dir)
+
+    # Update metadata fields from Croissant
+    metadata = get_metadata_fields_from_croissant(dataset)
+    dataitem.metadata.name = metadata[0]
+    dataitem.metadata.description = metadata[1]
+    if metadata[2] is not None:
+        dataitem.metadata.labels = metadata[2]
+    dataitem.save(update=True)
+
     return dataitem

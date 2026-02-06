@@ -76,6 +76,29 @@ def get_files_from_croissant(dataset: Any, metadata_path: str) -> list[str]:
     return files
 
 
+def get_metadata_fields_from_croissant(dataset: Any) -> tuple[str | None, str | None, list[str] | None]:
+    """
+    Extract name, description, and keywords from Croissant metadata.
+
+    Parameters
+    ----------
+    dataset : mlcroissant.Dataset
+        The Croissant Dataset object.
+
+    Returns
+    -------
+    tuple[str | None, str | None, list[str] | None]
+        Name, description, and keywords (labels) from metadata.
+    """
+    metadata = dataset.metadata
+    name = getattr(metadata, "name", None)
+    description = getattr(metadata, "description", None)
+    keywords = getattr(metadata, "keywords", None)
+    if keywords is not None and not isinstance(keywords, list):
+        keywords = [str(keywords)]
+    return name, description, keywords
+
+
 def validate_croissant_file(src: str) -> None:
     """
     Validate if the provided file is a Croissant metadata JSON file
