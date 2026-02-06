@@ -38,12 +38,16 @@ dependencies = [
 full = [
     "pandas",
     "polars",
+    "mlcroissant",
 ]
 pandas = [
     "pandas",
 ]
 polars = [
     "polars",
+]
+mlcroissant = [
+    "mlcroissant",
 ]
 dev = [
     "bumpver",
