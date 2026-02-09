@@ -10,7 +10,11 @@ from typing import Any
 
 from digitalhub.entities._commons.utils import refresh_decorator
 from digitalhub.entities.dataitem._base.entity import Dataitem
-from digitalhub.entities.dataitem.croissant.utils import get_croissant_dataset, get_files_from_croissant
+from digitalhub.entities.dataitem.croissant.utils import (
+    get_croissant_dataset,
+    get_files_from_croissant,
+    get_mappings_from_croissant,
+)
 from digitalhub.stores.data.api import get_store
 from digitalhub.utils.uri_utils import has_s3_scheme
 
@@ -116,7 +120,4 @@ class DataitemCroissant(Dataitem):
         if not has_s3_scheme(self.spec.path):
             return
         download_root = self._context().root / self.ENTITY_TYPE
-        return {
-            str(Path(file_path)): str((download_root / Path(file_path)).resolve())
-            for file_path in get_files_from_croissant(dataset, self._get_metadata_json())
-        }
+        return get_mappings_from_croissant(dataset, self._get_metadata_json(), download_root)
