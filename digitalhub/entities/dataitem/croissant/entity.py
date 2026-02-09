@@ -105,7 +105,7 @@ class DataitemCroissant(Dataitem):
 
     def _map_files_filepaths(self, dataset: Any) -> dict | None:
         """
-        Docstring per _map_files_filepaths
+        Map file paths from Croissant metadata to local paths.
 
         Parameters
         ----------
