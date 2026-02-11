@@ -37,7 +37,6 @@ class Task(UnversionedEntity):
         self,
         run_kind: str,
         save: bool = True,
-        local_execution: bool = False,
         **kwargs,
     ) -> Run:
         """
@@ -47,8 +46,6 @@ class Task(UnversionedEntity):
         ----------
         run_kind : str
             Kind the object.
-        local_execution : bool
-            Flag to indicate if the run will be executed locally.
         **kwargs : dict
             Keyword arguments.
 
@@ -65,7 +62,6 @@ class Task(UnversionedEntity):
             project=self.project,
             task=self._get_task_string(),
             kind=run_kind,
-            local_execution=local_execution,
             entity_type=EntityTypes.RUN.value,
             **kwargs,
         )

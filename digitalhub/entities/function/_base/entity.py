@@ -38,7 +38,6 @@ class Function(ExecutableEntity):
     def run(
         self,
         action: str,
-        local_execution: bool = False,
         wait: bool = False,
         log_info: bool = True,
         **kwargs,
@@ -50,8 +49,6 @@ class Function(ExecutableEntity):
         ----------
         action : str
             Action to execute.
-        local_execution : bool
-            Flag to determine if object has local execution.
         wait : bool
             Flag to wait for execution.
         log_info : bool
@@ -69,14 +66,14 @@ class Function(ExecutableEntity):
 
         # Run function from task
         run_kind = entity_factory.get_run_kind_from_action(self.kind, action)
-        run = task.run(run_kind, save=False, local_execution=local_execution, **kwargs)
+        run = task.run(run_kind, save=False, **kwargs)
 
         # Set as run's parent
         run.add_relationship(Relationship.RUN_OF.value, self.key)
         run.save()
 
         # If execution is done by DHCore backend, return the object
-        if not local_execution:
+        if not run.local_execution():
             if wait:
                 return run.wait(log_info=log_info)
             return run

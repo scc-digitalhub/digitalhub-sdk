@@ -14,7 +14,6 @@ class RunSpec(Spec):
     def __init__(
         self,
         task: str,
-        local_execution: bool = False,
         function: str | None = None,
         workflow: str | None = None,
         volumes: list[dict] | None = None,
@@ -25,7 +24,6 @@ class RunSpec(Spec):
         **kwargs,
     ) -> None:
         self.task = task
-        self.local_execution = local_execution
         self.function = function
         self.workflow = workflow
         self.volumes = volumes
@@ -47,6 +45,3 @@ class RunValidator(SpecValidator, K8s):
     # Run parameters
     task: str
     """The task string associated with the run."""
-
-    local_execution: bool = False
-    """Flag to indicate if the run will be executed locally."""

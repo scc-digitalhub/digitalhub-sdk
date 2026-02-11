@@ -22,7 +22,6 @@ def new_run(
     uuid: str | None = None,
     labels: list[str] | None = None,
     task: str | None = None,
-    local_execution: bool = False,
     **kwargs,
 ) -> Run:
     """
@@ -40,8 +39,6 @@ def new_run(
         List of labels.
     task : str
         Name of the task associated with the run.
-    local_execution : bool
-        Flag to determine if object has local execution.
     **kwargs : dict
         Spec keyword arguments.
 
@@ -62,7 +59,6 @@ def new_run(
         uuid=uuid,
         labels=labels,
         task=task,
-        local_execution=local_execution,
         entity_type=ENTITY_TYPE,
         **kwargs,
     )

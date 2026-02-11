@@ -26,11 +26,29 @@ class Runtime:
     def __init__(self, project: str) -> None:
         self.project = project
 
-    @abstractmethod
     def build(self, executable: dict, task: dict, run: dict) -> dict:
         """
         Build run specification from executable, task and run configurations.
+
+        Parameters
+        ----------
+        executable : dict
+            The executable spec (e.g., function or workflow).
+        task : dict
+            The task spec.
+        run : dict
+            The run spec.
+
+        Returns
+        -------
+        dict
+            The built run specification.
         """
+        return {
+            **executable.get("spec", {}),
+            **task.get("spec", {}),
+            **run.get("spec", {}),
+        }
 
     @abstractmethod
     def run(self, run: dict) -> dict:

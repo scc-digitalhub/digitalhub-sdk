@@ -71,7 +71,7 @@ class Run(UnversionedEntity, MetricsEntity):
         # Handle exceptions and set run status and message
         except Exception as e:
             self.refresh()
-            if self.spec.local_execution:
+            if self.local_execution:
                 self.status.state = State.ERROR.value
             self.status.message = str(e)
             self.save(update=True)
@@ -82,7 +82,7 @@ class Run(UnversionedEntity, MetricsEntity):
             self.end_execution()
 
         self.refresh()
-        if not self.spec.local_execution:
+        if not self.local_execution:
             status.pop("state", None)
         new_status = {**self.status.to_dict(), **status}
         self.set_status(new_status)
@@ -147,6 +147,18 @@ class Run(UnversionedEntity, MetricsEntity):
     #  Helpers
     ##############################
 
+    def local_execution(self) -> bool:
+        """
+        Check if run has local execution. By defautlt is False, but it can
+        be overridden by specific runtimes that support local execution.
+
+        Returns
+        -------
+        bool
+            True if run has local execution, False otherwise.
+        """
+        return False
+
     def _setup_execution(self) -> None:
         """
         Setup run execution.
@@ -157,7 +169,7 @@ class Run(UnversionedEntity, MetricsEntity):
         Start run execution.
         """
         self._context().set_run(self)
-        if self.spec.local_execution:
+        if self.local_execution:
             # Check run state
             if self.status.state not in (State.BUILT.value, State.STOPPED.value):
                 raise EntityError("Run is not in a state to run.")
