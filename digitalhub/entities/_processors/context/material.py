@@ -10,7 +10,7 @@ from digitalhub.entities._commons.enums import State
 from digitalhub.entities._processors.utils import get_context
 from digitalhub.factory.entity import entity_factory
 from digitalhub.utils.enums import FileExtensions
-from digitalhub.utils.exceptions import EntityError
+from digitalhub.utils.exceptions import EntityError, EntityErrorFileNotFound
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.material.entity import MaterialEntity
@@ -159,9 +159,14 @@ class ContextEntityMaterialProcessor:
             upload_fn(new_obj)
             uploaded = True
             msg = None
+        except FileNotFoundError as e:
+            uploaded = False
+            msg = str(e.args) + " Please verify that the specified source files are correct and exist."
+            exception = EntityErrorFileNotFound
         except Exception as e:
             uploaded = False
             msg = str(e.args)
+            exception = EntityError
 
         new_obj.status.message = msg
 
@@ -172,7 +177,7 @@ class ContextEntityMaterialProcessor:
         else:
             new_obj.status.state = State.ERROR.value
             new_obj = self._update_material_entity(crud_processor, new_obj)
-            raise EntityError(msg)
+            raise exception(msg)
 
         return new_obj
 

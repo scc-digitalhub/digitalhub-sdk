@@ -65,6 +65,12 @@ class EntityError(Exception):
     """
 
 
+class EntityErrorFileNotFound(EntityError):
+    """
+    Raised when a file specified in the entity spec is not found.
+    """
+
+
 class ContextError(Exception):
     """
     Raised when context errors.

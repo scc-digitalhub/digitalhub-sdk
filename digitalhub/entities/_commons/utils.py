@@ -215,6 +215,34 @@ def build_log_path_from_source(
     return path
 
 
+def build_log_path_as_partition(
+    project: str,
+    entity_type: str,
+    name: str,
+    uuid: str,
+) -> str:
+    """
+    Build log path as partition.
+
+    Parameters
+    ----------
+    project : str
+        Project name.
+    entity_type : str
+        Entity type.
+    name : str
+        Object name.
+    uuid : str
+        Object UUID.
+
+    Returns
+    -------
+    str
+        Log path as partition.
+    """
+    return _get_base_path(project, entity_type, name, uuid) + "/"
+
+
 def build_log_path_from_filename(
     project: str,
     entity_type: str,

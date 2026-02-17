@@ -9,7 +9,11 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any
 
+from digitalhub.entities._commons.utils import build_log_path_as_partition
+from digitalhub.entities._constructors.uuid import build_uuid
 from digitalhub.utils.uri_utils import has_local_scheme, has_s3_scheme
+
+METADATA_DEFAULT_NAME = "metadata.json"
 
 
 def _load_croissant() -> ModuleType:
@@ -131,25 +135,57 @@ def get_metadata_fields_from_croissant(dataset: Any) -> tuple[str | None, str | 
     return name, description, keywords
 
 
-def validate_croissant_file(src: str) -> None:
+def validate_croissant_source(src: str) -> str:
     """
-    Validate if the provided file is a Croissant metadata JSON file
-    named metadata.json.
+    Validate the provided source for the Croissant dataitem, ensuring
+    it points to a valid metadata JSON file.
 
     Parameters
     ----------
     src : str
-        Path to the file to validate.
+        Path to the file or directory to validate. If a directory is provided, it must contain a file named 'metadata.json'.
+
+    Returns
+    -------
+    str
+        The path to the valid Croissant metadata JSON file.
     """
-    filepath = Path(src)
-    if filepath.name != "metadata.json":
-        raise ValueError("The provided file is not a valid Croissant metadata JSON file.")
-    if not filepath.is_file():
-        raise ValueError("The provided path does not point to a valid file.")
+
+    path_src = Path(src)
+
+    # If the provided path does not exist, raise an error
+    if not path_src.exists():
+        raise ValueError(
+            f"The provided path '{src}' does not exist. "
+            "Please provide a valid path to a Croissant metadata JSON file or a directory containing it."
+        )
+
+    # If source is dir, verify that it contains a file named metadata.json, otherwise raise an error
+    if path_src.is_dir():
+        filepath = path_src / METADATA_DEFAULT_NAME
+        if not filepath.is_file():
+            raise ValueError(
+                f"The provided directory does not contain a file named '{METADATA_DEFAULT_NAME}'. "
+                "Please provide a valid Croissant metadata JSON file or a directory containing it."
+            )
+
+    # If it is a file, verify that it is named metadata.json, otherwise raise an error
+    if path_src.is_file():
+        if path_src.name != METADATA_DEFAULT_NAME:
+            raise ValueError(
+                f"The provided file is not a valid Croissant metadata JSON file. "
+                f"The file must be named '{METADATA_DEFAULT_NAME}'."
+            )
+        filepath = path_src
+
+    filepath = str(filepath.resolve())
+
     try:
-        _ = get_croissant_dataset(src)
+        _ = get_croissant_dataset(filepath)
     except Exception as e:
         raise ValueError("The provided file is not a valid Croissant metadata JSON file.") from e
+
+    return filepath
 
 
 def validate_output_path(path: str | None) -> None:
@@ -167,6 +203,46 @@ def validate_output_path(path: str | None) -> None:
         raise ValueError("The output path for Croissant dataitem must be an S3 path.")
     if not path.endswith("/"):
         raise ValueError("The output path for Croissant dataitem must be a partition path ending with '/'.")
+
+
+def build_croissant_kwargs(
+    project: str,
+    entity_type: str,
+    name: str,
+    path: str | None = None,
+    **kwargs,
+) -> dict[str, Any]:
+    """
+    Build kwargs for logging a Croissant dataitem.
+
+    Parameters
+    ----------
+    project : str
+        Project name.
+    entity_type : str
+        Entity type.
+    name : str
+        Object name.
+    path : str
+        Output path for the dataitem. If None, it will be generated.
+
+    Returns
+    -------
+    dict[str, Any]
+        Kwargs for logging a Croissant dataitem.
+    """
+    validate_output_path(path)
+    if path is None:
+        uuid = build_uuid()
+        kwargs["uuid"] = uuid
+        kwargs["path"] = build_log_path_as_partition(project, entity_type, name, uuid)
+    else:
+        kwargs["path"] = path
+
+    # For Croissant dataitems, we need to keep the directory structure of the
+    # files as defined in the metadata.json, so we set keep_dir_structure to True.
+    kwargs["keep_dir_structure"] = True
+    return kwargs
 
 
 def get_mappings_from_croissant(dataset: Any, metadata_path: str, root: Path) -> dict:
