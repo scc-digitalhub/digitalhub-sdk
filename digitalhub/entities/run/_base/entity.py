@@ -71,7 +71,7 @@ class Run(UnversionedEntity, MetricsEntity):
         # Handle exceptions and set run status and message
         except Exception as e:
             self.refresh()
-            if self.local_execution:
+            if self.local_execution():
                 self.status.state = State.ERROR.value
             self.status.message = str(e)
             self.save(update=True)
@@ -169,7 +169,7 @@ class Run(UnversionedEntity, MetricsEntity):
         Start run execution.
         """
         self._context().set_run(self)
-        if self.local_execution:
+        if self.local_execution():
             # Check run state
             if self.status.state not in (State.BUILT.value, State.STOPPED.value):
                 raise EntityError("Run is not in a state to run.")
