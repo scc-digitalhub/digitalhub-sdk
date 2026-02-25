@@ -36,9 +36,8 @@ class ContextBuilder:
             The newly created or existing Context instance.
         """
         if project.name not in self._instances:
-            # Create context without registering it yet to avoid recursion
-            # then register it before initialization to prevent recursion
-            # finally initialize it
+            # Create context without initialization to prevent recursion
+            # then call __init__ to properly set up the context
             ctx = Context.__new__(Context)
             self._instances[project.name] = ctx
             ctx.__init__(project)

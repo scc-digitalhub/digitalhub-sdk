@@ -123,3 +123,36 @@ def finalize_preview(preview: list[dict] | None = None, rows_count: int | None =
     if rows_count is not None:
         data["rows"] = rows_count
     return data
+
+
+class TableSchema:
+    """
+    Table schema representation.
+    """
+
+    def __init__(self):
+        self.fields: list[dict[str, str]] = []
+
+    def add_field(self, name: str, dtype: str) -> None:
+        """
+        Add field to schema.
+
+        Parameters
+        ----------
+        name : str
+            Field name.
+        dtype : str
+            Field type.
+        """
+        self.fields.append({"name": name, "type": dtype})
+
+    def to_dict(self) -> dict:
+        """
+        Convert schema to dict.
+
+        Returns
+        -------
+        dict
+            Schema as dict.
+        """
+        return self.__dict__

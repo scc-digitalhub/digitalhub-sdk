@@ -10,12 +10,13 @@ from typing import Any
 
 import pyarrow as pa
 import pyarrow.parquet as pq
-from sqlalchemy import MetaData, Table, create_engine, select
+from sqlalchemy import MetaData, Table, create_engine, inspect, select
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
 
 from digitalhub.stores.data._base.store import Store
 from digitalhub.stores.data.sql.configurator import SqlStoreConfigurator
+from digitalhub.stores.data.sql.utils import get_schema_from_columns
 from digitalhub.stores.readers.data.api import get_reader_by_object
 from digitalhub.utils.exceptions import ConfigError, StoreError
 from digitalhub.utils.types import Dataframe, SourcesOrListOfSources
@@ -244,6 +245,65 @@ class SqlStore(Store):
         schema = self._get_schema(dst)
         table = self._get_table_name(dst)
         return self._upload_table(df, schema, table, **kwargs)
+
+    ##############################
+    # Utils methods
+    ##############################
+
+    def create_vector_table(self, path: str, sql: str) -> tuple[str, str]:
+        """
+        Create a SQL table with vector extension.
+
+        Parameters
+        ----------
+        path : str
+            The SQL URI path specifying the database and table to create
+            in the format 'sql://database/schema/table' or 'sql://database/table'.
+        sql : str
+            The SQL query string to create the table with vector extension.
+
+        Returns
+        -------
+        tuple[str, str]
+            A tuple containing the schema and table name of the created table.
+        """
+        parsed = self._parse_path(path)
+        schema = parsed.get("schema")
+        table = parsed.get("table")
+
+        engine = self._check_factory(schema=schema)
+
+        vector = "CREATE EXTENSION IF NOT EXISTS vector"
+        with engine.begin() as connection:
+            try:
+                connection.exec_driver_sql(vector)
+            except SQLAlchemyError:
+                pass
+            connection.exec_driver_sql(sql)
+        engine.dispose()
+        return schema, table
+
+    def get_schema_from_table(self, table: str, schema: str | None = None) -> dict:
+        """
+        Get the schema of a SQL table.
+
+        Parameters
+        ----------
+        table : str
+            The name of the SQL table to retrieve the schema from.
+        schema : str
+            The database schema where the table is located. If None, uses default.
+
+        Returns
+        -------
+        dict
+            A dictionary representing the schema of the SQL table, with column names as keys and data types as values.
+        """
+        engine = self._check_factory(schema=schema)
+        inspector = inspect(engine)
+        columns = inspector.get_columns(table, schema=schema)
+        engine.dispose()
+        return get_schema_from_columns(columns)
 
     ##############################
     # Wrapper methods

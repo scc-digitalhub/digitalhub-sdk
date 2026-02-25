@@ -19,3 +19,16 @@ class FileExtensions(Enum):
     EXCEL = "xlsx"
     TXT = "txt"
     FILE = "file"
+
+
+class DataTypes(Enum):
+    """
+    Supported data types.
+    """
+
+    INTEGER = "integer"
+    NUMBER = "number"
+    BOOLEAN = "boolean"
+    DATETIME = "datetime"
+    STRING = "string"
+    ANY = "any"

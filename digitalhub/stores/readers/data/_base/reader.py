@@ -41,20 +41,6 @@ class DataframeReader:
 
     @staticmethod
     @abstractmethod
-    def write_csv(df: Any, *args, **kwargs) -> str:
-        """
-        Write DataFrame as csv.
-        """
-
-    @staticmethod
-    @abstractmethod
-    def write_parquet(df: Any, *args, **kwargs) -> str:
-        """
-        Write DataFrame as parquet.
-        """
-
-    @staticmethod
-    @abstractmethod
     def write_table(df: Any, *args, **kwargs) -> str:
         """
         Write DataFrame as table.

@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import typing
+from typing import Callable
 
 from digitalhub.entities._commons.enums import State
 from digitalhub.entities._processors.utils import get_context
@@ -13,6 +14,7 @@ from digitalhub.utils.enums import FileExtensions
 from digitalhub.utils.exceptions import EntityError, EntityErrorFileNotFound
 
 if typing.TYPE_CHECKING:
+    from digitalhub.context.context import Context
     from digitalhub.entities._base.material.entity import MaterialEntity
     from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
     from digitalhub.entities.dataitem.table.entity import DataitemTable
@@ -93,6 +95,31 @@ class ContextEntityMaterialProcessor:
             **kwargs,
         )
 
+    def log_dataitem_sql(
+        self,
+        crud_processor: ContextEntityCRUDProcessor,
+        **kwargs,
+    ) -> DataitemTable:
+        """
+        Create a table dataitem entity in the backend with reference to
+        a SQL table.
+
+        Parameters
+        ----------
+        crud_processor : ContextEntityCRUDProcessor
+            The CRUD processor instance for entity operations.
+        **kwargs : dict
+            Parameters for entity creation including:
+            - 'project': project name
+            - 'drop_existing': whether to drop existing entity with the same name
+
+        Returns
+        -------
+        DataitemTable
+            The created table dataitem entity.
+        """
+        return self._create_material_entity(crud_processor, **kwargs)
+
     def _log_entity_with_upload(
         self,
         crud_processor: ContextEntityCRUDProcessor,
@@ -119,44 +146,156 @@ class ContextEntityMaterialProcessor:
         MaterialEntity
             The created material entity with uploaded files.
         """
-        entity_kind = kwargs.get("kind")
+        # Create entity in backend
+        new_obj: MaterialEntity = self._create_material_entity(crud_processor, **kwargs)
 
+        # Upload data to entity and manage status transitions
+        return self._upload_material_entity(crud_processor, new_obj, upload_fn)
+
+    def _create_material_entity(
+        self,
+        crud_processor: ContextEntityCRUDProcessor,
+        **kwargs,
+    ) -> MaterialEntity:
+        """
+        Create a draft entity in the backend without file upload.
+
+        Parameters
+        ----------
+        crud_processor : ContextEntityCRUDProcessor
+            The CRUD processor instance for entity operations.
+        **kwargs : dict
+            Parameters for entity creation.
+
+        Returns
+        -------
+        MaterialEntity
+            The created draft material entity.
+        """
         # Validate entity type
-        entity_type = kwargs.pop("entity_type")
-        if entity_type != entity_factory.get_entity_type_from_kind(entity_kind):
-            raise ValueError(
-                f"Entity kind '{entity_kind}' does not match expected type '{entity_type}'.",
-            )
+        drop_existing = kwargs.pop("drop_existing", False)
+        kwargs = self._validate_entity_type(kwargs)
 
         # Build initial entity object
-        obj: MaterialEntity = entity_factory.build_entity_from_params(**kwargs)
+        obj: DataitemTable = entity_factory.build_entity_from_params(**kwargs)
 
         # Register entity in context if running
         context = get_context(kwargs["project"])
-        if context.is_running:
-            obj = context.register_entity(obj)
+        obj: DataitemTable = self._register_entity_in_context(obj, context)
 
         # Handle existing entity drop
-        drop_existing: bool = kwargs.pop("drop_existing", False)
+        self._drop_existing_entity(crud_processor, drop_existing, obj)
+
+        # Create entity in backend and return
+        new_obj: MaterialEntity = crud_processor._create_context_entity(context, obj.ENTITY_TYPE, obj.to_dict())
+        return entity_factory.build_entity_from_dict(new_obj)
+
+    def _validate_entity_type(
+        self,
+        kwargs: dict,
+    ) -> dict:
+        """
+        Validate that the entity type matches the expected type for the given kind.
+
+        Parameters
+        ----------
+        kwargs : dict
+            Parameters for entity creation including 'kind' and 'entity_type'.
+
+        Returns
+        -------
+        dict
+            The input parameters after validation.
+        """
+        entity_kind = kwargs["kind"]
+        entity_type = kwargs.pop("entity_type")
+        expected_type = entity_factory.get_entity_type_from_kind(entity_kind)
+        if entity_type != expected_type:
+            raise ValueError(
+                f"Entity kind '{entity_kind}' does not match expected type '{expected_type}'.",
+            )
+        return kwargs
+
+    def _register_entity_in_context(
+        self,
+        obj: MaterialEntity,
+        context: Context,
+    ) -> MaterialEntity:
+        """
+        Register an entity in the context if it is running.
+
+        Parameters
+        ----------
+        context : Context
+            The execution context to register the entity in.
+        obj : MaterialEntity
+            The material entity object to register.
+
+        Returns
+        -------
+        MaterialEntity
+            The registered material entity.
+        """
+        if context.is_running:
+            obj = context.register_entity(obj)
+        return obj
+
+    def _drop_existing_entity(
+        self,
+        crud_processor: ContextEntityCRUDProcessor,
+        drop_existing: bool,
+        obj: MaterialEntity,
+    ) -> None:
+        """
+        Drop an existing entity with the same name if it exists.
+
+        Parameters
+        ----------
+        crud_processor : ContextEntityCRUDProcessor
+            The CRUD processor instance for entity operations.
+        drop_existing : bool
+            Flag indicating whether to drop the existing entity if it exists.
+        obj : MaterialEntity
+            The material entity object to drop.
+        """
         if drop_existing:
             crud_processor.delete_context_entity(
-                kwargs["name"],
-                project=kwargs["project"],
+                obj.name,
+                project=obj.project,
                 entity_type=obj.ENTITY_TYPE,
                 delete_all_versions=True,
             )
 
-        # Create entity in backend
-        new_obj: MaterialEntity = crud_processor._create_context_entity(context, obj.ENTITY_TYPE, obj.to_dict())
-        new_obj = entity_factory.build_entity_from_dict(new_obj)
+    def _upload_material_entity(
+        self,
+        crud_processor: ContextEntityCRUDProcessor,
+        obj: MaterialEntity,
+        upload_fn: Callable,
+    ) -> MaterialEntity:
+        """
+        Upload data to a material entity.
 
+        Parameters
+        ----------
+        crud_processor : ContextEntityCRUDProcessor
+            The CRUD processor instance for entity operations.
+        obj : MaterialEntity
+            The material entity to upload data to.
+        upload_fn : Callable[[MaterialEntity], None]
+            Function to execute for uploading data to the entity.
+
+        Returns
+        -------
+        MaterialEntity
+            The material entity after upload.
+        """
         # Update status to UPLOADING before upload
-        new_obj.status.state = State.UPLOADING.value
-        new_obj = self._update_material_entity(crud_processor, new_obj)
+        obj.status.state = State.UPLOADING.value
+        obj = self._update_material_entity(crud_processor, obj)
 
         # Handle file upload
         try:
-            upload_fn(new_obj)
+            upload_fn(obj)
             uploaded = True
             msg = None
         except FileNotFoundError as e:
@@ -168,18 +307,18 @@ class ContextEntityMaterialProcessor:
             msg = str(e.args)
             exception = EntityError
 
-        new_obj.status.message = msg
+        obj.status.message = msg
 
         # Update status after upload
         if uploaded:
-            new_obj.status.state = State.READY.value
-            new_obj = self._update_material_entity(crud_processor, new_obj)
+            obj.status.state = State.READY.value
+            obj = self._update_material_entity(crud_processor, obj)
         else:
-            new_obj.status.state = State.ERROR.value
-            new_obj = self._update_material_entity(crud_processor, new_obj)
+            obj.status.state = State.ERROR.value
+            obj = self._update_material_entity(crud_processor, obj)
             raise exception(msg)
 
-        return new_obj
+        return obj
 
     def _update_material_entity(
         self,

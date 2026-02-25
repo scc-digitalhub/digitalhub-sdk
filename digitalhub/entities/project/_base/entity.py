@@ -33,6 +33,7 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities.run._base.entity import Run
     from digitalhub.entities.secret._base.entity import Secret
     from digitalhub.entities.workflow._base.entity import Workflow
+    from digitalhub.utils.types import Dataframe
 
 
 def _auto_refresh(method):
@@ -657,7 +658,8 @@ class Project(Entity):
         self,
         name: str,
         source: str | None = None,
-        data: Any | None = None,
+        data: Dataframe | None = None,  # type: ignore
+        sql: str | None = None,
         drop_existing: bool = False,
         path: str | None = None,
         file_format: str | None = None,
@@ -677,6 +679,7 @@ class Project(Entity):
             path=path,
             source=source,
             data=data,
+            sql=sql,
             drop_existing=drop_existing,
             file_format=file_format,
             read_df_params=read_df_params,

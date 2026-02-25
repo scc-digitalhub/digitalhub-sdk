@@ -69,6 +69,16 @@ class ContextEntityOperationsProcessor:
             **kwargs,
         )
 
+    def log_dataitem_sql(
+        self,
+        **kwargs,
+    ) -> DataitemTable:
+        """Create a dataitem table entity in the backend based on a SQL query."""
+        return self.material_processor.log_dataitem_sql(
+            crud_processor=self.crud_processor,
+            **kwargs,
+        )
+
     def read_context_entity(
         self,
         identifier: str,

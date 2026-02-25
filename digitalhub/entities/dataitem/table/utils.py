@@ -12,9 +12,11 @@ from digitalhub.entities._constructors.uuid import build_uuid
 from digitalhub.stores.data.api import get_store
 from digitalhub.stores.readers.data.api import get_reader_by_engine, get_reader_by_object
 from digitalhub.utils.file_utils import eval_local_source
+from digitalhub.utils.uri_utils import SqlSchemes, has_sql_scheme
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.dataitem._base.entity import Dataitem
+    from digitalhub.stores.data.sql.store import SqlStore
     from digitalhub.utils.types import Dataframe, SourcesOrListOfSources
 
 
@@ -105,6 +107,52 @@ def process_data_kwargs(
         kwargs["path"] = fn(project, EntityTypes.DATAITEM.value, name, uuid, arg)
 
     kwargs["schema"] = get_reader_by_object(data).get_schema(data)
+    return kwargs
+
+
+def process_sql_kwargs(
+    name: str,
+    sql: str,
+    path: str | None = None,
+    **kwargs,
+) -> dict:
+    """
+    Process and enhance specification parameters for SQL-based dataitem creation.
+
+    Parameters
+    ----------
+    name : str
+        The name of the dataitem entity.
+    sql : str
+        The SQL query string that defines the dataitem's content.
+    path : str
+        The destination path for the dataitem entity.
+        If None, a path will be automatically generated.
+    **kwargs : dict
+        Additional specification parameters to be processed
+        and passed to the dataitem creation.
+
+    Returns
+    -------
+    dict
+        The enhanced specification parameters for SQL-based dataitem creation.
+    """
+    store: SqlStore = get_store(SqlSchemes.SQL.value + "://")
+    engine = store.get_engine()
+
+    if path is None:
+        kwargs["path"] = f"{SqlSchemes.SQL.value}://{engine.url.database}/{name}"
+    else:
+        if not has_sql_scheme(path):
+            raise ValueError(f"Path must start with '{SqlSchemes.SQL.value}://'.")
+        kwargs["path"] = path
+
+    engine.dispose()
+
+    # Create table and get schema
+    schema, table = store.create_vector_table(sql, name)
+    kwargs["schema"] = store.get_schema_from_table(table, schema)
+
     return kwargs
 
 

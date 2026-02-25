@@ -167,7 +167,7 @@ def dump_json(struct: Any) -> str:
     return json.dumps(struct, cls=CustomJsonEncoder)
 
 
-def slugify_string(filename: str) -> str:
+def slugify_string(filename: str, **kwargs) -> str:
     """
     Sanitize a filename using slugify.
 
@@ -181,7 +181,9 @@ def slugify_string(filename: str) -> str:
     str
         The sanitized filename (max length 255).
     """
-    return slugify(filename, max_length=255)
+    if "max_length" not in kwargs:
+        kwargs["max_length"] = 255
+    return slugify(filename, **kwargs)
 
 
 def import_function(path: Path, handler: str) -> Callable:
