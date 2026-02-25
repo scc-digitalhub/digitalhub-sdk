@@ -150,7 +150,7 @@ def process_sql_kwargs(
     engine.dispose()
 
     # Create table and get schema
-    schema, table = store.create_vector_table(sql, name)
+    schema, table = store.create_vector_table(kwargs["path"], sql)
     kwargs["schema"] = store.get_schema_from_table(table, schema)
 
     return kwargs
