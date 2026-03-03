@@ -270,15 +270,8 @@ class SqlStore(Store):
         parsed = self._parse_path(path)
         schema = parsed.get("schema")
         table = parsed.get("table")
-
         engine = self._check_factory(schema=schema)
-
-        vector = "CREATE EXTENSION IF NOT EXISTS vector"
         with engine.begin() as connection:
-            try:
-                connection.exec_driver_sql(vector)
-            except SQLAlchemyError:
-                pass
             connection.exec_driver_sql(sql)
         engine.dispose()
         return schema, table
