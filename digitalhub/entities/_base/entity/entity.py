@@ -65,8 +65,8 @@ class Entity(Base):
 
         Parameters
         ----------
-        obj : dict
-            Mapping representation of object.
+        obj : Entity
+            The entity object to update attributes from.
         """
         self.metadata = obj.metadata
         self.spec = obj.spec
@@ -78,6 +78,45 @@ class Entity(Base):
         """
         Abstract export method.
         """
+
+    def set_name(self, value: str) -> None:
+        """
+        Set name in entity metadata. It overwrites the existing name if already set.
+
+        Parameters
+        ----------
+        value : str
+            The name value.
+        """
+        if not isinstance(value, str):
+            raise ValueError("Name must be a string.")
+        self.metadata.name = value
+
+    def set_version(self, value: str) -> None:
+        """
+        Set version in entity metadata. It overwrites the existing version if already set.
+
+        Parameters
+        ----------
+        value : str
+            The version value.
+        """
+        if not isinstance(value, str):
+            raise ValueError("Version must be a string.")
+        self.metadata.version = value
+
+    def set_description(self, value: str) -> None:
+        """
+        Set description in entity metadata. It overwrites the existing description if already set.
+
+        Parameters
+        ----------
+        value : str
+            The description value.
+        """
+        if not isinstance(value, str):
+            raise ValueError("Description must be a string.")
+        self.metadata.description = value
 
     def add_relationship(self, relation: str, dest: str, source: str | None = None) -> None:
         """
@@ -98,6 +137,34 @@ class Entity(Base):
         if source is not None:
             obj["source"] = source
         self.metadata.relationships.append(obj)
+
+    def add_labels(self, values: list[str]) -> None:
+        """
+        Add multiple labels to entity metadata. If a label already exists, it is not added again.
+
+        Parameters
+        ----------
+        values : list[str]
+            The list of label values.
+        """
+        for value in values:
+            self.add_label(value)
+
+    def add_label(self, value: str) -> None:
+        """
+        Add a label to entity metadata. If the label already exists, it is not added again.
+
+        Parameters
+        ----------
+        value : str
+            The label value.
+        """
+        if not isinstance(value, str):
+            raise ValueError(f"Label must be a string. Got {type(value)} instead.")
+        if self.metadata.labels is None:
+            self.metadata.labels = []
+        if value not in self.metadata.labels:
+            self.metadata.labels.append(value)
 
     def to_dict(self) -> dict:
         """

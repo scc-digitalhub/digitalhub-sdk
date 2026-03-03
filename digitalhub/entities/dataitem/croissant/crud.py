@@ -30,6 +30,8 @@ def log_croissant(
     source: str,
     drop_existing: bool = False,
     path: str | None = None,
+    description: str | None = None,
+    labels: list[str] | None = None,
     **kwargs,
 ) -> DataitemCroissant:
     """
@@ -47,6 +49,10 @@ def log_croissant(
         Whether to drop existing entity with the same name.
     path : str
         Destination path of the dataitem. If not provided, it's generated.
+    description : str
+        Dataitem description.
+    labels : list[str]
+        Dataitem labels.
     **kwargs : dict
         New dataitem spec parameters.
 
@@ -86,6 +92,8 @@ def log_croissant(
             kind=EntityKinds.DATAITEM_CROISSANT.value,
             source=sources,
             drop_existing=drop_existing,
+            description=description,
+            labels=labels,
             **kwargs,
         )
     except EntityErrorFileNotFound as e:

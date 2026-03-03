@@ -177,11 +177,11 @@ class ContextEntityMaterialProcessor:
         kwargs = self._validate_entity_type(kwargs)
 
         # Build initial entity object
-        obj: DataitemTable = entity_factory.build_entity_from_params(**kwargs)
+        obj: MaterialEntity = entity_factory.build_entity_from_params(**kwargs)
 
         # Register entity in context if running
         context = get_context(kwargs["project"])
-        obj: DataitemTable = self._register_entity_in_context(obj, context)
+        obj: MaterialEntity = self._register_entity_in_context(obj, context)
 
         # Handle existing entity drop
         self._drop_existing_entity(crud_processor, drop_existing, obj)

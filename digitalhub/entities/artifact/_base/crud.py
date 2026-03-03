@@ -23,6 +23,8 @@ def log_base_artifact(
     source: SourcesOrListOfSources,
     drop_existing: bool = False,
     path: str | None = None,
+    description: str | None = None,
+    labels: list[str] | None = None,
     **kwargs,
 ) -> Artifact:
     """
@@ -42,6 +44,10 @@ def log_base_artifact(
         Whether to drop existing entity with the same name.
     path : str
         Destination path of the artifact. If not provided, it's generated.
+    description : str
+        Artifact description.
+    labels : list[str]
+        Artifact labels.
     **kwargs : dict
         New artifact spec parameters.
 
@@ -73,5 +79,7 @@ def log_base_artifact(
         kind=kind,
         drop_existing=drop_existing,
         entity_type=EntityTypes.ARTIFACT.value,
+        description=description,
+        labels=labels,
         **kwargs,
     )

@@ -51,6 +51,8 @@ def log_table(
     sql: str | None = None,
     drop_existing: bool = False,
     path: str | None = None,
+    description: str | None = None,
+    labels: list[str] | None = None,
     file_format: str | None = None,
     read_df_params: dict | None = None,
     engine: str | None = "pandas",
@@ -75,6 +77,10 @@ def log_table(
         Whether to drop existing entity with the same name.
     path : str
         Destination path of the dataitem. If not provided, it's generated.
+    description : str
+        Dataitem description.
+    labels : list[str]
+        Dataitem labels.
     file_format : str
         Extension of the file source (parquet, csv, json, xlsx, txt).
     read_df_params : dict
@@ -124,6 +130,8 @@ def log_table(
                 kind=EntityKinds.DATAITEM_TABLE.value,
                 entity_type=EntityTypes.DATAITEM.value,
                 drop_existing=drop_existing,
+                description=description,
+                labels=labels,
                 **kwargs,
             )
             return post_process(obj, data)
@@ -146,6 +154,8 @@ def log_table(
                 kind=EntityKinds.DATAITEM_TABLE.value,
                 entity_type=EntityTypes.DATAITEM.value,
                 drop_existing=drop_existing,
+                description=description,
+                labels=labels,
                 **kwargs,
             )
             return post_process(obj, data)
@@ -163,6 +173,8 @@ def log_table(
                 kind=EntityKinds.DATAITEM_TABLE.value,
                 entity_type=EntityTypes.DATAITEM.value,
                 drop_existing=drop_existing,
+                description=description,
+                labels=labels,
                 **kwargs,
             )
         case _:

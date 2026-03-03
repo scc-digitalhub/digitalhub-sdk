@@ -21,6 +21,8 @@ def log_generic_dataitem(
     source: SourcesOrListOfSources,
     drop_existing: bool = False,
     path: str | None = None,
+    description: str | None = None,
+    labels: list[str] | None = None,
     **kwargs,
 ) -> DataitemDataitem:
     """
@@ -38,6 +40,10 @@ def log_generic_dataitem(
         Whether to drop existing entity with the same name.
     path : str
         Destination path of the dataitem. If not provided, it's generated.
+    description : str
+        Dataitem description.
+    labels : list[str]
+        Dataitem labels.
     **kwargs : dict
         New dataitem spec parameters.
 
@@ -60,5 +66,7 @@ def log_generic_dataitem(
         source=source,
         drop_existing=drop_existing,
         path=path,
+        description=description,
+        labels=labels,
         **kwargs,
     )

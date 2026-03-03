@@ -23,6 +23,8 @@ def log_base_dataitem(
     source: SourcesOrListOfSources,
     drop_existing: bool = False,
     path: str | None = None,
+    description: str | None = None,
+    labels: list[str] | None = None,
     **kwargs,
 ) -> Dataitem:
     """
@@ -42,6 +44,10 @@ def log_base_dataitem(
         Whether to drop existing entity with the same name.
     path : str
         Destination path of the dataitem. If not provided, it's generated.
+    description : str
+        Dataitem description.
+    labels : list[str]
+        Dataitem labels.
     **kwargs : dict
         New dataitem spec parameters.
 
@@ -53,9 +59,9 @@ def log_base_dataitem(
     Examples
     --------
     >>> obj = log_base_dataitem(project="my-project",
-    >>>                      name="my-dataitem",
-    >>>                      kind="dataitem",
-    >>>                      source="./local-path")
+    >>>                         name="my-dataitem",
+    >>>                         kind="dataitem",
+    >>>                         source="./local-path")
     """
     eval_local_source(source)
     kwargs = build_log_kwargs(
@@ -73,5 +79,7 @@ def log_base_dataitem(
         kind=kind,
         drop_existing=drop_existing,
         entity_type=EntityTypes.DATAITEM.value,
+        description=description,
+        labels=labels,
         **kwargs,
     )

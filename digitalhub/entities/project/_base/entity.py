@@ -406,6 +406,8 @@ class Project(Entity):
         source: str,
         drop_existing: bool = False,
         path: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
         **kwargs,
     ) -> Artifact:
         """
@@ -421,6 +423,8 @@ class Project(Entity):
             source=source,
             drop_existing=drop_existing,
             path=path,
+            description=description,
+            labels=labels,
             **kwargs,
         )
 
@@ -431,6 +435,8 @@ class Project(Entity):
         source: str,
         drop_existing: bool = False,
         path: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
         **kwargs,
     ) -> Artifact:
         """
@@ -445,6 +451,8 @@ class Project(Entity):
             source=source,
             drop_existing=drop_existing,
             path=path,
+            description=description,
+            labels=labels,
             **kwargs,
         )
 
@@ -607,6 +615,8 @@ class Project(Entity):
         source: str | None = None,
         data: Any | None = None,
         drop_existing: bool = False,
+        description: str | None = None,
+        labels: list[str] | None = None,
         extension: str | None = None,
         path: str | None = None,
         **kwargs,
@@ -625,6 +635,8 @@ class Project(Entity):
             source=source,
             data=data,
             drop_existing=drop_existing,
+            description=description,
+            labels=labels,
             extension=extension,
             **kwargs,
         )
@@ -636,6 +648,8 @@ class Project(Entity):
         source: str | None = None,
         drop_existing: bool = False,
         path: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
         **kwargs,
     ) -> Dataitem:
         """
@@ -650,6 +664,8 @@ class Project(Entity):
             source=source,
             drop_existing=drop_existing,
             path=path,
+            description=description,
+            labels=labels,
             **kwargs,
         )
 
@@ -662,6 +678,8 @@ class Project(Entity):
         sql: str | None = None,
         drop_existing: bool = False,
         path: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
         file_format: str | None = None,
         read_df_params: dict | None = None,
         engine: str | None = None,
@@ -681,6 +699,8 @@ class Project(Entity):
             data=data,
             sql=sql,
             drop_existing=drop_existing,
+            description=description,
+            labels=labels,
             file_format=file_format,
             read_df_params=read_df_params,
             engine=engine,
@@ -694,6 +714,9 @@ class Project(Entity):
         source: str | None = None,
         drop_existing: bool = False,
         path: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
+        **kwargs,
     ) -> Dataitem:
         """
         Create and upload a croissant dataitem.
@@ -707,6 +730,9 @@ class Project(Entity):
             source=source,
             drop_existing=drop_existing,
             path=path,
+            description=description,
+            labels=labels,
+            **kwargs,
         )
 
     @_auto_refresh
@@ -868,6 +894,8 @@ class Project(Entity):
         source: str,
         drop_existing: bool = False,
         path: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
         **kwargs,
     ) -> Model:
         """
@@ -883,6 +911,8 @@ class Project(Entity):
             source=source,
             drop_existing=drop_existing,
             path=path,
+            description=description,
+            labels=labels,
             **kwargs,
         )
 
@@ -893,6 +923,8 @@ class Project(Entity):
         source: str,
         drop_existing: bool = False,
         path: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
         **kwargs,
     ) -> Model:
         """
@@ -907,6 +939,8 @@ class Project(Entity):
             source=source,
             drop_existing=drop_existing,
             path=path,
+            description=description,
+            labels=labels,
             **kwargs,
         )
 
@@ -917,6 +951,8 @@ class Project(Entity):
         source: str,
         drop_existing: bool = False,
         path: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
         **kwargs,
     ) -> Model:
         """
@@ -931,6 +967,8 @@ class Project(Entity):
             source=source,
             drop_existing=drop_existing,
             path=path,
+            description=description,
+            labels=labels,
             **kwargs,
         )
 
@@ -941,6 +979,8 @@ class Project(Entity):
         source: str,
         drop_existing: bool = False,
         path: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
         **kwargs,
     ) -> Model:
         """
@@ -955,6 +995,8 @@ class Project(Entity):
             source=source,
             drop_existing=drop_existing,
             path=path,
+            description=description,
+            labels=labels,
             **kwargs,
         )
 
@@ -965,6 +1007,8 @@ class Project(Entity):
         source: str,
         drop_existing: bool = False,
         path: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
         **kwargs,
     ) -> Model:
         """
@@ -979,6 +1023,8 @@ class Project(Entity):
             source=source,
             drop_existing=drop_existing,
             path=path,
+            description=description,
+            labels=labels,
             **kwargs,
         )
 

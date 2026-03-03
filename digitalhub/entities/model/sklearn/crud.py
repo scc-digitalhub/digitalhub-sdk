@@ -20,6 +20,8 @@ def log_sklearn(
     source: SourcesOrListOfSources,
     drop_existing: bool = False,
     path: str | None = None,
+    description: str | None = None,
+    labels: list[str] | None = None,
     **kwargs,
 ) -> ModelSklearn:
     """
@@ -37,6 +39,10 @@ def log_sklearn(
         Whether to drop existing entity with the same name.
     path : str
         Destination path of the model. If not provided, it's generated.
+    description : str
+        Model description.
+    labels : list[str]
+        Model labels.
     **kwargs : dict
         New model spec parameters.
 
@@ -58,5 +64,7 @@ def log_sklearn(
         source=source,
         drop_existing=drop_existing,
         path=path,
+        description=description,
+        labels=labels,
         **kwargs,
     )

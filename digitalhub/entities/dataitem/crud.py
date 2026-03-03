@@ -92,6 +92,8 @@ def log_dataitem(
     data: Dataframe | None = None,  # type: ignore
     drop_existing: bool = False,
     path: str | None = None,
+    description: str | None = None,
+    labels: list[str] | None = None,
     file_format: str | None = None,
     read_df_params: dict | None = None,
     engine: str | None = "pandas",
@@ -116,6 +118,10 @@ def log_dataitem(
         Whether to drop existing entity with the same name.
     path : str
         Destination path of the dataitem. If not provided, it's generated.
+    description : str
+        Dataitem description.
+    labels : list[str]
+        Dataitem labels.
     file_format : str
         Extension of the file source (parquet, csv, json, xlsx, txt).
     read_df_params : dict
@@ -149,6 +155,8 @@ def log_dataitem(
             data=data,
             drop_existing=drop_existing,
             path=path,
+            description=description,
+            labels=labels,
             file_format=file_format,
             read_df_params=read_df_params,
             engine=engine,
@@ -162,6 +170,8 @@ def log_dataitem(
         source=source,
         drop_existing=drop_existing,
         path=path,
+        description=description,
+        labels=labels,
         **kwargs,
     )
 
