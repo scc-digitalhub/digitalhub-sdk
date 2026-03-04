@@ -99,6 +99,15 @@ OPS_REGISTRY = {
         OpType.UPDATE: entities.update_secret,
         OpType.DELETE: entities.delete_secret,
     },
+    EntityTypes.EXTENSION: {
+        OpType.NEW: entities.new_extension,
+        OpType.GET: entities.get_extension,
+        OpType.GET_VERSIONS: entities.get_extension_versions,
+        OpType.LIST: entities.list_extensions,
+        OpType.IMPORT: entities.import_extension,
+        OpType.UPDATE: entities.update_extension,
+        OpType.DELETE: entities.delete_extension,
+    },
     EntityTypes.RUN: {
         OpType.GET: entities.get_run,
         OpType.LIST: entities.list_runs,
@@ -236,4 +245,5 @@ class CRUDManager:
         self.function = EntityCRUD(project_name, EntityTypes.FUNCTION)
         self.workflow = EntityCRUD(project_name, EntityTypes.WORKFLOW)
         self.secret = EntityCRUD(project_name, EntityTypes.SECRET)
+        self.extension = EntityCRUD(project_name, EntityTypes.EXTENSION)
         self.run = EntityCRUD(project_name, EntityTypes.RUN)

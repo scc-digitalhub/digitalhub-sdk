@@ -6,22 +6,22 @@ from __future__ import annotations
 
 from digitalhub.entities._base.versioned.builder import VersionedBuilder
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
-from digitalhub.entities.log._base.entity import Log
-from digitalhub.entities.log._base.spec import LogSpec, LogValidator
-from digitalhub.entities.log._base.status import LogStatus
+from digitalhub.entities.extension._base.entity import Extension
+from digitalhub.entities.extension._base.spec import ExtensionSpec, ExtensionValidator
+from digitalhub.entities.extension._base.status import ExtensionStatus
 
 
-class LogLogBuilder(VersionedBuilder):
+class ExtensionExtensionBuilder(VersionedBuilder):
     """
-    LogLogBuilder builder.
+    ExtensionExtensionBuilder builder.
     """
 
-    ENTITY_TYPE = EntityTypes.LOG.value
-    ENTITY_CLASS = Log
-    ENTITY_SPEC_CLASS = LogSpec
-    ENTITY_SPEC_VALIDATOR = LogValidator
-    ENTITY_STATUS_CLASS = LogStatus
-    ENTITY_KIND = EntityKinds.LOG_LOG.value
+    ENTITY_TYPE = EntityTypes.EXTENSION.value
+    ENTITY_CLASS = Extension
+    ENTITY_SPEC_CLASS = ExtensionSpec
+    ENTITY_SPEC_VALIDATOR = ExtensionValidator
+    ENTITY_STATUS_CLASS = ExtensionStatus
+    ENTITY_KIND = EntityKinds.EXTENSION_EXTENSION.value
 
     def build(
         self,
@@ -32,7 +32,7 @@ class LogLogBuilder(VersionedBuilder):
         description: str | None = None,
         labels: list[str] | None = None,
         **kwargs,
-    ) -> Log:
+    ) -> Extension:
         """
         Create a new object.
 
@@ -55,7 +55,7 @@ class LogLogBuilder(VersionedBuilder):
 
         Returns
         -------
-        Log
+        Extension
             Object instance.
         """
         name = self.build_name(name)

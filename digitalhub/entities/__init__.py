@@ -28,6 +28,16 @@ from digitalhub.entities.dataitem.crud import (
 )
 from digitalhub.entities.dataitem.dataitem.crud import log_generic_dataitem
 from digitalhub.entities.dataitem.table.crud import log_table
+from digitalhub.entities.extension.crud import (
+    delete_extension,
+    get_extension,
+    get_extension_versions,
+    import_extension,
+    list_extensions,
+    load_extension,
+    new_extension,
+    update_extension,
+)
 from digitalhub.entities.function.crud import (
     delete_function,
     get_function,

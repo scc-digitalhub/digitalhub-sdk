@@ -82,7 +82,6 @@ class DataitemBuilder(MaterialBuilder):
             **kwargs,
         )
         status = self.build_status()
-        extensions = self.build_extension(extensions)
         return self.build_entity(
             project=project,
             name=name,

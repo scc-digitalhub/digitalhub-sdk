@@ -26,6 +26,7 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities._base.metadata.entity import Metadata
     from digitalhub.entities.artifact._base.entity import Artifact
     from digitalhub.entities.dataitem._base.entity import Dataitem
+    from digitalhub.entities.extension._base.entity import Extension
     from digitalhub.entities.function._base.entity import Function
     from digitalhub.entities.model._base.entity import Model
     from digitalhub.entities.project._base.spec import ProjectSpec
@@ -1549,6 +1550,155 @@ class Project(Entity):
             identifier=identifier,
             entity_id=entity_id,
             delete_all_versions=delete_all_versions,
+        )
+
+    ##############################
+    #  Extensions
+    ##############################
+
+    @_auto_refresh
+    def new_extension(
+        self,
+        name: str,
+        kind: str,
+        uuid: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
+        embedded: bool = False,
+        schema: str | None = None,
+        **kwargs,
+    ) -> Extension:
+        """
+        Create a new extension.
+
+        See also
+        -------
+        digitalhub.new_extension
+        """
+        return self.crud.extension.new(
+            name=name,
+            kind=kind,
+            uuid=uuid,
+            description=description,
+            labels=labels,
+            embedded=embedded,
+            schema=schema,
+            **kwargs,
+        )
+
+    @_auto_refresh
+    def get_extension(
+        self,
+        identifier: str,
+        entity_id: str | None = None,
+    ) -> Extension:
+        """
+        Get extension from backend.
+
+        See also
+        -------
+        digitalhub.get_extension
+        """
+        return self.crud.extension.get(
+            identifier=identifier,
+            entity_id=entity_id,
+        )
+
+    @_auto_refresh
+    def get_extension_versions(
+        self,
+        identifier: str,
+    ) -> list[Extension]:
+        """
+        Get extension versions from backend.
+
+        See also
+        -------
+        digitalhub.get_extension_versions
+        """
+        return self.crud.extension.get_versions(identifier=identifier)
+
+    @_auto_refresh
+    def list_extensions(
+        self,
+        q: str | None = None,
+        name: str | None = None,
+        kind: str | None = None,
+        user: str | None = None,
+        state: str | None = None,
+        created: str | None = None,
+        updated: str | None = None,
+        versions: str | None = None,
+    ) -> list[Extension]:
+        """
+        List all latest version extensions from backend.
+
+        See also
+        -------
+        digitalhub.list_extensions
+        """
+        return self.crud.extension.list(
+            q=q,
+            name=name,
+            kind=kind,
+            user=user,
+            state=state,
+            created=created,
+            updated=updated,
+            versions=versions,
+        )
+
+    @_auto_refresh
+    def import_extension(
+        self,
+        file: str | None = None,
+        key: str | None = None,
+        reset_id: bool = True,
+    ) -> Extension:
+        """
+        Import extension into backend from a YAML file or key.
+
+        See also
+        -------
+        digitalhub.import_extension
+        """
+        return self.crud.extension.import_entity(file=file, key=key, reset_id=reset_id)
+
+    @_auto_refresh
+    def update_extension(
+        self,
+        entity: Extension,
+    ) -> Extension:
+        """
+        Update extension.
+
+        See also
+        -------
+        digitalhub.update_extension
+        """
+        self._validate_entity_project(entity.project)
+        return self.crud.extension.update(entity)
+
+    @_auto_refresh
+    def delete_extension(
+        self,
+        identifier: str,
+        entity_id: str | None = None,
+        delete_all_versions: bool = False,
+        cascade: bool = True,
+    ) -> None:
+        """
+        Delete extension from backend.
+
+        See also
+        -------
+        digitalhub.delete_extension
+        """
+        self.crud.extension.delete(
+            identifier=identifier,
+            entity_id=entity_id,
+            delete_all_versions=delete_all_versions,
+            cascade=cascade,
         )
 
     ##############################

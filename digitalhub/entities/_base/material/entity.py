@@ -7,7 +7,6 @@ from __future__ import annotations
 import typing
 from pathlib import Path
 
-from digitalhub.entities._base.extensions.entity import Extension
 from digitalhub.entities._base.versioned.entity import VersionedEntity
 from digitalhub.entities._commons.utils import refresh_decorator
 from digitalhub.entities._processors.processors import context_processor
@@ -36,13 +35,13 @@ class MaterialEntity(VersionedEntity):
         metadata: Metadata,
         spec: MaterialSpec,
         status: MaterialStatus,
-        extensions: list[Extension],
+        extensions: list[dict],
         user: str | None = None,
     ) -> None:
         super().__init__(project, name, uuid, kind, metadata, spec, status, user)
         self.spec: MaterialSpec
         self.status: MaterialStatus
-        self.extensions: list[Extension] = extensions
+        self.extensions: list[dict] = extensions
 
         # Attributes to be included in __repr__
         self._obj_attr.extend(["extensions"])
@@ -182,42 +181,6 @@ class MaterialEntity(VersionedEntity):
         # Update files info
         files_info = store.get_file_info(self.spec.path, paths)
         self._update_files_info(files_info)
-
-    ##############################
-    # Extensions
-    ##############################
-
-    def get_extension(self, name: str) -> Extension | None:
-        """
-        Get extension by name.
-
-        Parameters
-        ----------
-        name : str
-            Extension name.
-
-        Returns
-        -------
-        Extension | None
-            Extension if found, else None.
-        """
-        for ext in self.extensions:
-            if ext.name == name:
-                return ext
-        return None
-
-    def add_extension(self, extension: dict) -> None:
-        """
-        Add an extension.
-
-        Parameters
-        ----------
-        extension : dict
-            Extension to add.
-        """
-        ext_obj = Extension.from_dict(extension)
-        if self.get_extension(ext_obj.name) is None:
-            self.extensions.append(ext_obj)
 
     ##############################
     #  Public Helpers

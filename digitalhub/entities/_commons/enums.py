@@ -23,6 +23,7 @@ class EntityTypes(Enum):
     RUN = "run"
     TRIGGER = "trigger"
     LOG = "log"
+    EXTENSION = "extension"
 
 
 class Relationship(Enum):
@@ -84,3 +85,4 @@ class EntityKinds(Enum):
     TRIGGER_LIFECYCLE = "lifecycle"
     TRIGGER_AUTOML = "automl"
     LOG_LOG = "log"
+    EXTENSION_EXTENSION = "extension"
