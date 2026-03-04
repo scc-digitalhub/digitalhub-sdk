@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from configparser import ConfigParser
 
+from digitalhub.stores.client.auth.enums import SetCreds
 from digitalhub.stores.client.common.config import get_client_config
 from digitalhub.utils.exceptions import ClientError
 
@@ -42,7 +43,7 @@ def load_file() -> ConfigParser:
         raise ClientError(f"Failed to read env file: {e}")
 
 
-def load_profile(file: ConfigParser) -> str | None:
+def load_profile(file: ConfigParser) -> str:
     """
     Load the current credentials profile name from the .dhcore.ini file.
 
@@ -53,13 +54,13 @@ def load_profile(file: ConfigParser) -> str | None:
 
     Returns
     -------
-    str or None
-        Name of the credentials profile, or None if not found.
+    str
+        Name of the credentials profile, or default if not found.
     """
     try:
         return file["DEFAULT"]["current_environment"]
     except KeyError:
-        return
+        return SetCreds.DEFAULT.value
 
 
 def load_key(file: ConfigParser, profile: str, key: str) -> str | None:

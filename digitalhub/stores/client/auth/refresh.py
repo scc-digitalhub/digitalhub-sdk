@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import typing
+from typing import Any
 from warnings import warn
 
 from requests import get, post
@@ -25,30 +26,15 @@ if typing.TYPE_CHECKING:
 class TokenRefreshService:
     """
     Handles OAuth2 token refresh operations for DHCore client.
-
-    Manages token exchange for personal access tokens and refresh token
-    operations for OAuth2 authentication. Automatically discovers token
-    endpoints from OAuth2 issuer well-known configuration and persists
-    refreshed credentials.
     """
 
     def __init__(
         self,
-        credential_manager: ConfigManager,
-        authentication_handler: AuthenticationHandler,
+        config_manager: ConfigManager,
+        auth_handler: AuthenticationHandler,
     ) -> None:
-        """
-        Initialize token refresh service.
-
-        Parameters
-        ----------
-        credential_manager : CredentialManager
-            Credential manager for accessing and persisting credentials.
-        authentication_handler : AuthenticationHandler
-            Authentication handler for checking auth type.
-        """
-        self._credential_manager = credential_manager
-        self._authentication_handler = authentication_handler
+        self._config_manager = config_manager
+        self._auth_handler = auth_handler
 
     def refresh_credentials(self) -> None:
         """
@@ -57,11 +43,11 @@ class TokenRefreshService:
         Exchanges personal access tokens or refreshes OAuth2 tokens depending
         on the current authentication type. Persists new credentials to file.
         """
-        if not self._authentication_handler.is_refreshable():
-            raise ClientError(f"Auth type {self._authentication_handler.auth_type} does not support refresh.")
+        if not self._auth_handler.is_refreshable():
+            raise ClientError(f"Auth type {self._auth_handler.auth_type} does not support refresh.")
 
         # Get credentials and configuration
-        creds = self._credential_manager.get_credentials_and_config()
+        creds = self._config_manager.get_credentials_and_config()
 
         # Get token refresh endpoint
         if (url := creds.get(ConfigurationVars.OAUTH2_TOKEN_ENDPOINT.value)) is None:
@@ -77,9 +63,8 @@ class TokenRefreshService:
         # Export new credentials to file
         self._export_new_creds(response.json())
 
-        # Reload credentials and re-evaluate auth type
-        self._credential_manager.reload_credentials()
-        self._authentication_handler.evaluate_auth_type()
+        # Re-evaluate auth type
+        self._auth_handler.evaluate_auth_type()
 
     def evaluate_refresh(self) -> bool:
         """
@@ -97,7 +82,14 @@ class TokenRefreshService:
             self.refresh_credentials()
             return True
         except Exception:
-            if not self._credential_manager.eval_retry():
+            if not self._config_manager.eval_retry():
+                if self._config_manager.in_memory:
+                    warn(
+                        "Failed to refresh credentials after retry attempt, and configuration is in-memory only."
+                        " Please check your credentials and make sure they are up to date."
+                        " (refresh tokens, password, etc.)."
+                    )
+                    return False
                 warn(
                     "Failed to refresh credentials after retry"
                     " (checked credentials from file and env)."
@@ -127,10 +119,8 @@ class TokenRefreshService:
         if (client_id := creds.get(ConfigurationVars.DHCORE_CLIENT_ID.value)) is None:
             raise ClientError("Client id not set.")
 
-        auth_type = self._authentication_handler.auth_type
-
         # Handling of token refresh
-        if auth_type == AuthType.OAUTH2.value:
+        if self._auth_handler.auth_type == AuthType.OAUTH2.value:
             return self._call_refresh_endpoint(
                 url,
                 client_id=client_id,
@@ -161,7 +151,7 @@ class TokenRefreshService:
         str
             Token endpoint URL for credential refresh.
         """
-        config = self._credential_manager.get_configuration()
+        config = self._config_manager.configuration()
 
         # Get issuer endpoint
         if (endpoint_issuer := config.get(ConfigurationVars.DHCORE_ISSUER.value)) is None:
@@ -201,7 +191,7 @@ class TokenRefreshService:
         req_kwargs = {"data": kwargs, **set_urlencoded_content_type()}
         return post(url, timeout=get_client_config().http_timeout, **req_kwargs)
 
-    def _export_new_creds(self, response: dict) -> None:
+    def _export_new_creds(self, response: dict[str, Any]) -> None:
         """
         Save refreshed credentials and switch to file-based storage.
 
@@ -221,6 +211,7 @@ class TokenRefreshService:
             ConfigurationVars.OAUTH2_TOKEN_ENDPOINT.value,
         ]
         for key in keys_to_prefix:
+            # Add the appropriate prefix to keys in the response to match configuration format
             if key == ConfigurationVars.OAUTH2_TOKEN_ENDPOINT.value:
                 prefix = get_client_config().oauth2
             else:
@@ -228,4 +219,11 @@ class TokenRefreshService:
             key = key.lower()
             if key.removeprefix(prefix) in response:
                 response[key] = response.pop(key.removeprefix(prefix))
-        self._credential_manager.write_credentials(response)
+
+        # Write new credentials to file if possible, otherwise update in-memory configuration
+        if not self._config_manager.in_memory:
+            self._config_manager.export_to_file(response)
+            self._config_manager.reload_credentials()
+        else:
+            variables = {k.upper(): v for k, v in response.items()}
+            self._config_manager.update_in_memory(variables)

@@ -34,10 +34,10 @@ class ClientConfigurator:
         """
         Initialize DHCore configurator and evaluate authentication type.
         """
-        self._cfg_manager = ConfigManager()
-        self._auth_handler = AuthenticationHandler(self._cfg_manager)
+        self._config_manager = ConfigManager()
+        self._auth_handler = AuthenticationHandler(self._config_manager)
         self._token_refresh_service = TokenRefreshService(
-            self._cfg_manager,
+            self._config_manager,
             self._auth_handler,
         )
         self.set_auth_type()
@@ -57,7 +57,7 @@ class ClientConfigurator:
         str
             DHCore backend endpoint URL.
         """
-        return self._cfg_manager.get_endpoint()
+        return self._config_manager.get_endpoint()
 
     ##############################
     # Auth methods
@@ -156,7 +156,7 @@ class ClientConfigurator:
                 kwargs = self.get_auth_parameters({})
                 return get(url, timeout=get_client_config().http_timeout, **kwargs)
             raise e
-        return self._cfg_manager.get_credentials_and_config()
+        return self._config_manager.get_credentials_and_config()
 
     def set_current_profile(self, profile: str) -> None:
         """
@@ -167,7 +167,7 @@ class ClientConfigurator:
         profile : str
             Name of the credentials profile to set.
         """
-        self._cfg_manager.set_current_profile(profile)
+        self._config_manager.set_current_profile(profile)
         self._auth_handler.evaluate_auth_type()
 
     def get_current_profile(self) -> str:
@@ -179,4 +179,4 @@ class ClientConfigurator:
         str
             Name of the current credentials profile.
         """
-        return self._cfg_manager.get_current_profile()
+        return self._config_manager.current_profile

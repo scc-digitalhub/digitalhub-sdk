@@ -16,6 +16,7 @@ class AuthType(Enum):
     OAUTH2 = "oauth2"
     EXCHANGE = "exchange"
     ACCESS_TOKEN = "access_token_only"
+    NO_AUTH = "no_auth"
 
 
 class ApiCategories(Enum):

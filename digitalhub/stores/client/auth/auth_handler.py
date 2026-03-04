@@ -17,56 +17,60 @@ if typing.TYPE_CHECKING:
 class AuthenticationHandler:
     """
     Handles authentication type evaluation and parameter injection.
-
-    Determines the appropriate authentication method from available credentials
-    and adds authentication headers/parameters to HTTP requests. Supports
-    multiple authentication methods: EXCHANGE (personal access token), OAUTH2
-    (access + refresh tokens), ACCESS_TOKEN (access only), and BASIC
-    (username + password).
     """
 
-    def __init__(self, credential_manager: ConfigManager) -> None:
-        """
-        Initialize authentication handler.
-
-        Parameters
-        ----------
-        credential_manager : CredentialManager
-            Credential manager instance for accessing credentials.
-        """
-        self._credential_manager = credential_manager
-        self._auth_type: str | None = None
-        self.evaluate_auth_type()
+    def __init__(self, config_manager: ConfigManager) -> None:
+        self._config_manager = config_manager
+        self._auth_type: str = self._eval_auth_type()
 
     def evaluate_auth_type(self) -> None:
         """
         Determine authentication type from available credentials.
-
-        Evaluates credentials in priority order: EXCHANGE (personal access token),
-        OAUTH2 (access + refresh tokens), ACCESS_TOKEN (access only), BASIC
-        (username + password).
         """
-        creds = self._credential_manager.get_credentials()
-        self._auth_type = self._eval_auth_type(creds)
+        self._auth_type = self._eval_auth_type()
 
-    @property
-    def auth_type(self) -> str | None:
+    def _eval_auth_type(self) -> str:
         """
-        Get current authentication type.
+        Evaluates in priority order:
+
+            EXCHANGE (personal access token)
+            OAUTH2 (access + refresh tokens)
+            ACCESS_TOKEN (access only)
+            BASIC (username + password)
+            NO_AUTH (no authentication)
 
         Returns
         -------
-        str or None
-            Current authentication type from AuthType enum.
+        str
+            Authentication type from AuthType enum.
         """
-        return self._auth_type
+        creds = self._config_manager.credentials
+
+        # PAT
+        if creds[CredentialsVars.DHCORE_PERSONAL_ACCESS_TOKEN.value] is not None:
+            return AuthType.EXCHANGE.value
+
+        # OAuth2 if refresh token is present, otherwise access token only
+        if creds[CredentialsVars.DHCORE_ACCESS_TOKEN.value] is not None:
+            if creds[CredentialsVars.DHCORE_REFRESH_TOKEN.value] is not None:
+                return AuthType.OAUTH2.value
+            return AuthType.ACCESS_TOKEN.value
+
+        # Basic auth
+        if (
+            creds[CredentialsVars.DHCORE_USER.value] is not None
+            and creds[CredentialsVars.DHCORE_PASSWORD.value] is not None
+        ):
+            return AuthType.BASIC.value
+
+        # No auth
+        return AuthType.NO_AUTH.value
 
     def is_refreshable(self) -> bool:
         """
         Check if current authentication supports token refresh.
 
-        Returns True for OAUTH2 (refresh token) and EXCHANGE (personal access token),
-        False for BASIC and ACCESS_TOKEN.
+        Returns True for OAUTH2 (refresh token) and EXCHANGE (personal access token).
 
         Returns
         -------
@@ -92,55 +96,25 @@ class AuthenticationHandler:
         dict
             Modified kwargs with authentication parameters.
         """
-        creds = self._credential_manager.get_credentials()
-        if self._auth_type in (
-            AuthType.EXCHANGE.value,
-            AuthType.OAUTH2.value,
-            AuthType.ACCESS_TOKEN.value,
-        ):
-            access_token = creds[CredentialsVars.DHCORE_ACCESS_TOKEN.value]
-            kwargs = ensure_headers(**kwargs)
-            kwargs["headers"]["Authorization"] = f"Bearer {access_token}"
-        elif self._auth_type == AuthType.BASIC.value:
-            user = creds[CredentialsVars.DHCORE_USER.value]
-            password = creds[CredentialsVars.DHCORE_PASSWORD.value]
-            kwargs["auth"] = (user, password)
+        creds = self._config_manager.credentials
+
+        match self._auth_type:
+            case AuthType.EXCHANGE.value | AuthType.OAUTH2.value | AuthType.ACCESS_TOKEN:
+                access_token = creds[CredentialsVars.DHCORE_ACCESS_TOKEN.value]
+                kwargs = ensure_headers(**kwargs)
+                kwargs["headers"]["Authorization"] = f"Bearer {access_token}"
+            case AuthType.BASIC.value:
+                user = creds[CredentialsVars.DHCORE_USER.value]
+                password = creds[CredentialsVars.DHCORE_PASSWORD.value]
+                kwargs["auth"] = (user, password)
+            case _:
+                pass
         return kwargs
 
-    def _eval_auth_type(self, creds: dict) -> str | None:
-        """
-        Determine authentication type from available credentials.
+    ###############################
+    # Properties
+    ###############################
 
-        Evaluates in priority order:
-
-            EXCHANGE (personal access token)
-            OAUTH2 (access + refresh tokens)
-            ACCESS_TOKEN (access only)
-            BASIC (username + password)
-            None (no valid credentials type)
-
-        Parameters
-        ----------
-        creds : dict
-            Available credential values.
-
-        Returns
-        -------
-        str or None
-            Authentication type from AuthType enum, or None if no valid credentials.
-        """
-        if creds[CredentialsVars.DHCORE_PERSONAL_ACCESS_TOKEN.value] is not None:
-            return AuthType.EXCHANGE.value
-        if (
-            creds[CredentialsVars.DHCORE_ACCESS_TOKEN.value] is not None
-            and creds[CredentialsVars.DHCORE_REFRESH_TOKEN.value] is not None
-        ):
-            return AuthType.OAUTH2.value
-        if creds[CredentialsVars.DHCORE_ACCESS_TOKEN.value] is not None:
-            return AuthType.ACCESS_TOKEN.value
-        if (
-            creds[CredentialsVars.DHCORE_USER.value] is not None
-            and creds[CredentialsVars.DHCORE_PASSWORD.value] is not None
-        ):
-            return AuthType.BASIC.value
-        return None
+    @property
+    def auth_type(self) -> str:
+        return self._auth_type
