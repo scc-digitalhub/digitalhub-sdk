@@ -22,8 +22,6 @@ class BaseEntityOperationsProcessor:
     for base-level entities (primarily projects). It interacts with the
     client layer to perform backend operations and manages entity lifecycle
     including creation, reading, updating, deletion, and sharing.
-
-    Uses composition with specialized processors for different operation types.
     """
 
     def __init__(self):

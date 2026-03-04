@@ -24,4 +24,3 @@ class RuntimeEnvVar(Enum):
 
     PROJECT = "PROJECT_NAME"
     RUN_ID = "RUN_ID"
-    SOURCE_DOWNLOAD = "SOURCE_DOWNLOAD"

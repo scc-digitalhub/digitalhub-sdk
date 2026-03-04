@@ -19,11 +19,6 @@ class RuntimeBuilder:
     This class implements the Builder pattern to create Runtime instances.
     Subclasses must set the RUNTIME_CLASS class variable to specify which
     Runtime implementation to build.
-
-    Attributes
-    ----------
-    RUNTIME_CLASS : Runtime
-        The Runtime class to be instantiated by this builder.
     """
 
     RUNTIME_CLASS: Runtime = None

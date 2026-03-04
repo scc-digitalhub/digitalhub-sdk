@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import typing
 
+from digitalhub.factory.enums import BuilderMethodsEnum
 from digitalhub.factory.registry import registry
 from digitalhub.utils.exceptions import BuilderError
 
@@ -19,9 +20,6 @@ if typing.TYPE_CHECKING:
 class EntityFactory:
     """
     Factory for creating and managing entity builders.
-
-    This class handles the creation of entities and their components
-    through their respective builders, using a centralized registry.
     """
 
     def _call_builder_method(self, kind: str, method_name: str, *args, **kwargs):
@@ -99,7 +97,7 @@ class EntityFactory:
         Spec
             Spec object.
         """
-        return self._call_builder_method(kind_to_build_from, "build_spec", **kwargs)
+        return self._call_builder_method(kind_to_build_from, BuilderMethodsEnum.BUILD_SPEC.value, **kwargs)
 
     def build_metadata(self, kind_to_build_from: str, **kwargs) -> Metadata:
         """
@@ -117,25 +115,7 @@ class EntityFactory:
         Metadata
             Metadata object.
         """
-        return self._call_builder_method(kind_to_build_from, "build_metadata", **kwargs)
-
-    def build_extension(self, kind_to_build_from: str, **kwargs) -> dict:
-        """
-        Build an entity extensions.
-
-        Parameters
-        ----------
-        kind_to_build_from : str
-            Entity type.
-        **kwargs
-            Additional extensions parameters.
-
-        Returns
-        -------
-        dict
-            Extensions dictionary.
-        """
-        return self._call_builder_method(kind_to_build_from, "build_extension", **kwargs)
+        return self._call_builder_method(kind_to_build_from, BuilderMethodsEnum.BUILD_METADATA.value, **kwargs)
 
     def build_status(self, kind_to_build_from: str, **kwargs) -> Status:
         """
@@ -153,7 +133,11 @@ class EntityFactory:
         Status
             Status object.
         """
-        return self._call_builder_method(kind_to_build_from, "build_status", **kwargs)
+        return self._call_builder_method(
+            kind_to_build_from,
+            BuilderMethodsEnum.BUILD_STATUS.value,
+            **kwargs,
+        )
 
     def get_entity_type_from_kind(self, kind: str) -> str:
         """
@@ -169,7 +153,7 @@ class EntityFactory:
         str
             Entity type.
         """
-        return self._call_builder_method(kind, "get_entity_type")
+        return self._call_builder_method(kind, BuilderMethodsEnum.GET_ENTITY_TYPE.value)
 
     def get_executable_kind(self, kind: str) -> str:
         """
@@ -185,7 +169,7 @@ class EntityFactory:
         str
             Executable kind.
         """
-        return self._call_builder_method(kind, "get_executable_kind")
+        return self._call_builder_method(kind, BuilderMethodsEnum.GET_EXECUTABLE_KIND.value)
 
     def get_action_from_task_kind(self, kind: str, task_kind: str) -> str:
         """
@@ -203,7 +187,11 @@ class EntityFactory:
         str
             Action.
         """
-        return self._call_builder_method(kind, "get_action_from_task_kind", task_kind)
+        return self._call_builder_method(
+            kind,
+            BuilderMethodsEnum.GET_ACTION_FROM_TASK_KIND.value,
+            task_kind,
+        )
 
     def get_task_kind_from_action(self, kind: str, action: str) -> str:
         """
@@ -221,7 +209,11 @@ class EntityFactory:
         str
             Task kind.
         """
-        return self._call_builder_method(kind, "get_task_kind_from_action", action)
+        return self._call_builder_method(
+            kind,
+            BuilderMethodsEnum.GET_TASK_KIND_FROM_ACTION.value,
+            action,
+        )
 
     def get_run_kind_from_action(self, kind: str, action: str) -> str:
         """
@@ -237,7 +229,11 @@ class EntityFactory:
         str
             Run kind.
         """
-        return self._call_builder_method(kind, "get_run_kind_from_action", action)
+        return self._call_builder_method(
+            kind,
+            BuilderMethodsEnum.GET_RUN_KIND_FROM_ACTION.value,
+            action,
+        )
 
     def get_all_kinds(self, kind: str) -> list[str]:
         """
@@ -253,7 +249,7 @@ class EntityFactory:
         list of str
             All kinds.
         """
-        return self._call_builder_method(kind, "get_all_kinds")
+        return self._call_builder_method(kind, BuilderMethodsEnum.GET_ALL_KINDS.value)
 
     def get_spec_validator(self, kind: str) -> SpecValidator:
         """
@@ -269,7 +265,7 @@ class EntityFactory:
         SpecValidator
             Spec validator.
         """
-        return self._call_builder_method(kind, "get_spec_validator")
+        return self._call_builder_method(kind, BuilderMethodsEnum.GET_SPEC_VALIDATOR.value)
 
     @staticmethod
     def _get_kind(**kwargs) -> str:

@@ -33,10 +33,6 @@ class BaseEntityImportExportProcessor:
         """
         Import a project entity from a YAML file and create it in the backend.
 
-        Reads project configuration from a YAML file, creates a new project
-        entity in the backend, and imports any related entities defined
-        in the file. Raises an error if the project already exists.
-
         Parameters
         ----------
         crud_processor : BaseEntityCRUDProcessor
@@ -72,18 +68,9 @@ class BaseEntityImportExportProcessor:
         ent.refresh()
         return ent
 
-    def load_project_entity(
-        self,
-        crud_processor: BaseEntityCRUDProcessor,
-        file: str,
-        **kwargs,
-    ) -> Project:
+    def load_project_entity(self, crud_processor: BaseEntityCRUDProcessor, file: str) -> Project:
         """
         Load a project entity from a YAML file and update it in the backend.
-
-        Reads project configuration from a YAML file and updates an existing
-        project in the backend. If the project doesn't exist, it creates a
-        new one. Also loads any related entities defined in the file.
 
         Parameters
         ----------
