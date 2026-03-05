@@ -151,10 +151,10 @@ class TokenRefreshService:
         str
             Token endpoint URL for credential refresh.
         """
-        config = self._config_manager.configuration()
+        endpoint_issuer = self._config_manager.configuration.get(ConfigurationVars.DHCORE_ISSUER.value)
 
         # Get issuer endpoint
-        if (endpoint_issuer := config.get(ConfigurationVars.DHCORE_ISSUER.value)) is None:
+        if endpoint_issuer is None:
             raise ClientError("Issuer endpoint not set.")
 
         # Standard issuer endpoint path
