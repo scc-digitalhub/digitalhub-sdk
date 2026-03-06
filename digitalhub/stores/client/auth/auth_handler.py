@@ -99,7 +99,7 @@ class AuthenticationHandler:
         creds = self._config_manager.credentials
 
         match self._auth_type:
-            case AuthType.EXCHANGE.value | AuthType.OAUTH2.value | AuthType.ACCESS_TOKEN:
+            case AuthType.EXCHANGE.value | AuthType.OAUTH2.value | AuthType.ACCESS_TOKEN.value:
                 access_token = creds[CredentialsVars.DHCORE_ACCESS_TOKEN.value]
                 kwargs = ensure_headers(**kwargs)
                 kwargs["headers"]["Authorization"] = f"Bearer {access_token}"
