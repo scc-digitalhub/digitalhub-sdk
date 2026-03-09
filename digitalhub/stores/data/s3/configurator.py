@@ -36,7 +36,7 @@ class S3StoreConfigurator:
         dict
             A dictionary containing the S3 credentials.
         """
-        creds = get_client().get_credentials_and_config()
+        creds = self.get_credentials(lowercase_keys=False)
         return {
             "endpoint_url": creds[ConfigurationVars.S3_ENDPOINT_URL.value],
             "aws_access_key_id": creds[CredentialsVars.S3_ACCESS_KEY_ID.value],
@@ -47,6 +47,35 @@ class S3StoreConfigurator:
                 signature_version=creds[ConfigurationVars.S3_SIGNATURE_VERSION.value],
             ),
         }
+
+    def get_credentials(self, lowercase_keys: bool = True) -> dict:
+        """
+        Get all configured S3 credentials as a dictionary.
+
+        Parameters
+        ----------
+        lowercase_keys : bool
+            Whether to return credential keys in lowercase format.
+
+        Returns
+        -------
+        dict
+            Dictionary containing all credential key-value pairs from self.keys.
+            Keys correspond to S3 connection parameters such as endpoint URL,
+            access key ID, secret access key, session token, region, and signature version.
+        """
+        keys = [
+            ConfigurationVars.S3_ENDPOINT_URL.value,
+            CredentialsVars.S3_ACCESS_KEY_ID.value,
+            CredentialsVars.S3_SECRET_ACCESS_KEY.value,
+            CredentialsVars.S3_SESSION_TOKEN.value,
+            ConfigurationVars.S3_REGION.value,
+            ConfigurationVars.S3_SIGNATURE_VERSION.value,
+        ]
+        creds = get_client().get_credentials_and_config()
+        if lowercase_keys:
+            return {key.lower(): creds.get(key) for key in keys}
+        return {key: creds.get(key) for key in keys}
 
     def _validate(self) -> None:
         """

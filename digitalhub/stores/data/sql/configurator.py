@@ -26,7 +26,7 @@ class SqlStoreConfigurator:
             A PostgreSQL connection string in the format:
             'postgresql://username:password@host:port/database'
         """
-        creds = self.get_sql_credentials()
+        creds = self.get_credentials(lowercase_keys=False)
         user = creds[CredentialsVars.DB_USERNAME.value]
         password = creds[CredentialsVars.DB_PASSWORD.value]
         host = creds[ConfigurationVars.DB_HOST.value]
@@ -34,13 +34,14 @@ class SqlStoreConfigurator:
         database = creds[ConfigurationVars.DB_DATABASE.value]
         return f"postgresql://{user}:{password}@{host}:{port}/{database}"
 
-    def get_sql_credentials(self) -> dict:
+    def get_credentials(self, lowercase_keys: bool = True) -> dict:
         """
         Get all configured database credentials as a dictionary.
 
-        Retrieves all available database credentials from the configured
-        source and returns them as a dictionary with all credential keys
-        from self.keys mapped to their values.
+        Parameters
+        ----------
+        lowercase_keys : bool
+            Whether to return credential keys in lowercase format.
 
         Returns
         -------
@@ -57,6 +58,8 @@ class SqlStoreConfigurator:
             ConfigurationVars.DB_DATABASE.value,
         ]
         creds = get_client().get_credentials_and_config()
+        if lowercase_keys:
+            return {key.lower(): creds.get(key) for key in keys}
         return {key: creds.get(key) for key in keys}
 
     def eval_retry(self) -> bool:

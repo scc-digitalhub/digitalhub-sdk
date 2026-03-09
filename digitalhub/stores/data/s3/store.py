@@ -370,6 +370,24 @@ class S3Store(Store):
         """
         return self._get_client(self._configurator.get_client_config())
 
+    def get_credentials(self, lowercase_keys: bool = True) -> dict:
+        """
+        Get all configured S3 credentials as a dictionary.
+
+        Parameters
+        ----------
+        lowercase_keys : bool
+            Whether to return credential keys in lowercase format.
+
+        Returns
+        -------
+        dict
+            Dictionary containing all credential key-value pairs from self.keys.
+            Keys correspond to S3 connection parameters such as endpoint URL,
+            access key ID, secret access key, session token, region, and signature version.
+        """
+        return self._configurator.get_credentials(lowercase_keys=lowercase_keys)
+
     ##############################
     # Private I/O methods
     ##############################

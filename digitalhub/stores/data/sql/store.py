@@ -313,6 +313,26 @@ class SqlStore(Store):
         """
         return self._check_factory(schema=schema)
 
+    def get_credentials(self, lowercase_keys: bool = True) -> dict:
+        """
+        Get database credentials as a dictionary.
+
+        Retrieves the database credentials from the configurator and
+        returns them as a dictionary. Keys can be returned in lowercase
+        format if specified.
+
+        Parameters
+        ----------
+        lowercase_keys : bool
+            Whether to return credential keys in lowercase format.
+
+        Returns
+        -------
+        dict
+            Dictionary containing database credential key-value pairs.
+        """
+        return self._configurator.get_credentials(lowercase_keys=lowercase_keys)
+
     ##############################
     # Private I/O methods
     ##############################
