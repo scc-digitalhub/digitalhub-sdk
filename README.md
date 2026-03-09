@@ -22,6 +22,8 @@ To be able to create and execute functions or workflows, you need to install the
 - [Digitalhub SDK Runtime Container](https://github.com/scc-digitalhub/digitalhub-sdk-runtime-container)
 - [Digitalhub SDK Runtime Hera](https://github.com/scc-digitalhub/digitalhub-sdk-runtime-hera)
 - [Digitalhub SDK Runtime Modelserve](https://github.com/scc-digitalhub/digitalhub-sdk-runtime-modelserve)
+- [Digitalhub SDK Runtime Openinference](https://github.com/scc-digitalhub/digitalhub-sdk-runtime-openinference)
+- [Digitalhub SDK Runtime Guardrail](https://github.com/scc-digitalhub/digitalhub-sdk-runtime-guardrail)
 
 ## Development
 
