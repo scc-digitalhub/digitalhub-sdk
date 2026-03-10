@@ -12,11 +12,14 @@ from digitalhub.entities._processors.utils import get_context
 from digitalhub.factory.entity import entity_factory
 from digitalhub.stores.client.common.enums import ApiCategories, BackendOperations
 from digitalhub.utils.exceptions import BackendError
+from digitalhub.utils.logger.logger import get_logger
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.context.entity import ContextEntity
     from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
     from digitalhub.entities.log._base.entity import Log
+
+logger = get_logger(__name__)
 
 
 class ContextEntitySpecialOpsProcessor:
@@ -494,5 +497,9 @@ class ContextEntitySpecialOpsProcessor:
                 living_entity = crud_processor.read_context_entity(entity["key"])
                 living_entities.append(living_entity)
             except BackendError:
+                logger.debug(
+                    f"Entity '{entity.get('key', 'unknown')}' could not be read from backend",
+                    exc_info=True,
+                )
                 dead_entities.append(entity)
         return living_entities, dead_entities

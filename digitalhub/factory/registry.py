@@ -120,7 +120,7 @@ class BuilderRegistry:
             self._register_entities()
             self._entities_registered = True
         except Exception as e:
-            raise BuilderError(f"Failed to register core entities: {e}")
+            raise BuilderError(f"Failed to register core entities: {e}") from e
 
     def _register_entities(self) -> None:
         """
@@ -146,7 +146,7 @@ class BuilderRegistry:
             self._register_runtimes_entities()
             self._runtimes_registered = True
         except Exception as e:
-            raise BuilderError(f"Failed to register runtime entities: {e}")
+            raise BuilderError(f"Failed to register runtime entities: {e}") from e
 
     def _register_runtimes_entities(self) -> None:
         """

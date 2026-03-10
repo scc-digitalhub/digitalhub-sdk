@@ -13,12 +13,15 @@ from digitalhub.factory.entity import entity_factory
 from digitalhub.runtimes.enums import RuntimeEnvVar
 from digitalhub.stores.client.common.enums import ApiCategories, BackendOperations
 from digitalhub.utils.exceptions import BackendError
+from digitalhub.utils.logger.logger import get_logger
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.context.entity import ContextEntity
     from digitalhub.entities.project._base.entity import Project
     from digitalhub.entities.run._base.entity import Run
     from digitalhub.stores.client.base.client import Client
+
+logger = get_logger(__name__)
 
 
 class Context:
@@ -67,7 +70,10 @@ class Context:
             try:
                 self.set_run(self._get_run(run_id))
             except BackendError:
-                pass
+                logger.debug(
+                    f"Run '{run_id}' set in environment but not found in backend",
+                    exc_info=True,
+                )
 
     def set_run(self, run: Run) -> None:
         """

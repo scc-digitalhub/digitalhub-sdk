@@ -11,7 +11,10 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
+from digitalhub.utils.logger.logger import get_logger
 from digitalhub.utils.uri_utils import has_local_scheme
+
+logger = get_logger(__name__)
 
 
 class FileInfo(BaseModel):
@@ -174,6 +177,10 @@ def get_file_info_from_local(path: str, src_path: str) -> None | dict:
             last_modified=last_modified,
         ).to_dict()
     except Exception:
+        logger.debug(
+            f"Failed to extract file info from local path '{path}'.",
+            exc_info=True,
+        )
         return None
 
 
@@ -216,6 +223,10 @@ def get_file_info_from_s3(path: str, metadata: dict) -> None | dict:
             last_modified=last_modified,
         ).to_dict()
     except Exception:
+        logger.debug(
+            f"Failed to extract file info from S3 path '{path}'.",
+            exc_info=True,
+        )
         return None
 
 

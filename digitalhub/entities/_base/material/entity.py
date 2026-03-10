@@ -12,12 +12,15 @@ from digitalhub.entities._commons.utils import refresh_decorator
 from digitalhub.entities._processors.processors import context_processor
 from digitalhub.stores.data.api import get_store
 from digitalhub.utils.exceptions import BackendError
+from digitalhub.utils.logger.logger import get_logger
 from digitalhub.utils.types import SourcesOrListOfSources
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.material.spec import MaterialSpec
     from digitalhub.entities._base.material.status import MaterialStatus
     from digitalhub.entities._base.metadata.entity import Metadata
+
+logger = get_logger(__name__)
 
 
 class MaterialEntity(VersionedEntity):
@@ -260,5 +263,9 @@ class MaterialEntity(VersionedEntity):
                     entity_id=self.id,
                 )
             except BackendError:
+                logger.debug(
+                    f"Could not retrieve files info for entity '{self.id}' from backend.",
+                    exc_info=True,
+                )
                 files = []
             self.add_files_info(files)

@@ -19,11 +19,14 @@ from digitalhub.stores.data.sql.configurator import SqlStoreConfigurator
 from digitalhub.stores.data.sql.utils import get_schema_from_columns
 from digitalhub.stores.readers.data.api import get_reader_by_object
 from digitalhub.utils.exceptions import ConfigError, StoreError
+from digitalhub.utils.logger.logger import get_logger
 from digitalhub.utils.types import Dataframe, SourcesOrListOfSources
 
 if typing.TYPE_CHECKING:
     from sqlalchemy.engine.row import Row
 
+
+logger = get_logger(__name__)
 
 ENGINE_CONNECTION_TIMEOUT = 30
 
@@ -461,6 +464,7 @@ class SqlStore(Store):
             return engine
         except ConfigError as e:
             if self._configurator.eval_retry():
+                logger.debug("SQL connection failed, retrying with new credentials.")
                 return self._check_factory(schema=schema)
             raise e
 
@@ -551,6 +555,7 @@ class SqlStore(Store):
         """
         try:
             engine.connect()
-        except SQLAlchemyError:
+        except SQLAlchemyError as e:
+            logger.debug(f"Database connection failed ({engine.url}), disposing engine.", exc_info=True)
             engine.dispose()
-            raise ConfigError("No access to db!")
+            raise ConfigError(f"No access to database {engine.url}!") from e

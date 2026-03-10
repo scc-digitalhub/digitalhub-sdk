@@ -13,14 +13,18 @@ from requests import get, post
 from digitalhub.stores.client.auth.enums import ConfigurationVars, CredentialsVars
 from digitalhub.stores.client.common.config import get_client_config
 from digitalhub.stores.client.common.enums import AuthType
+from digitalhub.stores.client.common.logger import log_request_response
 from digitalhub.stores.client.common.utils import sanitize_endpoint, set_urlencoded_content_type
 from digitalhub.utils.exceptions import ClientError
+from digitalhub.utils.logger.logger import get_logger
 
 if typing.TYPE_CHECKING:
     from requests import Response
 
     from digitalhub.stores.client.auth.auth_handler import AuthenticationHandler
     from digitalhub.stores.client.auth.config_manager import ConfigManager
+
+logger = get_logger(__name__)
 
 
 class TokenRefreshService:
@@ -82,6 +86,7 @@ class TokenRefreshService:
             self.refresh_credentials()
             return True
         except Exception:
+            logger.debug("Credential refresh failed, evaluating retry.", exc_info=True)
             if not self._config_manager.eval_retry():
                 if self._config_manager.in_memory:
                     warn(
@@ -161,9 +166,11 @@ class TokenRefreshService:
         url = sanitize_endpoint(endpoint_issuer + get_client_config().well_known_path)
 
         # Call issuer to get refresh endpoint
-        r = get(url, timeout=get_client_config().http_timeout)
-        r.raise_for_status()
-        return r.json().get("token_endpoint")
+        response = get(url, timeout=get_client_config().http_timeout)
+        log_request_response(logger, response)
+
+        response.raise_for_status()
+        return response.json().get("token_endpoint")
 
     def _call_refresh_endpoint(
         self,
@@ -189,7 +196,9 @@ class TokenRefreshService:
             Raw HTTP response for caller handling.
         """
         req_kwargs = {"data": kwargs, **set_urlencoded_content_type()}
-        return post(url, timeout=get_client_config().http_timeout, **req_kwargs)
+        response = post(url, timeout=get_client_config().http_timeout, **req_kwargs)
+        log_request_response(logger, response)
+        return response
 
     def _export_new_creds(self, response: dict[str, Any]) -> None:
         """

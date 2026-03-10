@@ -19,7 +19,10 @@ from digitalhub.stores.data.s3.configurator import S3StoreConfigurator
 from digitalhub.stores.readers.data.api import get_reader_by_object
 from digitalhub.utils.exceptions import ConfigError, StoreError
 from digitalhub.utils.file_utils import get_file_info_from_s3, get_file_mime_type
+from digitalhub.utils.logger.logger import get_logger
 from digitalhub.utils.types import Dataframe, SourcesOrListOfSources
+
+logger = get_logger(__name__)
 
 # Type aliases
 S3Client = Type["botocore.client.S3"]
@@ -684,6 +687,7 @@ class S3Store(Store):
             return client, bucket
         except ConfigError as e:
             if self._configurator.eval_retry():
+                logger.debug(f"S3 access check failed for bucket '{bucket}', retrying with new credentials.")
                 return self._check_factory(s3_path)
             raise e
 
@@ -701,7 +705,7 @@ class S3Store(Store):
         try:
             client.head_bucket(Bucket=bucket)
         except (ClientError, NoCredentialsError) as err:
-            raise ConfigError(f"No access to s3 bucket! Error: {err}")
+            raise ConfigError(f"No access to '{bucket}' s3 bucket! Error: {err}")
 
     @staticmethod
     def _get_key(path: str) -> str:

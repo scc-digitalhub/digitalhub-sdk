@@ -9,7 +9,9 @@ from typing import Any, Callable
 
 from digitalhub.factory.entity import entity_factory
 from digitalhub.utils.exceptions import EntityError
-from digitalhub.utils.logger import LOGGER
+from digitalhub.utils.logger.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class Runtime:
@@ -81,14 +83,14 @@ class Runtime:
             task_kind = run["spec"]["task"].split(":")[0]
         except (KeyError, IndexError):
             msg = "Malformed run spec."
-            LOGGER.exception(msg)
+            logger.exception(msg)
             raise RuntimeError(msg)
 
         try:
             return entity_factory.get_action_from_task_kind(task_kind, task_kind)
         except EntityError:
             msg = f"Task {task_kind} not allowed."
-            LOGGER.exception(msg)
+            logger.exception(msg)
             raise RuntimeError(msg)
 
     @staticmethod
@@ -114,5 +116,5 @@ class Runtime:
             return func(*args, **kwargs)
         except Exception:
             msg = "Something got wrong during function execution."
-            LOGGER.exception(msg)
+            logger.exception(msg)
             raise RuntimeError(msg)

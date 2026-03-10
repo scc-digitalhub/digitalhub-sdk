@@ -12,6 +12,7 @@ from requests.exceptions import HTTPError, JSONDecodeError, RequestException
 from requests.exceptions import Timeout as RequestsTimeout
 
 from digitalhub.stores.client.common.config import get_client_config
+from digitalhub.stores.client.common.logger import log_request_response
 from digitalhub.utils.exceptions import (
     BackendError,
     BadRequestError,
@@ -22,9 +23,12 @@ from digitalhub.utils.exceptions import (
     MissingSpecError,
     UnauthorizedError,
 )
+from digitalhub.utils.logger.logger import get_logger
 
 if typing.TYPE_CHECKING:
     from requests import Response
+
+logger = get_logger(__name__)
 
 
 class ResponseProcessor:
@@ -43,8 +47,9 @@ class ResponseProcessor:
         """
         Process HTTP response with validation and parsing.
 
-        Performs API version compatibility check, error parsing for failed
-        responses, and JSON deserialization.
+        Logs request and response details at DEBUG level, then performs API
+        version compatibility check, error parsing for failed responses, and
+        JSON deserialization.
 
         Parameters
         ----------
@@ -56,6 +61,7 @@ class ResponseProcessor:
         dict
             Parsed response body as dictionary.
         """
+        log_request_response(logger, response)
         self._check_api_version(response)
         self._parse_error(response)
         return self._parse_json(response)

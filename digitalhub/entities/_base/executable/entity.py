@@ -15,12 +15,15 @@ from digitalhub.entities.task.crud import delete_task, list_tasks
 from digitalhub.entities.trigger.crud import list_triggers
 from digitalhub.factory.entity import entity_factory
 from digitalhub.utils.exceptions import EntityAlreadyExistsError, EntityError
+from digitalhub.utils.logger.logger import get_logger
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.entity.spec import SpecValidator
     from digitalhub.entities.run._base.entity import Run
     from digitalhub.entities.task._base.entity import Task
     from digitalhub.entities.trigger._base.entity import Trigger
+
+logger = get_logger(__name__)
 
 
 class ExecutableEntity(VersionedEntity):
@@ -70,7 +73,9 @@ class ExecutableEntity(VersionedEntity):
         if self._tasks.get(action) is None:
             try:
                 self._tasks[action] = self.get_task(action)
+                logger.debug(f"Loaded existing task for action '{action}'.")
             except EntityError:
+                logger.debug(f"Task for action '{action}' not found, creating new one.")
                 self._tasks[action] = self.new_task(action)
         return self._tasks[action]
 
@@ -102,7 +107,9 @@ class ExecutableEntity(VersionedEntity):
             try:
                 task_obj.save()
             except EntityAlreadyExistsError:
-                pass
+                logger.debug(
+                    f"Task '{task_obj.kind}' already exists in backend, skipping save.",
+                )
 
             # Set task if function is the same. Overwrite
             # status task dict with the new task object

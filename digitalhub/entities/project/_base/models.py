@@ -6,15 +6,13 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
-_DEFAULT_FILES_STORE = "s3://datalake"
-
 
 class ProfileConfig(BaseModel):
     """
     Configuration profiles.
     """
 
-    default_files_store: str | None = _DEFAULT_FILES_STORE
+    default_files_store: str | None = None
 
     def to_dict(self) -> dict:
         return self.model_dump(by_alias=True, exclude_none=True)

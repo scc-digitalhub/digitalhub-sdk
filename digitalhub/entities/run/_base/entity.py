@@ -14,13 +14,15 @@ from digitalhub.entities._processors.processors import context_processor
 from digitalhub.factory.entity import entity_factory
 from digitalhub.factory.runtime import runtime_factory
 from digitalhub.utils.exceptions import EntityError
-from digitalhub.utils.logger import LOGGER
+from digitalhub.utils.logger.logger import get_logger
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.log._base.entity import Log
     from digitalhub.entities.run._base.spec import RunSpec
     from digitalhub.entities.run._base.status import RunStatus
     from digitalhub.runtimes._base import Runtime
+
+logger = get_logger(__name__)
 
 
 class Run(UnversionedEntity, MetricsEntity):
@@ -106,7 +108,7 @@ class Run(UnversionedEntity, MetricsEntity):
         start = time.time()
         while True:
             if log_info:
-                LOGGER.info(f"Waiting for run {self.id} to finish...")
+                logger.info(f"Waiting for run {self.id} to finish...")
             self.refresh()
             time.sleep(5)
             if self.status.state in [
@@ -116,7 +118,7 @@ class Run(UnversionedEntity, MetricsEntity):
             ]:
                 if log_info:
                     current = time.time() - start
-                    LOGGER.info(f"Run {self.id} finished in {current:.2f} seconds.")
+                    logger.info(f"Run {self.id} finished in {current:.2f} seconds.")
                 return self
 
     def logs(self) -> list[Log]:
