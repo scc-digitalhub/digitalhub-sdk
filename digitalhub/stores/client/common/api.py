@@ -14,7 +14,7 @@ def refresh_token() -> None:
     Uses the refresh token stored in client configuration to obtain a new
     access token. Requires OAuth2 authentication configuration.
     """
-    get_client().refresh_token()
+    get_client().eval_retry()
 
 
 def get_credentials_and_config() -> dict:

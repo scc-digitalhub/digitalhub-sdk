@@ -683,6 +683,7 @@ class S3Store(Store):
         cfg = self._configurator.get_client_config()
         client = self._get_client(cfg)
         try:
+            logger.debug(f"Credentials obtained for S3 access: {cfg}")
             self._check_access_to_storage(client, bucket)
             return client, bucket
         except ConfigError as e:

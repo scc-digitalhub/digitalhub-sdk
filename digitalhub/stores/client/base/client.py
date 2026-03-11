@@ -335,13 +335,7 @@ class Client:
         """
         Evaluate the status of retry lifecycle.
         """
-        self._configurator.evaluate_refresh()
-
-    def refresh_token(self) -> None:
-        """
-        Manually trigger OAuth2 token refresh.
-        """
-        self._configurator.evaluate_refresh()
+        return self._configurator.evaluate_refresh()
 
     def get_credentials_and_config(self) -> dict:
         """
