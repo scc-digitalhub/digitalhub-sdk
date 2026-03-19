@@ -9,32 +9,6 @@ import os
 
 from digitalhub.utils.logger.enum import LoggerVars
 
-# ---------------------------------------------------------------------------
-# Root logger for the digitalhub hierarchy.
-#
-# Every module should obtain its own child logger via:
-#
-#     from digitalhub.utils.logger.logger import get_logger
-#     logger = get_logger(__name__)
-#
-# This automatically creates a hierarchy (e.g.
-# "digitalhub.stores.client.http.handler") so that log levels can be
-# controlled per-component.
-#
-# Configuration
-# -------------
-# DIGITALHUB_LOG_LEVEL  – set the root level for the whole SDK
-#                         (default: INFO). Accepts standard level names:
-#                         DEBUG, INFO, WARNING, ERROR, CRITICAL.
-#
-# DIGITALHUB_LOG_FORMAT – override the default log format string.
-#
-# Fine-grained control is possible via the standard logging API:
-#
-#     logging.getLogger("digitalhub.stores").setLevel(logging.DEBUG)
-#
-# ---------------------------------------------------------------------------
-
 
 _ROOT_LOGGER_NAME = LoggerVars.LOG_NAME.value
 
@@ -98,4 +72,3 @@ def set_level(level: int | str) -> None:
     if isinstance(level, str):
         level = getattr(logging, level.upper(), logging.INFO)
     _root_logger.setLevel(level)
-
