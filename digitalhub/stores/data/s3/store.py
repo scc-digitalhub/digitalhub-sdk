@@ -367,10 +367,7 @@ class S3Store(Store):
         S3Client
             Returns a client object that interacts with the S3 storage service.
         """
-        if file:
-            cfg = self._configurator.get_file_config()
-        else:
-            cfg = self._configurator.get_env_config()
+        cfg = self._configurator.get_client_config()
         return self._get_client(cfg)
 
     ##############################
