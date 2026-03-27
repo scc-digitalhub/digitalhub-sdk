@@ -16,7 +16,7 @@ from digitalhub.entities.dataitem.croissant.utils import (
     get_mappings_from_croissant,
 )
 from digitalhub.stores.data.api import get_store
-from digitalhub.utils.uri_utils import has_s3_scheme
+from digitalhub.utils.uri_utils import has_s3_scheme, has_remote_scheme
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.dataitem.croissant.spec import DataitemSpecCroissant
@@ -49,11 +49,11 @@ class DataitemCroissant(Dataitem):
         mlcroissant.Dataset
             Croissant Dataset object.
         """
-        metadata_json_path = self._get_metadata_json()
-        dtst = get_croissant_dataset(metadata_json_path)
-        self._collect_local_data(dtst, metadata_json_path, overwrite=overwrite)
+        jsonld = self._get_metadata_json()
+        dtst = get_croissant_dataset(jsonld)
+        self._collect_local_data(dtst, jsonld, overwrite=overwrite)
         mapping = self._map_files_filepaths(dtst)
-        return get_croissant_dataset(metadata_json_path, mapping=mapping)
+        return get_croissant_dataset(jsonld, mapping=mapping)
 
     def _get_metadata_json(self) -> str:
         """
@@ -71,6 +71,8 @@ class DataitemCroissant(Dataitem):
                 self._context().root / self.ENTITY_TYPE,
                 overwrite=True,
             )
+        elif has_remote_scheme(self.spec.path):
+            return self.spec.path
         return self.download(overwrite=True)
 
     def _collect_local_data(
