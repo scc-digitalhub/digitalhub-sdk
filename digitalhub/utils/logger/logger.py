@@ -9,7 +9,6 @@ import os
 
 from digitalhub.utils.logger.enum import LoggerVars
 
-
 _ROOT_LOGGER_NAME = LoggerVars.LOG_NAME.value
 
 _DEFAULT_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

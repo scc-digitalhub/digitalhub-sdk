@@ -16,7 +16,7 @@ from digitalhub.entities.dataitem.croissant.utils import (
     get_mappings_from_croissant,
 )
 from digitalhub.stores.data.api import get_store
-from digitalhub.utils.uri_utils import has_s3_scheme, has_remote_scheme
+from digitalhub.utils.uri_utils import has_remote_scheme, has_s3_scheme
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.dataitem.croissant.spec import DataitemSpecCroissant
