@@ -118,6 +118,22 @@ def extract_archive(path: Path, filename: Path) -> None:
         zip_file.extractall(path)
 
 
+def create_archive(path: Path, filename: Path) -> None:
+    """
+    Create a zip archive from a specified directory.
+
+    Parameters
+    ----------
+    path : Path
+        Directory to archive.
+    filename : Path
+        Path where to save the zip archive.
+    """
+    with ZipFile(filename, "w") as zip_file:
+        for file in path.rglob("*"):
+            zip_file.write(file, file.relative_to(path))
+
+
 class CustomJsonEncoder(json.JSONEncoder):
     """
     Custom JSON encoder to handle serialization of special types.
