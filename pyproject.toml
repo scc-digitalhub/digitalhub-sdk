@@ -27,6 +27,7 @@ dependencies = [
     "GitPython>=3",
     "numpy",
     "psycopg[binary]",
+    "psycopg2-binary",
     "pyarrow",
     "pydantic",
     "python-slugify",

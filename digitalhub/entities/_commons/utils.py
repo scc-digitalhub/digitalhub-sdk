@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import re
+import typing
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
@@ -13,6 +14,9 @@ from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.utils.exceptions import BackendError
 from digitalhub.utils.file_utils import eval_zip_sources
 from digitalhub.utils.logger.logger import get_logger
+
+if typing.TYPE_CHECKING:
+    from digitalhub.entities._base.executable.entity import ExecutableEntity
 
 logger = get_logger(__name__)
 
@@ -305,6 +309,27 @@ def _get_base_path(
     from digitalhub.stores.data.api import get_default_store
 
     return f"{get_default_store(project)}/{project}/{entity_type}/{name}/{uuid}"
+
+
+def build_zip_path(exec: ExecutableEntity, filename: str) -> str:
+    """
+    Get destination path.
+
+    Parameters
+    ----------
+    exec : ExecutableEntity
+        Executable.
+    filename : str
+        Filename.
+
+    Returns
+    -------
+    str
+        Destination path.
+    """
+    from digitalhub.stores.data.api import get_default_store
+
+    return f"zip+{get_default_store(exec.project)}/{exec.project}/{exec.ENTITY_TYPE}/{exec.name}/{exec.id}/{filename}"
 
 
 def refresh_decorator(fn: Callable) -> Callable:
