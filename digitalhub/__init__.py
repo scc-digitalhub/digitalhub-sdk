@@ -99,6 +99,7 @@ from digitalhub.entities import (
     update_trigger,
     update_workflow,
 )
+from digitalhub.entities.extension._base.utils import create_extension_schema
 from digitalhub.stores.client.common.api import (
     get_credentials_and_config,
     get_current_profile,
