@@ -4,8 +4,32 @@
 
 from __future__ import annotations
 
+import logging
+import os
 from dataclasses import dataclass
 from pathlib import Path
+
+
+def _get_config_file_path() -> Path:
+    """
+    Get the path to the configuration file.
+
+    Returns
+    -------
+    Path
+        Path to the configuration file.
+    """
+    dh_config_env = os.getenv("DH_CONFIG")
+    if dh_config_env is not None:
+        try:
+            return Path(dh_config_env)
+        except Exception:
+            logging.getLogger(__name__).warning(
+                "Invalid DH_CONFIG value %r; falling back to default config path",
+                dh_config_env,
+            )
+            return Path.home() / ".dhcore.ini"
+    return Path.home() / ".dhcore.ini"
 
 
 @dataclass
@@ -43,7 +67,7 @@ class ClientConfig:
     lib_version: int = 15
 
     # Configuration file path
-    config_file_path: Path = Path.home() / ".dhcore.ini"
+    config_file_path: Path = _get_config_file_path()
 
     # API structure
     api_base: str = "/api/v1"
