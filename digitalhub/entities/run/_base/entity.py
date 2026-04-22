@@ -17,6 +17,7 @@ from digitalhub.utils.exceptions import EntityError
 from digitalhub.utils.logger.logger import get_logger
 
 if typing.TYPE_CHECKING:
+    from digitalhub.entities._base.metadata.entity import Metadata
     from digitalhub.entities.log._base.entity import Log
     from digitalhub.entities.run._base.spec import RunSpec
     from digitalhub.entities.run._base.status import RunStatus
@@ -32,11 +33,26 @@ class Run(UnversionedEntity, MetricsEntity):
 
     ENTITY_TYPE = EntityTypes.RUN.value
 
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-
+    def __init__(
+        self,
+        project: str,
+        name: str,
+        uuid: str,
+        kind: str,
+        metadata: Metadata,
+        spec: RunSpec,
+        status: RunStatus,
+        extensions: list[dict],
+        user: str | None = None,
+    ) -> None:
+        super().__init__(project, name, uuid, kind, metadata, spec, status, user)
         self.spec: RunSpec
         self.status: RunStatus
+
+        self.extensions: list[dict] = extensions
+
+        # Attributes to be included in __repr__
+        self._obj_attr.extend(["extensions"])
 
     ##############################
     #  Run Methods
