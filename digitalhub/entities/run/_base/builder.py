@@ -25,7 +25,9 @@ class RunBuilder(UnversionedBuilder, RuntimeEntityBuilder):
         self,
         project: str,
         kind: str,
+        name: str | None = None,
         uuid: str | None = None,
+        extensions: list[dict] | None = None,
         labels: list[str] | None = None,
         task: str | None = None,
         local_execution: bool = False,
@@ -80,6 +82,7 @@ class RunBuilder(UnversionedBuilder, RuntimeEntityBuilder):
             metadata=metadata,
             spec=spec,
             status=status,
+            extensions=extensions,
         )
 
     def _check_kind_validity(self, task: str) -> None:
@@ -94,3 +97,53 @@ class RunBuilder(UnversionedBuilder, RuntimeEntityBuilder):
         task_kind = task.split("://")[0]
         if task_kind not in self.get_all_kinds():
             raise EntityError(f"Invalid run '{self.ENTITY_KIND}' for task kind '{task_kind}'")
+
+    def from_dict(self, obj: dict) -> Run:
+        """
+        Create a new object from dictionary.
+
+        Parameters
+        ----------
+        obj : dict
+            Dictionary to create object from.
+
+        Returns
+        -------
+        Run
+            Object instance.
+        """
+        parsed_dict = self._parse_dict(obj)
+        return self.build_entity(**parsed_dict)
+
+    def _parse_dict(self, obj: dict) -> dict:
+        """
+        Get dictionary and parse it to a valid entity dictionary.
+
+        Parameters
+        ----------
+        obj : dict
+            Dictionary to parse.
+
+        Returns
+        -------
+        dict
+            A dictionary containing the attributes of the entity instance.
+        """
+        project = obj.get("project")
+        kind = obj.get("kind")
+        uuid = self.build_uuid(obj.get("id"))
+        metadata = self.build_metadata(**obj.get("metadata", {}))
+        spec = self.build_spec(**obj.get("spec", {}))
+        status = self.build_status(**obj.get("status", {}))
+        user = obj.get("user")
+        extensions = obj.get("extensions", [])
+        return {
+            "project": project,
+            "uuid": uuid,
+            "kind": kind,
+            "metadata": metadata,
+            "spec": spec,
+            "status": status,
+            "user": user,
+            "extensions": extensions,
+        }

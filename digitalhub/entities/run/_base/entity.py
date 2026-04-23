@@ -36,20 +36,19 @@ class Run(UnversionedEntity, MetricsEntity):
     def __init__(
         self,
         project: str,
-        name: str,
         uuid: str,
         kind: str,
         metadata: Metadata,
         spec: RunSpec,
         status: RunStatus,
-        extensions: list[dict],
+        extensions: list[dict] | None = None,
         user: str | None = None,
     ) -> None:
-        super().__init__(project, name, uuid, kind, metadata, spec, status, user)
+        super().__init__(project, uuid, kind, metadata, spec, status, user)
         self.spec: RunSpec
         self.status: RunStatus
 
-        self.extensions: list[dict] = extensions
+        self.extensions: list[dict] = extensions if extensions is not None else []
 
         # Attributes to be included in __repr__
         self._obj_attr.extend(["extensions"])
