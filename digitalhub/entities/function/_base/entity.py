@@ -40,6 +40,7 @@ class Function(ExecutableEntity):
         action: str,
         wait: bool = False,
         log_info: bool = True,
+        extensions: list[dict] | None = None,
         **kwargs,
     ) -> Run:
         """
@@ -53,6 +54,8 @@ class Function(ExecutableEntity):
             Flag to wait for execution.
         log_info : bool
             Flag to log information while waiting.
+        extensions : list[dict] | None
+            List of extensions to apply.
         **kwargs : dict
             Keyword arguments passed to Run builder.
 
@@ -67,6 +70,10 @@ class Function(ExecutableEntity):
         # Run function from task
         run_kind = entity_factory.get_run_kind_from_action(self.kind, action)
         run = task.run(run_kind, save=False, **kwargs)
+
+        # Add extensions if provided
+        if extensions is not None:
+            run.extensions = extensions
 
         # Set as run's parent
         run.add_relationship(Relationship.RUN_OF.value, self.key)

@@ -39,6 +39,7 @@ class Workflow(ExecutableEntity):
         action: str,
         wait: bool = False,
         log_info: bool = True,
+        extensions: list[dict] | None = None,
         **kwargs,
     ) -> Run:
         """
@@ -52,6 +53,8 @@ class Workflow(ExecutableEntity):
             Flag to wait for execution to finish.
         log_info : bool
             Flag to log information while waiting.
+        extensions : list[dict] | None
+            List of extensions to apply.
         **kwargs : dict
             Keyword arguments passed to Run builder.
 
@@ -66,6 +69,10 @@ class Workflow(ExecutableEntity):
         # Run task
         run_kind = entity_factory.get_run_kind_from_action(self.kind, action)
         run = task.run(run_kind, save=False, local_execution=False, **kwargs)
+
+        # Add extensions if provided
+        if extensions is not None:
+            run.extensions.extend(extensions)
 
         # Set as run's parent
         run.add_relationship(Relationship.RUN_OF.value, self.key)
