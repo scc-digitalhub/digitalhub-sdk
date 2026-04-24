@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import json
 import typing
 
 from digitalhub.entities._base.versioned.entity import VersionedEntity
@@ -25,3 +26,14 @@ class Extension(VersionedEntity):
         super().__init__(*args, **kwargs)
         self.spec: ExtensionSpec
         self.status: ExtensionStatus
+
+    def get_schema(self, as_dict: bool = True) -> str | dict:
+        """
+        Get the JSON schema of the extension.
+
+        Returns:
+            str | dict: The JSON schema of the extension.
+        """
+        if as_dict:
+            return json.loads(self.spec.schema)
+        return self.spec.schema
