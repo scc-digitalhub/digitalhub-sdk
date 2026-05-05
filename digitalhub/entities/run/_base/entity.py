@@ -191,6 +191,8 @@ class Run(UnversionedEntity, MetricsEntity):
             if self.status.state not in (State.BUILT.value, State.STOPPED.value):
                 raise EntityError("Run is not in a state to run.")
 
+            self.status.state = State.READY.value
+            self.save(update=True)
             self.status.state = State.RUNNING.value
             self.save(update=True)
 
