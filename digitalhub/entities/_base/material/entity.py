@@ -225,8 +225,10 @@ class MaterialEntity(VersionedEntity):
         files : list[dict]
             Files to add.
         """
-        current_files = self.status.files if self.status.files is not None else []
-        available = 100 - len(current_files)
+        if not self._has_files_info():
+            self.status.files = []
+
+        available = 100 - len(self.status.files)
         if len(files) > available:
             files = files[:available]
 
