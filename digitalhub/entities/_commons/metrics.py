@@ -50,7 +50,7 @@ def validate_metric_value(value: Any) -> MetricType:
         raise ValueError("Invalid metric value. Must be a list of floats or ints or a float or an int.") from e
 
 
-def set_metrics(
+def update_metrics(
     metrics: dict[str, MetricType],
     key: str,
     value: Any,

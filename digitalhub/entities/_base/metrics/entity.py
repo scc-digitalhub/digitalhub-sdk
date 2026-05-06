@@ -7,7 +7,7 @@ from __future__ import annotations
 import typing
 
 from digitalhub.entities._base.context.entity import ContextEntity
-from digitalhub.entities._commons.metrics import MetricType, set_metrics, validate_metric_value
+from digitalhub.entities._commons.metrics import MetricType, update_metrics, validate_metric_value
 from digitalhub.entities._processors.processors import context_processor
 
 if typing.TYPE_CHECKING:
@@ -33,7 +33,58 @@ class MetricsEntity(ContextEntity):
         dict[str, MetricType]
             Metrics dictionary.
         """
-        return self.status.metrics
+        if not self._has_metrics() or not self.status.metrics:
+            return {}
+        return self._read_metrics()
+
+    def _has_metrics(self) -> bool:
+        """
+        Check if the entity has any metrics.
+
+        Returns
+        -------
+        bool
+            True if the entity has metrics, False otherwise.
+        """
+        return self.status.metrics is not None
+
+    def _log_metric(
+        self,
+        key: str,
+        value: MetricType,
+        overwrite: bool = False,
+        single_value: bool = False,
+    ) -> None:
+        """
+        Log metric into entity status.
+        A metric is named by a key and value (single number or list of numbers).
+        The metric by default is put in a list or appended to an existing list.
+        If single_value is True, the value will be a single number.
+
+        Parameters
+        ----------
+        key : str
+            Key of the metric.
+        value : MetricType
+            Value of the metric.
+        overwrite : bool
+            If True, overwrite existing metric.
+        single_value : bool
+            If True, value is a single value.
+        """
+        # Validate metric value
+        validate_metric_value(value)
+
+        # Set up metrics dict if it doesn't exist
+        if not self._has_metrics():
+            self.status.metrics = {}
+            self.save(update=True)
+            metrics = {}
+        else:
+            metrics = self._read_metrics()
+
+        updated_metrics = self._update_metrics(metrics, key, value, overwrite, single_value)
+        context_processor.update_metric(self.project, self.ENTITY_TYPE, self.id, key, updated_metrics[key])
 
     def log_metric(
         self,
@@ -90,8 +141,7 @@ class MetricsEntity(ContextEntity):
         ...     overwrite=True,
         ... )
         """
-        self._set_metrics(key, value, overwrite, single_value)
-        context_processor.update_metric(self.project, self.ENTITY_TYPE, self.id, key, self.status.metrics[key])
+        self._log_metric(key, value, overwrite, single_value)
 
     def log_metrics(
         self,
@@ -154,34 +204,33 @@ class MetricsEntity(ContextEntity):
         for key, value in metrics.items():
             # For lists, use log_metric which handles appending correctly
             if isinstance(value, list):
-                self.log_metric(key, value, overwrite)
+                self._log_metric(key, value, overwrite)
 
             # For single values, check if we should append or create new
             else:
                 if not overwrite and key in self.status.metrics:
-                    self.log_metric(key, value)
+                    self._log_metric(key, value)
                 else:
-                    self.log_metric(key, value, overwrite, single_value=True)
+                    self._log_metric(key, value, overwrite, single_value=True)
 
-    def _post_read_hook(self) -> None:
-        """
-        Hook method called after reading the entity from Core.
-        Can be overridden in subclasses to implement custom behavior.
-        """
-        self.read_metrics()
-
-    def read_metrics(self) -> None:
+    def _read_metrics(self) -> dict[str, MetricType]:
         """
         Get model metrics from backend.
+
+        Returns
+        -------
+        dict[str, MetricType]
+            The metrics dictionary retrieved from the backend.
         """
-        self.status.metrics = context_processor.read_metrics(
+        return context_processor.read_metrics(
             project=self.project,
             entity_type=self.ENTITY_TYPE,
             entity_id=self.id,
         )
 
-    def _set_metrics(
+    def _update_metrics(
         self,
+        metrics: dict[str, MetricType],
         key: str,
         value: MetricType,
         overwrite: bool,
@@ -192,6 +241,8 @@ class MetricsEntity(ContextEntity):
 
         Parameters
         ----------
+        metrics : dict[str, MetricType]
+            Current metrics dictionary to update.
         key : str
             Key of the metric.
         value : MetricType
@@ -201,9 +252,8 @@ class MetricsEntity(ContextEntity):
         single_value : bool
             If True, value is a single value.
         """
-        value = validate_metric_value(value)
-        self.status.metrics = set_metrics(
-            self.status.metrics,
+        return update_metrics(
+            metrics,
             key,
             value,
             overwrite,

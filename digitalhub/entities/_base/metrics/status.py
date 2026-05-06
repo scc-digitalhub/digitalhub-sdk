@@ -12,4 +12,4 @@ class MetricsStatus:
 
     def __init__(self, metrics: dict | None = None, **kwargs) -> None:
         super().__init__(**kwargs)
-        self.metrics = metrics if metrics is not None else {}
+        self.metrics = metrics
