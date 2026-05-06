@@ -14,9 +14,6 @@
     "path": "s3://datalake/demo-mlflow/model/model-mlflow/d873199e-e49b-4d51-8f49-125939acc366/",
     "framework": "sklearn",
     "algorithm": "SVC",
-    "model_config": {
-      "model_type": "classification"
-    },
     "parameters": {
       "error_score": "nan",
       "cv": "None",
@@ -31,15 +28,10 @@
       "refit": "True",
       "verbose": "0"
     },
-    "metrics": {
-      "training_accuracy_score": 0.9933333333333333,
-      "best_cv_score": 0.9800000000000001,
-      "training_f1_score": 0.9933326665999933,
-      "training_recall_score": 0.9933333333333333,
-      "training_precision_score": 0.9934640522875816,
-      "training_score": 0.9933333333333333
-    },
     "flavor": "sklearn",
+    "model_config": {
+      "model_type": "classification"
+    },
     "input_datasets": [
       {
         "name": "dataset",
