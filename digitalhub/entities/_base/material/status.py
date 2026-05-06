@@ -20,4 +20,4 @@ class MaterialStatus(Status):
         **kwargs,
     ) -> None:
         super().__init__(state=state, message=message, **kwargs)
-        self.files = files if files is not None else []
+        self.files = files

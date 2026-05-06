@@ -199,8 +199,22 @@ class MaterialEntity(VersionedEntity):
         list[dict]
             Files info list.
         """
-        self._get_files_info()
-        return self.status.files
+        if self.status.files:
+            return self.status.files
+        elif self._has_files_info():
+            return self._get_files_info()
+        return []
+
+    def _has_files_info(self) -> bool:
+        """
+        Check if the entity has files info.
+
+        Returns
+        -------
+        bool
+            True if the entity has files info, False otherwise.
+        """
+        return self.status.files is not None
 
     def add_files_info(self, files: list[dict]) -> None:
         """
@@ -251,21 +265,19 @@ class MaterialEntity(VersionedEntity):
         self.add_files_info(files_info)
         self.save(update=True)
 
-    def _get_files_info(self) -> None:
+    def _get_files_info(self) -> list[dict]:
         """
         Get files info from backend.
         """
-        if not self.status.files:
-            try:
-                files = context_processor.read_files_info(
-                    project=self.project,
-                    entity_type=self.ENTITY_TYPE,
-                    entity_id=self.id,
-                )
-            except BackendError:
-                logger.debug(
-                    f"Could not retrieve files info for entity '{self.id}' from backend.",
-                    exc_info=True,
-                )
-                files = []
-            self.add_files_info(files)
+        try:
+            return context_processor.read_files_info(
+                project=self.project,
+                entity_type=self.ENTITY_TYPE,
+                entity_id=self.id,
+            )
+        except BackendError:
+            logger.debug(
+                f"Could not retrieve files info for entity '{self.id}' from backend.",
+                exc_info=True,
+            )
+            return []
