@@ -8,7 +8,7 @@ from digitalhub.entities._base.entity.status import Status
 from digitalhub.entities._base.metrics.status import MetricsStatus
 
 
-class RunStatus(MetricsStatus, Status):
+class RunStatus(Status, MetricsStatus):
     """
     RunStatus status.
     """

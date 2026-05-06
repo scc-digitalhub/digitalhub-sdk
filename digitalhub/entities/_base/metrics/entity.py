@@ -33,9 +33,11 @@ class MetricsEntity(ContextEntity):
         dict[str, MetricType]
             Metrics dictionary.
         """
-        if not self._has_metrics() or not self.status.metrics:
+        if not self._has_metrics():
             return {}
-        return self._read_metrics()
+        elif not self.status.metrics:
+            return self._read_metrics()
+        return self.status.metrics
 
     def _has_metrics(self) -> bool:
         """
