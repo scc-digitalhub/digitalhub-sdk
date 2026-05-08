@@ -207,13 +207,14 @@ class MetricsEntity(ContextEntity):
             # For lists, use log_metric which handles appending correctly
             if isinstance(value, list):
                 self._log_metric(key, value, overwrite)
+                continue
 
-            # For single values, check if we should append or create new
-            else:
-                if not overwrite and key in self.status.metrics:
-                    self._log_metric(key, value)
-                else:
-                    self._log_metric(key, value, overwrite, single_value=True)
+            # For single values, check if we should append or create new metric
+            if not overwrite and self._has_metrics() and key in self.status.metrics:
+                self._log_metric(key, value)
+                continue
+
+            self._log_metric(key, value, overwrite, single_value=True)
 
     def _read_metrics(self) -> dict[str, MetricType]:
         """

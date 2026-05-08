@@ -8,6 +8,6 @@ from enum import Enum
 
 
 class LoggerVars(Enum):
-    ENV_LOG_LEVEL = "DIGITALHUB_LOG_LEVEL"
-    ENV_LOG_FORMAT = "DIGITALHUB_LOG_FORMAT"
-    LOG_NAME = "digitalhub"
+    ENV_LOG_LEVEL = "DHCORE_LOG_LEVEL"
+    ENV_LOG_FORMAT = "DHCORE_LOG_FORMAT"
+    LOG_NAME = "dhcore"
