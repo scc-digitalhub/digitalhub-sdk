@@ -747,8 +747,11 @@ class S3Store(Store):
             The list of keys under the partition.
         """
         key = self._get_key(partition)
-        file_list = client.list_objects_v2(Bucket=bucket, Prefix=key).get("Contents", [])
-        return [f["Key"] for f in file_list]
+        paginator = client.get_paginator("list_objects_v2")
+        keys = []
+        for page in paginator.paginate(Bucket=bucket, Prefix=key):
+            keys.extend(obj["Key"] for obj in page.get("Contents", []))
+        return keys
 
     @staticmethod
     def is_partition(path: str) -> bool:

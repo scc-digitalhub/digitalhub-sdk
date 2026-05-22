@@ -170,10 +170,12 @@ class MaterialEntity(VersionedEntity):
         list[dict]
             Files info list.
         """
-        if self.status.files:
-            return self.status.files
-        elif self._has_files_info():
-            return self._get_files_info()
+        if self._has_files_info():
+            files_info = self._get_files_info()
+            if files_info:
+                return files_info
+            if self.status.files:
+                return self.status.files
         return []
 
     def _has_files_info(self) -> bool:
