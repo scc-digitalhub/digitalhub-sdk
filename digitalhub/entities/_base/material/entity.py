@@ -49,35 +49,6 @@ class MaterialEntity(VersionedEntity):
         # Attributes to be included in __repr__
         self._obj_attr.extend(["extensions"])
 
-    def save(self, update: bool = False) -> MaterialEntity:
-        """
-        Save entity into backend.
-
-        Parameters
-        ----------
-        update : bool
-            Flag to indicate update.
-
-        Returns
-        -------
-        MaterialEntity
-            Entity saved.
-        """
-        # Evaluate files info list length
-        files = None
-        if self.status.files is not None and len(self.status.files) > 5:
-            files = self.status.files
-            self.status.files = []
-
-        obj: MaterialEntity = super().save(update)
-
-        # Handle files info
-        if files is not None:
-            context_processor.update_files_info(self.project, self.ENTITY_TYPE, self.id, files)
-            self.add_files_info(files)
-
-        return obj
-
     ##############################
     # I/O Methods
     ##############################
@@ -216,27 +187,6 @@ class MaterialEntity(VersionedEntity):
         """
         return self.status.files is not None
 
-    def add_files_info(self, files: list[dict]) -> None:
-        """
-        Add a file to the status.
-
-        Parameters
-        ----------
-        files : list[dict]
-            Files to add.
-        """
-        if not self._has_files_info():
-            self.status.files = []
-
-        available = 100 - len(self.status.files)
-        if len(files) > available:
-            files = files[:available]
-
-        path_list = self.get_file_paths()
-        for f in files:
-            if f.get("path") not in path_list:
-                self.status.files.append(f)
-
     def get_file_paths(self) -> list:
         """
         Get the paths of the files in the status.
@@ -246,7 +196,7 @@ class MaterialEntity(VersionedEntity):
         list
             Paths of the files in the status.
         """
-        return [f.get("path") for f in self.status.files]
+        return [f.get("path") for f in self.files]
 
     ##############################
     #  Private Helpers
@@ -254,7 +204,7 @@ class MaterialEntity(VersionedEntity):
 
     def _update_files_info(self, files_info: list[dict] | None = None) -> None:
         """
-        Update files info.
+        Update files info through the dedicated backend endpoint.
 
         Parameters
         ----------
@@ -263,10 +213,78 @@ class MaterialEntity(VersionedEntity):
         """
         if files_info is None:
             return
-        if self.status.files:
-            self.refresh()
-        self.add_files_info(files_info)
-        self.save(update=True)
+        self._log_files_info(files_info)
+
+    def _log_files_info(self, files_info: list[dict]) -> None:
+        """
+        Log files info through the dedicated backend endpoint.
+
+        Parameters
+        ----------
+        files_info : list[dict]
+            Files info to log.
+        """
+        if not files_info:
+            return
+
+        if not self._has_files_info():
+            self.status.files = []
+            self.save(update=True)
+            current_files = []
+            migrate_status_files = False
+        else:
+            if self.status.files:
+                self.refresh()
+            current_files = self.files
+            migrate_status_files = bool(self.status.files)
+
+        updated_files = self._merge_files_info(current_files, files_info)
+        context_processor.update_files_info(
+            self.project,
+            self.ENTITY_TYPE,
+            self.id,
+            updated_files,
+        )
+
+        if migrate_status_files:
+            self.status.files = []
+            self.save(update=True)
+
+    @staticmethod
+    def _merge_files_info(current_files: list[dict], new_files: list[dict]) -> list[dict]:
+        """
+        Merge files info by path, keeping the latest value for duplicates.
+
+        Parameters
+        ----------
+        current_files : list[dict]
+            Current files info.
+        new_files : list[dict]
+            New files info to merge.
+
+        Returns
+        -------
+        list[dict]
+            Merged files info.
+        """
+        merged_files = list(current_files)
+        path_index = {
+            file_info["path"]: index
+            for index, file_info in enumerate(merged_files)
+            if file_info.get("path") is not None
+        }
+
+        for file_info in new_files:
+            path = file_info.get("path")
+            if path is None or path not in path_index:
+                if path is not None:
+                    path_index[path] = len(merged_files)
+                merged_files.append(file_info)
+                continue
+
+            merged_files[path_index[path]] = file_info
+
+        return merged_files
 
     def _get_files_info(self) -> list[dict]:
         """
