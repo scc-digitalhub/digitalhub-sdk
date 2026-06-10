@@ -7,6 +7,7 @@ from __future__ import annotations
 import base64
 import importlib.util as imputil
 import json
+import tempfile
 from datetime import date, datetime, time
 from enum import Enum, EnumMeta
 from pathlib import Path
@@ -118,7 +119,7 @@ def extract_archive(path: Path, filename: Path) -> None:
         zip_file.extractall(path)
 
 
-def create_archive(path: Path, filename: Path) -> None:
+def create_archive(path: Path) -> Path:
     """
     Create a zip archive from a specified directory.
 
@@ -126,12 +127,20 @@ def create_archive(path: Path, filename: Path) -> None:
     ----------
     path : Path
         Directory to archive.
-    filename : Path
-        Path where to save the zip archive.
+
+    Returns
+    -------
+    Path
+        Path to the created zip archive.
     """
+
+    temp_dir = Path(tempfile.mkdtemp())
+    filename = temp_dir / "archive.zip"
+    paths = [file for file in path.rglob("*")]
     with ZipFile(filename, "w") as zip_file:
-        for file in path.rglob("*"):
+        for file in paths:
             zip_file.write(file, file.relative_to(path))
+    return filename
 
 
 class CustomJsonEncoder(json.JSONEncoder):
