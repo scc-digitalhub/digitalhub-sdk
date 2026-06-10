@@ -9,6 +9,7 @@ from digitalhub.entities.dataitem.croissant.builder import DataitemCroissantBuil
 from digitalhub.entities.dataitem.dataitem.builder import DataitemDataitemBuilder
 from digitalhub.entities.dataitem.table.builder import DataitemTableBuilder
 from digitalhub.entities.extension._base.builder import ExtensionExtensionBuilder
+from digitalhub.entities.image._base.builder import ImageImageBuilder
 from digitalhub.entities.log._base.builder import LogLogBuilder
 from digitalhub.entities.model.huggingface.builder import ModelHuggingfaceBuilder
 from digitalhub.entities.model.mlflow.builder import ModelModelBuilder
@@ -26,6 +27,7 @@ entity_builders: tuple = (
     (DataitemTableBuilder.ENTITY_KIND, DataitemTableBuilder),
     (DataitemCroissantBuilder.ENTITY_KIND, DataitemCroissantBuilder),
     (ExtensionExtensionBuilder.ENTITY_KIND, ExtensionExtensionBuilder),
+    (ImageImageBuilder.ENTITY_KIND, ImageImageBuilder),
     (LogLogBuilder.ENTITY_KIND, LogLogBuilder),
     (ModelHuggingfaceBuilder.ENTITY_KIND, ModelHuggingfaceBuilder),
     (ModelMlflowBuilder.ENTITY_KIND, ModelMlflowBuilder),

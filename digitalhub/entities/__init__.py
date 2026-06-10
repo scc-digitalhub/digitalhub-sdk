@@ -48,6 +48,16 @@ from digitalhub.entities.function.crud import (
     new_function,
     update_function,
 )
+from digitalhub.entities.image.crud import (
+    delete_image,
+    get_image,
+    get_image_versions,
+    import_image,
+    list_images,
+    load_image,
+    new_image,
+    update_image,
+)
 from digitalhub.entities.model.crud import (
     delete_model,
     get_model,
