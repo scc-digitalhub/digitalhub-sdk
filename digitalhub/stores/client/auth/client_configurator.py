@@ -94,7 +94,7 @@ class ClientConfigurator:
         """
         return self._auth_handler.is_refreshable()
 
-    def get_auth_parameters(self, kwargs: dict) -> dict:
+    def get_auth_parameters(self, kwargs: dict | None = None) -> dict:
         """
         Add authentication headers/parameters to HTTP request kwargs.
 
