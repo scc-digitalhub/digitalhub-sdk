@@ -82,6 +82,51 @@ def add_param(key: str, value: Any | None, **kwargs) -> dict:
     return kwargs
 
 
+def set_bearer_token(token: str, **kwargs) -> dict:
+    """
+    Set Authorization header with Bearer token.
+
+    Parameters
+    ----------
+    token : str
+        Bearer token to set in Authorization header.
+    **kwargs : dict
+        Keyword arguments to format. May be empty or contain various
+        parameters for API operations.
+
+    Returns
+    -------
+    dict
+        Dictionary with 'Authorization' header set to 'Bearer {token}'.
+    """
+    kwargs = ensure_headers(**kwargs)
+    kwargs["headers"]["Authorization"] = f"Bearer {token}"
+    return kwargs
+
+
+def set_basic_auth(user: str, password: str, **kwargs) -> dict:
+    """
+    Set basic authentication parameters.
+
+    Parameters
+    ----------
+    user : str
+        Username for basic authentication.
+    password : str
+        Password for basic authentication.
+    **kwargs : dict
+        Keyword arguments to format. May be empty or contain various
+        parameters for API operations.
+
+    Returns
+    -------
+    dict
+        Dictionary with 'auth' key set to (user, password) tuple for basic authentication.
+    """
+    kwargs["auth"] = (user, password)
+    return kwargs
+
+
 def set_json_content_type(**kwargs) -> dict:
     """
     Set Content-Type header to application/json.

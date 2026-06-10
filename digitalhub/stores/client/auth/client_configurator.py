@@ -119,16 +119,21 @@ class ClientConfigurator:
         """
         self._token_refresh_service.refresh_credentials()
 
-    def evaluate_refresh(self) -> bool:
+    def evaluate_refresh(self, check_token_validity: bool = False) -> bool:
         """
         Check if token refresh should be attempted.
+
+        Parameters
+        ----------
+        check_token_validity : bool, optional
+            Whether to check the validity of the token before attempting refresh.
 
         Returns
         -------
         bool
             True if token refresh is applicable, otherwise False.
         """
-        return self._token_refresh_service.evaluate_refresh()
+        return self._token_refresh_service.evaluate_refresh(check_token_validity=check_token_validity)
 
     ###############################
     # Utility methods
@@ -147,13 +152,13 @@ class ClientConfigurator:
         url = self.get_endpoint() + get_client_config().api_auth_check
 
         # Handle authentication errors with token refresh
-        kwargs = self.get_auth_parameters({})
+        kwargs = self.get_auth_parameters()
         response = get(url, timeout=get_client_config().http_timeout, **kwargs)
         try:
             response.raise_for_status()
         except Exception as e:
             if response.status_code == 401 and self.evaluate_refresh():
-                kwargs = self.get_auth_parameters({})
+                kwargs = self.get_auth_parameters()
                 return get(url, timeout=get_client_config().http_timeout, **kwargs)
             raise e
         return self._config_manager.get_credentials_and_config()

@@ -103,4 +103,4 @@ class S3StoreConfigurator:
         bool
             True if a retry action was performed, otherwise False.
         """
-        return get_client().eval_retry()
+        return get_client().eval_retry(check_token_validity=True)

@@ -71,7 +71,7 @@ class SqlStoreConfigurator:
         bool
             True if a retry should be attempted, False otherwise.
         """
-        return get_client().eval_retry()
+        return get_client().eval_retry(check_token_validity=True)
 
     def _validate(self) -> None:
         """

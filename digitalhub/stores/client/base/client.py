@@ -331,11 +331,21 @@ class Client:
     # Facade methods
     ##############################
 
-    def eval_retry(self) -> None:
+    def eval_retry(self, check_token_validity: bool = False) -> bool:
         """
         Evaluate the status of retry lifecycle.
+
+        Parameters
+        ----------
+        check_token_validity : bool, optional
+            Whether to check the validity of the token before attempting refresh.
+
+        Returns
+        -------
+        bool
+            True if token refresh is applicable, otherwise False.
         """
-        return self._configurator.evaluate_refresh()
+        return self._configurator.evaluate_refresh(check_token_validity=check_token_validity)
 
     def get_credentials_and_config(self) -> dict:
         """

@@ -70,18 +70,30 @@ class TokenRefreshService:
         # Re-evaluate auth type
         self._auth_handler.evaluate_auth_type()
 
-    def evaluate_refresh(self) -> bool:
+    def evaluate_refresh(self, check_token_validity: bool = False) -> bool:
         """
         Check if token refresh should be attempted with retry logic.
 
         Attempts to refresh credentials, and if it fails, retries with
         credentials from alternate sources (file vs environment).
 
+        Parameters
+        ----------
+        check_token_validity : bool, optional
+            Whether to check the validity of the token before attempting refresh.
+
         Returns
         -------
         bool
             True if token refresh succeeded, False if all attempts failed.
         """
+        if check_token_validity:
+            if self._test_token_validity():
+                logger.debug(
+                    "Current token is valid, no refresh needed. Check for other issues causing authentication failure."
+                )
+                return False
+            logger.debug("Current token is invalid or expired, attempting refresh.")
         try:
             self.refresh_credentials()
             return True
@@ -104,6 +116,24 @@ class TokenRefreshService:
                 )
                 return False
             return self.evaluate_refresh()
+
+    def _test_token_validity(self) -> bool:
+        """
+        Test the validity of the current access token.
+
+        Makes a test API call to check if the current access token is valid.
+        Returns True if the token is valid, False if it is invalid or expired.
+        """
+        url = self._config_manager.configuration.get(ConfigurationVars.DHCORE_ENDPOINT.value)
+        if url is None:
+            raise ClientError("API endpoint not set.")
+        url = sanitize_endpoint(url) + get_client_config().api_auth_check
+
+        kwargs = self._auth_handler.get_auth_parameters()
+        response = get(url, timeout=get_client_config().http_timeout, **kwargs)
+        log_request_response(logger, response)
+
+        return response.status_code == 200
 
     def _evaluate_auth_flow(self, url: str, creds: dict) -> Response:
         """

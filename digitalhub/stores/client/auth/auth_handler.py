@@ -8,7 +8,7 @@ import typing
 
 from digitalhub.stores.client.auth.enums import CredentialsVars
 from digitalhub.stores.client.common.enums import AuthType
-from digitalhub.stores.client.common.utils import ensure_headers
+from digitalhub.stores.client.common.utils import set_basic_auth, set_bearer_token
 
 if typing.TYPE_CHECKING:
     from digitalhub.stores.client.auth.config_manager import ConfigManager
@@ -79,7 +79,7 @@ class AuthenticationHandler:
         """
         return self._auth_type in [AuthType.OAUTH2.value, AuthType.EXCHANGE.value]
 
-    def get_auth_parameters(self, kwargs: dict) -> dict:
+    def get_auth_parameters(self, kwargs: dict | None = None) -> dict:
         """
         Add authentication headers/parameters to HTTP request kwargs.
 
@@ -96,17 +96,19 @@ class AuthenticationHandler:
         dict
             Modified kwargs with authentication parameters.
         """
+        if kwargs is None:
+            kwargs = {}
+
         creds = self._config_manager.credentials
 
         match self._auth_type:
             case AuthType.EXCHANGE.value | AuthType.OAUTH2.value | AuthType.ACCESS_TOKEN.value:
                 access_token = creds[CredentialsVars.DHCORE_ACCESS_TOKEN.value]
-                kwargs = ensure_headers(**kwargs)
-                kwargs["headers"]["Authorization"] = f"Bearer {access_token}"
+                kwargs = set_bearer_token(access_token, **kwargs)
             case AuthType.BASIC.value:
                 user = creds[CredentialsVars.DHCORE_USER.value]
                 password = creds[CredentialsVars.DHCORE_PASSWORD.value]
-                kwargs["auth"] = (user, password)
+                kwargs = set_basic_auth(user, password, **kwargs)
             case _:
                 pass
         return kwargs
