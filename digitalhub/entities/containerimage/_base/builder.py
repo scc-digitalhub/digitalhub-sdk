@@ -5,23 +5,17 @@
 from __future__ import annotations
 
 from digitalhub.entities._base.versioned.builder import VersionedBuilder
-from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
-from digitalhub.entities.image._base.entity import Image
-from digitalhub.entities.image._base.spec import ImageSpec, ImageValidator
-from digitalhub.entities.image._base.status import ImageStatus
+from digitalhub.entities._commons.enums import EntityTypes
+from digitalhub.entities.containerimage._base.entity import Containerimage
+from digitalhub.utils.exceptions import EntityError
 
 
-class ImageImageBuilder(VersionedBuilder):
+class ContainerimageBuilder(VersionedBuilder):
     """
-    ImageImageBuilder builder.
+    ContainerimageBuilder builder.
     """
 
-    ENTITY_TYPE = EntityTypes.IMAGE.value
-    ENTITY_CLASS = Image
-    ENTITY_SPEC_CLASS = ImageSpec
-    ENTITY_SPEC_VALIDATOR = ImageValidator
-    ENTITY_STATUS_CLASS = ImageStatus
-    ENTITY_KIND = EntityKinds.IMAGE_IMAGE.value
+    ENTITY_TYPE = EntityTypes.CONTAINERIMAGE.value
 
     def build(
         self,
@@ -31,8 +25,9 @@ class ImageImageBuilder(VersionedBuilder):
         uuid: str | None = None,
         description: str | None = None,
         labels: list[str] | None = None,
+        image: str | None = None,
         **kwargs,
-    ) -> Image:
+    ) -> Containerimage:
         """
         Create a new object.
 
@@ -58,6 +53,9 @@ class ImageImageBuilder(VersionedBuilder):
         Image
             Object instance.
         """
+        if image is None:
+            raise EntityError("Missing required 'image' argument.")
+
         name = self.build_name(name)
         uuid = self.build_uuid(uuid)
         metadata = self.build_metadata(
@@ -66,11 +64,8 @@ class ImageImageBuilder(VersionedBuilder):
             description=description,
             labels=labels,
         )
-        path = f"image://{name}"
-        provider = "kubernetes"
         spec = self.build_spec(
-            path=path,
-            provider=provider,
+            image=image,
             **kwargs,
         )
         status = self.build_status()

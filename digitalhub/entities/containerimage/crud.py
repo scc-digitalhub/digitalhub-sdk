@@ -10,13 +10,13 @@ from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._processors.processors import context_processor
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities.image._base.entity import Image
+    from digitalhub.entities.containerimage._base.entity import Containerimage
 
 
-ENTITY_TYPE = EntityTypes.IMAGE.value
+ENTITY_TYPE = EntityTypes.CONTAINERIMAGE.value
 
 
-def new_image(
+def new_containerimage(
     project: str,
     name: str,
     kind: str,
@@ -26,7 +26,7 @@ def new_image(
     embedded: bool = False,
     image: str | None = None,
     **kwargs,
-) -> Image:
+) -> Containerimage:
     """
     Create a new object.
 
@@ -58,7 +58,7 @@ def new_image(
 
     Examples
     --------
-    >>> obj = new_image(project="my-project",
+    >>> obj = new_containerimage(project="my-project",
     >>>                 name="my-image",
     >>>                 kind="image",
     >>>                 image="my-image")
@@ -77,11 +77,11 @@ def new_image(
     )
 
 
-def get_image(
+def get_containerimage(
     identifier: str,
     project: str | None = None,
     entity_id: str | None = None,
-) -> Image:
+) -> Containerimage:
     """
     Get object from backend.
 
@@ -102,10 +102,10 @@ def get_image(
     Examples
     --------
     Using entity key:
-    >>> obj = get_image("store://my-image-key")
+    >>> obj = get_containerimage("store://my-image-key")
 
     Using entity name:
-    >>> obj = get_image("my-image-name",
+    >>> obj = get_containerimage("my-image-name",
     >>>                     project="my-project",
     >>>                     entity_id="my-image-id")
     """
@@ -117,10 +117,10 @@ def get_image(
     )
 
 
-def get_image_versions(
+def get_containerimage_versions(
     identifier: str,
     project: str | None = None,
-) -> list[Image]:
+) -> list[Containerimage]:
     """
     Get object versions from backend.
 
@@ -139,10 +139,10 @@ def get_image_versions(
     Examples
     --------
     Using entity key:
-    >>> obj = get_image_versions("store://my-image-key")
+    >>> obj = get_containerimage_versions("store://my-image-key")
 
     Using entity name:
-    >>> obj = get_image_versions("my-image-name",
+    >>> obj = get_containerimage_versions("my-image-name",
     >>>                              project="my-project")
     """
     return context_processor.read_context_entity_versions(
@@ -152,7 +152,7 @@ def get_image_versions(
     )
 
 
-def list_images(
+def list_containerimages(
     project: str,
     q: str | None = None,
     name: str | None = None,
@@ -162,7 +162,7 @@ def list_images(
     created: str | None = None,
     updated: str | None = None,
     versions: str | None = None,
-) -> list[Image]:
+) -> list[Containerimage]:
     """
     List all latest version objects from backend.
 
@@ -194,7 +194,7 @@ def list_images(
 
     Examples
     --------
-    >>> objs = list_images(project="my-project")
+    >>> objs = list_containerimages(project="my-project")
     """
     return context_processor.list_context_entities(
         project=project,
@@ -210,12 +210,12 @@ def list_images(
     )
 
 
-def import_image(
+def import_containerimage(
     file: str | None = None,
     key: str | None = None,
     reset_id: bool = False,
     context: str | None = None,
-) -> Image:
+) -> Containerimage:
     """
     Import an object from a YAML file or from a storage key.
 
@@ -237,7 +237,7 @@ def import_image(
 
     Examples
     --------
-    >>> obj = import_image("my-image.yaml")
+    >>> obj = import_containerimage("my-image.yaml")
     """
     return context_processor.import_context_entity(
         file,
@@ -247,7 +247,7 @@ def import_image(
     )
 
 
-def load_image(file: str) -> Image:
+def load_containerimage(file: str) -> Containerimage:
     """
     Load object from a YAML file and update an existing object into the backend.
 
@@ -263,12 +263,12 @@ def load_image(file: str) -> Image:
 
     Examples
     --------
-    >>> obj = load_image("my-image.yaml")
+    >>> obj = load_containerimage("my-image.yaml")
     """
     return context_processor.load_context_entity(file)
 
 
-def update_image(entity: Image) -> Image:
+def update_containerimage(entity: Containerimage) -> Containerimage:
     """
     Update object. Note that object spec are immutable.
 
@@ -284,7 +284,7 @@ def update_image(entity: Image) -> Image:
 
     Examples
     --------
-    >>> obj = update_image(obj)
+    >>> obj = update_containerimage(obj)
     """
     return context_processor.update_context_entity(
         project=entity.project,
@@ -294,7 +294,7 @@ def update_image(entity: Image) -> Image:
     )
 
 
-def delete_image(
+def delete_containerimage(
     identifier: str,
     project: str | None = None,
     entity_id: str | None = None,
@@ -326,10 +326,10 @@ def delete_image(
     Examples
     --------
     If delete_all_versions is False:
-    >>> delete_image("store://my-image-key")
+    >>> delete_containerimage("store://my-image-key")
 
     Otherwise:
-    >>> delete_image("my-image-name",
+    >>> delete_containerimage("my-image-name",
     >>>                  project="my-project",
     >>>                  delete_all_versions=True)
     """

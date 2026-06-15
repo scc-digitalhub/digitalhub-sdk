@@ -5,11 +5,11 @@
 from __future__ import annotations
 
 from digitalhub.entities.artifact.artifact.builder import ArtifactArtifactBuilder
+from digitalhub.entities.containerimage.containerimage.builder import ContainerimageContainerimageBuilder
 from digitalhub.entities.dataitem.croissant.builder import DataitemCroissantBuilder
 from digitalhub.entities.dataitem.dataitem.builder import DataitemDataitemBuilder
 from digitalhub.entities.dataitem.table.builder import DataitemTableBuilder
 from digitalhub.entities.extension._base.builder import ExtensionExtensionBuilder
-from digitalhub.entities.image._base.builder import ImageImageBuilder
 from digitalhub.entities.log._base.builder import LogLogBuilder
 from digitalhub.entities.model.huggingface.builder import ModelHuggingfaceBuilder
 from digitalhub.entities.model.mlflow.builder import ModelModelBuilder
@@ -23,11 +23,11 @@ from digitalhub.entities.trigger.scheduler.builder import TriggerSchedulerBuilde
 
 entity_builders: tuple = (
     (ArtifactArtifactBuilder.ENTITY_KIND, ArtifactArtifactBuilder),
+    (ContainerimageContainerimageBuilder.ENTITY_KIND, ContainerimageContainerimageBuilder),
+    (DataitemCroissantBuilder.ENTITY_KIND, DataitemCroissantBuilder),
     (DataitemDataitemBuilder.ENTITY_KIND, DataitemDataitemBuilder),
     (DataitemTableBuilder.ENTITY_KIND, DataitemTableBuilder),
-    (DataitemCroissantBuilder.ENTITY_KIND, DataitemCroissantBuilder),
     (ExtensionExtensionBuilder.ENTITY_KIND, ExtensionExtensionBuilder),
-    (ImageImageBuilder.ENTITY_KIND, ImageImageBuilder),
     (LogLogBuilder.ENTITY_KIND, LogLogBuilder),
     (ModelHuggingfaceBuilder.ENTITY_KIND, ModelHuggingfaceBuilder),
     (ModelMlflowBuilder.ENTITY_KIND, ModelMlflowBuilder),

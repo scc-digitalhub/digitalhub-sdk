@@ -7,7 +7,7 @@ from __future__ import annotations
 from digitalhub.entities._base.entity.spec import Spec, SpecValidator
 
 
-class ImageSpec(Spec):
+class ContainerimageSpec(Spec):
     """
     ImageSpec specifications.
     """
@@ -17,7 +17,7 @@ class ImageSpec(Spec):
         self.image = image
 
 
-class ImageValidator(SpecValidator):
+class ContainerimageValidator(SpecValidator):
     """
     ImageValidator validator.
     """

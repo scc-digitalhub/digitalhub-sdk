@@ -105,8 +105,7 @@ def get_git_username_password_from_token(token: str) -> tuple[str, str]:
     tuple[str, str]
         Username and password for git authentication.
     """
-    # Mutued from mlrun
-    if token.startswith("github_pat_") or token.startswith("glpat"):
+    if token.startswith(("github_pat_", "glpat_", "ghp_")):
         return "oauth2", token
     return token, "x-oauth-basic"
 

@@ -14,6 +14,16 @@ from digitalhub.entities.artifact.crud import (
     new_artifact,
     update_artifact,
 )
+from digitalhub.entities.containerimage.crud import (
+    delete_containerimage,
+    get_containerimage,
+    get_containerimage_versions,
+    import_containerimage,
+    list_containerimages,
+    load_containerimage,
+    new_containerimage,
+    update_containerimage,
+)
 from digitalhub.entities.dataitem.croissant.crud import log_croissant
 from digitalhub.entities.dataitem.crud import (
     delete_dataitem,
@@ -47,16 +57,6 @@ from digitalhub.entities.function.crud import (
     load_function,
     new_function,
     update_function,
-)
-from digitalhub.entities.image.crud import (
-    delete_image,
-    get_image,
-    get_image_versions,
-    import_image,
-    list_images,
-    load_image,
-    new_image,
-    update_image,
 )
 from digitalhub.entities.model.crud import (
     delete_model,
