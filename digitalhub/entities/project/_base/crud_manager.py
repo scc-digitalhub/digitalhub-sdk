@@ -39,10 +39,10 @@ OPS_REGISTRY = {
         OpType.NEW: entities.new_artifact,
         OpType.LOG: entities.log_artifact,
         OpType.LOG_GENERIC: entities.log_generic_artifact,
+        OpType.IMPORT: entities.import_artifact,
         OpType.GET: entities.get_artifact,
         OpType.GET_VERSIONS: entities.get_artifact_versions,
         OpType.LIST: entities.list_artifacts,
-        OpType.IMPORT: entities.import_artifact,
         OpType.UPDATE: entities.update_artifact,
         OpType.DELETE: entities.delete_artifact,
     },
@@ -52,10 +52,10 @@ OPS_REGISTRY = {
         OpType.LOG_GENERIC: entities.log_generic_dataitem,
         OpType.LOG_TABLE: entities.log_table,
         OpType.LOG_CROISSANT: entities.log_croissant,
+        OpType.IMPORT: entities.import_dataitem,
         OpType.GET: entities.get_dataitem,
         OpType.GET_VERSIONS: entities.get_dataitem_versions,
         OpType.LIST: entities.list_dataitems,
-        OpType.IMPORT: entities.import_dataitem,
         OpType.UPDATE: entities.update_dataitem,
         OpType.DELETE: entities.delete_dataitem,
     },
@@ -66,45 +66,45 @@ OPS_REGISTRY = {
         OpType.LOG_MLFLOW: entities.log_mlflow,
         OpType.LOG_SKLEARN: entities.log_sklearn,
         OpType.LOG_HUGGINGFACE: entities.log_huggingface,
+        OpType.IMPORT: entities.import_model,
         OpType.GET: entities.get_model,
         OpType.GET_VERSIONS: entities.get_model_versions,
         OpType.LIST: entities.list_models,
-        OpType.IMPORT: entities.import_model,
         OpType.UPDATE: entities.update_model,
         OpType.DELETE: entities.delete_model,
     },
     EntityTypes.FUNCTION: {
         OpType.NEW: entities.new_function,
+        OpType.IMPORT: entities.import_function,
         OpType.GET: entities.get_function,
         OpType.GET_VERSIONS: entities.get_function_versions,
         OpType.LIST: entities.list_functions,
-        OpType.IMPORT: entities.import_function,
         OpType.UPDATE: entities.update_function,
         OpType.DELETE: entities.delete_function,
     },
     EntityTypes.WORKFLOW: {
         OpType.NEW: entities.new_workflow,
+        OpType.IMPORT: entities.import_workflow,
         OpType.GET: entities.get_workflow,
         OpType.GET_VERSIONS: entities.get_workflow_versions,
         OpType.LIST: entities.list_workflows,
-        OpType.IMPORT: entities.import_workflow,
         OpType.UPDATE: entities.update_workflow,
         OpType.DELETE: entities.delete_workflow,
     },
     EntityTypes.SECRET: {
         OpType.NEW: entities.new_secret,
+        OpType.IMPORT: entities.import_secret,
         OpType.GET: entities.get_secret,
         OpType.LIST: entities.list_secrets,
-        OpType.IMPORT: entities.import_secret,
         OpType.UPDATE: entities.update_secret,
         OpType.DELETE: entities.delete_secret,
     },
     EntityTypes.EXTENSION: {
         OpType.NEW: entities.new_extension,
+        OpType.IMPORT: entities.import_extension,
         OpType.GET: entities.get_extension,
         OpType.GET_VERSIONS: entities.get_extension_versions,
         OpType.LIST: entities.list_extensions,
-        OpType.IMPORT: entities.import_extension,
         OpType.UPDATE: entities.update_extension,
         OpType.DELETE: entities.delete_extension,
     },
@@ -112,6 +112,15 @@ OPS_REGISTRY = {
         OpType.GET: entities.get_run,
         OpType.LIST: entities.list_runs,
         OpType.DELETE: entities.delete_run,
+    },
+    EntityTypes.CONTAINERIMAGE: {
+        OpType.NEW: entities.new_containerimage,
+        OpType.IMPORT: entities.import_containerimage,
+        OpType.GET: entities.get_containerimage,
+        OpType.GET_VERSIONS: entities.get_containerimage_versions,
+        OpType.LIST: entities.list_containerimages,
+        OpType.UPDATE: entities.update_containerimage,
+        OpType.DELETE: entities.delete_containerimage,
     },
 }
 
@@ -223,9 +232,11 @@ class EntityCRUD:
         kwargs["context"] = self.project_name
         return self._ops[OpType.IMPORT](**kwargs)
 
-    def update(self, *args) -> ContextEntity:
+    def update(self, entity: ContextEntity) -> ContextEntity:
         """Update entity."""
-        return self._ops[OpType.UPDATE](*args)
+        if entity.project != self.project_name:
+            raise ValueError(f"Entity to update is not in project {self.project_name}.")
+        return self._ops[OpType.UPDATE](entity)
 
     def delete(self, *args, **kwargs) -> dict:
         """Delete entity from backend."""
@@ -247,3 +258,4 @@ class CRUDManager:
         self.secret = EntityCRUD(project_name, EntityTypes.SECRET)
         self.extension = EntityCRUD(project_name, EntityTypes.EXTENSION)
         self.run = EntityCRUD(project_name, EntityTypes.RUN)
+        self.containerimage = EntityCRUD(project_name, EntityTypes.CONTAINERIMAGE)

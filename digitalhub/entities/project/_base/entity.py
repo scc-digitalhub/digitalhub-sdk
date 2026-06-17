@@ -25,6 +25,7 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities._base.context.entity import ContextEntity
     from digitalhub.entities._base.metadata.entity import Metadata
     from digitalhub.entities.artifact._base.entity import Artifact
+    from digitalhub.entities.containerimage._base.entity import Containerimage
     from digitalhub.entities.dataitem._base.entity import Dataitem
     from digitalhub.entities.extension._base.entity import Extension
     from digitalhub.entities.function._base.entity import Function
@@ -351,18 +352,6 @@ class Project(Entity):
             f"{EntityTypes.WORKFLOW.value}s",
         ]
 
-    def _validate_entity_project(self, project: str) -> None:
-        """
-        Validate that entity belongs to this project.
-
-        Parameters
-        ----------
-        project : str
-            Project name of the entity.
-        """
-        if project != self.name:
-            raise ValueError(f"Entity to update is not in project {self.name}.")
-
     ##############################
     #  Artifacts
     ##############################
@@ -547,7 +536,6 @@ class Project(Entity):
         -------
         digitalhub.update_artifact
         """
-        self._validate_entity_project(entity.project)
         return self.crud.artifact.update(entity)
 
     @_auto_refresh
@@ -826,7 +814,6 @@ class Project(Entity):
         -------
         digitalhub.update_dataitem
         """
-        self._validate_entity_project(entity.project)
         return self.crud.dataitem.update(entity)
 
     @_auto_refresh
@@ -1119,7 +1106,6 @@ class Project(Entity):
         -------
         digitalhub.update_model
         """
-        self._validate_entity_project(entity.project)
         return self.crud.model.update(entity)
 
     @_auto_refresh
@@ -1266,7 +1252,6 @@ class Project(Entity):
         -------
         digitalhub.update_function
         """
-        self._validate_entity_project(entity.project)
         return self.crud.function.update(entity)
 
     @_auto_refresh
@@ -1413,7 +1398,6 @@ class Project(Entity):
         -------
         digitalhub.update_workflow
         """
-        self._validate_entity_project(entity.project)
         return self.crud.workflow.update(entity)
 
     @_auto_refresh
@@ -1529,7 +1513,6 @@ class Project(Entity):
         -------
         digitalhub.update_secret
         """
-        self._validate_entity_project(entity.project)
         return self.crud.secret.update(entity)
 
     @_auto_refresh
@@ -1676,7 +1659,6 @@ class Project(Entity):
         -------
         digitalhub.update_extension
         """
-        self._validate_entity_project(entity.project)
         return self.crud.extension.update(entity)
 
     @_auto_refresh
@@ -1773,6 +1755,144 @@ class Project(Entity):
         self.crud.run.delete(
             identifier=identifier,
             entity_id=entity_id,
+        )
+
+    ##############################
+    #  Containerimages
+    ##############################
+
+    @_auto_refresh
+    def new_containerimage(
+        self,
+        name: str,
+        image: str,
+        description: str | None = None,
+        labels: list[str] | None = None,
+        **kwargs,
+    ) -> Containerimage:
+        """
+        Create and upload a containerimage.
+
+        See also
+        -------
+        digitalhub.new_containerimage
+        """
+        return self.crud.containerimage.new(
+            name=name,
+            image=image,
+            description=description,
+            labels=labels,
+            **kwargs,
+        )
+
+    @_auto_refresh
+    def get_containerimage(
+        self,
+        identifier: str,
+        entity_id: str | None = None,
+    ) -> Containerimage:
+        """
+        Get containerimage from backend.
+
+        See also
+        -------
+        digitalhub.get_containerimage
+        """
+        return self.crud.containerimage.get(
+            identifier=identifier,
+            entity_id=entity_id,
+        )
+
+    @_auto_refresh
+    def get_containerimage_versions(
+        self,
+        identifier: str,
+    ) -> list[Containerimage]:
+        """
+        Get containerimage versions from backend.
+
+        See also
+        -------
+        digitalhub.get_containerimage_versions
+        """
+        return self.crud.containerimage.get_versions(identifier=identifier)
+
+    @_auto_refresh
+    def list_containerimages(
+        self,
+        q: str | None = None,
+        name: str | None = None,
+        user: str | None = None,
+        state: str | None = None,
+        created: str | None = None,
+        updated: str | None = None,
+    ) -> list[Containerimage]:
+        """
+        List all latest containerimages from backend.
+
+        See also
+        -------
+        digitalhub.list_containerimages
+        """
+        return self.crud.containerimage.list(
+            q=q,
+            name=name,
+            user=user,
+            state=state,
+            created=created,
+            updated=updated,
+        )
+
+    @_auto_refresh
+    def import_containerimage(
+        self,
+        file: str | None = None,
+        key: str | None = None,
+        reset_id: bool = True,
+    ) -> Containerimage:
+        """
+        Import containerimage into backend from a YAML file or key.
+
+        See also
+        -------
+        digitalhub.import_containerimage
+        """
+        return self.crud.containerimage.import_entity(file=file, key=key, reset_id=reset_id)
+
+    @_auto_refresh
+    def update_containerimage(
+        self,
+        entity: Containerimage,
+    ) -> Containerimage:
+        """
+        Update containerimage.
+
+        See also
+        -------
+        digitalhub.update_containerimage
+        """
+        return self.crud.containerimage.update(entity)
+
+    @_auto_refresh
+    def delete_containerimage(
+        self,
+        identifier: str,
+        entity_id: str | None = None,
+        delete_all_versions: bool = False,
+        cascade: bool = True,
+    ) -> None:
+        """
+        Delete containerimage from backend.
+
+        See also
+        -------
+        digitalhub.delete_containerimage
+        """
+        self.crud.containerimage.delete(
+            identifier=identifier,
+            entity_id=entity_id,
+            delete_all_versions=delete_all_versions,
+            cascade=cascade,
         )
 
     ##############################
