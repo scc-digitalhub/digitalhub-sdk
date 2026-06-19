@@ -78,7 +78,7 @@ class LocalStore(Store):
         list[dict]
             Returns files metadata.
         """
-        return [get_file_info_from_local(p) for p in paths]
+        return [get_file_info_from_local(path, src_path) for path, src_path in paths]
 
     ##############################
     # Datastore methods
