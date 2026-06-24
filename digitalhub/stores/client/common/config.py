@@ -67,7 +67,8 @@ class ClientConfig:
     lib_version: int = 15
 
     # Configuration file path
-    config_file_path: Path = _get_config_file_path()
+    config_ini_path: Path = _get_config_file_path()
+    config_env_path: str = str(config_ini_path.parent / ".env")
 
     # API structure
     api_base: str = "/api/v1"

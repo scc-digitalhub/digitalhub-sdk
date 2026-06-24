@@ -64,6 +64,9 @@ class TokenRefreshService:
         # Raise an error if the response indicates failure
         response.raise_for_status()
 
+        import pdb
+
+        pdb.set_trace()
         # Export new credentials to file
         self._export_new_creds(response.json())
 
@@ -261,8 +264,10 @@ class TokenRefreshService:
 
         # Write new credentials to file if possible, otherwise update in-memory configuration
         if not self._config_manager.in_memory:
-            self._config_manager.export_to_file(response)
+            self._config_manager.export_to_ini(response)
+            self._config_manager.export_to_env(response)
             self._config_manager.reload_credentials()
+            self._config_manager.load_to_env()
         else:
             variables = {k.upper(): v for k, v in response.items()}
             self._config_manager.update_in_memory(variables)

@@ -9,12 +9,14 @@ from typing import Any
 from warnings import warn
 
 from digitalhub.stores.client.auth.enums import ConfigurationVars, CredentialsVars, SetCreds
-from digitalhub.stores.client.auth.ini_module import (
-    file_exists,
+from digitalhub.stores.client.auth.file_module import (
+    ini_file_exists,
+    load_dotenv_file,
     load_file,
     load_key,
     load_profile,
     set_current_profile,
+    write_dotenv,
     write_file,
 )
 from digitalhub.stores.client.common.utils import sanitize_endpoint
@@ -197,7 +199,7 @@ class ConfigManager:
     # Export methods
     ##############################
 
-    def export_to_file(self, variables: dict) -> None:
+    def export_to_ini(self, variables: dict) -> None:
         """
         Write credentials/configuration to the .dhcore file.
 
@@ -210,6 +212,29 @@ class ConfigManager:
             write_file(variables, self._current_profile)
         except Exception:
             raise ClientError("Failed to write credentials to file.")
+
+    def export_to_env(self, variables: dict) -> None:
+        """
+        Write credentials/configuration to the .env file.
+
+        Parameters
+        ----------
+        variables : dict
+            Variables to save.
+        """
+        try:
+            write_dotenv(variables)
+        except Exception:
+            warn("Failed to write credentials to .env file.")
+
+    def load_to_env(self) -> None:
+        """
+        Load credentials/configuration to environment variables.
+        """
+        try:
+            load_dotenv_file()
+        except Exception:
+            warn("Failed to load credentials from .env file.")
 
     def update_in_memory(self, variables: dict) -> None:
         """
@@ -228,9 +253,10 @@ class ConfigManager:
         if file does not exist yet.
         """
         try:
-            if not file_exists():
+            if not ini_file_exists():
                 variables = {k: v for k, v in {**self._configuration, **self._credentials}.items() if v is not None}
-                self.export_to_file(variables)
+                self.export_to_env(variables)
+                self.export_to_ini(variables)
         except Exception:
             self._in_memory = True
             warn("Configuration file is not writable. Credentials will be stored in memory only for this session.")
