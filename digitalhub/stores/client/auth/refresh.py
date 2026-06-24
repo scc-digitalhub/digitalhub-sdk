@@ -64,9 +64,6 @@ class TokenRefreshService:
         # Raise an error if the response indicates failure
         response.raise_for_status()
 
-        import pdb
-
-        pdb.set_trace()
         # Export new credentials to file
         self._export_new_creds(response.json())
 
