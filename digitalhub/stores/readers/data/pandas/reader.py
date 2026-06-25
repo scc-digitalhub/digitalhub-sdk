@@ -25,6 +25,7 @@ from digitalhub.utils.data_utils import (
     prepare_data,
     prepare_preview,
 )
+from digitalhub.utils.enums import FileExtensions
 from digitalhub.utils.exceptions import ReaderError
 
 
@@ -55,9 +56,16 @@ class DataframeReaderPandas(DataframeReader):
         pd.DataFrame
             Pandas DataFrame.
         """
+        limit = None
+        if extension == FileExtensions.PARQUET.value:
+            limit = kwargs.pop(self.get_limit_arg_name(), None)
+
         read_function = map_read_function(extension)
         try:
-            return read_function(path_or_buffer, **kwargs)
+            df = read_function(path_or_buffer, **kwargs)
+            if limit is not None:
+                return df.head(limit)
+            return df
         except ParserError as e:
             raise ReaderError(f"Unable to read from {path_or_buffer}.") from e
         except ValueError as e:
