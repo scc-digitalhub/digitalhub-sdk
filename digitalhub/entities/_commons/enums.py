@@ -83,6 +83,8 @@ class EntityKinds(Enum):
     MODEL_MLFLOW = "mlflow"
     MODEL_MODEL = "model"
     MODEL_SKLEARN = "sklearn"
+    MODEL_TVM_IR = "tvm-ir"
+    MODEL_TVM_SO = "tvm-so"
     PROJECT_PROJECT = "project"
     SECRET_SECRET = "secret"
     TRIGGER_AUTOML = "automl"

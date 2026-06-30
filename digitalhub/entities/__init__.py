@@ -73,6 +73,8 @@ from digitalhub.entities.model.huggingface.crud import log_huggingface
 from digitalhub.entities.model.mlflow.crud import log_mlflow
 from digitalhub.entities.model.model.crud import log_generic_model
 from digitalhub.entities.model.sklearn.crud import log_sklearn
+from digitalhub.entities.model.tvm_ir.crud import log_tvm_ir
+from digitalhub.entities.model.tvm_so.crud import log_tvm_so
 from digitalhub.entities.project.crud import (
     delete_project,
     get_or_create_project,

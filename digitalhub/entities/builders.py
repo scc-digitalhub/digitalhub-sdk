@@ -15,6 +15,8 @@ from digitalhub.entities.model.huggingface.builder import ModelHuggingfaceBuilde
 from digitalhub.entities.model.mlflow.builder import ModelModelBuilder
 from digitalhub.entities.model.model.builder import ModelMlflowBuilder
 from digitalhub.entities.model.sklearn.builder import ModelSklearnBuilder
+from digitalhub.entities.model.tvm_ir.builder import ModelTvmIrBuilder
+from digitalhub.entities.model.tvm_so.builder import ModelTvmSoBuilder
 from digitalhub.entities.project._base.builder import ProjectProjectBuilder
 from digitalhub.entities.secret._base.builder import SecretSecretBuilder
 from digitalhub.entities.trigger.automl.builder import TriggerAutomlBuilder
@@ -33,6 +35,8 @@ entity_builders: tuple = (
     (ModelMlflowBuilder.ENTITY_KIND, ModelMlflowBuilder),
     (ModelModelBuilder.ENTITY_KIND, ModelModelBuilder),
     (ModelSklearnBuilder.ENTITY_KIND, ModelSklearnBuilder),
+    (ModelTvmIrBuilder.ENTITY_KIND, ModelTvmIrBuilder),
+    (ModelTvmSoBuilder.ENTITY_KIND, ModelTvmSoBuilder),
     (ProjectProjectBuilder.ENTITY_KIND, ProjectProjectBuilder),
     (SecretSecretBuilder.ENTITY_KIND, SecretSecretBuilder),
     (TriggerAutomlBuilder.ENTITY_KIND, TriggerAutomlBuilder),

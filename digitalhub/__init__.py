@@ -81,6 +81,8 @@ from digitalhub.entities import (
     log_model,
     log_sklearn,
     log_table,
+    log_tvm_ir,
+    log_tvm_so,
     new_artifact,
     new_containerimage,
     new_dataitem,
