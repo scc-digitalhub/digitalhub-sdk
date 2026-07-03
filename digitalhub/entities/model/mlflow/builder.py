@@ -11,7 +11,7 @@ from digitalhub.entities.model.mlflow.spec import ModelSpecMlflow, ModelValidato
 from digitalhub.entities.model.mlflow.status import ModelStatusMlflow
 
 
-class ModelModelBuilder(ModelBuilder):
+class ModelMlflowBuilder(ModelBuilder):
     """
     ModelMlflow builder.
     """

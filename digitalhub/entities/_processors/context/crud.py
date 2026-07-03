@@ -14,6 +14,7 @@ from digitalhub.entities._processors.utils import (
 )
 from digitalhub.factory.entity import entity_factory
 from digitalhub.stores.client.common.enums import ApiCategories, BackendOperations
+from digitalhub.utils.exceptions import BuilderError
 
 if typing.TYPE_CHECKING:
     from digitalhub.context.context import Context
@@ -96,14 +97,18 @@ class ContextEntityCRUDProcessor:
             context = get_context(kwargs["project"])
             entity_kind = kwargs.get("kind")
             entity_type = kwargs.pop("entity_type")
-            if entity_type != entity_factory.get_entity_type_from_kind(entity_kind):
+            try:
+                expected_type = entity_factory.get_entity_type_from_kind(entity_kind)
+            except BuilderError:
+                expected_type = entity_type
+            if entity_type != expected_type:
                 raise ValueError(
                     f"Entity kind '{entity_kind}' does not match expected type '{entity_type}'.",
                 )
-            obj: ContextEntity = entity_factory.build_entity_from_params(**kwargs)
+            obj: ContextEntity = entity_factory.build_entity_from_params(entity_type=entity_type, **kwargs)
             obj._post_create_hook_before_save()
         new_obj = self._create_context_entity(context, obj.ENTITY_TYPE, obj.to_dict())
-        return entity_factory.build_entity_from_dict(new_obj)
+        return entity_factory.build_entity_from_dict(new_obj, entity_type=obj.ENTITY_TYPE)
 
     def _read_context_entity(
         self,
@@ -215,7 +220,7 @@ class ContextEntityCRUDProcessor:
             entity_id=entity_id,
             **kwargs,
         )
-        entity = entity_factory.build_entity_from_dict(obj)
+        entity = entity_factory.build_entity_from_dict(obj, entity_type=entity_type)
         entity._post_read_hook()
         return entity
 

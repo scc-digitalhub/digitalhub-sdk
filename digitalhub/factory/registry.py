@@ -28,6 +28,7 @@ class BuilderRegistry:
         self._instance: BuilderRegistry | None = None
         self._initialized = False
         self._entity_builders: dict[str, EntityBuilder | RuntimeEntityBuilder] = {}
+        self._generic_entity_builders: dict[str, EntityBuilder | RuntimeEntityBuilder] = {}
         self._runtime_builders: dict[str, RuntimeBuilder] = {}
         self._entities_registered = False
         self._runtimes_registered = False
@@ -66,7 +67,30 @@ class BuilderRegistry:
             raise BuilderError(f"Builder {name} already exists.")
         self._runtime_builders[name] = builder()
 
-    def get_entity_builder(self, kind: str) -> EntityBuilder | RuntimeEntityBuilder:
+    def add_generic_entity_builder(
+        self,
+        entity_type: str,
+        builder: type[EntityBuilder | RuntimeEntityBuilder],
+    ) -> None:
+        """
+        Register a generic entity builder for a given entity type.
+
+        Parameters
+        ----------
+        entity_type : str
+            The entity type used as fallback key.
+        builder : type[EntityBuilder] | type[RuntimeEntityBuilder]
+            The builder class to register. It will be instantiated immediately.
+        """
+        if entity_type in self._generic_entity_builders:
+            raise BuilderError(f"Generic builder for {entity_type} already exists.")
+        self._generic_entity_builders[entity_type] = builder()
+
+    def get_entity_builder(
+        self,
+        kind: str,
+        entity_type: str | None = None,
+    ) -> EntityBuilder | RuntimeEntityBuilder:
         """
         Retrieve the entity builder for the given kind, ensuring lazy registration.
 
@@ -86,6 +110,8 @@ class BuilderRegistry:
             if not self._runtimes_registered:
                 self._ensure_runtimes_registered()
             if kind not in self._entity_builders:
+                if entity_type is not None and entity_type in self._generic_entity_builders:
+                    return self._generic_entity_builders[entity_type]
                 raise BuilderError(f"Entity builder for kind '{kind}' not found.")
         return self._entity_builders[kind]
 
@@ -132,6 +158,10 @@ class BuilderRegistry:
             # Register core entities
             for k, b in getattr(module, FactoryEnum.REG_ENTITIES_VAR.value, []):
                 self.add_entity_builder(k, b)
+
+            # Register generic fallback entities
+            for k, b in getattr(module, FactoryEnum.REG_GENERIC_ENTITIES_VAR.value, []):
+                self.add_generic_entity_builder(k, b)
 
         except Exception as e:
             raise RuntimeError("Error registering core entities.") from e

@@ -45,7 +45,7 @@ class EntityFactory:
         builder = registry.get_entity_builder(kind)
         return getattr(builder, method_name)(*args, **kwargs)
 
-    def build_entity_from_params(self, **kwargs) -> Entity:
+    def build_entity_from_params(self, entity_type: str | None = None, **kwargs) -> Entity:
         """
         Build an entity from parameters.
 
@@ -60,10 +60,10 @@ class EntityFactory:
             Entity object.
         """
         kind = self._get_kind(**kwargs)
-        builder = registry.get_entity_builder(kind)
+        builder = registry.get_entity_builder(kind, entity_type=entity_type)
         return builder.build(**kwargs)
 
-    def build_entity_from_dict(self, obj: dict) -> Entity:
+    def build_entity_from_dict(self, obj: dict, entity_type: str | None = None) -> Entity:
         """
         Build an entity from a dictionary.
 
@@ -78,7 +78,7 @@ class EntityFactory:
             Entity object.
         """
         kind = self._get_kind(**obj)
-        builder = registry.get_entity_builder(kind)
+        builder = registry.get_entity_builder(kind, entity_type=entity_type)
         return builder.from_dict(obj)
 
     def build_spec(self, kind_to_build_from: str, **kwargs) -> Spec:

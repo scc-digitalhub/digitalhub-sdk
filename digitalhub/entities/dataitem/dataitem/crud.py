@@ -15,7 +15,7 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities.dataitem.dataitem.entity import DataitemDataitem
 
 
-def log_generic_dataitem(
+def log_dataitem_dataitem(
     project: str,
     name: str,
     source: SourcesOrListOfSources,

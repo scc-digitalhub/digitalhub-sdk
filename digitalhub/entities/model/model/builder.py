@@ -11,7 +11,7 @@ from digitalhub.entities.model.model.spec import ModelSpecModel, ModelValidatorM
 from digitalhub.entities.model.model.status import ModelStatusModel
 
 
-class ModelMlflowBuilder(ModelBuilder):
+class ModelModelBuilder(ModelBuilder):
     """
     ModelModel builder.
     """

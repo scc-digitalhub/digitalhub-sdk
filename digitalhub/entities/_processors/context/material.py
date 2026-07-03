@@ -11,7 +11,7 @@ from digitalhub.entities._commons.enums import State
 from digitalhub.entities._processors.utils import get_context
 from digitalhub.factory.entity import entity_factory
 from digitalhub.utils.enums import FileExtensions
-from digitalhub.utils.exceptions import EntityError, EntityErrorFileNotFound
+from digitalhub.utils.exceptions import BuilderError, EntityError, EntityErrorFileNotFound
 
 if typing.TYPE_CHECKING:
     from digitalhub.context.context import Context
@@ -209,7 +209,10 @@ class ContextEntityMaterialProcessor:
         """
         entity_kind = kwargs["kind"]
         entity_type = kwargs.pop("entity_type")
-        expected_type = entity_factory.get_entity_type_from_kind(entity_kind)
+        try:
+            expected_type = entity_factory.get_entity_type_from_kind(entity_kind)
+        except BuilderError:
+            expected_type = entity_type
         if entity_type != expected_type:
             raise ValueError(
                 f"Entity kind '{entity_kind}' does not match expected type '{expected_type}'.",

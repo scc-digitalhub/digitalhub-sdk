@@ -7,9 +7,9 @@ from __future__ import annotations
 import typing
 from warnings import warn
 
-from digitalhub.entities._commons.enums import EntityTypes
+from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
 from digitalhub.entities._processors.processors import context_processor
-from digitalhub.entities.artifact.artifact.crud import log_generic_artifact
+from digitalhub.entities.artifact.artifact.crud import log_artifact_artifact, log_generic_artifact
 from digitalhub.utils.types import SourcesOrListOfSources
 
 if typing.TYPE_CHECKING:
@@ -132,9 +132,21 @@ def log_artifact(
     >>>                    source="./local-path")
     """
     warn("log_artifact in version 0.16 wil log an artifact of kind 'artifact'.")
+    if kind == EntityKinds.ARTIFACT_ARTIFACT.value:
+        return log_artifact_artifact(
+            project=project,
+            name=name,
+            source=source,
+            drop_existing=drop_existing,
+            path=path,
+            description=description,
+            labels=labels,
+            **kwargs,
+        )
     return log_generic_artifact(
         project=project,
         name=name,
+        kind=kind,
         source=source,
         drop_existing=drop_existing,
         path=path,

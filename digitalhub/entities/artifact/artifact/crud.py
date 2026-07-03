@@ -15,7 +15,7 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities.artifact.artifact.entity import ArtifactArtifact
 
 
-def log_generic_artifact(
+def log_artifact_artifact(
     project: str,
     name: str,
     source: SourcesOrListOfSources,

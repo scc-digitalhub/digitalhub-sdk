@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from digitalhub.entities.artifact.artifact.crud import log_generic_artifact
+from digitalhub.entities.artifact.artifact.crud import log_artifact_artifact
 from digitalhub.entities.artifact.crud import (
     delete_artifact,
     get_artifact,
@@ -14,6 +14,7 @@ from digitalhub.entities.artifact.crud import (
     new_artifact,
     update_artifact,
 )
+from digitalhub.entities.artifact.generic.crud import log_generic_artifact
 from digitalhub.entities.containerimage.crud import (
     delete_containerimage,
     get_containerimage,
@@ -36,7 +37,8 @@ from digitalhub.entities.dataitem.crud import (
     new_dataitem,
     update_dataitem,
 )
-from digitalhub.entities.dataitem.dataitem.crud import log_generic_dataitem
+from digitalhub.entities.dataitem.dataitem.crud import log_dataitem_dataitem
+from digitalhub.entities.dataitem.generic.crud import log_generic_dataitem
 from digitalhub.entities.dataitem.table.crud import log_table
 from digitalhub.entities.extension.crud import (
     delete_extension,
@@ -69,9 +71,10 @@ from digitalhub.entities.model.crud import (
     new_model,
     update_model,
 )
+from digitalhub.entities.model.generic.crud import log_generic_model
 from digitalhub.entities.model.huggingface.crud import log_huggingface
 from digitalhub.entities.model.mlflow.crud import log_mlflow
-from digitalhub.entities.model.model.crud import log_generic_model
+from digitalhub.entities.model.model.crud import log_model_model
 from digitalhub.entities.model.sklearn.crud import log_sklearn
 from digitalhub.entities.model.tvm_ir.crud import log_tvm_ir
 from digitalhub.entities.model.tvm_so.crud import log_tvm_so

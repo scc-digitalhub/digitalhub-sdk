@@ -11,7 +11,7 @@ from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
 from digitalhub.entities._processors.processors import context_processor
 from digitalhub.entities.model.huggingface.crud import log_huggingface
 from digitalhub.entities.model.mlflow.crud import log_mlflow
-from digitalhub.entities.model.model.crud import log_generic_model
+from digitalhub.entities.model.model.crud import log_generic_model, log_model_model
 from digitalhub.entities.model.sklearn.crud import log_sklearn
 
 if typing.TYPE_CHECKING:
@@ -142,7 +142,9 @@ def log_model(
         return log_mlflow(**kwargs)
     elif kind == EntityKinds.MODEL_SKLEARN.value:
         return log_sklearn(**kwargs)
-    return log_generic_model(**kwargs)
+    elif kind == EntityKinds.MODEL_MODEL.value:
+        return log_model_model(**kwargs)
+    return log_generic_model(kind=kind, **kwargs)
 
 
 def get_model(

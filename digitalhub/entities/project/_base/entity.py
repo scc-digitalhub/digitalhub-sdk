@@ -419,9 +419,38 @@ class Project(Entity):
         )
 
     @_auto_refresh
+    def log_artifact_artifact(
+        self,
+        name: str,
+        source: str,
+        drop_existing: bool = False,
+        path: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
+        **kwargs,
+    ) -> Artifact:
+        """
+        Create and upload an artifact artifact.
+
+        See also
+        -------
+        digitalhub.log_artifact_artifact
+        """
+        return self.crud.artifact.log_artifact(
+            name=name,
+            source=source,
+            drop_existing=drop_existing,
+            path=path,
+            description=description,
+            labels=labels,
+            **kwargs,
+        )
+
+    @_auto_refresh
     def log_generic_artifact(
         self,
         name: str,
+        kind: str,
         source: str,
         drop_existing: bool = False,
         path: str | None = None,
@@ -438,6 +467,7 @@ class Project(Entity):
         """
         return self.crud.artifact.log_generic(
             name=name,
+            kind=kind,
             source=source,
             drop_existing=drop_existing,
             path=path,
@@ -631,7 +661,7 @@ class Project(Entity):
         )
 
     @_auto_refresh
-    def log_generic_dataitem(
+    def log_dataitem_dataitem(
         self,
         name: str,
         source: str | None = None,
@@ -648,8 +678,38 @@ class Project(Entity):
         -------
         digitalhub.log_generic_dataitem
         """
+        return self.crud.dataitem.log_dataitem(
+            name=name,
+            source=source,
+            drop_existing=drop_existing,
+            path=path,
+            description=description,
+            labels=labels,
+            **kwargs,
+        )
+
+    @_auto_refresh
+    def log_generic_dataitem(
+        self,
+        name: str,
+        kind: str,
+        source: str | None = None,
+        drop_existing: bool = False,
+        path: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
+        **kwargs,
+    ) -> Dataitem:
+        """
+        Create and upload a generic dataitem.
+
+        See also
+        -------
+        digitalhub.log_generic_dataitem
+        """
         return self.crud.dataitem.log_generic(
             name=name,
+            kind=kind,
             source=source,
             drop_existing=drop_existing,
             path=path,
@@ -905,9 +965,38 @@ class Project(Entity):
         )
 
     @_auto_refresh
+    def log_model_model(
+        self,
+        name: str,
+        source: str,
+        drop_existing: bool = False,
+        path: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
+        **kwargs,
+    ) -> Model:
+        """
+        Create and upload a generic model.
+
+        See also
+        -------
+        digitalhub.log_model_model
+        """
+        return self.crud.model.log_model(
+            name=name,
+            source=source,
+            drop_existing=drop_existing,
+            path=path,
+            description=description,
+            labels=labels,
+            **kwargs,
+        )
+
+    @_auto_refresh
     def log_generic_model(
         self,
         name: str,
+        kind: str,
         source: str,
         drop_existing: bool = False,
         path: str | None = None,
@@ -924,6 +1013,7 @@ class Project(Entity):
         """
         return self.crud.model.log_generic(
             name=name,
+            kind=kind,
             source=source,
             drop_existing=drop_existing,
             path=path,

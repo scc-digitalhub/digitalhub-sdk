@@ -15,7 +15,7 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities.model.model.entity import ModelModel
 
 
-def log_generic_model(
+def log_model_model(
     project: str,
     name: str,
     source: SourcesOrListOfSources,

@@ -72,6 +72,7 @@ class EntityKinds(Enum):
     Entity kinds.
     """
 
+    GENERIC = "_generic"
     ARTIFACT_ARTIFACT = "artifact"
     DATAITEM_CROISSANT = "croissant"
     DATAITEM_DATAITEM = "dataitem"

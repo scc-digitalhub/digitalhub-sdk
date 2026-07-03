@@ -9,7 +9,7 @@ from warnings import warn
 
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
 from digitalhub.entities._processors.processors import context_processor
-from digitalhub.entities.dataitem.dataitem.crud import log_generic_dataitem
+from digitalhub.entities.dataitem.dataitem.crud import log_dataitem_dataitem, log_generic_dataitem
 from digitalhub.entities.dataitem.table.crud import log_table
 
 if typing.TYPE_CHECKING:
@@ -162,11 +162,25 @@ def log_dataitem(
             engine=engine,
             **kwargs,
         )
+    if kind == EntityKinds.DATAITEM_DATAITEM.value:
+        if source is None:
+            raise ValueError("Source must be provided for non-table dataitems.")
+        return log_dataitem_dataitem(
+            project=project,
+            name=name,
+            source=source,
+            drop_existing=drop_existing,
+            path=path,
+            description=description,
+            labels=labels,
+            **kwargs,
+        )
     if source is None:
         raise ValueError("Source must be provided for non-table dataitems.")
     return log_generic_dataitem(
         project=project,
         name=name,
+        kind=kind,
         source=source,
         drop_existing=drop_existing,
         path=path,

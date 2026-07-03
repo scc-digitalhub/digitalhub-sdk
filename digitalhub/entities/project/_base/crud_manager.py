@@ -12,6 +12,14 @@ from digitalhub.entities._commons.enums import EntityTypes
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.context.entity import ContextEntity
+    from digitalhub.entities.artifact.artifact.entity import ArtifactArtifact
+    from digitalhub.entities.dataitem.croissant.entity import DataitemCroissant
+    from digitalhub.entities.dataitem.dataitem.entity import DataitemDataitem
+    from digitalhub.entities.dataitem.table.entity import DataitemTable
+    from digitalhub.entities.model.huggingface.entity import ModelHuggingface
+    from digitalhub.entities.model.mlflow.entity import ModelMlflow
+    from digitalhub.entities.model.model.entity import ModelModel
+    from digitalhub.entities.model.sklearn.entity import ModelSklearn
 
 
 class OpType(str, Enum):
@@ -20,7 +28,10 @@ class OpType(str, Enum):
     NEW = "new"
     LOG = "log"
     LOG_GENERIC = "log_generic"
+    LOG_ARTIFACT = "log_artifact"
+    LOG_DATAITEM = "log_dataitem"
     LOG_TABLE = "log_table"
+    LOG_MODEL = "log_model"
     LOG_MLFLOW = "log_mlflow"
     LOG_SKLEARN = "log_sklearn"
     LOG_HUGGINGFACE = "log_huggingface"
@@ -39,6 +50,7 @@ OPS_REGISTRY = {
         OpType.NEW: entities.new_artifact,
         OpType.LOG: entities.log_artifact,
         OpType.LOG_GENERIC: entities.log_generic_artifact,
+        OpType.LOG_ARTIFACT: entities.log_artifact_artifact,
         OpType.IMPORT: entities.import_artifact,
         OpType.GET: entities.get_artifact,
         OpType.GET_VERSIONS: entities.get_artifact_versions,
@@ -50,6 +62,7 @@ OPS_REGISTRY = {
         OpType.NEW: entities.new_dataitem,
         OpType.LOG: entities.log_dataitem,
         OpType.LOG_GENERIC: entities.log_generic_dataitem,
+        OpType.LOG_DATAITEM: entities.log_dataitem_dataitem,
         OpType.LOG_TABLE: entities.log_table,
         OpType.LOG_CROISSANT: entities.log_croissant,
         OpType.IMPORT: entities.import_dataitem,
@@ -63,6 +76,7 @@ OPS_REGISTRY = {
         OpType.NEW: entities.new_model,
         OpType.LOG: entities.log_model,
         OpType.LOG_GENERIC: entities.log_generic_model,
+        OpType.LOG_MODEL: entities.log_model_model,
         OpType.LOG_MLFLOW: entities.log_mlflow,
         OpType.LOG_SKLEARN: entities.log_sklearn,
         OpType.LOG_HUGGINGFACE: entities.log_huggingface,
@@ -195,23 +209,35 @@ class EntityCRUD:
         """Create and upload a generic entity."""
         return self._call_op(OpType.LOG_GENERIC, **kwargs)
 
-    def log_table(self, **kwargs) -> ContextEntity:
+    def log_artifact(self, **kwargs) -> ArtifactArtifact:
+        """Create and upload an artifact."""
+        return self._call_op(OpType.LOG_ARTIFACT, **kwargs)
+
+    def log_dataitem(self, **kwargs) -> DataitemDataitem:
+        """Create and upload a dataitem."""
+        return self._call_op(OpType.LOG_DATAITEM, **kwargs)
+
+    def log_table(self, **kwargs) -> DataitemTable:
         """Create and upload a table dataitem."""
         return self._call_op(OpType.LOG_TABLE, **kwargs)
 
-    def log_croissant(self, **kwargs) -> ContextEntity:
+    def log_croissant(self, **kwargs) -> DataitemCroissant:
         """Create and upload a Croissant model."""
         return self._call_op(OpType.LOG_CROISSANT, **kwargs)
 
-    def log_mlflow(self, **kwargs) -> ContextEntity:
+    def log_model(self, **kwargs) -> ModelModel:
+        """Create and upload a model."""
+        return self._call_op(OpType.LOG_MODEL, **kwargs)
+
+    def log_mlflow(self, **kwargs) -> ModelMlflow:
         """Create and upload a MLflow model."""
         return self._call_op(OpType.LOG_MLFLOW, **kwargs)
 
-    def log_sklearn(self, **kwargs) -> ContextEntity:
+    def log_sklearn(self, **kwargs) -> ModelSklearn:
         """Create and upload a scikit-learn model."""
         return self._call_op(OpType.LOG_SKLEARN, **kwargs)
 
-    def log_huggingface(self, **kwargs) -> ContextEntity:
+    def log_huggingface(self, **kwargs) -> ModelHuggingface:
         """Create and upload a Huggingface model."""
         return self._call_op(OpType.LOG_HUGGINGFACE, **kwargs)
 
