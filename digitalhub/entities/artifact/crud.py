@@ -9,11 +9,12 @@ from warnings import warn
 
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
 from digitalhub.entities._processors.processors import context_processor
-from digitalhub.entities.artifact.artifact.crud import log_artifact_artifact, log_generic_artifact
-from digitalhub.utils.types import SourcesOrListOfSources
+from digitalhub.entities.artifact.artifact.crud import log_artifact_artifact
+from digitalhub.entities.artifact.generic.crud import log_generic_artifact
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.artifact._base.entity import Artifact
+    from digitalhub.utils.types import SourcesOrListOfSources
 
 
 ENTITY_TYPE = EntityTypes.ARTIFACT.value

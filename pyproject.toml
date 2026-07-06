@@ -24,6 +24,7 @@ keywords = ["data", "dataops", "kubernetes"]
 requires-python = ">=3.10, <3.15"
 dependencies = [
     "boto3",
+    "huggingface_hub",
     "python-dotenv",
     "GitPython>=3",
     "numpy",

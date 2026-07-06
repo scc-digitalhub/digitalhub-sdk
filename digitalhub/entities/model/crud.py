@@ -9,9 +9,10 @@ from warnings import warn
 
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
 from digitalhub.entities._processors.processors import context_processor
+from digitalhub.entities.model.generic.crud import log_generic_model
 from digitalhub.entities.model.huggingface.crud import log_huggingface
 from digitalhub.entities.model.mlflow.crud import log_mlflow
-from digitalhub.entities.model.model.crud import log_generic_model, log_model_model
+from digitalhub.entities.model.model.crud import log_model_model
 from digitalhub.entities.model.sklearn.crud import log_sklearn
 
 if typing.TYPE_CHECKING:

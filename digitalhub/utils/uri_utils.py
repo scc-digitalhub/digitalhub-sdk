@@ -50,6 +50,15 @@ class RemoteSchemes(Enum):
     ZIP_HTTPS = "zip+https"
 
 
+class HfSchemes(Enum):
+    """
+    Hugging Face URI schemes.
+    """
+
+    HF = "hf"
+    HUGGINGFACE = "huggingface"
+
+
 class SqlSchemes(Enum):
     """
     SQL URI schemes.
@@ -75,6 +84,7 @@ class SchemeCategory(Enum):
     """
 
     S3 = "s3"
+    HF = "hf"
     LOCAL = "local"
     REMOTE = "remote"
     SQL = "sql"
@@ -106,6 +116,8 @@ def map_uri_scheme(uri: str) -> str:
         raise ValueError("For local URI, do not use any scheme.")
     if scheme in list_enum(RemoteSchemes):
         return SchemeCategory.REMOTE.value
+    if scheme in list_enum(HfSchemes):
+        return SchemeCategory.HF.value
     if scheme in list_enum(S3Schemes):
         return SchemeCategory.S3.value
     if scheme in list_enum(SqlSchemes):
@@ -147,6 +159,23 @@ def has_remote_scheme(uri: str) -> bool:
         True if the URI is remote, False otherwise.
     """
     return map_uri_scheme(uri) == SchemeCategory.REMOTE.value
+
+
+def has_hf_scheme(uri: str) -> bool:
+    """
+    Check if a URI has a Hugging Face scheme.
+
+    Parameters
+    ----------
+    uri : str
+        URI string.
+
+    Returns
+    -------
+    bool
+        True if the URI is Hugging Face, False otherwise.
+    """
+    return map_uri_scheme(uri) == SchemeCategory.HF.value
 
 
 def has_s3_scheme(uri: str) -> bool:
