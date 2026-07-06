@@ -23,6 +23,22 @@ class MetricsEntity(ContextEntity):
         super().__init__(*args, **kwargs)
         self.status: MetricsStatus
 
+        self._entity_has_metrics: bool | None = None
+
+    def _has_metrics(self) -> bool:
+        """
+        Verify that the entity has metrics.
+
+        Raises
+        ------
+        ValueError
+            If the entity does not have metrics.
+        """
+        if self._entity_has_metrics is not None:
+            return self._entity_has_metrics
+        self._entity_has_metrics = bool(self._read_metrics()) or bool(self.status.metrics)
+        return self._entity_has_metrics
+
     @property
     def metrics(self) -> dict[str, MetricType]:
         """
@@ -35,20 +51,9 @@ class MetricsEntity(ContextEntity):
         """
         if not self._has_metrics():
             return {}
-        elif not self.status.metrics:
+        elif not bool(self.status.metrics):
             return self._read_metrics()
         return self.status.metrics
-
-    def _has_metrics(self) -> bool:
-        """
-        Check if the entity has any metrics.
-
-        Returns
-        -------
-        bool
-            True if the entity has metrics, False otherwise.
-        """
-        return self.status.metrics is not None
 
     def _log_metric(
         self,
@@ -87,6 +92,7 @@ class MetricsEntity(ContextEntity):
 
         updated_metrics = self._update_metrics(metrics, key, value, overwrite, single_value)
         context_processor.update_metric(self.project, self.ENTITY_TYPE, self.id, key, updated_metrics[key])
+        self._entity_has_metrics = True
 
     def log_metric(
         self,
@@ -203,6 +209,7 @@ class MetricsEntity(ContextEntity):
         --------
         log_metric
         """
+        stored_metrics = self._read_metrics()
         for key, value in metrics.items():
             # For lists, use log_metric which handles appending correctly
             if isinstance(value, list):
@@ -210,7 +217,7 @@ class MetricsEntity(ContextEntity):
                 continue
 
             # For single values, check if we should append or create new metric
-            if not overwrite and self._has_metrics() and key in self.status.metrics:
+            if not overwrite and self._has_metrics() and key in stored_metrics:
                 self._log_metric(key, value)
                 continue
 
@@ -238,7 +245,7 @@ class MetricsEntity(ContextEntity):
         value: MetricType,
         overwrite: bool,
         single_value: bool,
-    ) -> None:
+    ) -> dict[str, MetricType]:
         """
         Set model metrics.
 
