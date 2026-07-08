@@ -37,5 +37,5 @@ def backend_factory() -> requests.Session:
     session = requests.Session()
     session.mount("http://", DragonflyAdapter())
     session.mount("https://", DragonflyAdapter())
-    session.proxies = {"http": "http://127.0.0.1:4001"}
+    session.proxies = {"http": f"http://{NODE_IP}:4001"}
     return session

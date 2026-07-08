@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, unquote, urlparse
 
-from huggingface_hub import configure_http_backend, snapshot_download
+from huggingface_hub import set_client_factory, snapshot_download
 
 from digitalhub.stores.data._base.store import Store
 from digitalhub.stores.data.hf.dragonfly import backend_factory, dragonfly
@@ -53,7 +53,7 @@ class HFStore(Store):
 
         repo_id, revision = self._parse_source(src)
         if dragonfly:
-            configure_http_backend(backend_factory=backend_factory)
+            set_client_factory(backend_factory=backend_factory)
         snapshot_download(
             repo_id=repo_id,
             revision=revision,
