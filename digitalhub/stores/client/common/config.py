@@ -93,7 +93,17 @@ class ClientConfig:
     oauth2: str = "oauth2_"
 
     # Apis
-    well_known_path: str = "/.well-known/openid-configuration"
+    well_known_openid_conf: str = "/.well-known/openid-configuration"
+
+    ###################################
+    # Configuration
+    ###################################
+
+    # Vars
+    k8s_resource_profiles: str = "k8s_resource_profiles"
+
+    # Apis
+    well_known_conf: str = "/.well-known/configuration"
 
 
 # Global default configuration instance
