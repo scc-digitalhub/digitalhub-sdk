@@ -51,3 +51,15 @@ def get_current_profile() -> str:
         Name of the current credentials profile.
     """
     return get_client().get_current_profile()
+
+
+def get_k8s_resource_profiles() -> list[str]:
+    """
+    Get the Kubernetes resource profile list from the current credentials.
+
+    Returns
+    -------
+    list[str]
+        Kubernetes resource profile names.
+    """
+    return get_client().get_k8s_resource_profiles()

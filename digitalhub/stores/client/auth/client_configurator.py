@@ -185,3 +185,19 @@ class ClientConfigurator:
             Name of the current credentials profile.
         """
         return self._config_manager.current_profile
+
+    def get_k8s_resource_profiles(self) -> list[str]:
+        """
+        Get the Kubernetes resource profile list from the current credentials.
+
+        Returns
+        -------
+        list[str]
+            Kubernetes resource profile names.
+        """
+        endpoint = self.get_endpoint()
+        url = endpoint + get_client_config().well_known_conf
+        response = get(url, timeout=get_client_config().http_timeout)
+        response.raise_for_status()
+        data: dict = response.json()
+        return data.get(get_client_config().k8s_resource_profiles, [])

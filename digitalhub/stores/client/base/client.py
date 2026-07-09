@@ -380,3 +380,14 @@ class Client:
             Name of the current credentials profile.
         """
         return self._configurator.get_current_profile()
+
+    def get_k8s_resource_profiles(self) -> list[str]:
+        """
+        Get the Kubernetes resource profile list from the current credentials.
+
+        Returns
+        -------
+        list[str]
+            Kubernetes resource profile names.
+        """
+        return self._configurator.get_k8s_resource_profiles()

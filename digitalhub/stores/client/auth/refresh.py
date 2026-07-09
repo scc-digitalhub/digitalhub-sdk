@@ -193,7 +193,7 @@ class TokenRefreshService:
             raise ClientError("Issuer endpoint not set.")
 
         # Standard issuer endpoint path
-        url = sanitize_endpoint(endpoint_issuer + get_client_config().well_known_path)
+        url = sanitize_endpoint(endpoint_issuer + get_client_config().well_known_openid_conf)
 
         # Call issuer to get refresh endpoint
         response = get(url, timeout=get_client_config().http_timeout)
