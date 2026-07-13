@@ -116,6 +116,7 @@ from digitalhub.entities.extension._base.utils import create_extension_schema
 from digitalhub.stores.client.common.api import (
     get_credentials_and_config,
     get_current_profile,
+    get_k8s_resource_profiles,
     refresh_token,
     set_current_profile,
 )
