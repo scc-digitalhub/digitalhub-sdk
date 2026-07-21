@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import typing
-from warnings import warn
 
 from digitalhub.entities._commons.enums import EntityKinds
 from digitalhub.entities.model._base.crud import log_base_model
@@ -15,7 +14,7 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities.model.model.entity import ModelModel
 
 
-def log_model_model(
+def log_model(
     project: str,
     name: str,
     source: SourcesOrListOfSources,
@@ -54,11 +53,10 @@ def log_model_model(
 
     Examples
     --------
-    >>> obj = log_generic_model(project="my-project",
-    >>>                         name="my-generic-model",
-    >>>                         source="./local-path")
+    >>> obj = log_model(project="my-project",
+    >>>                 name="my-model",
+    >>>                 source="./local-path")
     """
-    warn("This method will become log_model in 0.16")
     return log_base_model(
         project=project,
         name=name,

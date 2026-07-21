@@ -5,16 +5,12 @@
 from __future__ import annotations
 
 import typing
-from warnings import warn
 
-from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
+from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._processors.processors import context_processor
-from digitalhub.entities.artifact.artifact.crud import log_artifact_artifact
-from digitalhub.entities.artifact.generic.crud import log_generic_artifact
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.artifact._base.entity import Artifact
-    from digitalhub.utils.types import SourcesOrListOfSources
 
 
 ENTITY_TYPE = EntityTypes.ARTIFACT.value
@@ -81,78 +77,6 @@ def new_artifact(
         entity_type=ENTITY_TYPE,
         path=path,
         extensions=extensions,
-        **kwargs,
-    )
-
-
-def log_artifact(
-    project: str,
-    name: str,
-    kind: str,
-    source: SourcesOrListOfSources,
-    drop_existing: bool = False,
-    path: str | None = None,
-    description: str | None = None,
-    labels: list[str] | None = None,
-    **kwargs,
-) -> Artifact:
-    """
-    Create and upload an object.
-
-    Parameters
-    ----------
-    project : str
-        Project name.
-    name : str
-        Object name.
-    kind : str
-        Kind the object.
-    source : SourcesOrListOfSources
-        Artifact location on local path.
-    drop_existing : bool
-        Whether to drop existing entity with the same name.
-    path : str
-        Destination path of the artifact. If not provided, it's generated.
-    description : str
-        Artifact description.
-    labels : list[str]
-        Artifact labels.
-    **kwargs : dict
-        New artifact spec parameters.
-
-    Returns
-    -------
-    Artifact
-        Object instance.
-
-    Examples
-    --------
-    >>> obj = log_artifact(project="my-project",
-    >>>                    name="my-artifact",
-    >>>                    kind="artifact",
-    >>>                    source="./local-path")
-    """
-    warn("log_artifact in version 0.16 wil log an artifact of kind 'artifact'.")
-    if kind == EntityKinds.ARTIFACT_ARTIFACT.value:
-        return log_artifact_artifact(
-            project=project,
-            name=name,
-            source=source,
-            drop_existing=drop_existing,
-            path=path,
-            description=description,
-            labels=labels,
-            **kwargs,
-        )
-    return log_generic_artifact(
-        project=project,
-        name=name,
-        kind=kind,
-        source=source,
-        drop_existing=drop_existing,
-        path=path,
-        description=description,
-        labels=labels,
         **kwargs,
     )
 

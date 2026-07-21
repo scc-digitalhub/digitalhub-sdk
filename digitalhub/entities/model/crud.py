@@ -5,19 +5,12 @@
 from __future__ import annotations
 
 import typing
-from warnings import warn
 
-from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
+from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._processors.processors import context_processor
-from digitalhub.entities.model.generic.crud import log_generic_model
-from digitalhub.entities.model.huggingface.crud import log_huggingface
-from digitalhub.entities.model.mlflow.crud import log_mlflow
-from digitalhub.entities.model.model.crud import log_model_model
-from digitalhub.entities.model.sklearn.crud import log_sklearn
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.model._base.entity import Model
-    from digitalhub.utils.types import SourcesOrListOfSources
 
 ENTITY_TYPE = EntityTypes.MODEL.value
 
@@ -85,67 +78,6 @@ def new_model(
         extensions=extensions,
         **kwargs,
     )
-
-
-def log_model(
-    project: str,
-    name: str,
-    kind: str,
-    source: SourcesOrListOfSources,
-    drop_existing: bool = False,
-    path: str | None = None,
-    **kwargs,
-) -> Model:
-    """
-    Create and upload an object.
-
-    Parameters
-    ----------
-    project : str
-        Project name.
-    name : str
-        Object name.
-    kind : str
-        Kind the object.
-    source : SourcesOrListOfSources
-        Model location on local path.
-    drop_existing : bool
-        Whether to drop existing entity with the same name.
-    path : str
-        Destination path of the model. If not provided, it's generated.
-    **kwargs : dict
-        New model spec parameters.
-
-    Returns
-    -------
-    Model
-        Object instance.
-
-    Examples
-    --------
-    >>> obj = log_model(project="my-project",
-    >>>                 name="my-model",
-    >>>                 kind="model",
-    >>>                 source="./local-path")
-    """
-    warn(
-        "log_model will in version 0.16 log a model of kind 'model'. "
-        "To log a model of a specific kind, use the log_<kind> methods (e.g. log_sklearn, log_mlflow)."
-    )
-    kwargs["project"] = project
-    kwargs["name"] = name
-    kwargs["source"] = source
-    kwargs["drop_existing"] = drop_existing
-    kwargs["path"] = path
-    if kind == EntityKinds.MODEL_HUGGINGFACE.value:
-        return log_huggingface(**kwargs)
-    elif kind == EntityKinds.MODEL_MLFLOW.value:
-        return log_mlflow(**kwargs)
-    elif kind == EntityKinds.MODEL_SKLEARN.value:
-        return log_sklearn(**kwargs)
-    elif kind == EntityKinds.MODEL_MODEL.value:
-        return log_model_model(**kwargs)
-    return log_generic_model(kind=kind, **kwargs)
 
 
 def get_model(

@@ -13,9 +13,9 @@ class EntityTypes(Enum):
     """
 
     ARTIFACT = "artifact"
+    CONTAINERIMAGE = "containerimage"
     DATAITEM = "dataitem"
     FUNCTION = "function"
-    CONTAINERIMAGE = "containerimage"
     LOG = "log"
     MODEL = "model"
     PROJECT = "project"
@@ -32,10 +32,10 @@ class Relationship(Enum):
     """
 
     CONSUMES = "consumes"
+    PART_OF = "part_of"
     PRODUCEDBY = "produced_by"
     RUN_OF = "run_of"
     STEP_OF = "step_of"
-    PART_OF = "part_of"
 
 
 class State(Enum):
@@ -72,12 +72,12 @@ class EntityKinds(Enum):
     Entity kinds.
     """
 
-    GENERIC = "_generic"
     ARTIFACT_ARTIFACT = "artifact"
+    CONTAINERIMAGE_CONTAINERIMAGE = "container-image"
     DATAITEM_CROISSANT = "croissant"
     DATAITEM_DATAITEM = "dataitem"
     DATAITEM_TABLE = "table"
-    CONTAINERIMAGE_CONTAINERIMAGE = "container-image"
+    GENERIC = "_generic"
     LOG_LOG = "log"
     MODEL_HUGGINGFACE = "huggingface"
     MODEL_MLFLOW = "mlflow"
@@ -87,7 +87,6 @@ class EntityKinds(Enum):
     MODEL_TVM_SO = "tvm-so"
     PROJECT_PROJECT = "project"
     SECRET_SECRET = "secret"
-    TRIGGER_AUTOML = "automl"
     TRIGGER_LIFECYCLE = "lifecycle"
     TRIGGER_SCHEDULER = "scheduler"
 
@@ -106,7 +105,6 @@ class OpType(str, Enum):
     DELETE = "delete"
 
     # Log operations
-    LOG = "log"
     LOG_GENERIC = "log_generic"
     LOG_ARTIFACT = "log_artifact"
     LOG_DATAITEM = "log_dataitem"

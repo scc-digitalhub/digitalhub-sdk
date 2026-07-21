@@ -5,18 +5,12 @@
 from __future__ import annotations
 
 import typing
-from warnings import warn
 
-from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
+from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._processors.processors import context_processor
-from digitalhub.entities.dataitem.croissant.crud import log_croissant
-from digitalhub.entities.dataitem.dataitem.crud import log_dataitem_dataitem
-from digitalhub.entities.dataitem.generic.crud import log_generic_dataitem
-from digitalhub.entities.dataitem.table.crud import log_table
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.dataitem._base.entity import Dataitem
-    from digitalhub.utils.types import Dataframe, SourcesOrListOfSources
 
 ENTITY_TYPE = EntityTypes.DATAITEM.value
 
@@ -82,121 +76,6 @@ def new_dataitem(
         entity_type=ENTITY_TYPE,
         path=path,
         extensions=extensions,
-        **kwargs,
-    )
-
-
-def log_dataitem(
-    project: str,
-    name: str,
-    kind: str,
-    source: SourcesOrListOfSources | None = None,
-    data: Dataframe | None = None,  # type: ignore
-    drop_existing: bool = False,
-    path: str | None = None,
-    description: str | None = None,
-    labels: list[str] | None = None,
-    file_format: str | None = None,
-    read_df_params: dict | None = None,
-    engine: str | None = "pandas",
-    **kwargs,
-) -> Dataitem:
-    """
-    Log a dataitem to the project.
-
-    Parameters
-    ----------
-    project : str
-        Project name.
-    name : str
-        Object name.
-    kind : str
-        Kind the object.
-    source : SourcesOrListOfSources
-        Dataitem location on local path. Alternative to data.
-    data : Dataframe
-        Dataframe to log. Alternative to source.
-    drop_existing : bool
-        Whether to drop existing entity with the same name.
-    path : str
-        Destination path of the dataitem. If not provided, it's generated.
-    description : str
-        Dataitem description.
-    labels : list[str]
-        Dataitem labels.
-    file_format : str
-        Extension of the file source (parquet, csv, json, xlsx, txt).
-    read_df_params : dict
-        Parameters to pass to the dataframe reader.
-    engine : str
-        Dataframe engine (pandas, polars, etc.).
-    **kwargs : dict
-        New dataitem spec parameters.
-
-    Returns
-    -------
-    Dataitem
-        Object instance.
-
-    Examples
-    --------
-    >>> obj = log_dataitem(project="my-project",
-    >>>                    name="my-dataitem",
-    >>>                    kind="table",
-    >>>                    data=df)
-    """
-    warn(
-        "log_dataitem in version 0.16 will log a dataitem of kind 'dataitem'. "
-        "To log a dataitem of a specific kind, use the log_<kind> methods (e.g. log_table)."
-    )
-    if kind == EntityKinds.DATAITEM_TABLE.value:
-        return log_table(
-            project=project,
-            name=name,
-            source=source,
-            data=data,
-            drop_existing=drop_existing,
-            path=path,
-            description=description,
-            labels=labels,
-            file_format=file_format,
-            read_df_params=read_df_params,
-            engine=engine,
-            **kwargs,
-        )
-    if source is None:
-        raise ValueError("Source must be provided for non-table dataitems.")
-    if kind == EntityKinds.DATAITEM_DATAITEM.value:
-        return log_dataitem_dataitem(
-            project=project,
-            name=name,
-            source=source,
-            drop_existing=drop_existing,
-            path=path,
-            description=description,
-            labels=labels,
-            **kwargs,
-        )
-    if kind == EntityKinds.DATAITEM_CROISSANT.value:
-        return log_croissant(
-            project=project,
-            name=name,
-            source=source,
-            drop_existing=drop_existing,
-            path=path,
-            description=description,
-            labels=labels,
-            **kwargs,
-        )
-    return log_generic_dataitem(
-        project=project,
-        name=name,
-        kind=kind,
-        source=source,
-        drop_existing=drop_existing,
-        path=path,
-        description=description,
-        labels=labels,
         **kwargs,
     )
 

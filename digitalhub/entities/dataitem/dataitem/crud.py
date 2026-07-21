@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import typing
-from warnings import warn
 
 from digitalhub.entities._commons.enums import EntityKinds
 from digitalhub.entities.dataitem._base.crud import log_base_dataitem
@@ -15,7 +14,7 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities.dataitem.dataitem.entity import DataitemDataitem
 
 
-def log_dataitem_dataitem(
+def log_dataitem(
     project: str,
     name: str,
     source: SourcesOrListOfSources,
@@ -54,11 +53,10 @@ def log_dataitem_dataitem(
 
     Examples
     --------
-    >>> obj = log_generic_dataitem(project="my-project",
-    >>>                         name="my-generic-dataitem",
-    >>>                         source="./local-path")
+    >>> obj = log_dataitem(project="my-project",
+                           name="my-dataitem-dataitem",
+                           source="./local-path")
     """
-    warn("This method will become log_dataitem in 0.16")
     return log_base_dataitem(
         project=project,
         name=name,
