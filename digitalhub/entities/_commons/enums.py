@@ -14,7 +14,6 @@ class EntityTypes(Enum):
 
     ARTIFACT = "artifact"
     DATAITEM = "dataitem"
-    EXTENSION = "extension"
     FUNCTION = "function"
     CONTAINERIMAGE = "containerimage"
     LOG = "log"
@@ -78,7 +77,6 @@ class EntityKinds(Enum):
     DATAITEM_CROISSANT = "croissant"
     DATAITEM_DATAITEM = "dataitem"
     DATAITEM_TABLE = "table"
-    EXTENSION_EXTENSION = "extension"
     CONTAINERIMAGE_CONTAINERIMAGE = "container-image"
     LOG_LOG = "log"
     MODEL_HUGGINGFACE = "huggingface"
@@ -92,3 +90,31 @@ class EntityKinds(Enum):
     TRIGGER_AUTOML = "automl"
     TRIGGER_LIFECYCLE = "lifecycle"
     TRIGGER_SCHEDULER = "scheduler"
+
+
+class OpType(str, Enum):
+    """Enum for CRUD operation types."""
+
+    # Common operations
+    NEW = "new"
+    GET = "get"
+    GET_VERSIONS = "get_versions"
+    LIST = "list"
+    IMPORT = "import"
+    LOAD = "load"
+    UPDATE = "update"
+    DELETE = "delete"
+
+    # Log operations
+    LOG = "log"
+    LOG_GENERIC = "log_generic"
+    LOG_ARTIFACT = "log_artifact"
+    LOG_DATAITEM = "log_dataitem"
+    LOG_TABLE = "log_table"
+    LOG_CROISSANT = "log_croissant"
+    LOG_MODEL = "log_model"
+    LOG_MLFLOW = "log_mlflow"
+    LOG_SKLEARN = "log_sklearn"
+    LOG_HUGGINGFACE = "log_huggingface"
+    LOG_TVM_IR = "log_tvm_ir"
+    LOG_TVM_SO = "log_tvm_so"

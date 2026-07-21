@@ -68,10 +68,7 @@ def new_task(
     )
 
 
-def get_task(
-    identifier: str,
-    project: str | None = None,
-) -> Task:
+def get_task(identifier: str, project: str | None = None) -> Task:
     """
     Get object from backend.
 

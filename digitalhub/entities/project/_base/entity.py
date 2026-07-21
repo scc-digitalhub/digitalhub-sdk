@@ -27,13 +27,14 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities.artifact._base.entity import Artifact
     from digitalhub.entities.containerimage._base.entity import Containerimage
     from digitalhub.entities.dataitem._base.entity import Dataitem
-    from digitalhub.entities.extension._base.entity import Extension
     from digitalhub.entities.function._base.entity import Function
     from digitalhub.entities.model._base.entity import Model
     from digitalhub.entities.project._base.spec import ProjectSpec
     from digitalhub.entities.project._base.status import ProjectStatus
     from digitalhub.entities.run._base.entity import Run
     from digitalhub.entities.secret._base.entity import Secret
+    from digitalhub.entities.task._base.entity import Task
+    from digitalhub.entities.trigger._base.entity import Trigger
     from digitalhub.entities.workflow._base.entity import Workflow
     from digitalhub.utils.types import Dataframe
 
@@ -353,6 +354,70 @@ class Project(Entity):
         ]
 
     ##############################
+    #  Properties
+    ##############################
+
+    @property
+    def functions(self) -> list[Function]:
+        """
+        Get all functions in the project.
+
+        Returns
+        -------
+        list
+            List of functions.
+        """
+        return self.crud.function.list()
+
+    @property
+    def workflows(self) -> list[Workflow]:
+        """
+        Get all workflows in the project.
+
+        Returns
+        -------
+        list
+            List of workflows.
+        """
+        return self.crud.workflow.list()
+
+    @property
+    def artifacts(self) -> list[Artifact]:
+        """
+        Get all artifacts in the project.
+
+        Returns
+        -------
+        list
+            List of artifacts.
+        """
+        return self.crud.artifact.list()
+
+    @property
+    def dataitems(self) -> list[Dataitem]:
+        """
+        Get all dataitems in the project.
+
+        Returns
+        -------
+        list
+            List of dataitems.
+        """
+        return self.crud.dataitem.list()
+
+    @property
+    def models(self) -> list[Model]:
+        """
+        Get all models in the project.
+
+        Returns
+        -------
+        list
+            List of models.
+        """
+        return self.crud.model.list()
+
+    ##############################
     #  Artifacts
     ##############################
 
@@ -553,6 +618,17 @@ class Project(Entity):
         digitalhub.import_artifact
         """
         return self.crud.artifact.import_entity(file=file, key=key, reset_id=reset_id)
+
+    @_auto_refresh
+    def load_artifact(self, file: str) -> Artifact:
+        """
+        Load artifact from a YAML file.
+
+        See also
+        -------
+        digitalhub.load_artifact
+        """
+        return self.crud.artifact.load_entity(file)
 
     @_auto_refresh
     def update_artifact(
@@ -863,6 +939,17 @@ class Project(Entity):
         return self.crud.dataitem.import_entity(file=file, key=key, reset_id=reset_id)
 
     @_auto_refresh
+    def load_dataitem(self, file: str) -> Dataitem:
+        """
+        Load dataitem from a YAML file.
+
+        See also
+        -------
+        digitalhub.load_dataitem
+        """
+        return self.crud.dataitem.load_entity(file)
+
+    @_auto_refresh
     def update_dataitem(
         self,
         entity: Dataitem,
@@ -1107,6 +1194,62 @@ class Project(Entity):
         )
 
     @_auto_refresh
+    def log_tvm_ir(
+        self,
+        name: str,
+        source: str,
+        drop_existing: bool = False,
+        path: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
+        **kwargs,
+    ) -> Model:
+        """
+        Create and upload a TVM IR model.
+
+        See also
+        -------
+        digitalhub.log_tvm_ir
+        """
+        return self.crud.model.log_tvm_ir(
+            name=name,
+            source=source,
+            drop_existing=drop_existing,
+            path=path,
+            description=description,
+            labels=labels,
+            **kwargs,
+        )
+
+    @_auto_refresh
+    def log_tvm_so(
+        self,
+        name: str,
+        source: str,
+        drop_existing: bool = False,
+        path: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
+        **kwargs,
+    ) -> Model:
+        """
+        Create and upload a TVM SO model.
+
+        See also
+        -------
+        digitalhub.log_tvm_so
+        """
+        return self.crud.model.log_tvm_so(
+            name=name,
+            source=source,
+            drop_existing=drop_existing,
+            path=path,
+            description=description,
+            labels=labels,
+            **kwargs,
+        )
+
+    @_auto_refresh
     def get_model(
         self,
         identifier: str,
@@ -1183,6 +1326,17 @@ class Project(Entity):
         digitalhub.import_model
         """
         return self.crud.model.import_entity(file=file, key=key, reset_id=reset_id)
+
+    @_auto_refresh
+    def load_model(self, file: str) -> Model:
+        """
+        Load model from a YAML file.
+
+        See also
+        -------
+        digitalhub.load_model
+        """
+        return self.crud.model.load_entity(file)
 
     @_auto_refresh
     def update_model(
@@ -1331,6 +1485,17 @@ class Project(Entity):
         return self.crud.function.import_entity(file=file, key=key, reset_id=reset_id)
 
     @_auto_refresh
+    def load_function(self, file: str) -> Function:
+        """
+        Load function from a YAML file.
+
+        See also
+        -------
+        digitalhub.load_function
+        """
+        return self.crud.function.load_entity(file)
+
+    @_auto_refresh
     def update_function(
         self,
         entity: Function,
@@ -1477,6 +1642,17 @@ class Project(Entity):
         return self.crud.workflow.import_entity(file=file, key=key, reset_id=reset_id)
 
     @_auto_refresh
+    def load_workflow(self, file: str) -> Workflow:
+        """
+        Load workflow from a YAML file.
+
+        See also
+        -------
+        digitalhub.load_workflow
+        """
+        return self.crud.workflow.load_entity(file)
+
+    @_auto_refresh
     def update_workflow(
         self,
         entity: Workflow,
@@ -1510,6 +1686,423 @@ class Project(Entity):
             entity_id=entity_id,
             delete_all_versions=delete_all_versions,
             cascade=cascade,
+        )
+
+    ##############################
+    #  Tasks
+    ##############################
+
+    @_auto_refresh
+    def new_task(
+        self,
+        kind: str,
+        uuid: str | None = None,
+        labels: list[str] | None = None,
+        function: str | None = None,
+        workflow: str | None = None,
+        **kwargs,
+    ) -> Task:
+        """
+        Create a new task.
+
+        See also
+        -------
+        digitalhub.new_task
+        """
+        return self.crud.task.new(
+            kind=kind,
+            uuid=uuid,
+            labels=labels,
+            function=function,
+            workflow=workflow,
+            **kwargs,
+        )
+
+    @_auto_refresh
+    def get_task(self, identifier: str) -> Task:
+        """
+        Get task from backend.
+
+        See also
+        -------
+        digitalhub.get_task
+        """
+        return self.crud.task.get(identifier=identifier)
+
+    @_auto_refresh
+    def list_tasks(
+        self,
+        q: str | None = None,
+        name: str | None = None,
+        kind: str | None = None,
+        user: str | None = None,
+        state: str | None = None,
+        created: str | None = None,
+        updated: str | None = None,
+        function: str | None = None,
+        workflow: str | None = None,
+    ) -> list[Task]:
+        """
+        List all latest version tasks from backend.
+
+        See also
+        -------
+        digitalhub.list_tasks
+        """
+        return self.crud.task.list(
+            q=q,
+            name=name,
+            kind=kind,
+            user=user,
+            state=state,
+            created=created,
+            updated=updated,
+            function=function,
+            workflow=workflow,
+        )
+
+    @_auto_refresh
+    def import_task(
+        self,
+        file: str | None = None,
+        key: str | None = None,
+        reset_id: bool = True,
+    ) -> Task:
+        """
+        Import task into backend from a YAML file or key.
+
+        See also
+        -------
+        digitalhub.import_task
+        """
+        return self.crud.task.import_entity(file=file, key=key, reset_id=reset_id)
+
+    @_auto_refresh
+    def load_task(self, file: str) -> Task:
+        """
+        Load task from a YAML file.
+
+        See also
+        -------
+        digitalhub.load_task
+        """
+        return self.crud.task.load_entity(file)
+
+    @_auto_refresh
+    def update_task(
+        self,
+        entity: Task,
+    ) -> Task:
+        """
+        Update task.
+
+        See also
+        -------
+        digitalhub.update_task
+        """
+        return self.crud.task.update(entity)
+
+    @_auto_refresh
+    def delete_task(
+        self,
+        identifier: str,
+        entity_id: str | None = None,
+        cascade: bool = True,
+    ) -> None:
+        """
+        Delete task from backend.
+
+        See also
+        -------
+        digitalhub.delete_task
+        """
+        self.crud.task.delete(
+            identifier=identifier,
+            entity_id=entity_id,
+            cascade=cascade,
+        )
+
+    ##############################
+    #  Runs
+    ##############################
+
+    @_auto_refresh
+    def new_run(
+        self,
+        kind: str,
+        uuid: str | None = None,
+        labels: list[str] | None = None,
+        task: str | None = None,
+        **kwargs,
+    ) -> Run:
+        """
+        Create a new run.
+
+        See also
+        -------
+        digitalhub.new_run
+        """
+        return self.crud.run.new(
+            kind=kind,
+            uuid=uuid,
+            labels=labels,
+            task=task,
+            **kwargs,
+        )
+
+    @_auto_refresh
+    def get_run(self, identifier: str) -> Run:
+        """
+        Get run from backend.
+
+        See also
+        -------
+        digitalhub.get_run
+        """
+        return self.crud.run.get(identifier=identifier)
+
+    @_auto_refresh
+    def list_runs(
+        self,
+        q: str | None = None,
+        name: str | None = None,
+        kind: str | None = None,
+        user: str | None = None,
+        state: str | None = None,
+        created: str | None = None,
+        updated: str | None = None,
+        function: str | None = None,
+        workflow: str | None = None,
+        task: str | None = None,
+        action: str | None = None,
+    ) -> list[Run]:
+        """
+        List all latest runs from backend.
+
+        See also
+        -------
+        digitalhub.list_runs
+        """
+        return self.crud.run.list(
+            q=q,
+            name=name,
+            kind=kind,
+            user=user,
+            state=state,
+            created=created,
+            updated=updated,
+            function=function,
+            workflow=workflow,
+            task=task,
+            action=action,
+        )
+
+    @_auto_refresh
+    def import_run(
+        self,
+        file: str | None = None,
+        key: str | None = None,
+        reset_id: bool = True,
+    ) -> Run:
+        """
+        Import run into backend from a YAML file or key.
+
+        See also
+        -------
+        digitalhub.import_run
+        """
+        return self.crud.run.import_entity(file=file, key=key, reset_id=reset_id)
+
+    @_auto_refresh
+    def load_run(self, file: str) -> Run:
+        """
+        Load run from a YAML file.
+
+        See also
+        -------
+        digitalhub.load_run
+        """
+        return self.crud.run.load_entity(file)
+
+    @_auto_refresh
+    def update_run(
+        self,
+        entity: Run,
+    ) -> Run:
+        """
+        Update run.
+
+        See also
+        -------
+        digitalhub.update_run
+        """
+        return self.crud.run.update(entity)
+
+    @_auto_refresh
+    def delete_run(
+        self,
+        identifier: str,
+        entity_id: str,
+    ) -> None:
+        """
+        Delete run from backend.
+
+        See also
+        -------
+        digitalhub.delete_run
+        """
+        self.crud.run.delete(
+            identifier=identifier,
+            entity_id=entity_id,
+        )
+
+    ##############################
+    #  Triggers
+    ##############################
+
+    @_auto_refresh
+    def new_trigger(
+        self,
+        name: str,
+        kind: str,
+        task: str,
+        function: str | None = None,
+        workflow: str | None = None,
+        uuid: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
+        embedded: bool = False,
+        template: dict | None = None,
+        **kwargs,
+    ) -> Trigger:
+        """
+        Create a new trigger.
+
+        See also
+        -------
+        digitalhub.new_trigger
+        """
+        return self.crud.trigger.new(
+            name=name,
+            kind=kind,
+            task=task,
+            function=function,
+            workflow=workflow,
+            uuid=uuid,
+            description=description,
+            labels=labels,
+            embedded=embedded,
+            template=template,
+            **kwargs,
+        )
+
+    @_auto_refresh
+    def get_trigger(
+        self,
+        identifier: str,
+        entity_id: str | None = None,
+    ) -> Trigger:
+        """
+        Get trigger from backend.
+
+        See also
+        -------
+        digitalhub.get_trigger
+        """
+        return self.crud.trigger.get(
+            identifier=identifier,
+            entity_id=entity_id,
+        )
+
+    @_auto_refresh
+    def list_triggers(
+        self,
+        q: str | None = None,
+        name: str | None = None,
+        kind: str | None = None,
+        user: str | None = None,
+        state: str | None = None,
+        created: str | None = None,
+        updated: str | None = None,
+        versions: str | None = None,
+        task: str | None = None,
+    ) -> list[Trigger]:
+        """
+        List all latest version triggers from backend.
+
+        See also
+        -------
+        digitalhub.list_triggers
+        """
+        return self.crud.trigger.list(
+            q=q,
+            name=name,
+            kind=kind,
+            user=user,
+            state=state,
+            created=created,
+            updated=updated,
+            versions=versions,
+            task=task,
+        )
+
+    @_auto_refresh
+    def import_trigger(
+        self,
+        file: str | None = None,
+        key: str | None = None,
+        reset_id: bool = True,
+    ) -> Trigger:
+        """
+        Import trigger into backend from a YAML file or key.
+
+        See also
+        -------
+        digitalhub.import_trigger
+        """
+        return self.crud.trigger.import_entity(file=file, key=key, reset_id=reset_id)
+
+    @_auto_refresh
+    def load_trigger(self, file: str) -> Trigger:
+        """
+        Load trigger from a YAML file.
+
+        See also
+        -------
+        digitalhub.load_trigger
+        """
+        return self.crud.trigger.load_entity(file)
+
+    @_auto_refresh
+    def update_trigger(
+        self,
+        entity: Trigger,
+    ) -> Trigger:
+        """
+        Update trigger.
+
+        See also
+        -------
+        digitalhub.update_trigger
+        """
+        return self.crud.trigger.update(entity)
+
+    @_auto_refresh
+    def delete_trigger(
+        self,
+        identifier: str,
+        entity_id: str | None = None,
+    ) -> None:
+        """
+        Delete trigger from backend.
+
+        See also
+        -------
+        digitalhub.delete_trigger
+        """
+        self.crud.trigger.delete(
+            identifier=identifier,
+            entity_id=entity_id,
         )
 
     ##############################
@@ -1592,6 +2185,17 @@ class Project(Entity):
         return self.crud.secret.import_entity(file=file, key=key, reset_id=reset_id)
 
     @_auto_refresh
+    def load_secret(self, file: str) -> Secret:
+        """
+        Load secret from a YAML file.
+
+        See also
+        -------
+        digitalhub.load_secret
+        """
+        return self.crud.secret.load_entity(file)
+
+    @_auto_refresh
     def update_secret(
         self,
         entity: Secret,
@@ -1623,228 +2227,6 @@ class Project(Entity):
             identifier=identifier,
             entity_id=entity_id,
             delete_all_versions=delete_all_versions,
-        )
-
-    ##############################
-    #  Extensions
-    ##############################
-
-    @_auto_refresh
-    def new_extension(
-        self,
-        name: str,
-        kind: str,
-        uuid: str | None = None,
-        description: str | None = None,
-        labels: list[str] | None = None,
-        embedded: bool = False,
-        schema: str | None = None,
-        **kwargs,
-    ) -> Extension:
-        """
-        Create a new extension.
-
-        See also
-        -------
-        digitalhub.new_extension
-        """
-        return self.crud.extension.new(
-            name=name,
-            kind=kind,
-            uuid=uuid,
-            description=description,
-            labels=labels,
-            embedded=embedded,
-            schema=schema,
-            **kwargs,
-        )
-
-    @_auto_refresh
-    def get_extension(
-        self,
-        identifier: str,
-        entity_id: str | None = None,
-    ) -> Extension:
-        """
-        Get extension from backend.
-
-        See also
-        -------
-        digitalhub.get_extension
-        """
-        return self.crud.extension.get(
-            identifier=identifier,
-            entity_id=entity_id,
-        )
-
-    @_auto_refresh
-    def get_extension_versions(
-        self,
-        identifier: str,
-    ) -> list[Extension]:
-        """
-        Get extension versions from backend.
-
-        See also
-        -------
-        digitalhub.get_extension_versions
-        """
-        return self.crud.extension.get_versions(identifier=identifier)
-
-    @_auto_refresh
-    def list_extensions(
-        self,
-        q: str | None = None,
-        name: str | None = None,
-        kind: str | None = None,
-        user: str | None = None,
-        state: str | None = None,
-        created: str | None = None,
-        updated: str | None = None,
-        versions: str | None = None,
-    ) -> list[Extension]:
-        """
-        List all latest version extensions from backend.
-
-        See also
-        -------
-        digitalhub.list_extensions
-        """
-        return self.crud.extension.list(
-            q=q,
-            name=name,
-            kind=kind,
-            user=user,
-            state=state,
-            created=created,
-            updated=updated,
-            versions=versions,
-        )
-
-    @_auto_refresh
-    def import_extension(
-        self,
-        file: str | None = None,
-        key: str | None = None,
-        reset_id: bool = True,
-    ) -> Extension:
-        """
-        Import extension into backend from a YAML file or key.
-
-        See also
-        -------
-        digitalhub.import_extension
-        """
-        return self.crud.extension.import_entity(file=file, key=key, reset_id=reset_id)
-
-    @_auto_refresh
-    def update_extension(
-        self,
-        entity: Extension,
-    ) -> Extension:
-        """
-        Update extension.
-
-        See also
-        -------
-        digitalhub.update_extension
-        """
-        return self.crud.extension.update(entity)
-
-    @_auto_refresh
-    def delete_extension(
-        self,
-        identifier: str,
-        entity_id: str | None = None,
-        delete_all_versions: bool = False,
-        cascade: bool = True,
-    ) -> None:
-        """
-        Delete extension from backend.
-
-        See also
-        -------
-        digitalhub.delete_extension
-        """
-        self.crud.extension.delete(
-            identifier=identifier,
-            entity_id=entity_id,
-            delete_all_versions=delete_all_versions,
-            cascade=cascade,
-        )
-
-    ##############################
-    #  Runs
-    ##############################
-
-    @_auto_refresh
-    def get_run(
-        self,
-        identifier: str,
-    ) -> Run:
-        """
-        Get run from backend.
-
-        See also
-        -------
-        digitalhub.get_run
-        """
-        return self.crud.run.get(
-            identifier=identifier,
-        )
-
-    @_auto_refresh
-    def list_runs(
-        self,
-        q: str | None = None,
-        name: str | None = None,
-        kind: str | None = None,
-        user: str | None = None,
-        state: str | None = None,
-        created: str | None = None,
-        updated: str | None = None,
-        function: str | None = None,
-        workflow: str | None = None,
-        task: str | None = None,
-        action: str | None = None,
-    ) -> list[Run]:
-        """
-        List all latest runs from backend.
-
-        See also
-        -------
-        digitalhub.list_runs
-        """
-        return self.crud.run.list(
-            q=q,
-            name=name,
-            kind=kind,
-            user=user,
-            state=state,
-            created=created,
-            updated=updated,
-            function=function,
-            workflow=workflow,
-            task=task,
-            action=action,
-        )
-
-    @_auto_refresh
-    def delete_run(
-        self,
-        identifier: str,
-        entity_id: str,
-    ) -> None:
-        """
-        Delete run from backend.
-
-        See also
-        -------
-        digitalhub.delete_run
-        """
-        self.crud.run.delete(
-            identifier=identifier,
-            entity_id=entity_id,
         )
 
     ##############################

@@ -5,10 +5,9 @@
 from __future__ import annotations
 
 import typing
-from enum import Enum
 
-from digitalhub import entities
-from digitalhub.entities._commons.enums import EntityTypes
+from digitalhub.entities import OPS_REGISTRY
+from digitalhub.entities._commons.enums import EntityTypes, OpType
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.context.entity import ContextEntity
@@ -20,123 +19,8 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities.model.mlflow.entity import ModelMlflow
     from digitalhub.entities.model.model.entity import ModelModel
     from digitalhub.entities.model.sklearn.entity import ModelSklearn
-
-
-class OpType(str, Enum):
-    """Enum for CRUD operation types."""
-
-    NEW = "new"
-    LOG = "log"
-    LOG_GENERIC = "log_generic"
-    LOG_ARTIFACT = "log_artifact"
-    LOG_DATAITEM = "log_dataitem"
-    LOG_TABLE = "log_table"
-    LOG_MODEL = "log_model"
-    LOG_MLFLOW = "log_mlflow"
-    LOG_SKLEARN = "log_sklearn"
-    LOG_HUGGINGFACE = "log_huggingface"
-    LOG_CROISSANT = "log_croissant"
-    GET = "get"
-    GET_VERSIONS = "get_versions"
-    LIST = "list"
-    IMPORT = "import"
-    UPDATE = "update"
-    DELETE = "delete"
-
-
-# Operation registry: maps entity type to operation functions
-OPS_REGISTRY = {
-    EntityTypes.ARTIFACT: {
-        OpType.NEW: entities.new_artifact,
-        OpType.LOG: entities.log_artifact,
-        OpType.LOG_GENERIC: entities.log_generic_artifact,
-        OpType.LOG_ARTIFACT: entities.log_artifact_artifact,
-        OpType.IMPORT: entities.import_artifact,
-        OpType.GET: entities.get_artifact,
-        OpType.GET_VERSIONS: entities.get_artifact_versions,
-        OpType.LIST: entities.list_artifacts,
-        OpType.UPDATE: entities.update_artifact,
-        OpType.DELETE: entities.delete_artifact,
-    },
-    EntityTypes.DATAITEM: {
-        OpType.NEW: entities.new_dataitem,
-        OpType.LOG: entities.log_dataitem,
-        OpType.LOG_GENERIC: entities.log_generic_dataitem,
-        OpType.LOG_DATAITEM: entities.log_dataitem_dataitem,
-        OpType.LOG_TABLE: entities.log_table,
-        OpType.LOG_CROISSANT: entities.log_croissant,
-        OpType.IMPORT: entities.import_dataitem,
-        OpType.GET: entities.get_dataitem,
-        OpType.GET_VERSIONS: entities.get_dataitem_versions,
-        OpType.LIST: entities.list_dataitems,
-        OpType.UPDATE: entities.update_dataitem,
-        OpType.DELETE: entities.delete_dataitem,
-    },
-    EntityTypes.MODEL: {
-        OpType.NEW: entities.new_model,
-        OpType.LOG: entities.log_model,
-        OpType.LOG_GENERIC: entities.log_generic_model,
-        OpType.LOG_MODEL: entities.log_model_model,
-        OpType.LOG_MLFLOW: entities.log_mlflow,
-        OpType.LOG_SKLEARN: entities.log_sklearn,
-        OpType.LOG_HUGGINGFACE: entities.log_huggingface,
-        OpType.IMPORT: entities.import_model,
-        OpType.GET: entities.get_model,
-        OpType.GET_VERSIONS: entities.get_model_versions,
-        OpType.LIST: entities.list_models,
-        OpType.UPDATE: entities.update_model,
-        OpType.DELETE: entities.delete_model,
-    },
-    EntityTypes.FUNCTION: {
-        OpType.NEW: entities.new_function,
-        OpType.IMPORT: entities.import_function,
-        OpType.GET: entities.get_function,
-        OpType.GET_VERSIONS: entities.get_function_versions,
-        OpType.LIST: entities.list_functions,
-        OpType.UPDATE: entities.update_function,
-        OpType.DELETE: entities.delete_function,
-    },
-    EntityTypes.WORKFLOW: {
-        OpType.NEW: entities.new_workflow,
-        OpType.IMPORT: entities.import_workflow,
-        OpType.GET: entities.get_workflow,
-        OpType.GET_VERSIONS: entities.get_workflow_versions,
-        OpType.LIST: entities.list_workflows,
-        OpType.UPDATE: entities.update_workflow,
-        OpType.DELETE: entities.delete_workflow,
-    },
-    EntityTypes.SECRET: {
-        OpType.NEW: entities.new_secret,
-        OpType.IMPORT: entities.import_secret,
-        OpType.GET: entities.get_secret,
-        OpType.LIST: entities.list_secrets,
-        OpType.UPDATE: entities.update_secret,
-        OpType.DELETE: entities.delete_secret,
-    },
-    EntityTypes.EXTENSION: {
-        OpType.NEW: entities.new_extension,
-        OpType.IMPORT: entities.import_extension,
-        OpType.GET: entities.get_extension,
-        OpType.GET_VERSIONS: entities.get_extension_versions,
-        OpType.LIST: entities.list_extensions,
-        OpType.UPDATE: entities.update_extension,
-        OpType.DELETE: entities.delete_extension,
-    },
-    EntityTypes.RUN: {
-        OpType.GET: entities.get_run,
-        OpType.LIST: entities.list_runs,
-        OpType.DELETE: entities.delete_run,
-    },
-    EntityTypes.CONTAINERIMAGE: {
-        OpType.NEW: entities.new_containerimage,
-        OpType.IMPORT: entities.import_containerimage,
-        OpType.GET: entities.get_containerimage,
-        OpType.GET_VERSIONS: entities.get_containerimage_versions,
-        OpType.LIST: entities.list_containerimages,
-        OpType.UPDATE: entities.update_containerimage,
-        OpType.DELETE: entities.delete_containerimage,
-    },
-}
+    from digitalhub.entities.model.tvm_ir.entity import ModelTvmIr
+    from digitalhub.entities.model.tvm_so.entity import ModelTvmSo
 
 
 class EntityCRUD:
@@ -202,44 +86,8 @@ class EntityCRUD:
         return self._call_op(OpType.NEW, **kwargs)
 
     def log(self, **kwargs) -> ContextEntity:
-        """Create and upload an entity."""
+        """Log a new entity."""
         return self._call_op(OpType.LOG, **kwargs)
-
-    def log_generic(self, **kwargs) -> ContextEntity:
-        """Create and upload a generic entity."""
-        return self._call_op(OpType.LOG_GENERIC, **kwargs)
-
-    def log_artifact(self, **kwargs) -> ArtifactArtifact:
-        """Create and upload an artifact."""
-        return self._call_op(OpType.LOG_ARTIFACT, **kwargs)
-
-    def log_dataitem(self, **kwargs) -> DataitemDataitem:
-        """Create and upload a dataitem."""
-        return self._call_op(OpType.LOG_DATAITEM, **kwargs)
-
-    def log_table(self, **kwargs) -> DataitemTable:
-        """Create and upload a table dataitem."""
-        return self._call_op(OpType.LOG_TABLE, **kwargs)
-
-    def log_croissant(self, **kwargs) -> DataitemCroissant:
-        """Create and upload a Croissant model."""
-        return self._call_op(OpType.LOG_CROISSANT, **kwargs)
-
-    def log_model(self, **kwargs) -> ModelModel:
-        """Create and upload a model."""
-        return self._call_op(OpType.LOG_MODEL, **kwargs)
-
-    def log_mlflow(self, **kwargs) -> ModelMlflow:
-        """Create and upload a MLflow model."""
-        return self._call_op(OpType.LOG_MLFLOW, **kwargs)
-
-    def log_sklearn(self, **kwargs) -> ModelSklearn:
-        """Create and upload a scikit-learn model."""
-        return self._call_op(OpType.LOG_SKLEARN, **kwargs)
-
-    def log_huggingface(self, **kwargs) -> ModelHuggingface:
-        """Create and upload a Huggingface model."""
-        return self._call_op(OpType.LOG_HUGGINGFACE, **kwargs)
 
     def get(self, *args, **kwargs) -> ContextEntity:
         """Get entity from backend."""
@@ -258,6 +106,10 @@ class EntityCRUD:
         kwargs["context"] = self.project_name
         return self._ops[OpType.IMPORT](**kwargs)
 
+    def load(self, *args, **kwargs) -> ContextEntity:
+        """Load entity from backend."""
+        return self._call_op(OpType.LOAD, *args, **kwargs)
+
     def update(self, entity: ContextEntity) -> ContextEntity:
         """Update entity."""
         if entity.project != self.project_name:
@@ -269,6 +121,58 @@ class EntityCRUD:
         return self._call_op(OpType.DELETE, *args, **kwargs)
 
 
+class EntityCRUDArtifact(EntityCRUD):
+    """CRUD manager for artifact entities."""
+
+    def log_artifact(self, **kwargs) -> ArtifactArtifact:
+        """Create and upload an artifact entity."""
+        return self._call_op(OpType.LOG_ARTIFACT, **kwargs)
+
+
+class EntityCRUDDataitem(EntityCRUD):
+    """CRUD manager for dataitem entities."""
+
+    def log_dataitem(self, **kwargs) -> DataitemDataitem:
+        """Create and upload a dataitem entity."""
+        return self._call_op(OpType.LOG_DATAITEM, **kwargs)
+
+    def log_table(self, **kwargs) -> DataitemTable:
+        """Create and upload a table dataitem entity."""
+        return self._call_op(OpType.LOG_TABLE, **kwargs)
+
+    def log_croissant(self, **kwargs) -> DataitemCroissant:
+        """Create and upload a Croissant model entity."""
+        return self._call_op(OpType.LOG_CROISSANT, **kwargs)
+
+
+class EntityCRUDModel(EntityCRUD):
+    """CRUD manager for model entities."""
+
+    def log_model(self, **kwargs) -> ModelModel:
+        """Create and upload a model entity."""
+        return self._call_op(OpType.LOG_MODEL, **kwargs)
+
+    def log_mlflow(self, **kwargs) -> ModelMlflow:
+        """Create and upload a MLflow model entity."""
+        return self._call_op(OpType.LOG_MLFLOW, **kwargs)
+
+    def log_sklearn(self, **kwargs) -> ModelSklearn:
+        """Create and upload a scikit-learn model entity."""
+        return self._call_op(OpType.LOG_SKLEARN, **kwargs)
+
+    def log_huggingface(self, **kwargs) -> ModelHuggingface:
+        """Create and upload a Huggingface model entity."""
+        return self._call_op(OpType.LOG_HUGGINGFACE, **kwargs)
+
+    def log_tvm_ir(self, **kwargs) -> ModelTvmIr:
+        """Create and upload a TVM IR model entity."""
+        return self._call_op(OpType.LOG_TVM_IR, **kwargs)
+
+    def log_tvm_so(self, **kwargs) -> ModelTvmSo:
+        """Create and upload a TVM SO model entity."""
+        return self._call_op(OpType.LOG_TVM_SO, **kwargs)
+
+
 class CRUDManager:
     """
     Manager for CRUD operations on all entity types.
@@ -276,12 +180,13 @@ class CRUDManager:
 
     def __init__(self, project_name: str) -> None:
         self.project_name = project_name
-        self.artifact = EntityCRUD(project_name, EntityTypes.ARTIFACT)
-        self.dataitem = EntityCRUD(project_name, EntityTypes.DATAITEM)
-        self.model = EntityCRUD(project_name, EntityTypes.MODEL)
+        self.artifact = EntityCRUDArtifact(project_name, EntityTypes.ARTIFACT)
+        self.dataitem = EntityCRUDDataitem(project_name, EntityTypes.DATAITEM)
+        self.model = EntityCRUDModel(project_name, EntityTypes.MODEL)
         self.function = EntityCRUD(project_name, EntityTypes.FUNCTION)
         self.workflow = EntityCRUD(project_name, EntityTypes.WORKFLOW)
-        self.secret = EntityCRUD(project_name, EntityTypes.SECRET)
-        self.extension = EntityCRUD(project_name, EntityTypes.EXTENSION)
+        self.task = EntityCRUD(project_name, EntityTypes.TASK)
         self.run = EntityCRUD(project_name, EntityTypes.RUN)
+        self.trigger = EntityCRUD(project_name, EntityTypes.TRIGGER)
+        self.secret = EntityCRUD(project_name, EntityTypes.SECRET)
         self.containerimage = EntityCRUD(project_name, EntityTypes.CONTAINERIMAGE)

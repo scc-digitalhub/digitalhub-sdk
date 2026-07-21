@@ -297,7 +297,6 @@ def delete_trigger(
     identifier: str,
     project: str | None = None,
     entity_id: str | None = None,
-    delete_all_versions: bool = False,
 ) -> dict:
     """
     Delete object from backend.
@@ -310,9 +309,6 @@ def delete_trigger(
         Project name.
     entity_id : str
         Entity ID.
-    delete_all_versions : bool
-        Delete all versions of the named entity.
-        If True, use entity name instead of entity key as identifier.
 
     Returns
     -------
@@ -326,13 +322,11 @@ def delete_trigger(
 
     Otherwise:
     >>> obj = delete_trigger("my-trigger-name"
-    >>>                     project="my-project",
-    >>>                     delete_all_versions=True)
+    >>>                      project="my-project")
     """
     return context_processor.delete_context_entity(
         identifier=identifier,
         entity_type=ENTITY_TYPE,
         project=project,
         entity_id=entity_id,
-        delete_all_versions=delete_all_versions,
     )
