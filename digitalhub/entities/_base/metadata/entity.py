@@ -7,7 +7,6 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict, Field
 
 from digitalhub.entities._base._base.entity import Base
-from digitalhub.entities._commons.enums import Relationship
 
 
 class Metadata(Base):
@@ -75,7 +74,7 @@ class RelationshipValidator(BaseModel):
 
     model_config = ConfigDict(use_enum_values=True)
 
-    type_: Relationship = Field(default=None, alias="type")
+    type_: str = Field(default=None, alias="type")
     """The type of relationship."""
 
     source: str = None
