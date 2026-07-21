@@ -36,6 +36,7 @@ class Relationship(Enum):
     PRODUCEDBY = "produced_by"
     RUN_OF = "run_of"
     STEP_OF = "step_of"
+    PART_OF = "part_of"
 
 
 class State(Enum):
