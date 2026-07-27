@@ -156,11 +156,11 @@ class ClientConfigurator:
         response = get(url, timeout=get_client_config().http_timeout, **kwargs)
         try:
             response.raise_for_status()
-        except Exception as e:
+        except Exception:
             if response.status_code == 401 and self.evaluate_refresh():
                 kwargs = self.get_auth_parameters()
                 return get(url, timeout=get_client_config().http_timeout, **kwargs)
-            raise e
+            raise
         return self._config_manager.get_credentials_and_config()
 
     def set_current_profile(self, profile: str) -> None:

@@ -93,7 +93,7 @@ class Run(UnversionedEntity, MetricsEntity):
                 self.status.state = State.ERROR.value
             self.status.message = str(e)
             self.save(update=True)
-            raise e
+            raise
 
         # Unset run in context
         finally:

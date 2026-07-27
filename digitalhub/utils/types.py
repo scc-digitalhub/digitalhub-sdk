@@ -10,4 +10,4 @@ from digitalhub.stores.readers.data.types import _dataframe_types
 
 SourcesOrListOfSources = str | list[str]
 
-Dataframe = Union[_dataframe_types]
+Dataframe = Union[_dataframe_types]  # noqa: UP007

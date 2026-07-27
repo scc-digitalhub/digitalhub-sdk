@@ -11,7 +11,7 @@ from digitalhub.entities._commons.enums import State
 from digitalhub.entities._processors.utils import get_context
 from digitalhub.factory.entity import entity_factory
 from digitalhub.utils.enums import FileExtensions
-from digitalhub.utils.exceptions import BuilderError, EntityError, EntityErrorFileNotFound
+from digitalhub.utils.exceptions import BuilderError, EntityError, EntityErrorFileNotFound, StoreError
 
 if typing.TYPE_CHECKING:
     from digitalhub.context.context import Context
@@ -305,7 +305,7 @@ class ContextEntityMaterialProcessor:
             uploaded = False
             msg = str(e.args) + " Please verify that the specified source files are correct and exist."
             exception = EntityErrorFileNotFound
-        except Exception as e:
+        except (StoreError, OSError, ValueError, NotImplementedError) as e:
             uploaded = False
             msg = str(e.args)
             exception = EntityError

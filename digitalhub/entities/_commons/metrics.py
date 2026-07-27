@@ -4,11 +4,11 @@
 
 from __future__ import annotations
 
-from typing import Any, Union
+from typing import Any
 
 from pydantic import BaseModel, ValidationError
 
-MetricType = Union[float, int, list[float | int]]
+MetricType = float | int | list[float | int]
 
 
 class Metric(BaseModel):

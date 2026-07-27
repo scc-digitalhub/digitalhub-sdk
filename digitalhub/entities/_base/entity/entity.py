@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import typing
 from abc import abstractmethod
+from typing import ClassVar
 
 from digitalhub.entities._base._base.entity import Base
 
@@ -28,7 +29,7 @@ class Entity(Base):
     ENTITY_TYPE: str
 
     # Attributes to render as dict. Need to be expanded in subclasses.
-    _obj_attr = ["kind", "metadata", "spec", "status", "user", "key"]
+    _obj_attr: ClassVar[list[str]] = ["kind", "metadata", "spec", "status", "user", "key"]
 
     def __init__(
         self,
@@ -89,7 +90,7 @@ class Entity(Base):
             The name value.
         """
         if not isinstance(value, str):
-            raise ValueError("Name must be a string.")
+            raise TypeError("Name must be a string.")
         self.metadata.name = value
 
     def set_version(self, value: str) -> None:
@@ -102,7 +103,7 @@ class Entity(Base):
             The version value.
         """
         if not isinstance(value, str):
-            raise ValueError("Version must be a string.")
+            raise TypeError("Version must be a string.")
         self.metadata.version = value
 
     def set_description(self, value: str) -> None:
@@ -115,7 +116,7 @@ class Entity(Base):
             The description value.
         """
         if not isinstance(value, str):
-            raise ValueError("Description must be a string.")
+            raise TypeError("Description must be a string.")
         self.metadata.description = value
 
     def add_relationship(self, relation: str, dest: str, source: str | None = None) -> None:
@@ -160,7 +161,7 @@ class Entity(Base):
             The label value.
         """
         if not isinstance(value, str):
-            raise ValueError(f"Label must be a string. Got {type(value)} instead.")
+            raise TypeError(f"Label must be a string. Got {type(value)} instead.")
         if self.metadata.labels is None:
             self.metadata.labels = []
         if value not in self.metadata.labels:

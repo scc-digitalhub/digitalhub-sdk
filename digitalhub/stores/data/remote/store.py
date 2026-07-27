@@ -215,13 +215,10 @@ class RemoteStore(Store):
         """
         if file_format is not None:
             return file_format
-        try:
-            r = requests.head(url, timeout=60)
-            r.raise_for_status()
-            content_type = r.headers["content-type"]
-            if "text" in content_type:
-                return "csv"
-            else:
-                raise ValueError("Content type not supported.")
-        except Exception as e:
-            raise e
+
+        r = requests.head(url, timeout=60)
+        r.raise_for_status()
+        content_type = r.headers["content-type"]
+        if "text" in content_type:
+            return "csv"
+        raise ValueError("Content type not supported.")

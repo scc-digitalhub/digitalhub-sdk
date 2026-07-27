@@ -82,10 +82,10 @@ class HttpRequestHandler:
         response = request(method, url, timeout=get_client_config().http_timeout, **kwargs)
         try:
             return self._response_processor.process(response)
-        except UnauthorizedError as e:
+        except UnauthorizedError:
             if self._configurator.evaluate_refresh():
                 kwargs = self._configurator.get_auth_parameters(kwargs)
                 return self._execute_request(method, url, **kwargs)
-            raise e
-        except BackendError as e:
-            raise e
+            raise
+        except BackendError:
+            raise

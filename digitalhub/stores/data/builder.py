@@ -11,11 +11,11 @@ from digitalhub.stores.data.local.store import LocalStore
 from digitalhub.stores.data.remote.store import RemoteStore
 from digitalhub.stores.data.s3.store import S3Store
 from digitalhub.stores.data.sql.store import SqlStore
+from digitalhub.utils.exceptions import StoreError
 from digitalhub.utils.uri_utils import SchemeCategory, map_uri_scheme
 
 if typing.TYPE_CHECKING:
     from digitalhub.stores.data._base.store import Store
-    from digitalhub.utils.exceptions import StoreError
 
 
 class StoreBuilder:

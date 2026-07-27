@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any
+from typing import Any, ClassVar
 from warnings import warn
 
 from digitalhub.stores.client.auth.enums import ConfigurationVars, CredentialsVars, SetCreds
@@ -30,7 +30,7 @@ class ConfigManager:
     """
 
     # List of all configuration and credential keys for easy access and validation.
-    keys = [*list_enum(ConfigurationVars), *list_enum(CredentialsVars)]
+    keys: ClassVar[list[str]] = [*list_enum(ConfigurationVars), *list_enum(CredentialsVars)]
 
     def __init__(self) -> None:
         # Current credentials profile name.
@@ -210,7 +210,7 @@ class ConfigManager:
         """
         try:
             write_file(variables, self._current_profile)
-        except Exception:
+        except (ClientError, OSError):
             raise ClientError("Failed to write credentials to file.")
 
     def export_to_env(self, variables: dict) -> None:
@@ -224,7 +224,7 @@ class ConfigManager:
         """
         try:
             write_dotenv(variables)
-        except Exception:
+        except (ClientError, OSError):
             warn("Failed to write credentials to .env file.")
 
     def load_to_env(self) -> None:
@@ -233,7 +233,7 @@ class ConfigManager:
         """
         try:
             load_dotenv_file()
-        except Exception:
+        except (ClientError, OSError):
             warn("Failed to load credentials from .env file.")
 
     def update_in_memory(self, variables: dict) -> None:
@@ -257,7 +257,7 @@ class ConfigManager:
                 variables = {k: v for k, v in {**self._configuration, **self._credentials}.items() if v is not None}
                 self.export_to_env(variables)
                 self.export_to_ini(variables)
-        except Exception:
+        except (ClientError, OSError):
             self._in_memory = True
             warn("Configuration file is not writable. Credentials will be stored in memory only for this session.")
 

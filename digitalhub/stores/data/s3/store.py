@@ -105,9 +105,8 @@ class S3Store(Store):
 
             self._download_file(key, dst_pth, client, bucket)
 
-        if len(trees) == 1:
-            if dst.suffix == "":
-                return str(Path(dst, trees[0]))
+        if len(trees) == 1 and dst.suffix == "":
+            return str(Path(dst, trees[0]))
         return str(dst)
 
     def upload(
@@ -686,11 +685,11 @@ class S3Store(Store):
             logger.debug(f"Credentials obtained for S3 access: {cfg}")
             self._check_access_to_storage(client, bucket)
             return client, bucket
-        except ConfigError as e:
+        except ConfigError:
             if self._configurator.eval_retry():
                 logger.debug(f"S3 access check failed for bucket '{bucket}', retrying with new credentials.")
                 return self._check_factory(s3_path)
-            raise e
+            raise
 
     def _check_access_to_storage(self, client: S3Client, bucket: str) -> None:
         """
@@ -766,6 +765,4 @@ class S3Store(Store):
         -------
         bool
         """
-        if path.endswith("/"):
-            return True
-        return False
+        return bool(path.endswith("/"))

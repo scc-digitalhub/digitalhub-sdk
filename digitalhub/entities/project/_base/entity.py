@@ -300,21 +300,19 @@ class Project(Entity):
                 ref = entity["metadata"].get("ref")
 
                 # Load entity if not embedded and there is a ref
-                if not embedded and ref is not None:
-                    # Load entity from local ref
-                    if has_local_scheme(ref):
-                        try:
-                            # Artifacts, Dataitems and Models
-                            if entity_type in entity_types[:3]:
-                                context_processor.load_context_entity(ref)
+                if not embedded and ref is not None and has_local_scheme(ref):
+                    try:
+                        # Artifacts, Dataitems and Models
+                        if entity_type in entity_types[:3]:
+                            context_processor.load_context_entity(ref)
 
-                            # Functions and Workflows
-                            elif entity_type in entity_types[3:]:
-                                context_processor.load_executable_entity(ref)
+                        # Functions and Workflows
+                        elif entity_type in entity_types[3:]:
+                            context_processor.load_executable_entity(ref)
 
-                        except FileNotFoundError:
-                            msg = f"File not found: {ref}."
-                            raise EntityError(msg)
+                    except FileNotFoundError:
+                        msg = f"File not found: {ref}."
+                        raise EntityError(msg)
 
     def _is_embedded(self, entity: dict) -> bool:
         """

@@ -32,7 +32,7 @@ def write_dotenv(variables: dict) -> None:
 
         with open(DOTENV_FILE, "w") as envfile:
             envfile.writelines(f"{key}={value}\n" for key, value in current_values.items())
-    except Exception as e:
+    except OSError as e:
         raise ClientError(f"Failed to write .env file: {e}")
 
 
@@ -42,7 +42,7 @@ def load_dotenv_file() -> None:
     """
     try:
         load_dotenv(DOTENV_FILE, verbose=True, override=True)
-    except Exception as e:
+    except OSError as e:
         raise ClientError(f"Failed to load .env file: {e}")
 
 
@@ -71,7 +71,7 @@ def load_file() -> ConfigParser:
         file = ConfigParser()
         file.read(INI_FILE)
         return file
-    except Exception as e:
+    except OSError as e:
         raise ClientError(f"Failed to read env file: {e}")
 
 
@@ -147,7 +147,7 @@ def write_config(creds: dict, environment: str) -> None:
         with open(INI_FILE, "w") as inifile:
             cfg.write(inifile)
 
-    except Exception as e:
+    except OSError as e:
         raise ClientError(f"Failed to write env file: {e}")
 
 
@@ -178,7 +178,7 @@ def write_file(variables: dict, profile: str) -> None:
         with open(INI_FILE, "w") as inifile:
             cfg.write(inifile)
 
-    except Exception as e:
+    except OSError as e:
         raise ClientError(f"Failed to write env file: {e}")
 
 
@@ -197,5 +197,5 @@ def set_current_profile(environment: str) -> None:
         with open(INI_FILE, "w") as inifile:
             cfg.write(inifile)
 
-    except Exception as e:
+    except OSError as e:
         raise ClientError(f"Failed to write env file: {e}")

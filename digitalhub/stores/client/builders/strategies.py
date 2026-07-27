@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from typing import ClassVar
 
 
 class ParameterStrategy(ABC):
@@ -138,7 +139,7 @@ class ListParameterStrategy(ParameterStrategy):
     query, name, kind, user, state, timestamps, and relationships.
     """
 
-    ALLOWED_PARAMS = [
+    ALLOWED_PARAMS: ClassVar[list[str]] = [
         "q",
         "name",
         "kind",

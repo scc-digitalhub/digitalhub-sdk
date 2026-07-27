@@ -341,10 +341,7 @@ class ExecutableEntity(VersionedEntity):
         bool
             Flag to determine if task exists in backend.
         """
-        resp = self._get_task_from_backend(kind)
-        if not resp:
-            return False
-        return True
+        return bool(self._get_task_from_backend(kind))
 
     def _raise_if_exists(self, action: str) -> None:
         """

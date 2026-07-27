@@ -88,7 +88,7 @@ def new_trigger(
     if template is None:
         template = {}
     if not isinstance(template, dict):
-        raise ValueError("Template must be a dictionary")
+        raise TypeError("Template must be a dictionary")
     template["task"] = task
     template[executable_type] = executable
     template["local_execution"] = False
