@@ -20,6 +20,7 @@ def log_model(
     source: SourcesOrListOfSources,
     drop_existing: bool = False,
     path: str | None = None,
+    version: str | None = None,
     description: str | None = None,
     labels: list[str] | None = None,
     **kwargs,
@@ -39,6 +40,8 @@ def log_model(
         Whether to drop existing entity with the same name.
     path : str
         Destination path of the model. If not provided, it's generated.
+    version : str
+        Version stored in entity metadata.
     description : str
         Model description.
     labels : list[str]
@@ -64,6 +67,7 @@ def log_model(
         source=source,
         drop_existing=drop_existing,
         path=path,
+        version=version,
         description=description,
         labels=labels,
         **kwargs,

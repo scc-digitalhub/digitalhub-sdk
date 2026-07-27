@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: © 2025 DSLab - Fondazione Bruno Kessler
+#
+# SPDX-License-Identifier: Apache-2.0
+
 from __future__ import annotations
 
 import typing
@@ -16,11 +20,16 @@ def log_generic_model(
     source: SourcesOrListOfSources,
     drop_existing: bool = False,
     path: str | None = None,
+    version: str | None = None,
     description: str | None = None,
     labels: list[str] | None = None,
     **kwargs,
 ) -> ModelGeneric:
-    """Create and upload a model of an unknown kind."""
+    """Create and upload a model of an unknown kind.
+
+    version : str
+        Version stored in entity metadata.
+    """
     return log_base_model(
         project=project,
         name=name,
@@ -28,6 +37,7 @@ def log_generic_model(
         source=source,
         drop_existing=drop_existing,
         path=path,
+        version=version,
         description=description,
         labels=labels,
         **kwargs,

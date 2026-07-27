@@ -23,6 +23,7 @@ def log_base_model(
     source: SourcesOrListOfSources,
     drop_existing: bool = False,
     path: str | None = None,
+    version: str | None = None,
     description: str | None = None,
     labels: list[str] | None = None,
     **kwargs,
@@ -44,6 +45,8 @@ def log_base_model(
         Whether to drop existing entity with the same name.
     path : str
         Destination path of the model. If not provided, it's generated.
+    version : str
+        Version stored in entity metadata.
     description : str
         Model description.
     labels : list[str]
@@ -79,6 +82,7 @@ def log_base_model(
         kind=kind,
         drop_existing=drop_existing,
         entity_type=EntityTypes.MODEL.value,
+        version=version,
         description=description,
         labels=labels,
         **kwargs,

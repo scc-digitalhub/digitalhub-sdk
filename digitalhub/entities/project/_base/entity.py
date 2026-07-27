@@ -7,7 +7,6 @@ from __future__ import annotations
 import typing
 from functools import wraps
 from pathlib import Path
-from typing import Any
 
 from digitalhub.context.api import build_context
 from digitalhub.entities._base.entity.entity import Entity
@@ -427,6 +426,7 @@ class Project(Entity):
         name: str,
         kind: str,
         uuid: str | None = None,
+        version: str | None = None,
         description: str | None = None,
         labels: list[str] | None = None,
         embedded: bool = False,
@@ -445,6 +445,7 @@ class Project(Entity):
             name=name,
             kind=kind,
             uuid=uuid,
+            version=version,
             description=description,
             labels=labels,
             embedded=embedded,
@@ -457,39 +458,10 @@ class Project(Entity):
     def log_artifact(
         self,
         name: str,
-        kind: str,
         source: str,
         drop_existing: bool = False,
         path: str | None = None,
-        description: str | None = None,
-        labels: list[str] | None = None,
-        **kwargs,
-    ) -> Artifact:
-        """
-        Create and upload an artifact.
-
-        See also
-        -------
-        digitalhub.log_artifact
-        """
-        return self.crud.artifact.log(
-            name=name,
-            kind=kind,
-            source=source,
-            drop_existing=drop_existing,
-            path=path,
-            description=description,
-            labels=labels,
-            **kwargs,
-        )
-
-    @_auto_refresh
-    def log_artifact_artifact(
-        self,
-        name: str,
-        source: str,
-        drop_existing: bool = False,
-        path: str | None = None,
+        version: str | None = None,
         description: str | None = None,
         labels: list[str] | None = None,
         **kwargs,
@@ -499,13 +471,14 @@ class Project(Entity):
 
         See also
         -------
-        digitalhub.log_artifact_artifact
+        digitalhub.log_artifact
         """
         return self.crud.artifact.log_artifact(
             name=name,
             source=source,
             drop_existing=drop_existing,
             path=path,
+            version=version,
             description=description,
             labels=labels,
             **kwargs,
@@ -519,6 +492,7 @@ class Project(Entity):
         source: str,
         drop_existing: bool = False,
         path: str | None = None,
+        version: str | None = None,
         description: str | None = None,
         labels: list[str] | None = None,
         **kwargs,
@@ -530,12 +504,13 @@ class Project(Entity):
         -------
         digitalhub.log_generic_artifact
         """
-        return self.crud.artifact.log_generic(
+        return self.crud.artifact.log(
             name=name,
             kind=kind,
             source=source,
             drop_existing=drop_existing,
             path=path,
+            version=version,
             description=description,
             labels=labels,
             **kwargs,
@@ -676,6 +651,7 @@ class Project(Entity):
         name: str,
         kind: str,
         uuid: str | None = None,
+        version: str | None = None,
         description: str | None = None,
         labels: list[str] | None = None,
         embedded: bool = False,
@@ -694,6 +670,7 @@ class Project(Entity):
             name=name,
             kind=kind,
             uuid=uuid,
+            version=version,
             description=description,
             labels=labels,
             embedded=embedded,
@@ -706,43 +683,10 @@ class Project(Entity):
     def log_dataitem(
         self,
         name: str,
-        kind: str,
-        source: str | None = None,
-        data: Any | None = None,
-        drop_existing: bool = False,
-        description: str | None = None,
-        labels: list[str] | None = None,
-        extension: str | None = None,
-        path: str | None = None,
-        **kwargs,
-    ) -> Dataitem:
-        """
-        Create and upload a dataitem.
-
-        See also
-        -------
-        digitalhub.log_dataitem
-        """
-        return self.crud.dataitem.log(
-            name=name,
-            kind=kind,
-            path=path,
-            source=source,
-            data=data,
-            drop_existing=drop_existing,
-            description=description,
-            labels=labels,
-            extension=extension,
-            **kwargs,
-        )
-
-    @_auto_refresh
-    def log_dataitem_dataitem(
-        self,
-        name: str,
         source: str | None = None,
         drop_existing: bool = False,
         path: str | None = None,
+        version: str | None = None,
         description: str | None = None,
         labels: list[str] | None = None,
         **kwargs,
@@ -759,6 +703,7 @@ class Project(Entity):
             source=source,
             drop_existing=drop_existing,
             path=path,
+            version=version,
             description=description,
             labels=labels,
             **kwargs,
@@ -772,6 +717,7 @@ class Project(Entity):
         source: str | None = None,
         drop_existing: bool = False,
         path: str | None = None,
+        version: str | None = None,
         description: str | None = None,
         labels: list[str] | None = None,
         **kwargs,
@@ -783,12 +729,13 @@ class Project(Entity):
         -------
         digitalhub.log_generic_dataitem
         """
-        return self.crud.dataitem.log_generic(
+        return self.crud.dataitem.log(
             name=name,
             kind=kind,
             source=source,
             drop_existing=drop_existing,
             path=path,
+            version=version,
             description=description,
             labels=labels,
             **kwargs,
@@ -803,6 +750,7 @@ class Project(Entity):
         sql: str | None = None,
         drop_existing: bool = False,
         path: str | None = None,
+        version: str | None = None,
         description: str | None = None,
         labels: list[str] | None = None,
         file_format: str | None = None,
@@ -824,6 +772,7 @@ class Project(Entity):
             data=data,
             sql=sql,
             drop_existing=drop_existing,
+            version=version,
             description=description,
             labels=labels,
             file_format=file_format,
@@ -839,6 +788,7 @@ class Project(Entity):
         source: str | None = None,
         drop_existing: bool = False,
         path: str | None = None,
+        version: str | None = None,
         description: str | None = None,
         labels: list[str] | None = None,
         **kwargs,
@@ -855,6 +805,7 @@ class Project(Entity):
             source=source,
             drop_existing=drop_existing,
             path=path,
+            version=version,
             description=description,
             labels=labels,
             **kwargs,
@@ -995,6 +946,7 @@ class Project(Entity):
         name: str,
         kind: str,
         uuid: str | None = None,
+        version: str | None = None,
         description: str | None = None,
         labels: list[str] | None = None,
         embedded: bool = False,
@@ -1013,6 +965,7 @@ class Project(Entity):
             name=name,
             kind=kind,
             uuid=uuid,
+            version=version,
             description=description,
             labels=labels,
             embedded=embedded,
@@ -1025,39 +978,10 @@ class Project(Entity):
     def log_model(
         self,
         name: str,
-        kind: str,
         source: str,
         drop_existing: bool = False,
         path: str | None = None,
-        description: str | None = None,
-        labels: list[str] | None = None,
-        **kwargs,
-    ) -> Model:
-        """
-        Create and upload a model.
-
-        See also
-        -------
-        digitalhub.log_model
-        """
-        return self.crud.model.log(
-            name=name,
-            kind=kind,
-            source=source,
-            drop_existing=drop_existing,
-            path=path,
-            description=description,
-            labels=labels,
-            **kwargs,
-        )
-
-    @_auto_refresh
-    def log_model_model(
-        self,
-        name: str,
-        source: str,
-        drop_existing: bool = False,
-        path: str | None = None,
+        version: str | None = None,
         description: str | None = None,
         labels: list[str] | None = None,
         **kwargs,
@@ -1067,13 +991,14 @@ class Project(Entity):
 
         See also
         -------
-        digitalhub.log_model_model
+        digitalhub.log_model
         """
         return self.crud.model.log_model(
             name=name,
             source=source,
             drop_existing=drop_existing,
             path=path,
+            version=version,
             description=description,
             labels=labels,
             **kwargs,
@@ -1087,6 +1012,7 @@ class Project(Entity):
         source: str,
         drop_existing: bool = False,
         path: str | None = None,
+        version: str | None = None,
         description: str | None = None,
         labels: list[str] | None = None,
         **kwargs,
@@ -1098,12 +1024,13 @@ class Project(Entity):
         -------
         digitalhub.log_generic_model
         """
-        return self.crud.model.log_generic(
+        return self.crud.model.log(
             name=name,
             kind=kind,
             source=source,
             drop_existing=drop_existing,
             path=path,
+            version=version,
             description=description,
             labels=labels,
             **kwargs,
@@ -1116,6 +1043,7 @@ class Project(Entity):
         source: str,
         drop_existing: bool = False,
         path: str | None = None,
+        version: str | None = None,
         description: str | None = None,
         labels: list[str] | None = None,
         **kwargs,
@@ -1132,6 +1060,7 @@ class Project(Entity):
             source=source,
             drop_existing=drop_existing,
             path=path,
+            version=version,
             description=description,
             labels=labels,
             **kwargs,
@@ -1144,6 +1073,7 @@ class Project(Entity):
         source: str,
         drop_existing: bool = False,
         path: str | None = None,
+        version: str | None = None,
         description: str | None = None,
         labels: list[str] | None = None,
         **kwargs,
@@ -1160,6 +1090,7 @@ class Project(Entity):
             source=source,
             drop_existing=drop_existing,
             path=path,
+            version=version,
             description=description,
             labels=labels,
             **kwargs,
@@ -1172,6 +1103,7 @@ class Project(Entity):
         source: str,
         drop_existing: bool = False,
         path: str | None = None,
+        version: str | None = None,
         description: str | None = None,
         labels: list[str] | None = None,
         **kwargs,
@@ -1188,6 +1120,7 @@ class Project(Entity):
             source=source,
             drop_existing=drop_existing,
             path=path,
+            version=version,
             description=description,
             labels=labels,
             **kwargs,
@@ -1200,6 +1133,7 @@ class Project(Entity):
         source: str,
         drop_existing: bool = False,
         path: str | None = None,
+        version: str | None = None,
         description: str | None = None,
         labels: list[str] | None = None,
         **kwargs,
@@ -1216,6 +1150,7 @@ class Project(Entity):
             source=source,
             drop_existing=drop_existing,
             path=path,
+            version=version,
             description=description,
             labels=labels,
             **kwargs,
@@ -1228,6 +1163,7 @@ class Project(Entity):
         source: str,
         drop_existing: bool = False,
         path: str | None = None,
+        version: str | None = None,
         description: str | None = None,
         labels: list[str] | None = None,
         **kwargs,
@@ -1244,6 +1180,7 @@ class Project(Entity):
             source=source,
             drop_existing=drop_existing,
             path=path,
+            version=version,
             description=description,
             labels=labels,
             **kwargs,
@@ -1384,6 +1321,7 @@ class Project(Entity):
         name: str,
         kind: str,
         uuid: str | None = None,
+        version: str | None = None,
         description: str | None = None,
         labels: list[str] | None = None,
         embedded: bool = False,
@@ -1400,6 +1338,7 @@ class Project(Entity):
             name=name,
             kind=kind,
             uuid=uuid,
+            version=version,
             description=description,
             labels=labels,
             embedded=embedded,
@@ -1541,6 +1480,7 @@ class Project(Entity):
         name: str,
         kind: str,
         uuid: str | None = None,
+        version: str | None = None,
         description: str | None = None,
         labels: list[str] | None = None,
         embedded: bool = False,
@@ -1557,6 +1497,7 @@ class Project(Entity):
             name=name,
             kind=kind,
             uuid=uuid,
+            version=version,
             description=description,
             labels=labels,
             embedded=embedded,
@@ -1696,6 +1637,7 @@ class Project(Entity):
     def new_task(
         self,
         kind: str,
+        name: str | None = None,
         uuid: str | None = None,
         labels: list[str] | None = None,
         function: str | None = None,
@@ -1711,6 +1653,7 @@ class Project(Entity):
         """
         return self.crud.task.new(
             kind=kind,
+            name=name,
             uuid=uuid,
             labels=labels,
             function=function,
@@ -1830,6 +1773,7 @@ class Project(Entity):
     def new_run(
         self,
         kind: str,
+        name: str | None = None,
         uuid: str | None = None,
         labels: list[str] | None = None,
         task: str | None = None,
@@ -1844,6 +1788,7 @@ class Project(Entity):
         """
         return self.crud.run.new(
             kind=kind,
+            name=name,
             uuid=uuid,
             labels=labels,
             task=task,
@@ -2238,6 +2183,7 @@ class Project(Entity):
         self,
         name: str,
         image: str,
+        version: str | None = None,
         description: str | None = None,
         labels: list[str] | None = None,
         **kwargs,
@@ -2252,6 +2198,7 @@ class Project(Entity):
         return self.crud.containerimage.new(
             name=name,
             image=image,
+            version=version,
             description=description,
             labels=labels,
             **kwargs,

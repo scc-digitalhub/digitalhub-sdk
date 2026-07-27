@@ -331,6 +331,4 @@ def eval_zip_sources(source: str | list[str]) -> bool:
             return False
         path = source
 
-    if not eval_zip_type(path):
-        return False
-    return True
+    return eval_zip_type(path)

@@ -21,6 +21,7 @@ def new_containerimage(
     name: str,
     kind: str,
     uuid: str | None = None,
+    version: str | None = None,
     description: str | None = None,
     labels: list[str] | None = None,
     embedded: bool = False,
@@ -40,6 +41,8 @@ def new_containerimage(
         Kind the object.
     uuid : str
         ID of the object.
+    version : str
+        Version stored in entity metadata.
     description : str
         Description of the object (human readable).
     labels : list[str]
@@ -68,6 +71,7 @@ def new_containerimage(
         name=name,
         kind=kind,
         uuid=uuid,
+        version=version,
         description=description,
         labels=labels,
         embedded=embedded,

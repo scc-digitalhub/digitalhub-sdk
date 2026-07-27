@@ -21,6 +21,7 @@ def new_workflow(
     name: str,
     kind: str,
     uuid: str | None = None,
+    version: str | None = None,
     description: str | None = None,
     labels: list[str] | None = None,
     embedded: bool = False,
@@ -37,6 +38,8 @@ def new_workflow(
         Object name.
     uuid : str
         ID of the object.
+    version : str
+        Version stored in entity metadata.
     description : str
         Description of the object (human readable).
     labels : list[str]
@@ -64,6 +67,7 @@ def new_workflow(
         name=name,
         kind=kind,
         uuid=uuid,
+        version=version,
         description=description,
         labels=labels,
         embedded=embedded,

@@ -20,6 +20,7 @@ def new_run(
     project: str,
     kind: str,
     uuid: str | None = None,
+    name: str | None = None,
     labels: list[str] | None = None,
     task: str | None = None,
     **kwargs,
@@ -35,6 +36,8 @@ def new_run(
         Kind the object.
     uuid : str
         ID of the object.
+    name : str
+        Name stored in entity metadata.
     labels : list[str]
         List of labels.
     task : str
@@ -57,6 +60,7 @@ def new_run(
         project=project,
         kind=kind,
         uuid=uuid,
+        name=name,
         labels=labels,
         task=task,
         entity_type=ENTITY_TYPE,

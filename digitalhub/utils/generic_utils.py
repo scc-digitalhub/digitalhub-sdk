@@ -8,11 +8,12 @@ import base64
 import importlib.util as imputil
 import json
 import tempfile
+from collections.abc import Callable
 from datetime import date, datetime, time
 from enum import Enum, EnumMeta
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, Callable
+from typing import Any
 from warnings import warn
 from zipfile import ZipFile
 
@@ -229,16 +230,16 @@ def import_function(path: Path, handler: str) -> Callable:
     """
     spec = imputil.spec_from_file_location(path.stem, path)
     if spec is None:
-        raise RuntimeError(f"Error loading function source from {str(path)}.")
+        raise RuntimeError(f"Error loading function source from {path!s}.")
 
     mod = imputil.module_from_spec(spec)
     if spec.loader is None:
-        raise RuntimeError(f"Error getting module loader from {str(path)}.")
+        raise RuntimeError(f"Error getting module loader from {path!s}.")
 
     spec.loader.exec_module(mod)
     func = getattr(mod, handler)
     if not callable(func):
-        raise RuntimeError(f"Handler '{handler}' is not a callable.")
+        raise TypeError(f"Handler '{handler}' is not a callable.")
 
     return func
 

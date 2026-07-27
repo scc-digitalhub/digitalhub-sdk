@@ -20,6 +20,7 @@ def new_task(
     project: str,
     kind: str,
     uuid: str | None = None,
+    name: str | None = None,
     labels: list[str] | None = None,
     function: str | None = None,
     workflow: str | None = None,
@@ -36,6 +37,8 @@ def new_task(
         Kind the object.
     uuid : str
         ID of the object.
+    name : str
+        Name stored in entity metadata.
     labels : list[str]
         List of labels.
     function : str
@@ -60,6 +63,7 @@ def new_task(
         project=project,
         kind=kind,
         uuid=uuid,
+        name=name,
         labels=labels,
         entity_type=ENTITY_TYPE,
         function=function,

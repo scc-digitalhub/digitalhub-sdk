@@ -45,13 +45,14 @@ class Run(UnversionedEntity, MetricsEntity):
         user: str | None = None,
     ) -> None:
         super().__init__(project, uuid, kind, metadata, spec, status, user)
+        self.name: str = self.metadata.name
         self.spec: RunSpec
         self.status: RunStatus
 
         self.extensions: list[dict] = extensions if extensions is not None else []
 
         # Attributes to be included in __repr__
-        self._obj_attr.extend(["extensions"])
+        self._obj_attr.extend(["name", "extensions"])
 
     ##############################
     #  Run Methods

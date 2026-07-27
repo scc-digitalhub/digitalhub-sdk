@@ -1,6 +1,5 @@
+# SPDX-FileCopyrightText: © 2025 DSLab - Fondazione Bruno Kessler
+#
+# SPDX-License-Identifier: Apache-2.0
+
 from __future__ import annotations
-
-from digitalhub.entities.secret.generic.builder import SecretGenericBuilder
-from digitalhub.entities.secret.generic.entity import SecretGeneric
-
-__all__ = ["SecretGenericBuilder", "SecretGeneric"]

@@ -25,6 +25,7 @@ class TaskBuilder(UnversionedBuilder, RuntimeEntityBuilder):
         self,
         project: str,
         kind: str,
+        name: str | None = None,
         uuid: str | None = None,
         labels: list[str] | None = None,
         **kwargs,
@@ -40,6 +41,8 @@ class TaskBuilder(UnversionedBuilder, RuntimeEntityBuilder):
             Kind the object.
         uuid : str
             ID of the object.
+        name : str
+            Name stored in entity metadata.
         labels : list[str]
             List of labels.
         **kwargs : dict
@@ -61,7 +64,7 @@ class TaskBuilder(UnversionedBuilder, RuntimeEntityBuilder):
         uuid = self.build_uuid(uuid)
         metadata = self.build_metadata(
             project=project,
-            name=uuid,
+            name=name,
             labels=labels,
         )
         spec = self.build_spec(

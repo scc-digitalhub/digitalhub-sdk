@@ -117,8 +117,7 @@ def get_secret(
         for secret in secrets:
             if secret.name == identifier:
                 return secret
-        else:
-            raise EntityNotExistsError(f"Secret {identifier} not found.")
+        raise EntityNotExistsError(f"Secret {identifier} not found.")
     return context_processor.read_context_entity(
         identifier=identifier,
         entity_type=ENTITY_TYPE,

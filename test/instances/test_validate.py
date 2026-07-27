@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import json
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -25,7 +24,6 @@ class SchemaRegistry:
         self._schemas_path = schemas_path
         self._schema_paths = {path.stem: path for path in schemas_path.rglob("*.json")}
 
-    @lru_cache(maxsize=None)
     def get_schema(self, kind: str) -> dict[str, Any]:
         """Load and cache schema by kind."""
         if kind not in self._schema_paths:

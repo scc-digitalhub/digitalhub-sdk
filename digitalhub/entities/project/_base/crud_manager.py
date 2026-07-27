@@ -86,8 +86,8 @@ class EntityCRUD:
         return self._call_op(OpType.NEW, **kwargs)
 
     def log(self, **kwargs) -> ContextEntity:
-        """Log a new entity."""
-        return self._call_op(OpType.LOG, **kwargs)
+        """Create and upload an entity."""
+        return self._call_op(OpType.LOG_GENERIC, **kwargs)
 
     def get(self, *args, **kwargs) -> ContextEntity:
         """Get entity from backend."""

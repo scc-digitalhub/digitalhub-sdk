@@ -44,6 +44,8 @@ class RunBuilder(UnversionedBuilder, RuntimeEntityBuilder):
             Kind the object.
         uuid : str
             ID of the object.
+        name : str
+            Name stored in entity metadata.
         labels : list[str]
             List of labels.
         task : str
@@ -66,7 +68,7 @@ class RunBuilder(UnversionedBuilder, RuntimeEntityBuilder):
         uuid = self.build_uuid(uuid)
         metadata = self.build_metadata(
             project=project,
-            name=uuid,
+            name=name,
             labels=labels,
         )
         spec = self.build_spec(

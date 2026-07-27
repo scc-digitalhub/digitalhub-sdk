@@ -23,6 +23,7 @@ class ContainerimageBuilder(VersionedBuilder):
         project: str,
         name: str,
         uuid: str | None = None,
+        version: str | None = None,
         description: str | None = None,
         labels: list[str] | None = None,
         image: str | None = None,
@@ -41,6 +42,8 @@ class ContainerimageBuilder(VersionedBuilder):
             Kind the object.
         uuid : str
             ID of the object.
+        version : str
+            Version stored in entity metadata.
         description : str
             Description of the object (human readable).
         labels : list[str]
@@ -61,6 +64,7 @@ class ContainerimageBuilder(VersionedBuilder):
         metadata = self.build_metadata(
             project=project,
             name=name,
+            version=version,
             description=description,
             labels=labels,
         )

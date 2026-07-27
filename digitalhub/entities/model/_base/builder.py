@@ -27,6 +27,7 @@ class ModelBuilder(MaterialBuilder):
         project: str,
         name: str,
         uuid: str | None = None,
+        version: str | None = None,
         description: str | None = None,
         labels: list[str] | None = None,
         extensions: list[dict] | None = None,
@@ -73,6 +74,7 @@ class ModelBuilder(MaterialBuilder):
         metadata = self.build_metadata(
             project=project,
             name=name,
+            version=version,
             description=description,
             labels=labels,
             embedded=embedded,

@@ -47,7 +47,7 @@ class HFStore(Store):
             if dst.is_file():
                 raise StoreError("The destination path for a Hugging Face model must be a directory.")
             if any(dst.iterdir()) and not overwrite:
-                raise StoreError(f"Destination {str(dst)} already exists.")
+                raise StoreError(f"Destination {dst!s} already exists.")
 
         dst.mkdir(parents=True, exist_ok=True)
 

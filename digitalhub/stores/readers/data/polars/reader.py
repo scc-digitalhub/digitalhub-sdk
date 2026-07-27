@@ -54,9 +54,9 @@ class DataframeReaderPolars(DataframeReader):
         try:
             return read_function(path_or_buffer, **kwargs)
         except ComputeError as e:
-            raise ReaderError(f"Error reading data with Polars: {str(e)}") from e
+            raise ReaderError(f"Error reading data with Polars: {e!s}") from e
         except Exception as e:
-            raise ReaderError(f"Unexpected error reading data with Polars: {str(e)}") from e
+            raise ReaderError(f"Unexpected error reading data with Polars: {e!s}") from e
 
     def read_table(self, sql: str, engine: Any, **kwargs) -> pl.DataFrame:
         """
@@ -107,9 +107,9 @@ class DataframeReaderPolars(DataframeReader):
         try:
             write_function(df, dst, **kwargs)
         except ComputeError as e:
-            raise ReaderError(f"Error writing data with Polars: {str(e)}") from e
+            raise ReaderError(f"Error writing data with Polars: {e!s}") from e
         except Exception as e:
-            raise ReaderError(f"Unexpected error writing data with Polars: {str(e)}") from e
+            raise ReaderError(f"Unexpected error writing data with Polars: {e!s}") from e
 
     @staticmethod
     def write_table(df: pl.DataFrame, table: str, engine: Any, schema: str | None = None, **kwargs) -> None:

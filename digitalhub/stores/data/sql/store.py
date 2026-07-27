@@ -462,11 +462,11 @@ class SqlStore(Store):
         try:
             self._check_access_to_storage(engine)
             return engine
-        except ConfigError as e:
+        except ConfigError:
             if self._configurator.eval_retry():
                 logger.debug("SQL connection failed, retrying with new credentials.")
                 return self._check_factory(schema=schema)
-            raise e
+            raise
 
     @staticmethod
     def _parse_path(path: str) -> dict:

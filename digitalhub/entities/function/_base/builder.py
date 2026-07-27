@@ -27,6 +27,7 @@ class FunctionBuilder(VersionedBuilder, RuntimeEntityBuilder):
         project: str,
         name: str,
         uuid: str | None = None,
+        version: str | None = None,
         description: str | None = None,
         labels: list[str] | None = None,
         embedded: bool = False,
@@ -45,6 +46,8 @@ class FunctionBuilder(VersionedBuilder, RuntimeEntityBuilder):
             Kind the object.
         uuid : str
             ID of the object.
+        version : str
+            Version stored in entity metadata.
         description : str
             Description of the object (human readable).
         labels : list[str]
@@ -64,6 +67,7 @@ class FunctionBuilder(VersionedBuilder, RuntimeEntityBuilder):
         metadata = self.build_metadata(
             project=project,
             name=name,
+            version=version,
             description=description,
             labels=labels,
             embedded=embedded,
