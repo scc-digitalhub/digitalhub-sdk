@@ -297,18 +297,21 @@ class ContextEntityMaterialProcessor:
         obj = self._update_material_entity(crud_processor, obj)
 
         # Handle file upload
+        error: Exception | None = None
         try:
             upload_fn(obj)
             uploaded = True
             msg = None
         except FileNotFoundError as e:
             uploaded = False
-            msg = str(e.args) + " Please verify that the specified source files are correct and exist."
+            msg = f"Upload failed: {e}. Please verify that the specified source files are correct and exist."
             exception = EntityErrorFileNotFound
+            error = e
         except (StoreError, OSError, ValueError, NotImplementedError) as e:
             uploaded = False
-            msg = str(e.args)
+            msg = f"Upload failed: {e}"
             exception = EntityError
+            error = e
 
         obj.status.message = msg
 
@@ -319,7 +322,7 @@ class ContextEntityMaterialProcessor:
         else:
             obj.status.state = State.ERROR.value
             obj = self._update_material_entity(crud_processor, obj)
-            raise exception(msg)
+            raise exception(msg) from error
 
         return obj
 

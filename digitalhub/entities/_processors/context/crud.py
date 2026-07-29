@@ -103,7 +103,7 @@ class ContextEntityCRUDProcessor:
                 expected_type = entity_type
             if entity_type != expected_type:
                 raise ValueError(
-                    f"Entity kind '{entity_kind}' does not match expected type '{entity_type}'.",
+                    f"Entity kind '{entity_kind}' does not match expected type '{expected_type}'.",
                 )
             obj: ContextEntity = entity_factory.build_entity_from_params(entity_type=entity_type, **kwargs)
             obj._post_create_hook_before_save()
