@@ -23,6 +23,9 @@ class NameValidator(BaseModel):
 
 
 def _random_enum_value(enum_cls: type[Enum]) -> str:
+    """
+    Get a random value from an Enum class.
+    """
     return random.choice(list(enum_cls)).value
 
 

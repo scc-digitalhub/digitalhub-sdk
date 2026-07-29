@@ -10,7 +10,6 @@ from __future__ import annotations
 from enum import Enum
 
 
-
 class EuropeanMammalName(str, Enum):
     """Representative European wild mammal genera used to build random names."""
 
@@ -31,7 +30,6 @@ class EuropeanMammalName(str, Enum):
     TALPA = "talpa"
     URSUS = "ursus"
     VULPES = "vulpes"
-
 
 
 class EuropeanAmphibianReptileName(str, Enum):
