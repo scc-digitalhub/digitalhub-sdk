@@ -36,6 +36,7 @@ class Run(UnversionedEntity, MetricsEntity):
     def __init__(
         self,
         project: str,
+        name: str,
         uuid: str,
         kind: str,
         metadata: Metadata,
@@ -45,7 +46,7 @@ class Run(UnversionedEntity, MetricsEntity):
         user: str | None = None,
     ) -> None:
         super().__init__(project, uuid, kind, metadata, spec, status, user)
-        self.name: str = self.metadata.name
+        self.name: str = name
         self.spec: RunSpec
         self.status: RunStatus
 

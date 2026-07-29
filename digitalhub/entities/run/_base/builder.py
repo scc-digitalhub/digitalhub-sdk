@@ -71,6 +71,8 @@ class RunBuilder(UnversionedBuilder, RuntimeEntityBuilder):
             name=name,
             labels=labels,
         )
+        if name is None:
+            name = metadata.name
         spec = self.build_spec(
             task=task,
             local_execution=local_execution,
@@ -79,6 +81,7 @@ class RunBuilder(UnversionedBuilder, RuntimeEntityBuilder):
         status = self.build_status()
         return self.build_entity(
             project=project,
+            name=name,
             uuid=uuid,
             kind=kind,
             metadata=metadata,
@@ -133,6 +136,9 @@ class RunBuilder(UnversionedBuilder, RuntimeEntityBuilder):
         """
         project = obj.get("project")
         kind = obj.get("kind")
+        name = obj.get("name")
+        if name is None:
+            name = obj.get("metadata", {}).get("name")
         uuid = self.build_uuid(obj.get("id"))
         metadata = self.build_metadata(**obj.get("metadata", {}))
         spec = self.build_spec(**obj.get("spec", {}))
@@ -141,6 +147,7 @@ class RunBuilder(UnversionedBuilder, RuntimeEntityBuilder):
         extensions = obj.get("extensions", [])
         return {
             "project": project,
+            "name": name,
             "uuid": uuid,
             "kind": kind,
             "metadata": metadata,
