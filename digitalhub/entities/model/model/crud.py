@@ -6,7 +6,8 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.entities._commons.enums import EntityKinds
+from digitalhub.entities._base.material.utils import log_warning
+from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
 from digitalhub.entities.model._base.crud import log_base_model
 from digitalhub.utils.types import SourcesOrListOfSources
 
@@ -60,6 +61,11 @@ def log_model(
     >>>                 name="my-model",
     >>>                 source="./local-path")
     """
+    log_warning(
+        requested_kind=kwargs.pop("kind", None),
+        log_kind=EntityKinds.MODEL_MODEL.value,
+        entity_type=EntityTypes.MODEL.value,
+    )
     return log_base_model(
         project=project,
         name=name,

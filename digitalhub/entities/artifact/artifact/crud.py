@@ -6,7 +6,8 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.entities._commons.enums import EntityKinds
+from digitalhub.entities._base.material.utils import log_warning
+from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
 from digitalhub.entities.artifact._base.crud import log_base_artifact
 from digitalhub.utils.types import SourcesOrListOfSources
 
@@ -60,6 +61,11 @@ def log_artifact(
     >>>                    name="my-artifact",
     >>>                    source="./local-path")
     """
+    log_warning(
+        requested_kind=kwargs.pop("kind", None),
+        log_kind=EntityKinds.ARTIFACT_ARTIFACT.value,
+        entity_type=EntityTypes.ARTIFACT.value,
+    )
     return log_base_artifact(
         project=project,
         name=name,

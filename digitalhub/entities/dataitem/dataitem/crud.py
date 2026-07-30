@@ -6,7 +6,8 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.entities._commons.enums import EntityKinds
+from digitalhub.entities._base.material.utils import log_warning
+from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
 from digitalhub.entities.dataitem._base.crud import log_base_dataitem
 from digitalhub.utils.types import SourcesOrListOfSources
 
@@ -60,6 +61,11 @@ def log_dataitem(
                            name="my-dataitem-dataitem",
                            source="./local-path")
     """
+    log_warning(
+        requested_kind=kwargs.pop("kind", None),
+        log_kind=EntityKinds.DATAITEM_DATAITEM.value,
+        entity_type=EntityTypes.DATAITEM.value,
+    )
     return log_base_dataitem(
         project=project,
         name=name,

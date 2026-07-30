@@ -62,9 +62,9 @@ def log_base_artifact(
     Examples
     --------
     >>> obj = log_base_artifact(project="my-project",
-    >>>                      name="my-artifact",
-    >>>                      kind="artifact",
-    >>>                      source="./local-path")
+    >>>                         name="my-artifact",
+    >>>                         kind="artifact",
+    >>>                         source="./local-path")
     """
     eval_local_source(source)
     kwargs = build_log_kwargs(
