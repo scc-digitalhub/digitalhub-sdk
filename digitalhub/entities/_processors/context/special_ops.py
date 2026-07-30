@@ -282,7 +282,8 @@ class ContextEntitySpecialOpsProcessor:
         Returns
         -------
         list[dict]
-            List of file information dictionaries from the backend.
+            List of file information dictionaries from the backend,
+            collected across all pages.
         """
         context = get_context(project)
         api = context.client.build_api(
@@ -292,7 +293,7 @@ class ContextEntitySpecialOpsProcessor:
             entity_type=entity_type,
             entity_id=entity_id,
         )
-        return context.client.read_object(api, **kwargs)
+        return context.client.list_objects(api, **kwargs)
 
     def update_files_info(
         self,
