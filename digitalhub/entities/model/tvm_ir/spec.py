@@ -8,8 +8,8 @@ from typing import Literal
 
 from digitalhub.entities.model._tvm.spec import ModelSpecTvm, ModelValidatorTvm
 
-# mirrors the Java TvmFormat enum (auto/onnx/pytorch/tvmscript)
-TvmSourceFormat = Literal["auto", "onnx", "pytorch", "tvmscript"]
+# mirrors the Java TvmFormat enum (auto/onnx/tflite)
+TvmSourceFormat = Literal["auto", "onnx", "tflite"]
 
 
 class ModelSpecTvmIr(ModelSpecTvm):
@@ -42,10 +42,10 @@ class ModelValidatorTvmIr(ModelValidatorTvm):
     """
 
     source_format: TvmSourceFormat | None = None
-    """Source model format; one of auto/onnx/pytorch/tvmscript (mirrors Java TvmFormat)."""
+    """Source model format; one of auto/onnx/tflite (mirrors Java TvmFormat)."""
 
     keep_params_in_input: bool | None = None
-    """Whether weights are kept as input vars (params.bin) instead of folded into the IR."""
+    """Whether weights are kept as input vars (params.bin) instead of folded into the IR. ONNX only."""
 
     sanitize_input_names: bool | None = None
-    """Whether input names were sanitized by the ONNX frontend."""
+    """Whether input names were sanitized by the ONNX frontend. ONNX only."""
