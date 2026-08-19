@@ -8,10 +8,11 @@ import typing
 from pathlib import Path
 from typing import ClassVar
 
+from digitalhub.entities._commons.enums import State
 from digitalhub.entities._commons.utils import refresh_decorator
 from digitalhub.entities._processors.processors import material_processor
 from digitalhub.stores.data.api import get_store
-from digitalhub.utils.exceptions import BackendError
+from digitalhub.utils.exceptions import BackendError, EntityError, EntityErrorFileNotFound, StoreError
 from digitalhub.utils.logger.logger import get_logger
 from digitalhub.utils.types import SourcesOrListOfSources
 
@@ -64,15 +65,42 @@ class MaterialMixin:
         source: SourcesOrListOfSources,
         keep_dir_structure: bool = False,
     ) -> None:
-        store = get_store(self.spec.path)
-        paths = store.upload(
-            source,
-            self.spec.path,
-            keep_dir_structure=keep_dir_structure,
-        )
+        self.status.state = State.UPLOADING.value
+        self.save(update=True)
 
-        files_info = store.get_file_info(self.spec.path, paths)
-        self._update_files_info(files_info)
+        store = get_store(self.spec.path)
+        error: Exception | None = None
+        try:
+            paths = store.upload(
+                source,
+                self.spec.path,
+                keep_dir_structure=keep_dir_structure,
+            )
+            files_info = store.get_file_info(self.spec.path, paths)
+            self._update_files_info(files_info)
+            uploaded = True
+            msg = None
+        except FileNotFoundError as e:
+            uploaded = False
+            msg = f"Upload failed: {e}. Please verify that the specified source files are correct and exist."
+            exception = EntityErrorFileNotFound
+            error = e
+        except (StoreError, OSError, ValueError, NotImplementedError) as e:
+            uploaded = False
+            msg = f"Upload failed: {e}"
+            exception = EntityError
+            error = e
+
+        self.status.message = msg
+
+        if uploaded:
+            self.status.state = State.READY.value
+            self.save(update=True)
+            return
+
+        self.status.state = State.ERROR.value
+        self.save(update=True)
+        raise exception(msg) from error
 
     @property
     def files(self) -> list[dict]:
