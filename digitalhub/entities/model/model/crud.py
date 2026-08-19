@@ -17,8 +17,8 @@ if typing.TYPE_CHECKING:
 
 def log_model(
     project: str,
-    name: str,
     source: SourcesOrListOfSources,
+    name: str | None = None,
     drop_existing: bool = False,
     path: str | None = None,
     version: str | None = None,

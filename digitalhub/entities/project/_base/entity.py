@@ -455,8 +455,8 @@ class Project(Entity):
     @_auto_refresh
     def log_artifact(
         self,
-        name: str,
         source: str,
+        name: str | None = None,
         drop_existing: bool = False,
         path: str | None = None,
         version: str | None = None,
@@ -485,9 +485,9 @@ class Project(Entity):
     @_auto_refresh
     def log_generic_artifact(
         self,
-        name: str,
         kind: str,
         source: str,
+        name: str | None = None,
         drop_existing: bool = False,
         path: str | None = None,
         version: str | None = None,
@@ -680,8 +680,8 @@ class Project(Entity):
     @_auto_refresh
     def log_dataitem(
         self,
-        name: str,
         source: str | None = None,
+        name: str | None = None,
         drop_existing: bool = False,
         path: str | None = None,
         version: str | None = None,
@@ -710,9 +710,9 @@ class Project(Entity):
     @_auto_refresh
     def log_generic_dataitem(
         self,
-        name: str,
         kind: str,
         source: str | None = None,
+        name: str | None = None,
         drop_existing: bool = False,
         path: str | None = None,
         version: str | None = None,
@@ -742,7 +742,7 @@ class Project(Entity):
     @_auto_refresh
     def log_table(
         self,
-        name: str,
+        name: str | None = None,
         source: str | None = None,
         data: Dataframe | None = None,  # type: ignore
         sql: str | None = None,
@@ -782,7 +782,7 @@ class Project(Entity):
     @_auto_refresh
     def log_croissant(
         self,
-        name: str,
+        name: str | None = None,
         source: str | None = None,
         drop_existing: bool = False,
         path: str | None = None,
@@ -975,8 +975,8 @@ class Project(Entity):
     @_auto_refresh
     def log_model(
         self,
-        name: str,
         source: str,
+        name: str | None = None,
         drop_existing: bool = False,
         path: str | None = None,
         version: str | None = None,
@@ -1005,9 +1005,9 @@ class Project(Entity):
     @_auto_refresh
     def log_generic_model(
         self,
-        name: str,
         kind: str,
         source: str,
+        name: str | None = None,
         drop_existing: bool = False,
         path: str | None = None,
         version: str | None = None,
@@ -1037,8 +1037,8 @@ class Project(Entity):
     @_auto_refresh
     def log_mlflow(
         self,
-        name: str,
         source: str,
+        name: str | None = None,
         drop_existing: bool = False,
         path: str | None = None,
         version: str | None = None,
@@ -1067,8 +1067,8 @@ class Project(Entity):
     @_auto_refresh
     def log_sklearn(
         self,
-        name: str,
         source: str,
+        name: str | None = None,
         drop_existing: bool = False,
         path: str | None = None,
         version: str | None = None,
@@ -1097,8 +1097,8 @@ class Project(Entity):
     @_auto_refresh
     def log_huggingface(
         self,
-        name: str,
         source: str,
+        name: str | None = None,
         drop_existing: bool = False,
         path: str | None = None,
         version: str | None = None,
@@ -1127,8 +1127,8 @@ class Project(Entity):
     @_auto_refresh
     def log_tvm_ir(
         self,
-        name: str,
         source: str,
+        name: str | None = None,
         drop_existing: bool = False,
         path: str | None = None,
         version: str | None = None,
@@ -1157,8 +1157,8 @@ class Project(Entity):
     @_auto_refresh
     def log_tvm_so(
         self,
-        name: str,
         source: str,
+        name: str | None = None,
         drop_existing: bool = False,
         path: str | None = None,
         version: str | None = None,

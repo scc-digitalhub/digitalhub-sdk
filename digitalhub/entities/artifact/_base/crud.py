@@ -7,6 +7,7 @@ from __future__ import annotations
 import typing
 
 from digitalhub.entities._commons.enums import EntityTypes
+from digitalhub.entities._commons.utils import build_log_name_from_source
 from digitalhub.entities._processors.processors import material_processor
 from digitalhub.entities.artifact._base.utils import build_log_kwargs
 from digitalhub.utils.file_utils import eval_local_source
@@ -18,9 +19,9 @@ if typing.TYPE_CHECKING:
 
 def log_base_artifact(
     project: str,
-    name: str,
     kind: str,
     source: SourcesOrListOfSources,
+    name: str | None = None,
     drop_existing: bool = False,
     path: str | None = None,
     version: str | None = None,
@@ -67,6 +68,8 @@ def log_base_artifact(
     >>>                         source="./local-path")
     """
     eval_local_source(source)
+    if name is None:
+        name = build_log_name_from_source(source)
     kwargs = build_log_kwargs(
         project,
         name,

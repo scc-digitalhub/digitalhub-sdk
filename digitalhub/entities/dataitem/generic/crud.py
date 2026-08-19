@@ -15,9 +15,9 @@ if typing.TYPE_CHECKING:
 
 def log_generic_dataitem(
     project: str,
-    name: str,
     kind: str,
     source: SourcesOrListOfSources,
+    name: str | None = None,
     drop_existing: bool = False,
     path: str | None = None,
     version: str | None = None,

@@ -16,8 +16,8 @@ if typing.TYPE_CHECKING:
 
 def log_tvm_so(
     project: str,
-    name: str,
     source: SourcesOrListOfSources,
+    name: str | None = None,
     drop_existing: bool = False,
     path: str | None = None,
     description: str | None = None,

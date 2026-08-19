@@ -13,6 +13,7 @@ from pathlib import Path
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.utils.exceptions import BackendError
 from digitalhub.utils.file_utils import eval_zip_sources
+from digitalhub.utils.generic_utils import slugify_string
 from digitalhub.utils.logger.logger import get_logger
 
 if typing.TYPE_CHECKING:
@@ -220,6 +221,31 @@ def build_log_path_from_source(
         path += f"/{Path(source).name}"
 
     return path
+
+
+def build_log_name_from_source(source: str | list[str]) -> str:
+    """
+    Build a log entity name from a source path.
+
+    Parameters
+    ----------
+    source : str or list[str]
+        Source path(s).
+
+    Returns
+    -------
+    str
+        Slugified source name.
+    """
+    if isinstance(source, list):
+        if len(source) != 1:
+            raise ValueError("A name is required when logging multiple sources.")
+        source_path = Path(source[0])
+    else:
+        source_path = Path(source)
+
+    source_name = source_path.stem if source_path.is_file() else source_path.name
+    return slugify_string(source_name)
 
 
 def build_log_path_as_partition(

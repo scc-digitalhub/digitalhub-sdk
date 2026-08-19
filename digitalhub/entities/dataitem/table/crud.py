@@ -8,6 +8,7 @@ import typing
 from enum import Enum
 
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
+from digitalhub.entities._commons.utils import build_log_name_from_source
 from digitalhub.entities._processors.processors import material_processor
 from digitalhub.entities.dataitem.table.utils import (
     post_process,
@@ -45,10 +46,10 @@ def _eval_source(
 
 def log_table(
     project: str,
-    name: str,
     source: SourcesOrListOfSources | None = None,
     data: Dataframe | None = None,  # type: ignore
     sql: str | None = None,
+    name: str | None = None,
     drop_existing: bool = False,
     path: str | None = None,
     description: str | None = None,
@@ -105,9 +106,16 @@ def log_table(
 
     data_source = _eval_source(source, data, sql)
 
+    if data_source == SourceTypes.DATA.value and name is None:
+        raise ValueError("A name is required when logging a table from a dataframe.")
+    if data_source == SourceTypes.SQL.value and name is None:
+        raise ValueError("A name is required when logging a table from SQL.")
+
     match data_source:
         case SourceTypes.SOURCE.value:
             filename = None
+            if name is None:
+                name = build_log_name_from_source(source)
             data = read_data_sample(
                 source,
                 file_format,
@@ -136,8 +144,7 @@ def log_table(
             )
             return post_process(obj, data)
         case SourceTypes.DATA.value:
-            regex_pattern = r"[^-a-z0-9_]+"
-            filename = slugify_string(name, regex_pattern=regex_pattern) + f".{FileExtensions.PARQUET.value}"
+            filename = slugify_string(name) + f".{FileExtensions.PARQUET.value}"
             kwargs = process_data_kwargs(
                 project,
                 name,

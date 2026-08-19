@@ -207,9 +207,7 @@ def slugify_string(filename: str, **kwargs) -> str:
     str
         The sanitized filename (max length 255).
     """
-    if "max_length" not in kwargs:
-        kwargs["max_length"] = 255
-    return slugify(filename, **kwargs)
+    return slugify(filename, regex_pattern=r"[^-a-z0-9]+", max_length=255, **kwargs)
 
 
 def import_function(path: Path, handler: str) -> Callable:
