@@ -7,7 +7,7 @@ from __future__ import annotations
 import typing
 
 from digitalhub.entities._commons.enums import EntityTypes
-from digitalhub.entities._processors.processors import context_processor
+from digitalhub.entities._processors.processors import crud_processor
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.task._base.entity import Task
@@ -59,7 +59,7 @@ def new_task(
     >>>                kind="python+job",
     >>>                function="function-string")
     """
-    return context_processor.create_context_entity(
+    return crud_processor.create_context_entity(
         project=project,
         kind=kind,
         uuid=uuid,
@@ -97,7 +97,7 @@ def get_task(identifier: str, project: str | None = None) -> Task:
     >>> obj = get_task("my-task-id"
     >>>               project="my-project")
     """
-    return context_processor.read_unversioned_entity(
+    return crud_processor.read_unversioned_entity(
         identifier=identifier,
         entity_type=ENTITY_TYPE,
         project=project,
@@ -151,7 +151,7 @@ def list_tasks(
     --------
     >>> objs = list_tasks(project="my-project")
     """
-    return context_processor.list_context_entities(
+    return crud_processor.list_context_entities(
         project=project,
         entity_type=ENTITY_TYPE,
         q=q,
@@ -195,12 +195,7 @@ def import_task(
     -------
     >>> obj = import_task("my-task.yaml")
     """
-    return context_processor.import_context_entity(
-        file,
-        key,
-        reset_id,
-        context,
-    )
+    return crud_processor.import_context_entity(file, key, reset_id, context)
 
 
 def load_task(file: str) -> Task:
@@ -221,7 +216,7 @@ def load_task(file: str) -> Task:
     --------
     >>> obj = load_task("my-task.yaml")
     """
-    return context_processor.load_context_entity(file)
+    return crud_processor.load_context_entity(file)
 
 
 def update_task(entity: Task) -> Task:
@@ -242,7 +237,7 @@ def update_task(entity: Task) -> Task:
     --------
     >>> obj = update_task(obj)
     """
-    return context_processor.update_context_entity(
+    return crud_processor.update_context_entity(
         project=entity.project,
         entity_type=entity.ENTITY_TYPE,
         entity_id=entity.id,
@@ -281,7 +276,7 @@ def delete_task(
     --------
     >>> obj = delete_task("store://my-task-key")
     """
-    return context_processor.delete_context_entity(
+    return crud_processor.delete_context_entity(
         identifier=identifier,
         entity_type=ENTITY_TYPE,
         project=project,

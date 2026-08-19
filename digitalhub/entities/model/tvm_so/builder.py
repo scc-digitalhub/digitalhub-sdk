@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from digitalhub.entities._commons.enums import EntityKinds
 from digitalhub.entities.model._base.builder import ModelBuilder
-from digitalhub.entities.model._tvm.status import ModelStatusTvm
+from digitalhub.entities.model.tvm.status import ModelStatusTvm
 from digitalhub.entities.model.tvm_so.entity import ModelTvmSo
 from digitalhub.entities.model.tvm_so.spec import ModelSpecTvmSo, ModelValidatorTvmSo
 

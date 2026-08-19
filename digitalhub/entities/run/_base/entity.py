@@ -7,10 +7,12 @@ from __future__ import annotations
 import time
 import typing
 
-from digitalhub.entities._base.metrics.entity import MetricsEntity
-from digitalhub.entities._base.unversioned.entity import UnversionedEntity
+from digitalhub.entities._base.context.entity import ContextEntity
 from digitalhub.entities._commons.enums import EntityTypes, State
-from digitalhub.entities._processors.processors import context_processor
+from digitalhub.entities._mixin.metrics.mixin import MetricsMixin
+from digitalhub.entities._mixin.unversioned.mixin import UnversionedMixin
+from digitalhub.entities._processors.processors import crud_processor, run_processor
+from digitalhub.entities.run._base.utils import init_run_extensions
 from digitalhub.factory.entity import entity_factory
 from digitalhub.factory.runtime import runtime_factory
 from digitalhub.utils.exceptions import EntityError
@@ -26,7 +28,7 @@ if typing.TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class Run(UnversionedEntity, MetricsEntity):
+class Run(ContextEntity, UnversionedMixin, MetricsMixin):
     """
     A class representing a run.
     """
@@ -45,15 +47,18 @@ class Run(UnversionedEntity, MetricsEntity):
         extensions: list[dict] | None = None,
         user: str | None = None,
     ) -> None:
-        super().__init__(project, uuid, kind, metadata, spec, status, user)
-        self.name: str = name
+        super().__init__(project, kind, metadata, spec, status, user)
+        self._init_unversioned_identity(project, uuid, kind)
+
         self.spec: RunSpec
         self.status: RunStatus
 
-        self.extensions: list[dict] = extensions if extensions is not None else []
+        self.name = name
+        self._init_metrics_state()
 
         # Attributes to be included in __repr__
-        self._obj_attr.extend(["name", "extensions"])
+        self._obj_attr.extend(["name"])
+        init_run_extensions(self, extensions)
 
     ##############################
     #  Run Methods
@@ -148,19 +153,19 @@ class Run(UnversionedEntity, MetricsEntity):
         list[Log]
             List of run logs.
         """
-        return context_processor.read_run_logs(self.project, self.ENTITY_TYPE, self.id)
+        return run_processor.read_run_logs(self.project, self.ENTITY_TYPE, self.id)
 
     def stop(self) -> None:
         """
         Stop run.
         """
-        return context_processor.stop_entity(self.project, self.ENTITY_TYPE, self.id)
+        return run_processor.stop_entity(self.project, self.ENTITY_TYPE, self.id)
 
     def resume(self) -> None:
         """
         Resume run.
         """
-        return context_processor.resume_entity(self.project, self.ENTITY_TYPE, self.id)
+        return run_processor.resume_entity(self.project, self.ENTITY_TYPE, self.id)
 
     ##############################
     #  Helpers
@@ -240,7 +245,7 @@ class Run(UnversionedEntity, MetricsEntity):
         exec_type = entity_factory.get_entity_type_from_kind(exec_kind)
         string_to_split = getattr(self.spec, exec_type)
         exec_name, exec_id = string_to_split.split("://")[-1].split("/")[-1].split(":")
-        return context_processor.read_context_entity(
+        return crud_processor.read_context_entity(
             exec_name,
             entity_type=exec_type,
             project=self.project,
@@ -258,7 +263,7 @@ class Run(UnversionedEntity, MetricsEntity):
             Task from backend.
         """
         task_id = self.spec.task.split("://")[-1].split("/")[-1]
-        return context_processor.read_unversioned_entity(
+        return crud_processor.read_unversioned_entity(
             task_id,
             entity_type=EntityTypes.TASK.value,
             project=self.project,

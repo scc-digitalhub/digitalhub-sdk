@@ -8,8 +8,7 @@ import typing
 
 from digitalhub.context.api import get_context
 from digitalhub.entities._base.entity.entity import Entity
-from digitalhub.entities._processors.processors import context_processor
-from digitalhub.utils.io_utils import write_yaml
+from digitalhub.entities._processors.processors import crud_processor
 
 if typing.TYPE_CHECKING:
     from digitalhub.context.context import Context
@@ -67,7 +66,7 @@ class ContextEntity(Entity):
         ContextEntity
             Entity saved.
         """
-        new_obj = context_processor.create_context_entity(_entity=self)
+        new_obj = crud_processor.create_context_entity(_entity=self)
         self._update_attributes(new_obj)
         return self
 
@@ -80,7 +79,7 @@ class ContextEntity(Entity):
         ContextEntity
             Entity updated.
         """
-        new_obj = context_processor.update_context_entity(self.project, self.ENTITY_TYPE, self.id, self.to_dict())
+        new_obj = crud_processor.update_context_entity(self.project, self.ENTITY_TYPE, self.id, self.to_dict())
         self._update_attributes(new_obj)
         return self
 
@@ -93,10 +92,7 @@ class ContextEntity(Entity):
         str
             Exported filepath.
         """
-        obj = self.to_dict()
-        pth = self._context().root / f"{self.ENTITY_TYPE}s-{self.id}.yaml"
-        write_yaml(pth, obj)
-        return str(pth)
+        return crud_processor.export_context_entity(self)
 
     def refresh(self) -> ContextEntity:
         """
@@ -107,7 +103,7 @@ class ContextEntity(Entity):
         ContextEntity
             Entity refreshed.
         """
-        new_obj = context_processor.read_context_entity(self.key)
+        new_obj = crud_processor.read_context_entity(self.key)
         self._update_attributes(new_obj)
         return self
 

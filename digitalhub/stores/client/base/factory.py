@@ -11,7 +11,6 @@ from digitalhub.stores.client.base.client import Client
 if TYPE_CHECKING:
     from digitalhub.stores.client.auth.client_configurator import ClientConfigurator
     from digitalhub.stores.client.builders.api import ClientApiBuilder
-    from digitalhub.stores.client.builders.key import ClientKeyBuilder
     from digitalhub.stores.client.builders.params import ClientParametersBuilder
     from digitalhub.stores.client.http.handler import HttpRequestHandler
 
@@ -31,7 +30,6 @@ class ClientFactory:
         self,
         configurator: ClientConfigurator | None = None,
         api_builder: ClientApiBuilder | None = None,
-        key_builder: ClientKeyBuilder | None = None,
         params_builder: ClientParametersBuilder | None = None,
         http_handler: HttpRequestHandler | None = None,
     ) -> Client:
@@ -65,7 +63,6 @@ class ClientFactory:
             for dep in [
                 configurator,
                 api_builder,
-                key_builder,
                 params_builder,
                 http_handler,
             ]
@@ -73,7 +70,6 @@ class ClientFactory:
             return Client(
                 configurator=configurator,
                 api_builder=api_builder,
-                key_builder=key_builder,
                 params_builder=params_builder,
                 http_handler=http_handler,
             )
@@ -90,7 +86,6 @@ client_factory = ClientFactory()
 def get_client(
     configurator: ClientConfigurator | None = None,
     api_builder: ClientApiBuilder | None = None,
-    key_builder: ClientKeyBuilder | None = None,
     params_builder: ClientParametersBuilder | None = None,
     http_handler: HttpRequestHandler | None = None,
 ) -> Client:
@@ -106,8 +101,6 @@ def get_client(
         Configurator for credentials and authentication.
     api_builder : ClientApiBuilder
         Builder for API endpoints.
-    key_builder : ClientKeyBuilder
-        Builder for entity keys.
     params_builder : ClientParametersBuilder
         Builder for request parameters.
     http_handler : HttpRequestHandler
@@ -130,7 +123,6 @@ def get_client(
     return client_factory.build(
         configurator=configurator,
         api_builder=api_builder,
-        key_builder=key_builder,
         params_builder=params_builder,
         http_handler=http_handler,
     )

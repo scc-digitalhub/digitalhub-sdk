@@ -10,8 +10,8 @@ from __future__ import annotations
 from enum import Enum
 
 
-class EuropeanMammalName(str, Enum):
-    """Representative European wild mammal genera used to build random names."""
+class MammalName(str, Enum):
+    """Representative  wild mammal genera used to build random names."""
 
     BISON = "bison"
     CAPREOLUS = "capreolus"
@@ -33,8 +33,8 @@ class EuropeanMammalName(str, Enum):
     VULPES = "vulpes"
 
 
-class EuropeanAmphibianReptileName(str, Enum):
-    """Representative European amphibian and reptile genera used to build random names."""
+class AmphibianReptileName(str, Enum):
+    """Representative  amphibian and reptile genera used to build random names."""
 
     BUFO = "bufo"
     HIEROPHIS = "hierophis"
@@ -47,8 +47,8 @@ class EuropeanAmphibianReptileName(str, Enum):
     VIPERA = "vipera"
 
 
-class EuropeanBirdName(str, Enum):
-    """Representative European bird genera used to build random names."""
+class BirdName(str, Enum):
+    """Representative  bird genera used to build random names."""
 
     AEGITHALOS = "aegithalos"
     ALECTORIS = "alectoris"
@@ -76,8 +76,8 @@ class EuropeanBirdName(str, Enum):
     TURDUS = "turdus"
 
 
-class EuropeanArachnidInsectName(str, Enum):
-    """Representative European arachnid and insect genera used to build random names."""
+class ArachnidInsectName(str, Enum):
+    """Representative  arachnid and insect genera used to build random names."""
 
     APIS = "apis"
     ARANEUS = "araneus"
@@ -99,30 +99,57 @@ class EuropeanArachnidInsectName(str, Enum):
     VESPA = "vespa"
 
 
-class LichenFungusName(str, Enum):
-    """Representative European lichen and basidiomycete genera used to build random names."""
+class LichenName(str, Enum):
+    """Representative  lichen and basidiomycete genera used to build random names."""
+
+    BRODOA = "brodoa"
+    CANDELARIELLA = "candelariella"
+    CETRARIA = "cetraria"
+    CETRELIA = "cetrelia"
+    CHRYSOTRIX = "chrysotrix"
+    CLADONIA = "cladonia"
+    EVERNIA = "evernia"
+    FLAVOPARMELIA = "flavoparmelia"
+    FLAVOPLACA = "flavoplaca"
+    FLAVOPUNCTELIA = "flavopunctelia"
+    HYPOGYMNIA = "hypogymnia"
+    ICMADOPHILA = "icmadophila"
+    LECIDELLA = "lecidella"
+    LEPRARIA = "lepraria"
+    LETHARIA = "letharia"
+    MENEGAZZIA = "menegazzia"
+    OPHIOPARMA = "ophioparma"
+    PARMELIA = "parmelia"
+    PARMELINA = "parmelina"
+    PARMELIOPSIS = "parmelopsis"
+    PELTIGERA = "peltigera"
+    PHLYCTIS = "phlyctis"
+    PHYSCIA = "physcia"
+    PROTOPARMELIOPSIS = "protoparmeliopsis"
+    PSEUDOVERNIA = "pseudovernia"
+    PUNCTELIA = "punctelia"
+    RAMALINA = "ramalina"
+    RUSAVSKIA = "rusavskia"
+    UMBILICARIA = "umbilicaria"
+    USNEA = "usnea"
+    XANTHOPARMELIA = "xanthoparmelia"
+    XANTHORIA = "xanthoria"
+
+
+class FungusName(str, Enum):
+    """Representative  fungus genera used to build random names."""
 
     AGARICUS = "agaricus"
     AMANITA = "amanita"
     BOLETUS = "boletus"
     CANTHARELLUS = "cantharellus"
-    CLADONIA = "cladonia"
     COPRINUS = "coprinus"
-    EVERNIA = "evernia"
-    HYPOGYMNIA = "hypogymnia"
     LACTARIUS = "lactarius"
-    LETHARIA = "letharia"
-    PARMELIA = "parmelia"
-    PELTIGERA = "peltigera"
-    PHYSCIA = "physcia"
-    RUSAVSKIA = "rusavskia"
     RUSSULA = "russula"
-    UMBILICARIA = "umbilicaria"
-    XANTHORIA = "xanthoria"
 
 
-class EuropeanTreeName(str, Enum):
-    """Representative European tree genera used to build random names."""
+class TreeName(str, Enum):
+    """Representative  tree genera used to build random names."""
 
     ABIES = "abies"
     ACER = "acer"
@@ -138,8 +165,8 @@ class EuropeanTreeName(str, Enum):
     ULMUS = "ulmus"
 
 
-class EuropeanShrubName(str, Enum):
-    """Representative European shrub genera used to build random names."""
+class ShrubName(str, Enum):
+    """Representative  shrub genera used to build random names."""
 
     CORNUS = "cornus"
     CORYLUS = "corylus"
@@ -153,8 +180,8 @@ class EuropeanShrubName(str, Enum):
     VIBURNUM = "viburnum"
 
 
-class EuropeanHerbName(str, Enum):
-    """Representative European herbaceous genera used to build random names."""
+class HerbName(str, Enum):
+    """Representative  herbaceous genera used to build random names."""
 
     ACHILLEA = "achillea"
     ANGELICA = "angelica"
@@ -291,13 +318,14 @@ class ColorAdjective(str, Enum):
 
 
 NAME_REGISTRY = (
-    EuropeanMammalName,
-    EuropeanAmphibianReptileName,
-    EuropeanBirdName,
-    EuropeanArachnidInsectName,
-    LichenFungusName,
-    EuropeanTreeName,
-    EuropeanShrubName,
-    EuropeanHerbName,
+    MammalName,
+    AmphibianReptileName,
+    BirdName,
+    ArachnidInsectName,
+    LichenName,
+    FungusName,
+    TreeName,
+    ShrubName,
+    HerbName,
 )
 ADJECTIVE_REGISTRY = (GemAdjective, AstronomicalAdjective, ElegantAdjective, ColorAdjective)

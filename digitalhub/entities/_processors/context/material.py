@@ -10,12 +10,13 @@ from collections.abc import Callable
 from digitalhub.entities._commons.enums import State
 from digitalhub.entities._processors.utils import get_context
 from digitalhub.factory.entity import entity_factory
+from digitalhub.stores.client.common.enums import ApiCategories, BackendOperations
 from digitalhub.utils.enums import FileExtensions
 from digitalhub.utils.exceptions import BuilderError, EntityError, EntityErrorFileNotFound, StoreError
 
 if typing.TYPE_CHECKING:
     from digitalhub.context.context import Context
-    from digitalhub.entities._base.material.entity import MaterialEntity
+    from digitalhub.entities._base.material.protocol import MaterialEntityProtocol
     from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
     from digitalhub.entities.dataitem.table.entity import DataitemTable
     from digitalhub.utils.types import Dataframe, SourcesOrListOfSources
@@ -30,11 +31,13 @@ class ContextEntityMaterialProcessor:
     management during uploads.
     """
 
+    def __init__(self, crud_processor: ContextEntityCRUDProcessor):
+        self.crud_processor = crud_processor
+
     def log_material_entity(
         self,
-        crud_processor: ContextEntityCRUDProcessor,
         **kwargs,
-    ) -> MaterialEntity:
+    ) -> MaterialEntityProtocol:
         """
         Create a material entity in the backend and upload associated files.
 
@@ -54,20 +57,18 @@ class ContextEntityMaterialProcessor:
 
         Returns
         -------
-        MaterialEntity
+        MaterialEntityProtocol
             The created material entity with uploaded files.
         """
         source: SourcesOrListOfSources = kwargs.pop("source")
         keep_dir_structure = kwargs.get("keep_dir_structure", False)
         return self._log_entity_with_upload(
-            crud_processor,
-            upload_fn=lambda obj: obj.upload(source, keep_dir_structure=keep_dir_structure),
             **kwargs,
+            upload_fn=lambda obj: obj.upload(source, keep_dir_structure=keep_dir_structure),
         )
 
     def log_dataitem_table(
         self,
-        crud_processor: ContextEntityCRUDProcessor,
         **kwargs,
     ) -> DataitemTable:
         """
@@ -90,14 +91,12 @@ class ContextEntityMaterialProcessor:
         """
         data: Dataframe = kwargs.pop("data")  # type: ignore
         return self._log_entity_with_upload(
-            crud_processor,
-            upload_fn=lambda obj: obj.write_df(data, extension=FileExtensions.PARQUET.value),
             **kwargs,
+            upload_fn=lambda obj: obj.write_df(data, extension=FileExtensions.PARQUET.value),
         )
 
     def log_dataitem_sql(
         self,
-        crud_processor: ContextEntityCRUDProcessor,
         **kwargs,
     ) -> DataitemTable:
         """
@@ -118,14 +117,48 @@ class ContextEntityMaterialProcessor:
         DataitemTable
             The created table dataitem entity.
         """
-        return self._create_material_entity(crud_processor, **kwargs)
+        return self._create_material_entity(**kwargs)
+
+    def read_files_info(
+        self,
+        project: str,
+        entity_type: str,
+        entity_id: str,
+        **kwargs,
+    ) -> list[dict]:
+        context = get_context(project)
+        api = context.client.build_api(
+            ApiCategories.CONTEXT.value,
+            BackendOperations.FILES.value,
+            project=context.name,
+            entity_type=entity_type,
+            entity_id=entity_id,
+        )
+        return context.client.list_objects(api, **kwargs)
+
+    def update_files_info(
+        self,
+        project: str,
+        entity_type: str,
+        entity_id: str,
+        entity_list: list[dict],
+        **kwargs,
+    ) -> None:
+        context = get_context(project)
+        api = context.client.build_api(
+            ApiCategories.CONTEXT.value,
+            BackendOperations.FILES.value,
+            project=context.name,
+            entity_type=entity_type,
+            entity_id=entity_id,
+        )
+        return context.client.update_object(api, entity_list, **kwargs)
 
     def _log_entity_with_upload(
         self,
-        crud_processor: ContextEntityCRUDProcessor,
-        upload_fn: typing.Callable[[MaterialEntity], None],
+        upload_fn: typing.Callable[[MaterialEntityProtocol], None],
         **kwargs,
-    ) -> MaterialEntity:
+    ) -> MaterialEntityProtocol:
         """
         Create an entity in the backend and execute upload operation.
 
@@ -136,27 +169,26 @@ class ContextEntityMaterialProcessor:
         ----------
         crud_processor : ContextEntityCRUDProcessor
             The CRUD processor instance for entity operations.
-        upload_fn : Callable[[MaterialEntity], None]
+        upload_fn : Callable[[MaterialEntityProtocol], None]
             Function to execute for uploading data to the entity.
         **kwargs : dict
             Parameters for entity creation.
 
         Returns
         -------
-        MaterialEntity
+        MaterialEntityProtocol
             The created material entity with uploaded files.
         """
         # Create entity in backend
-        new_obj: MaterialEntity = self._create_material_entity(crud_processor, **kwargs)
+        new_obj: MaterialEntityProtocol = self._create_material_entity(**kwargs)
 
         # Upload data to entity and manage status transitions
-        return self._upload_material_entity(crud_processor, new_obj, upload_fn)
+        return self._upload_material_entity(new_obj, upload_fn)
 
     def _create_material_entity(
         self,
-        crud_processor: ContextEntityCRUDProcessor,
         **kwargs,
-    ) -> MaterialEntity:
+    ) -> MaterialEntityProtocol:
         """
         Create a draft entity in the backend without file upload.
 
@@ -169,7 +201,7 @@ class ContextEntityMaterialProcessor:
 
         Returns
         -------
-        MaterialEntity
+        MaterialEntityProtocol
             The created draft material entity.
         """
         # Validate entity type
@@ -177,17 +209,19 @@ class ContextEntityMaterialProcessor:
         kwargs = self._validate_entity_type(kwargs)
 
         # Build initial entity object
-        obj: MaterialEntity = entity_factory.build_entity_from_params(**kwargs)
+        obj: MaterialEntityProtocol = entity_factory.build_entity_from_params(**kwargs)
 
         # Register entity in context if running
         context = get_context(kwargs["project"])
-        obj: MaterialEntity = self._register_entity_in_context(obj, context)
+        obj: MaterialEntityProtocol = self._register_entity_in_context(obj, context)
 
         # Handle existing entity drop
-        self._drop_existing_entity(crud_processor, drop_existing, obj)
+        self._drop_existing_entity(drop_existing, obj)
 
         # Create entity in backend and return
-        new_obj: MaterialEntity = crud_processor._create_context_entity(context, obj.ENTITY_TYPE, obj.to_dict())
+        new_obj: MaterialEntityProtocol = self.crud_processor._create_context_entity(
+            context, obj.ENTITY_TYPE, obj.to_dict()
+        )
         return entity_factory.build_entity_from_dict(new_obj)
 
     def _validate_entity_type(
@@ -221,9 +255,9 @@ class ContextEntityMaterialProcessor:
 
     def _register_entity_in_context(
         self,
-        obj: MaterialEntity,
+        obj: MaterialEntityProtocol,
         context: Context,
-    ) -> MaterialEntity:
+    ) -> MaterialEntityProtocol:
         """
         Register an entity in the context if it is running.
 
@@ -231,12 +265,12 @@ class ContextEntityMaterialProcessor:
         ----------
         context : Context
             The execution context to register the entity in.
-        obj : MaterialEntity
+        obj : MaterialEntityProtocol
             The material entity object to register.
 
         Returns
         -------
-        MaterialEntity
+        MaterialEntityProtocol
             The registered material entity.
         """
         if context.is_running:
@@ -245,9 +279,8 @@ class ContextEntityMaterialProcessor:
 
     def _drop_existing_entity(
         self,
-        crud_processor: ContextEntityCRUDProcessor,
         drop_existing: bool,
-        obj: MaterialEntity,
+        obj: MaterialEntityProtocol,
     ) -> None:
         """
         Drop an existing entity with the same name if it exists.
@@ -258,11 +291,11 @@ class ContextEntityMaterialProcessor:
             The CRUD processor instance for entity operations.
         drop_existing : bool
             Flag indicating whether to drop the existing entity if it exists.
-        obj : MaterialEntity
+        obj : MaterialEntityProtocol
             The material entity object to drop.
         """
         if drop_existing:
-            crud_processor.delete_context_entity(
+            self.crud_processor.delete_context_entity(
                 obj.name,
                 project=obj.project,
                 entity_type=obj.ENTITY_TYPE,
@@ -271,10 +304,9 @@ class ContextEntityMaterialProcessor:
 
     def _upload_material_entity(
         self,
-        crud_processor: ContextEntityCRUDProcessor,
-        obj: MaterialEntity,
+        obj: MaterialEntityProtocol,
         upload_fn: Callable,
-    ) -> MaterialEntity:
+    ) -> MaterialEntityProtocol:
         """
         Upload data to a material entity.
 
@@ -282,19 +314,19 @@ class ContextEntityMaterialProcessor:
         ----------
         crud_processor : ContextEntityCRUDProcessor
             The CRUD processor instance for entity operations.
-        obj : MaterialEntity
+        obj : MaterialEntityProtocol
             The material entity to upload data to.
-        upload_fn : Callable[[MaterialEntity], None]
+        upload_fn : Callable[[MaterialEntityProtocol], None]
             Function to execute for uploading data to the entity.
 
         Returns
         -------
-        MaterialEntity
+        MaterialEntityProtocol
             The material entity after upload.
         """
         # Update status to UPLOADING before upload
         obj.status.state = State.UPLOADING.value
-        obj = self._update_material_entity(crud_processor, obj)
+        obj = self._update_material_entity(obj)
 
         # Handle file upload
         error: Exception | None = None
@@ -318,19 +350,18 @@ class ContextEntityMaterialProcessor:
         # Update status after upload
         if uploaded:
             obj.status.state = State.READY.value
-            obj = self._update_material_entity(crud_processor, obj)
+            obj = self._update_material_entity(obj)
         else:
             obj.status.state = State.ERROR.value
-            obj = self._update_material_entity(crud_processor, obj)
+            obj = self._update_material_entity(obj)
             raise exception(msg) from error
 
         return obj
 
     def _update_material_entity(
         self,
-        crud_processor: ContextEntityCRUDProcessor,
-        new_obj: MaterialEntity,
-    ) -> MaterialEntity:
+        new_obj: MaterialEntityProtocol,
+    ) -> MaterialEntityProtocol:
         """
         Update a material entity using a shortcut method.
 
@@ -341,15 +372,15 @@ class ContextEntityMaterialProcessor:
         ----------
         crud_processor : ContextEntityCRUDProcessor
             The CRUD processor instance for entity operations.
-        new_obj : MaterialEntity
+        new_obj : MaterialEntityProtocol
             The material entity object to update.
 
         Returns
         -------
-        MaterialEntity
+        MaterialEntityProtocol
             The updated material entity.
         """
-        return crud_processor.update_context_entity(
+        return self.crud_processor.update_context_entity(
             new_obj.project,
             new_obj.ENTITY_TYPE,
             new_obj.id,

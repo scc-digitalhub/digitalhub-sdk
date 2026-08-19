@@ -5,11 +5,14 @@
 from __future__ import annotations
 
 import typing
+from warnings import warn
 
 from digitalhub.context.api import delete_context
 from digitalhub.factory.entity import entity_factory
 from digitalhub.stores.client.base.factory import get_client
 from digitalhub.stores.client.common.enums import ApiCategories, BackendOperations
+from digitalhub.utils.exceptions import EntityAlreadyExistsError, EntityError, EntityNotExistsError
+from digitalhub.utils.io_utils import read_yaml
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.project._base.entity import Project
@@ -225,6 +228,44 @@ class BaseEntityCRUDProcessor:
             ent = entity_factory.build_entity_from_dict(obj)
             entities.append(ent)
         return entities
+
+    def import_project_entity(
+        self,
+        file: str,
+        **kwargs,
+    ) -> Project:
+        obj: dict = read_yaml(file)
+        obj["status"] = {}
+        ent: Project = entity_factory.build_entity_from_dict(obj)
+        reset_id = kwargs.pop("reset_id", False)
+
+        try:
+            self._create_base_entity(ent._client, ent.ENTITY_TYPE, ent.to_dict())
+        except EntityAlreadyExistsError:
+            msg = f"Entity {ent.name} already exists."
+            if reset_id:
+                ent._import_entities(obj, reset_id=reset_id)
+                warn(f"{msg} Other entities ids have been imported.")
+                ent.refresh()
+                return ent
+            raise EntityError(f"{msg} If you want to update it, use load instead.")
+
+        ent._import_entities(obj, reset_id=reset_id)
+        ent.refresh()
+        return ent
+
+    def load_project_entity(self, file: str) -> Project:
+        obj: dict = read_yaml(file)
+        ent: Project = entity_factory.build_entity_from_dict(obj)
+
+        try:
+            self._update_base_entity(ent._client, ent.ENTITY_TYPE, ent.name, ent.to_dict())
+        except EntityNotExistsError:
+            self._create_base_entity(ent._client, ent.ENTITY_TYPE, ent.to_dict())
+
+        ent._load_entities(obj)
+        ent.refresh()
+        return ent
 
     def _update_base_entity(
         self,

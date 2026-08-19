@@ -8,7 +8,7 @@ import typing
 from enum import Enum
 
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
-from digitalhub.entities._processors.processors import context_processor
+from digitalhub.entities._processors.processors import material_processor
 from digitalhub.entities.dataitem.table.utils import (
     post_process,
     process_data_kwargs,
@@ -123,7 +123,7 @@ def log_table(
                 filename=filename,
                 **kwargs,
             )
-            obj = context_processor.log_material_entity(
+            obj = material_processor.log_material_entity(
                 source=source,
                 project=project,
                 name=name,
@@ -147,7 +147,7 @@ def log_table(
                 filename=filename,
                 **kwargs,
             )
-            obj = context_processor.log_dataitem_table(
+            obj = material_processor.log_dataitem_table(
                 data=data,
                 project=project,
                 name=name,
@@ -166,7 +166,7 @@ def log_table(
                 path=path,
                 **kwargs,
             )
-            return context_processor.log_dataitem_sql(
+            return material_processor.log_dataitem_sql(
                 sql=sql,
                 project=project,
                 name=name,

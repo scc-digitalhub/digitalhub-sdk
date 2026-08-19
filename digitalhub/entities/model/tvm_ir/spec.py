@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from digitalhub.entities.model._tvm.spec import ModelSpecTvm, ModelValidatorTvm
+from digitalhub.entities.model.tvm.spec import ModelSpecTvm, ModelValidatorTvm
 
 # mirrors the Java TvmFormat enum (auto/onnx/pytorch/tvmscript)
 TvmSourceFormat = Literal["auto", "onnx", "pytorch", "tvmscript"]

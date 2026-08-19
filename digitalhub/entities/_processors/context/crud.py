@@ -7,6 +7,7 @@ from __future__ import annotations
 import typing
 
 from digitalhub.entities._commons.utils import is_valid_key, sanitize_unversioned_key
+from digitalhub.entities._constructors.uuid import build_uuid
 from digitalhub.entities._processors.utils import (
     get_context,
     get_context_from_identifier,
@@ -14,12 +15,13 @@ from digitalhub.entities._processors.utils import (
 )
 from digitalhub.factory.entity import entity_factory
 from digitalhub.stores.client.common.enums import ApiCategories, BackendOperations
-from digitalhub.utils.exceptions import BuilderError
+from digitalhub.utils.exceptions import BuilderError, EntityAlreadyExistsError, EntityError, EntityNotExistsError
+from digitalhub.utils.io_utils import read_yaml, write_yaml
 
 if typing.TYPE_CHECKING:
     from digitalhub.context.context import Context
     from digitalhub.entities._base.context.entity import ContextEntity
-    from digitalhub.entities._base.unversioned.entity import UnversionedEntity
+    from digitalhub.entities._mixin.unversioned.protocol import UnversionedEntityProtocol
 
 
 class ContextEntityCRUDProcessor:
@@ -109,6 +111,25 @@ class ContextEntityCRUDProcessor:
             obj._post_create_hook_before_save()
         new_obj = self._create_context_entity(context, obj.ENTITY_TYPE, obj.to_dict())
         return entity_factory.build_entity_from_dict(new_obj, entity_type=obj.ENTITY_TYPE)
+
+    def export_context_entity(self, _entity: ContextEntity) -> str:
+        """
+        Export a context entity to a YAML file.
+
+        Parameters
+        ----------
+        _entity : ContextEntity
+            The context entity to export.
+
+        Returns
+        -------
+        str
+            The file path of the exported YAML file.
+        """
+        obj = _entity.to_dict()
+        pth = _entity._context().root / f"{_entity.ENTITY_TYPE}s-{_entity.id}.yaml"
+        write_yaml(pth, obj)
+        return str(pth)
 
     def _read_context_entity(
         self,
@@ -231,7 +252,7 @@ class ContextEntityCRUDProcessor:
         project: str | None = None,
         entity_id: str | None = None,
         **kwargs,
-    ) -> UnversionedEntity:
+    ) -> UnversionedEntityProtocol:
         """
         Read an unversioned entity from the backend.
 
@@ -254,7 +275,7 @@ class ContextEntityCRUDProcessor:
 
         Returns
         -------
-        UnversionedEntity
+        UnversionedEntityProtocol
             The unversioned entity object populated with backend data.
         """
         if not is_valid_key(identifier):
@@ -365,6 +386,53 @@ class ContextEntityCRUDProcessor:
             entity: ContextEntity = entity_factory.build_entity_from_dict(o)
             objects.append(entity)
         return objects
+
+    def import_context_entity(
+        self,
+        file: str | None = None,
+        key: str | None = None,
+        reset_id: bool = False,
+        context: str | None = None,
+    ) -> ContextEntity:
+        if (file is None) == (key is None):
+            raise ValueError("Provide key or file, not both or none.")
+
+        if file is not None:
+            dict_obj: dict = read_yaml(file)
+        else:
+            ctx = get_context_from_identifier(key)
+            dict_obj = self._read_context_entity(ctx, key)
+
+        dict_obj["status"] = {}
+
+        if context is None:
+            context = dict_obj["project"]
+
+        ctx = get_context(context)
+        obj = entity_factory.build_entity_from_dict(dict_obj)
+        if reset_id:
+            new_id = build_uuid()
+            obj.id = new_id
+            obj.metadata.version = new_id
+        try:
+            bck_obj = self._create_context_entity(ctx, obj.ENTITY_TYPE, obj.to_dict())
+            new_obj: ContextEntity = entity_factory.build_entity_from_dict(bck_obj)
+        except EntityAlreadyExistsError:
+            raise EntityError(f"Entity {obj.name} already exists. If you want to update it, use load instead.")
+        return new_obj
+
+    def load_context_entity(
+        self,
+        file: str,
+    ) -> ContextEntity:
+        dict_obj: dict = read_yaml(file)
+        context = get_context(dict_obj["project"])
+        obj: ContextEntity = entity_factory.build_entity_from_dict(dict_obj)
+        try:
+            self._update_context_entity(context, obj.ENTITY_TYPE, obj.id, obj.to_dict())
+        except EntityNotExistsError:
+            self._create_context_entity(context, obj.ENTITY_TYPE, obj.to_dict())
+        return obj
 
     def _list_context_entities(
         self,

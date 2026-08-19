@@ -5,11 +5,11 @@
 from __future__ import annotations
 
 from digitalhub.entities._base.entity.spec import SpecValidator
-from digitalhub.entities._base.generic.builder import GenericBuilder
-from digitalhub.entities._base.generic.spec import GenericSpec
-from digitalhub.entities._base.generic.status import GenericStatus
-from digitalhub.entities._base.unversioned.builder import UnversionedBuilder
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
+from digitalhub.entities._mixin.generic.builder import GenericBuilder
+from digitalhub.entities._mixin.generic.spec import GenericSpec
+from digitalhub.entities._mixin.generic.status import GenericStatus
+from digitalhub.entities._mixin.unversioned.builder import UnversionedBuilder
 from digitalhub.entities.run.generic.entity import RunGeneric
 
 
@@ -49,6 +49,7 @@ class RunGenericBuilder(GenericBuilder, UnversionedBuilder):
         status = self.build_status()
         return self.build_entity(
             project=project,
+            name=name,
             uuid=uuid,
             kind=kind,
             metadata=metadata,

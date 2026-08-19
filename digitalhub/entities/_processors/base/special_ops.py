@@ -36,7 +36,7 @@ class BaseEntitySpecialOpsProcessor:
         str
             The constructed project entity key string.
         """
-        return get_client().build_key(ApiCategories.BASE.value, entity_id)
+        return f"store://{entity_id}"
 
     def share_project_entity(
         self,

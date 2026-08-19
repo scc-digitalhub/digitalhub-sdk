@@ -6,9 +6,10 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.entities._base.unversioned.entity import UnversionedEntity
+from digitalhub.entities._base.context.entity import ContextEntity
 from digitalhub.entities._commons.enums import EntityTypes
-from digitalhub.entities._processors.processors import context_processor
+from digitalhub.entities._mixin.unversioned.mixin import UnversionedMixin
+from digitalhub.entities._processors.processors import crud_processor
 from digitalhub.factory.entity import entity_factory
 
 if typing.TYPE_CHECKING:
@@ -17,15 +18,25 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities.task._base.status import TaskStatus
 
 
-class Task(UnversionedEntity):
+class Task(ContextEntity, UnversionedMixin):
     """
     A class representing a task.
     """
 
     ENTITY_TYPE = EntityTypes.TASK.value
 
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        project: str,
+        uuid: str,
+        kind: str,
+        metadata,
+        spec,
+        status,
+        user: str | None = None,
+    ) -> None:
+        super().__init__(project, kind, metadata, spec, status, user)
+        self._init_unversioned_identity(project, uuid, kind)
         self.spec: TaskSpec
         self.status: TaskStatus
 
@@ -98,7 +109,7 @@ class Task(UnversionedEntity):
             Run object.
         """
         if save:
-            return context_processor.create_context_entity(**kwargs)
+            return crud_processor.create_context_entity(**kwargs)
         return entity_factory.build_entity_from_params(**kwargs)
 
     def get_run(self, entity_key: str) -> Run:
@@ -115,7 +126,7 @@ class Task(UnversionedEntity):
         Run
             Run object.
         """
-        return context_processor.read_context_entity(entity_key)
+        return crud_processor.read_context_entity(entity_key)
 
     def delete_run(self, entity_key: str) -> dict:
         """
@@ -131,4 +142,4 @@ class Task(UnversionedEntity):
         dict
             Response from backend.
         """
-        return context_processor.delete_context_entity(entity_key)
+        return crud_processor.delete_context_entity(entity_key)

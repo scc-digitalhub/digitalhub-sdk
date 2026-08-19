@@ -4,8 +4,8 @@
 
 from __future__ import annotations
 
-from digitalhub.entities._base.versioned.builder import VersionedBuilder
 from digitalhub.entities._commons.enums import EntityTypes
+from digitalhub.entities._mixin.versioned.builder import VersionedBuilder
 from digitalhub.entities.containerimage._base.entity import Containerimage
 from digitalhub.utils.exceptions import EntityError
 

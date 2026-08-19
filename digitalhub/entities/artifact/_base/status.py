@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from digitalhub.entities._base.material.status import MaterialStatus
+from digitalhub.entities._mixin.material.status import MaterialStatus
 
 
 class ArtifactStatus(MaterialStatus):

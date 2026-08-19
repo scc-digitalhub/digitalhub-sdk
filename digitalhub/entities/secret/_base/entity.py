@@ -6,24 +6,36 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.entities._base.versioned.entity import VersionedEntity
+from digitalhub.entities._base.context.entity import ContextEntity
 from digitalhub.entities._commons.enums import EntityTypes
-from digitalhub.entities._processors.processors import context_processor
+from digitalhub.entities._mixin.versioned.mixin import VersionedMixin
+from digitalhub.entities._processors.processors import secret_processor
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.secret._base.spec import SecretSpec
     from digitalhub.entities.secret._base.status import SecretStatus
 
 
-class Secret(VersionedEntity):
+class Secret(ContextEntity, VersionedMixin):
     """
     A class representing a secret.
     """
 
     ENTITY_TYPE = EntityTypes.SECRET.value
 
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        project: str,
+        name: str,
+        uuid: str,
+        kind: str,
+        metadata,
+        spec,
+        status,
+        user: str | None = None,
+    ) -> None:
+        super().__init__(project, kind, metadata, spec, status, user)
+        self._init_versioned_identity(project, name, uuid, kind)
         self.spec: SecretSpec
         self.status: SecretStatus
 
@@ -41,7 +53,7 @@ class Secret(VersionedEntity):
             Value of the secret.
         """
         obj = {self.name: value}
-        context_processor.update_secret_data(self.project, self.ENTITY_TYPE, obj)
+        secret_processor.update_secret_data(self.project, self.ENTITY_TYPE, obj)
 
     def read_secret_value(self) -> dict:
         """
@@ -53,5 +65,5 @@ class Secret(VersionedEntity):
             Value of the secret.
         """
         params = {"keys": self.name}
-        data = context_processor.read_secret_data(self.project, self.ENTITY_TYPE, params=params)
+        data = secret_processor.read_secret_data(self.project, self.ENTITY_TYPE, params=params)
         return data[self.name]

@@ -12,7 +12,13 @@ from digitalhub.context.api import build_context
 from digitalhub.entities._base.entity.entity import Entity
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._constructors.uuid import build_uuid
-from digitalhub.entities._processors.processors import base_processor, context_processor
+from digitalhub.entities._processors.processors import (
+    base_crud_processor,
+    base_special_ops_processor,
+    crud_processor,
+    executable_processor,
+    search_processor,
+)
 from digitalhub.entities.project._base.crud_manager import CRUDManager
 from digitalhub.factory.entity import entity_factory
 from digitalhub.stores.client.base.factory import get_client
@@ -72,7 +78,7 @@ class Project(Entity):
 
         self.id = name
         self.name = name
-        self.key = base_processor.build_project_key(self.name)
+        self.key = base_special_ops_processor.build_project_key(self.name)
 
         self._obj_attr.extend(["id", "name"])
 
@@ -104,13 +110,13 @@ class Project(Entity):
             Entity saved.
         """
         if update:
-            new_obj = base_processor.update_project_entity(
+            new_obj = base_crud_processor.update_project_entity(
                 entity_type=self.ENTITY_TYPE,
                 entity_name=self.name,
                 entity_dict=self.to_dict(),
             )
         else:
-            new_obj = base_processor.create_project_entity(_entity=self)
+            new_obj = base_crud_processor.create_project_entity(_entity=self)
         self._update_attributes(new_obj)
         return self
 
@@ -123,7 +129,7 @@ class Project(Entity):
         Project
             Project object.
         """
-        new_obj = base_processor.read_project_entity(
+        new_obj = base_crud_processor.read_project_entity(
             entity_type=self.ENTITY_TYPE,
             entity_name=self.name,
         )
@@ -149,7 +155,7 @@ class Project(Entity):
         --------
         digitalhub.search_entity
         """
-        return context_processor.search_entity(
+        return search_processor.search_entity(
             self.name,
             query=query,
             entity_types=entity_types,
@@ -213,7 +219,7 @@ class Project(Entity):
                 # Export entity if not embedded is in metadata, else do nothing
                 if not self._is_embedded(entity):
                     # Get entity object from backend
-                    ent = context_processor.read_context_entity(entity["key"])
+                    ent = crud_processor.read_context_entity(entity["key"])
 
                     # Export and store ref in object metadata inside project
                     pth = ent.export()
@@ -247,18 +253,12 @@ class Project(Entity):
                         try:
                             # Artifacts, Dataitems and Models
                             if entity_type in entity_types[:3]:
-                                context_processor.import_context_entity(
-                                    file=ref,
-                                    reset_id=reset_id,
-                                    context=self.name,
-                                )
+                                crud_processor.import_context_entity(file=ref, reset_id=reset_id, context=self.name)
 
                             # Functions and Workflows
                             elif entity_type in entity_types[3:]:
-                                context_processor.import_executable_entity(
-                                    file=ref,
-                                    reset_id=reset_id,
-                                    context=self.name,
+                                executable_processor.import_executable_entity(
+                                    file=ref, reset_id=reset_id, context=self.name
                                 )
 
                         except FileNotFoundError:
@@ -304,11 +304,11 @@ class Project(Entity):
                     try:
                         # Artifacts, Dataitems and Models
                         if entity_type in entity_types[:3]:
-                            context_processor.load_context_entity(ref)
+                            crud_processor.load_context_entity(ref)
 
                         # Functions and Workflows
                         elif entity_type in entity_types[3:]:
-                            context_processor.load_executable_entity(ref)
+                            executable_processor.load_executable_entity(ref)
 
                     except FileNotFoundError:
                         msg = f"File not found: {ref}."
@@ -2358,7 +2358,7 @@ class Project(Entity):
         -------
         None
         """
-        return base_processor.share_project_entity(
+        return base_special_ops_processor.share_project_entity(
             entity_type=self.ENTITY_TYPE,
             entity_name=self.name,
             user=user,
@@ -2377,7 +2377,7 @@ class Project(Entity):
         -------
         None
         """
-        return base_processor.share_project_entity(
+        return base_special_ops_processor.share_project_entity(
             entity_type=self.ENTITY_TYPE,
             entity_name=self.name,
             user=user,

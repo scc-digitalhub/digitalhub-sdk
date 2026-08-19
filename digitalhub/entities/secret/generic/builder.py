@@ -5,10 +5,10 @@
 from __future__ import annotations
 
 from digitalhub.entities._base.entity.spec import SpecValidator
-from digitalhub.entities._base.generic.builder import GenericBuilder
-from digitalhub.entities._base.generic.spec import GenericSpec
-from digitalhub.entities._base.generic.status import GenericStatus
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
+from digitalhub.entities._mixin.generic.builder import GenericBuilder
+from digitalhub.entities._mixin.generic.spec import GenericSpec
+from digitalhub.entities._mixin.generic.status import GenericStatus
 from digitalhub.entities.secret._base.builder import SecretSecretBuilder
 from digitalhub.entities.secret.generic.entity import SecretGeneric
 

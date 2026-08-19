@@ -7,7 +7,7 @@ from __future__ import annotations
 import typing
 
 from digitalhub.entities._commons.enums import EntityTypes
-from digitalhub.entities._processors.processors import context_processor
+from digitalhub.entities._processors.processors import crud_processor
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.trigger._base.entity import Trigger
@@ -94,7 +94,7 @@ def new_trigger(
     template["local_execution"] = False
     kwargs["template"] = template
 
-    return context_processor.create_context_entity(
+    return crud_processor.create_context_entity(
         project=project,
         name=name,
         kind=kind,
@@ -139,7 +139,7 @@ def get_trigger(
     >>>                  project="my-project",
     >>>                  entity_id="my-trigger-id")
     """
-    return context_processor.read_context_entity(
+    return crud_processor.read_context_entity(
         identifier=identifier,
         entity_type=ENTITY_TYPE,
         project=project,
@@ -194,7 +194,7 @@ def list_triggers(
     --------
     >>> objs = list_triggers(project="my-project")
     """
-    return context_processor.list_context_entities(
+    return crud_processor.list_context_entities(
         project=project,
         entity_type=ENTITY_TYPE,
         q=q,
@@ -238,12 +238,7 @@ def import_trigger(
     --------
     >>> obj = import_trigger("my-trigger.yaml")
     """
-    return context_processor.import_context_entity(
-        file,
-        key,
-        reset_id,
-        context,
-    )
+    return crud_processor.import_context_entity(file, key, reset_id, context)
 
 
 def load_trigger(file: str) -> Trigger:
@@ -264,7 +259,7 @@ def load_trigger(file: str) -> Trigger:
     --------
     >>> obj = load_trigger("my-trigger.yaml")
     """
-    return context_processor.load_context_entity(file)
+    return crud_processor.load_context_entity(file)
 
 
 def update_trigger(entity: Trigger) -> Trigger:
@@ -285,7 +280,7 @@ def update_trigger(entity: Trigger) -> Trigger:
     --------
     >>> obj = update_trigger(obj)
     """
-    return context_processor.update_context_entity(
+    return crud_processor.update_context_entity(
         project=entity.project,
         entity_type=entity.ENTITY_TYPE,
         entity_id=entity.id,
@@ -324,7 +319,7 @@ def delete_trigger(
     >>> obj = delete_trigger("my-trigger-name"
     >>>                      project="my-project")
     """
-    return context_processor.delete_context_entity(
+    return crud_processor.delete_context_entity(
         identifier=identifier,
         entity_type=ENTITY_TYPE,
         project=project,

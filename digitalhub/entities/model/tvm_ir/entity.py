@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.entities.model._tvm.entity import ModelTvm
+from digitalhub.entities.model.tvm.entity import ModelTvm
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.model.tvm_ir.spec import ModelSpecTvmIr

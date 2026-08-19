@@ -7,7 +7,7 @@ from __future__ import annotations
 import typing
 
 from digitalhub.entities._commons.enums import EntityTypes
-from digitalhub.entities._processors.processors import context_processor
+from digitalhub.entities._processors.processors import crud_processor, executable_processor
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.workflow._base.entity import Workflow
@@ -62,7 +62,7 @@ def new_workflow(
     >>>                    code_src="pipeline.py",
     >>>                    handler="pipeline-handler")
     """
-    return context_processor.create_context_entity(
+    return crud_processor.create_context_entity(
         project=project,
         name=name,
         kind=kind,
@@ -108,7 +108,7 @@ def get_workflow(
     >>>                    project="my-project",
     >>>                    entity_id="my-workflow-id")
     """
-    return context_processor.read_context_entity(
+    return crud_processor.read_context_entity(
         identifier=identifier,
         entity_type=ENTITY_TYPE,
         project=project,
@@ -144,7 +144,7 @@ def get_workflow_versions(
     >>> obj = get_workflow_versions("my-workflow-name"
     >>>                             project="my-project")
     """
-    return context_processor.read_context_entity_versions(
+    return crud_processor.read_context_entity_versions(
         identifier=identifier,
         entity_type=ENTITY_TYPE,
         project=project,
@@ -195,7 +195,7 @@ def list_workflows(
     --------
     >>> objs = list_workflows(project="my-project")
     """
-    return context_processor.list_context_entities(
+    return crud_processor.list_context_entities(
         project=project,
         entity_type=ENTITY_TYPE,
         q=q,
@@ -238,7 +238,7 @@ def import_workflow(
     --------
     >>> obj = import_workflow("my-workflow.yaml")
     """
-    return context_processor.import_executable_entity(file, key, reset_id, context)
+    return executable_processor.import_executable_entity(file, key, reset_id, context)
 
 
 def load_workflow(file: str) -> Workflow:
@@ -259,7 +259,7 @@ def load_workflow(file: str) -> Workflow:
     --------
     >>> obj = load_workflow("my-workflow.yaml")
     """
-    return context_processor.load_executable_entity(file)
+    return executable_processor.load_executable_entity(file)
 
 
 def update_workflow(entity: Workflow) -> Workflow:
@@ -280,7 +280,7 @@ def update_workflow(entity: Workflow) -> Workflow:
     --------
     >>> obj = update_workflow(obj)
     """
-    return context_processor.update_context_entity(
+    return crud_processor.update_context_entity(
         project=entity.project,
         entity_type=entity.ENTITY_TYPE,
         entity_id=entity.id,
@@ -327,7 +327,7 @@ def delete_workflow(
     >>>                       project="my-project",
     >>>                       delete_all_versions=True)
     """
-    return context_processor.delete_context_entity(
+    return crud_processor.delete_context_entity(
         identifier=identifier,
         entity_type=ENTITY_TYPE,
         project=project,

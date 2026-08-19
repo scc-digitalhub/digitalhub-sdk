@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 from digitalhub.entities._base.entity.status import Status
-from digitalhub.entities._base.metrics.status import MetricsStatus
+from digitalhub.entities._mixin.metrics.status import MetricsStatus
 
 
 class RunStatus(Status, MetricsStatus):

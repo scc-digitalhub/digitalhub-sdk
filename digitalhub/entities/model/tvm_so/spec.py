@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from digitalhub.entities.model._tvm.spec import ModelSpecTvm, ModelValidatorTvm
+from digitalhub.entities.model.tvm.spec import ModelSpecTvm, ModelValidatorTvm
 
 
 class ModelSpecTvmSo(ModelSpecTvm):

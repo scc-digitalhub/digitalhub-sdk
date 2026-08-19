@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.entities._base.material.utils import log_warning
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
+from digitalhub.entities._mixin.material.utils import log_warning
 from digitalhub.entities.dataitem._base.crud import log_base_dataitem
 from digitalhub.utils.types import SourcesOrListOfSources
 

@@ -6,9 +6,9 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.entities._base.runtime_entity.builder import RuntimeEntityBuilder
-from digitalhub.entities._base.versioned.builder import VersionedBuilder
 from digitalhub.entities._commons.enums import EntityTypes
+from digitalhub.entities._mixin.runtime_entity.builder import RuntimeEntityBuilder
+from digitalhub.entities._mixin.versioned.builder import VersionedBuilder
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.function._base.entity import Function

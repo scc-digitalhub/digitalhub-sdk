@@ -7,7 +7,7 @@ from __future__ import annotations
 import typing
 
 from digitalhub.entities._commons.enums import EntityTypes
-from digitalhub.entities._processors.processors import context_processor
+from digitalhub.entities._processors.processors import crud_processor
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.dataitem._base.entity import Dataitem
@@ -68,7 +68,7 @@ def new_dataitem(
     >>>                    kind="dataitem",
     >>>                    path="s3://my-bucket/my-key")
     """
-    return context_processor.create_context_entity(
+    return crud_processor.create_context_entity(
         project=project,
         name=name,
         kind=kind,
@@ -116,7 +116,7 @@ def get_dataitem(
     >>>                    project="my-project",
     >>>                    entity_id="my-dataitem-id")
     """
-    return context_processor.read_context_entity(
+    return crud_processor.read_context_entity(
         identifier=identifier,
         entity_type=ENTITY_TYPE,
         project=project,
@@ -152,7 +152,7 @@ def get_dataitem_versions(
     >>> objs = get_dataitem_versions("my-dataitem-name",
     >>>                              project="my-project")
     """
-    return context_processor.read_context_entity_versions(
+    return crud_processor.read_context_entity_versions(
         identifier=identifier,
         entity_type=ENTITY_TYPE,
         project=project,
@@ -203,7 +203,7 @@ def list_dataitems(
     --------
     >>> objs = list_dataitems(project="my-project")
     """
-    return context_processor.list_context_entities(
+    return crud_processor.list_context_entities(
         project=project,
         entity_type=ENTITY_TYPE,
         q=q,
@@ -246,12 +246,7 @@ def import_dataitem(
     --------
     >>> obj = import_dataitem("my-dataitem.yaml")
     """
-    return context_processor.import_context_entity(
-        file,
-        key,
-        reset_id,
-        context,
-    )
+    return crud_processor.import_context_entity(file, key, reset_id, context)
 
 
 def load_dataitem(file: str) -> Dataitem:
@@ -272,7 +267,7 @@ def load_dataitem(file: str) -> Dataitem:
     --------
     >>> obj = load_dataitem("my-dataitem.yaml")
     """
-    return context_processor.load_context_entity(file)
+    return crud_processor.load_context_entity(file)
 
 
 def update_dataitem(entity: Dataitem) -> Dataitem:
@@ -293,7 +288,7 @@ def update_dataitem(entity: Dataitem) -> Dataitem:
     --------
     >>> obj = update_dataitem(obj)
     """
-    return context_processor.update_context_entity(
+    return crud_processor.update_context_entity(
         project=entity.project,
         entity_type=entity.ENTITY_TYPE,
         entity_id=entity.id,
@@ -343,7 +338,7 @@ def delete_dataitem(
     >>>                       project="my-project",
     >>>                       delete_all_versions=True)
     """
-    return context_processor.delete_context_entity(
+    return crud_processor.delete_context_entity(
         identifier=identifier,
         entity_type=ENTITY_TYPE,
         project=project,

@@ -7,7 +7,7 @@ from __future__ import annotations
 import typing
 
 from digitalhub.entities._commons.enums import EntityTypes
-from digitalhub.entities._processors.processors import context_processor
+from digitalhub.entities._processors.processors import crud_processor
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.artifact._base.entity import Artifact
@@ -69,7 +69,7 @@ def new_artifact(
     >>>                    kind="artifact",
     >>>                    path="s3://my-bucket/my-key")
     """
-    return context_processor.create_context_entity(
+    return crud_processor.create_context_entity(
         project=project,
         name=name,
         kind=kind,
@@ -117,7 +117,7 @@ def get_artifact(
     >>>                    project="my-project",
     >>>                    entity_id="my-artifact-id")
     """
-    return context_processor.read_context_entity(
+    return crud_processor.read_context_entity(
         identifier=identifier,
         entity_type=ENTITY_TYPE,
         project=project,
@@ -153,7 +153,7 @@ def get_artifact_versions(
     >>> obj = get_artifact_versions("my-artifact-name"
     >>>                             project="my-project")
     """
-    return context_processor.read_context_entity_versions(
+    return crud_processor.read_context_entity_versions(
         identifier=identifier,
         entity_type=ENTITY_TYPE,
         project=project,
@@ -204,7 +204,7 @@ def list_artifacts(
     --------
     >>> objs = list_artifacts(project="my-project")
     """
-    return context_processor.list_context_entities(
+    return crud_processor.list_context_entities(
         project=project,
         entity_type=ENTITY_TYPE,
         q=q,
@@ -247,12 +247,7 @@ def import_artifact(
     --------
     >>> obj = import_artifact("my-artifact.yaml")
     """
-    return context_processor.import_context_entity(
-        file,
-        key,
-        reset_id,
-        context,
-    )
+    return crud_processor.import_context_entity(file, key, reset_id, context)
 
 
 def load_artifact(file: str) -> Artifact:
@@ -273,7 +268,7 @@ def load_artifact(file: str) -> Artifact:
     --------
     >>> obj = load_artifact("my-artifact.yaml")
     """
-    return context_processor.load_context_entity(file)
+    return crud_processor.load_context_entity(file)
 
 
 def update_artifact(entity: Artifact) -> Artifact:
@@ -294,7 +289,7 @@ def update_artifact(entity: Artifact) -> Artifact:
     --------
     >>> obj = update_artifact(obj)
     """
-    return context_processor.update_context_entity(
+    return crud_processor.update_context_entity(
         project=entity.project,
         entity_type=entity.ENTITY_TYPE,
         entity_id=entity.id,
@@ -341,7 +336,7 @@ def delete_artifact(
     >>>                  project="my-project",
     >>>                  delete_all_versions=True)
     """
-    return context_processor.delete_context_entity(
+    return crud_processor.delete_context_entity(
         identifier=identifier,
         entity_type=ENTITY_TYPE,
         project=project,

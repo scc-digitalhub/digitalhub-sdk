@@ -12,7 +12,7 @@ from digitalhub.utils.exceptions import BuilderError
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.entity.builder import EntityBuilder
-    from digitalhub.entities._base.runtime_entity.builder import RuntimeEntityBuilder
+    from digitalhub.entities._mixin.runtime_entity.builder import RuntimeEntityBuilder
     from digitalhub.runtimes.builder import RuntimeBuilder
 
 

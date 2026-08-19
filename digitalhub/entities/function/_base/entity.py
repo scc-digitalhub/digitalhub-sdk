@@ -7,8 +7,10 @@ from __future__ import annotations
 import typing
 from concurrent.futures import ThreadPoolExecutor
 
-from digitalhub.entities._base.executable.entity import ExecutableEntity
+from digitalhub.entities._base.context.entity import ContextEntity
 from digitalhub.entities._commons.enums import EntityTypes, Relationship
+from digitalhub.entities._mixin.executable.mixin import ExecutableMixin
+from digitalhub.entities._mixin.versioned.mixin import VersionedMixin
 from digitalhub.factory.entity import entity_factory
 
 if typing.TYPE_CHECKING:
@@ -18,15 +20,26 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities.task._base.entity import Task
 
 
-class Function(ExecutableEntity):
+class Function(ContextEntity, VersionedMixin, ExecutableMixin):
     """
     A class representing a function.
     """
 
     ENTITY_TYPE = EntityTypes.FUNCTION.value
 
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        project: str,
+        name: str,
+        uuid: str,
+        kind: str,
+        metadata,
+        spec,
+        status,
+        user: str | None = None,
+    ) -> None:
+        super().__init__(project, kind, metadata, spec, status, user)
+        self._init_versioned_identity(project, name, uuid, kind)
 
         self.spec: FunctionSpec
         self.status: FunctionStatus

@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.entities._base.material.builder import MaterialBuilder
 from digitalhub.entities._commons.enums import EntityTypes
+from digitalhub.entities._mixin.material.builder import MaterialBuilder
 from digitalhub.utils.exceptions import EntityError
 
 if typing.TYPE_CHECKING:

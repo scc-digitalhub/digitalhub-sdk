@@ -5,16 +5,22 @@
 from __future__ import annotations
 
 import typing
+from typing import Literal, overload
 
 from digitalhub.factory.enums import BuilderMethodsEnum
 from digitalhub.factory.registry import registry
 from digitalhub.utils.exceptions import BuilderError
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities._base.entity.entity import Entity
+    from digitalhub.entities._base.context.entity import ContextEntity
     from digitalhub.entities._base.entity.spec import Spec, SpecValidator
     from digitalhub.entities._base.entity.status import Status
     from digitalhub.entities._base.metadata.entity import Metadata
+    from digitalhub.entities._mixin.executable.protocol import ExecutableEntityProtocol
+    from digitalhub.entities._mixin.material.protocol import MaterialEntityProtocol
+    from digitalhub.entities._mixin.metrics.protocol import MetricsEntityProtocol
+    from digitalhub.entities._mixin.unversioned.protocol import UnversionedEntityProtocol
+    from digitalhub.entities._mixin.versioned.protocol import VersionedEntityProtocol
 
 
 class EntityFactory:
@@ -45,7 +51,31 @@ class EntityFactory:
         builder = registry.get_entity_builder(kind)
         return getattr(builder, method_name)(*args, **kwargs)
 
-    def build_entity_from_params(self, entity_type: str | None = None, **kwargs) -> Entity:
+    @overload
+    def build_entity_from_params(
+        self, entity_type: Literal["artifact", "dataitem", "model"], **kwargs
+    ) -> MaterialEntityProtocol: ...
+
+    @overload
+    def build_entity_from_params(
+        self, entity_type: Literal["function", "workflow"], **kwargs
+    ) -> ExecutableEntityProtocol: ...
+
+    @overload
+    def build_entity_from_params(self, entity_type: Literal["run"], **kwargs) -> MetricsEntityProtocol: ...
+
+    @overload
+    def build_entity_from_params(self, entity_type: Literal["task"], **kwargs) -> UnversionedEntityProtocol: ...
+
+    @overload
+    def build_entity_from_params(
+        self, entity_type: Literal["containerimage", "log", "secret", "trigger"], **kwargs
+    ) -> VersionedEntityProtocol: ...
+
+    @overload
+    def build_entity_from_params(self, entity_type: str | None = None, **kwargs) -> ContextEntity: ...
+
+    def build_entity_from_params(self, entity_type: str | None = None, **kwargs) -> ContextEntity:
         """
         Build an entity from parameters.
 
@@ -63,7 +93,31 @@ class EntityFactory:
         builder = registry.get_entity_builder(kind, entity_type=entity_type)
         return builder.build(**kwargs)
 
-    def build_entity_from_dict(self, obj: dict, entity_type: str | None = None) -> Entity:
+    @overload
+    def build_entity_from_dict(
+        self, obj: dict, entity_type: Literal["artifact", "dataitem", "model"]
+    ) -> MaterialEntityProtocol: ...
+
+    @overload
+    def build_entity_from_dict(
+        self, obj: dict, entity_type: Literal["function", "workflow"]
+    ) -> ExecutableEntityProtocol: ...
+
+    @overload
+    def build_entity_from_dict(self, obj: dict, entity_type: Literal["run"]) -> MetricsEntityProtocol: ...
+
+    @overload
+    def build_entity_from_dict(self, obj: dict, entity_type: Literal["task"]) -> UnversionedEntityProtocol: ...
+
+    @overload
+    def build_entity_from_dict(
+        self, obj: dict, entity_type: Literal["containerimage", "log", "secret", "trigger"]
+    ) -> VersionedEntityProtocol: ...
+
+    @overload
+    def build_entity_from_dict(self, obj: dict, entity_type: str | None = None) -> ContextEntity: ...
+
+    def build_entity_from_dict(self, obj: dict, entity_type: str | None = None) -> ContextEntity:
         """
         Build an entity from a dictionary.
 

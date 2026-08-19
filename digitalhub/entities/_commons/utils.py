@@ -16,7 +16,7 @@ from digitalhub.utils.file_utils import eval_zip_sources
 from digitalhub.utils.logger.logger import get_logger
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities._base.executable.entity import ExecutableEntity
+    from digitalhub.entities._mixin.versioned.protocol import VersionedEntityProtocol
 
 logger = get_logger(__name__)
 
@@ -311,14 +311,14 @@ def _get_base_path(
     return f"{get_default_store(project)}/{project}/{entity_type}/{name}/{uuid}"
 
 
-def build_zip_path(exec: ExecutableEntity, filename: str) -> str:
+def build_zip_path(entity: VersionedEntityProtocol, filename: str) -> str:
     """
     Get destination path.
 
     Parameters
     ----------
-    exec : ExecutableEntity
-        Executable.
+    entity : VersionedEntityProtocol
+        Entity.
     filename : str
         Filename.
 
@@ -329,7 +329,7 @@ def build_zip_path(exec: ExecutableEntity, filename: str) -> str:
     """
     from digitalhub.stores.data.api import get_default_store
 
-    return f"zip+{get_default_store(exec.project)}/{exec.project}/{exec.ENTITY_TYPE}/{exec.name}/{exec.id}/{filename}"
+    return f"zip+{get_default_store(entity.project)}/{entity.project}/{entity.ENTITY_TYPE}/{entity.name}/{entity.id}/{filename}"
 
 
 def refresh_decorator(fn: Callable) -> Callable:

@@ -7,7 +7,7 @@ from __future__ import annotations
 import typing
 
 from digitalhub.entities._commons.enums import EntityTypes
-from digitalhub.entities._processors.processors import context_processor
+from digitalhub.entities._processors.processors import crud_processor
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.run._base.entity import Run
@@ -56,7 +56,7 @@ def new_run(
     >>>               kind="python+run",
     >>>               task="task-string")
     """
-    return context_processor.create_context_entity(
+    return crud_processor.create_context_entity(
         project=project,
         kind=kind,
         uuid=uuid,
@@ -96,7 +96,7 @@ def get_run(
     >>> obj = get_run("my-run-id"
     >>>               project="my-project")
     """
-    return context_processor.read_unversioned_entity(
+    return crud_processor.read_unversioned_entity(
         identifier=identifier,
         entity_type=ENTITY_TYPE,
         project=project,
@@ -156,7 +156,7 @@ def list_runs(
     --------
     >>> objs = list_runs(project="my-project")
     """
-    return context_processor.list_context_entities(
+    return crud_processor.list_context_entities(
         project=project,
         entity_type=ENTITY_TYPE,
         q=q,
@@ -202,12 +202,7 @@ def import_run(
     -------
     >>> obj = import_run("my-run.yaml")
     """
-    return context_processor.import_context_entity(
-        file,
-        key,
-        reset_id,
-        context,
-    )
+    return crud_processor.import_context_entity(file, key, reset_id, context)
 
 
 def load_run(file: str) -> Run:
@@ -228,7 +223,7 @@ def load_run(file: str) -> Run:
     --------
     >>> obj = load_run("my-run.yaml")
     """
-    return context_processor.load_context_entity(file)
+    return crud_processor.load_context_entity(file)
 
 
 def update_run(entity: Run) -> Run:
@@ -249,7 +244,7 @@ def update_run(entity: Run) -> Run:
     --------
     >>> obj = update_run(obj)
     """
-    return context_processor.update_context_entity(
+    return crud_processor.update_context_entity(
         project=entity.project,
         entity_type=entity.ENTITY_TYPE,
         entity_id=entity.id,
@@ -287,7 +282,7 @@ def delete_run(
     ...     project="my-project",
     ... )
     """
-    return context_processor.delete_context_entity(
+    return crud_processor.delete_context_entity(
         identifier=identifier,
         entity_type=ENTITY_TYPE,
         project=project,

@@ -8,7 +8,7 @@ import typing
 
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
 from digitalhub.entities._commons.utils import is_valid_key
-from digitalhub.entities._processors.processors import context_processor
+from digitalhub.entities._processors.processors import crud_processor
 from digitalhub.utils.exceptions import EntityNotExistsError
 
 if typing.TYPE_CHECKING:
@@ -63,7 +63,7 @@ def new_secret(
     """
     if secret_value is None:
         raise ValueError("secret_value must be provided.")
-    obj: Secret = context_processor.create_context_entity(
+    obj: Secret = crud_processor.create_context_entity(
         project=project,
         name=name,
         kind=EntityKinds.SECRET_SECRET.value,
@@ -118,7 +118,7 @@ def get_secret(
             if secret.name == identifier:
                 return secret
         raise EntityNotExistsError(f"Secret {identifier} not found.")
-    return context_processor.read_context_entity(
+    return crud_processor.read_context_entity(
         identifier=identifier,
         entity_type=ENTITY_TYPE,
         project=project,
@@ -144,7 +144,7 @@ def list_secrets(project: str) -> list[Secret]:
     --------
     >>> objs = list_secrets(project="my-project")
     """
-    return context_processor.list_context_entities(
+    return crud_processor.list_context_entities(
         project=project,
         entity_type=ENTITY_TYPE,
     )
@@ -179,12 +179,7 @@ def import_secret(
     --------
     >>> obj = import_secret("my-secret.yaml")
     """
-    return context_processor.import_context_entity(
-        file,
-        key,
-        reset_id,
-        context,
-    )
+    return crud_processor.import_context_entity(file, key, reset_id, context)
 
 
 def load_secret(file: str) -> Secret:
@@ -205,7 +200,7 @@ def load_secret(file: str) -> Secret:
     --------
     >>> obj = load_secret("my-secret.yaml")
     """
-    return context_processor.load_context_entity(file)
+    return crud_processor.load_context_entity(file)
 
 
 def update_secret(entity: Secret) -> Secret:
@@ -226,7 +221,7 @@ def update_secret(entity: Secret) -> Secret:
     --------
     >>> obj = update_secret(obj)
     """
-    return context_processor.update_context_entity(
+    return crud_processor.update_context_entity(
         project=entity.project,
         entity_type=entity.ENTITY_TYPE,
         entity_id=entity.id,
@@ -270,7 +265,7 @@ def delete_secret(
     >>>                     project="my-project",
     >>>                     delete_all_versions=True)
     """
-    return context_processor.delete_context_entity(
+    return crud_processor.delete_context_entity(
         identifier=identifier,
         entity_type=ENTITY_TYPE,
         project=project,

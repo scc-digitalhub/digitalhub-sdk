@@ -4,8 +4,8 @@
 
 from __future__ import annotations
 
-from digitalhub.entities._base.material.status import MaterialStatus
-from digitalhub.entities._base.metrics.status import MetricsStatus
+from digitalhub.entities._mixin.material.status import MaterialStatus
+from digitalhub.entities._mixin.metrics.status import MetricsStatus
 
 
 class ModelStatus(MetricsStatus, MaterialStatus):

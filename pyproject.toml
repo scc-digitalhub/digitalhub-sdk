@@ -24,18 +24,13 @@ keywords = ["data", "dataops", "kubernetes"]
 requires-python = ">=3.10, <3.15"
 dependencies = [
     "boto3",
-    "huggingface_hub",
-    "python-dotenv",
-    "GitPython>=3",
+    "GitPython",
     "numpy",
-    "psycopg[binary]",
-    "psycopg2-binary",
-    "pyarrow",
     "pydantic",
+    "python-dotenv",
     "python-slugify",
     "PyYAML",
     "requests",
-    "sqlalchemy",
 ]
 
 [project.optional-dependencies]
@@ -43,6 +38,18 @@ full = [
     "pandas",
     "polars",
     "mlcroissant",
+    "sqlalchemy",
+    "psycopg[binary]",
+    "pyarrow",
+    "huggingface_hub",
+]
+sql = [
+    "sqlalchemy",
+    "psycopg[binary]",
+    "pyarrow",
+]
+huggingface = [
+    "huggingface_hub",
 ]
 pandas = [
     "pandas",

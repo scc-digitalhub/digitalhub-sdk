@@ -7,7 +7,7 @@ from __future__ import annotations
 import typing
 
 from digitalhub.entities._commons.enums import EntityTypes
-from digitalhub.entities._processors.processors import context_processor
+from digitalhub.entities._processors.processors import material_processor
 from digitalhub.entities.model._base.utils import build_log_kwargs
 from digitalhub.utils.file_utils import eval_local_source
 
@@ -38,7 +38,7 @@ def log_base_model(
     name : str
         Object name.
     kind : str
-        Kind the object.
+        return material_processor.log_material_entity(
     source : SourcesOrListOfSources
         Model location on local path.
     drop_existing : bool
@@ -75,7 +75,7 @@ def log_base_model(
         path=path,
         **kwargs,
     )
-    return context_processor.log_material_entity(
+    return material_processor.log_material_entity(
         source=source,
         project=project,
         name=name,
