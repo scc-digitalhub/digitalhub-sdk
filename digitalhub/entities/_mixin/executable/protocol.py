@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: © 2025 DSLab - Fondazione Bruno Kessler
+#
+# SPDX-License-Identifier: Apache-2.0
+
+from __future__ import annotations
+
+import typing
+from typing import Protocol
+
+from digitalhub.entities._mixin.versioned.protocol import VersionedEntityProtocol
+
+if typing.TYPE_CHECKING:
+    from digitalhub.entities.task._base.entity import Task
+
+
+class ExecutableEntityProtocol(VersionedEntityProtocol, Protocol):
+    _tasks: dict[str, Task]
+
+    def import_tasks(self, tasks: list[dict]) -> None: ...
+
+    def new_task(self, action: str, **kwargs): ...
+
+    def get_task(self, action: str): ...
+
+    def list_task(self): ...
+
+    def update_task(self, action: str, **kwargs): ...
+
+    def delete_task(self, action: str): ...
+
+    def set_task(self, action: str, task) -> None: ...
+
+    def run(self, *args, **kwargs): ...
+
+    def get_run(self, entity_key: str): ...
+
+    def list_runs(self, *args, **kwargs): ...
+
+    def trigger(self, *args, **kwargs): ...
+
+    def get_trigger(self, entity_key: str): ...
+
+    def list_triggers(self, *args, **kwargs): ...
