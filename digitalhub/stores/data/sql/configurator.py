@@ -24,7 +24,7 @@ class SqlStoreConfigurator:
         -------
         str
             A PostgreSQL connection string in the format:
-            'postgresql://username:password@host:port/database'
+            'postgresql+pg8000://username:password@host:port/database'
         """
         creds = self.get_credentials(lowercase_keys=False)
         user = creds[CredentialsVars.DB_USERNAME.value]
@@ -32,7 +32,7 @@ class SqlStoreConfigurator:
         host = creds[ConfigurationVars.DB_HOST.value]
         port = creds[ConfigurationVars.DB_PORT.value]
         database = creds[ConfigurationVars.DB_DATABASE.value]
-        return f"postgresql://{user}:{password}@{host}:{port}/{database}"
+        return f"postgresql+pg8000://{user}:{password}@{host}:{port}/{database}"
 
     def get_credentials(self, lowercase_keys: bool = True) -> dict:
         """

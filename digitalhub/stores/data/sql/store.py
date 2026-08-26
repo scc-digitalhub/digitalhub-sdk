@@ -438,9 +438,9 @@ class SqlStore(Store):
         Engine
             A configured SQLAlchemy engine instance.
         """
-        connect_args = {"connect_timeout": ENGINE_CONNECTION_TIMEOUT}
+        connect_args = {"timeout": ENGINE_CONNECTION_TIMEOUT}
         if schema is not None:
-            connect_args["options"] = f"-csearch_path={schema}"
+            connect_args["startup_params"] = {"search_path": schema}
         return create_engine(connection_string, connect_args=connect_args)
 
     def _check_factory(self, schema: str | None = None) -> Engine:

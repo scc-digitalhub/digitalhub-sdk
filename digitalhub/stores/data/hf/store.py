@@ -8,8 +8,6 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, unquote, urlparse
 
-from huggingface_hub import set_client_factory, snapshot_download
-
 from digitalhub.stores.data._base.store import Store
 from digitalhub.stores.data.hf.dragonfly import backend_factory, dragonfly
 from digitalhub.utils.exceptions import StoreError
@@ -34,6 +32,14 @@ class HFStore(Store):
         """
         Download a Hugging Face model repository to local storage.
         """
+        try:
+            from huggingface_hub import set_client_factory, snapshot_download
+        except ImportError as exc:
+            raise StoreError(
+                "Hugging Face support requires the 'huggingface_hub' package. "
+                "Install it with 'pip install digitalhub[huggingface]'."
+            ) from exc
+
         if dst is None:
             dst = self._build_temp()
         else:

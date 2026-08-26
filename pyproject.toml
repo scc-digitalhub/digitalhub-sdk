@@ -26,11 +26,14 @@ dependencies = [
     "boto3",
     "GitPython",
     "numpy",
+    "pg8000",
+    "pyarrow",
     "pydantic",
     "python-dotenv",
     "python-slugify",
     "PyYAML",
     "requests",
+    "sqlalchemy",
 ]
 
 [project.optional-dependencies]
@@ -38,15 +41,7 @@ full = [
     "pandas",
     "polars",
     "mlcroissant",
-    "sqlalchemy",
-    "psycopg[binary]",
-    "pyarrow",
     "huggingface_hub",
-]
-sql = [
-    "sqlalchemy",
-    "psycopg[binary]",
-    "pyarrow",
 ]
 huggingface = [
     "huggingface_hub",

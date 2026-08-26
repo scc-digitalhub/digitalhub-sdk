@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.stores.data.hf.store import HFStore
 from digitalhub.stores.data.local.store import LocalStore
 from digitalhub.stores.data.remote.store import RemoteStore
 from digitalhub.stores.data.s3.store import S3Store
@@ -16,6 +15,12 @@ from digitalhub.utils.uri_utils import SchemeCategory, map_uri_scheme
 
 if typing.TYPE_CHECKING:
     from digitalhub.stores.data._base.store import Store
+
+
+def _build_hf_store() -> Store:
+    from digitalhub.stores.data.hf.store import HFStore
+
+    return HFStore()
 
 
 class StoreBuilder:
@@ -93,7 +98,7 @@ class StoreBuilder:
 
 store_builder = StoreBuilder()
 store_builder.register(SchemeCategory.S3.value, S3Store)
-store_builder.register(SchemeCategory.HF.value, HFStore)
+store_builder.register(SchemeCategory.HF.value, _build_hf_store)
 store_builder.register(SchemeCategory.SQL.value, SqlStore)
 store_builder.register(SchemeCategory.LOCAL.value, LocalStore)
 store_builder.register(SchemeCategory.REMOTE.value, RemoteStore)
