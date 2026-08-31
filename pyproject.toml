@@ -79,6 +79,14 @@ docstring-code-line-length = 120
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
 
+[tool.pytest.ini_options]
+addopts = ["--import-mode=importlib", "--strict-config", "--strict-markers", "-ra"]
+testpaths = ["test"]
+markers = [
+    "unit: isolated tests without external services or generated fixtures",
+    "instance: entity instance compatibility tests requiring external schemas",
+]
+
 [tool.bumpver]
 current_version = "0.16.0b3"
 version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"

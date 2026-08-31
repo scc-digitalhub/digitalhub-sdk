@@ -12,7 +12,7 @@ from jsonschema import ValidationError, validate
 
 from digitalhub.factory.entity import entity_factory
 
-ROOT = Path("test/instances")
+ROOT = Path(__file__).parent
 ENTITIES_PATH = ROOT / "entities"
 SCHEMAS_PATH = ROOT / "schemas"
 

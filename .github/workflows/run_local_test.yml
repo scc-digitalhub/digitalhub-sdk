@@ -34,9 +34,13 @@ jobs:
           rm main.zip
           mv digitalhub-core-main/schemas/specs test/instances/schemas
           rm -r digitalhub-core-main
-      - name: Test with pytest
+      - name: Run unit tests
         run: |
-          coverage run -m pytest test -v -s
+          coverage erase
+          coverage run --source=digitalhub -m pytest test/unittest -v
+      - name: Run instance tests
+        run: |
+          coverage run --append --source=digitalhub -m pytest test/instances -v
       - name: Generate Coverage Report
         run: |
           coverage report -m
