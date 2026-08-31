@@ -22,6 +22,7 @@ class ArtifactGeneric(ContextEntity, VersionedMixin, MaterialMixin, GenericMixin
     """Generic artifact entity that preserves runtime fields but does not expose download helpers."""
 
     ENTITY_TYPE = EntityTypes.ARTIFACT.value
+    _obj_attr = (*ContextEntity._obj_attr, "extensions")
 
     def __init__(
         self,

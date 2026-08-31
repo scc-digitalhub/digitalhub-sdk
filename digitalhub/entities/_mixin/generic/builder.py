@@ -11,6 +11,8 @@ from digitalhub.entities._mixin.generic.status import GenericStatus
 class GenericBuilder:
     """Mixin that builds a pass-through generic spec."""
 
+    VALIDATE_RUNTIME_ATTRIBUTES = False
+
     def build_spec(self, **kwargs) -> GenericSpec:
         return GenericSpec(**kwargs)
 

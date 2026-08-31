@@ -16,14 +16,15 @@ class RuntimeEntityBuilder:
     EXECUTABLE_KIND: str = None
     TASKS_KINDS: list[KindAction] = None
     RUN_KINDS: list[KindAction] = None
+    VALIDATE_RUNTIME_ATTRIBUTES = True
 
-    def __init__(self) -> None:
-        self._validate()
+    def _validate_runtime_attributes(self) -> None:
+        """
+        Validate runtime entity attributes.
+        """
+        if not self.VALIDATE_RUNTIME_ATTRIBUTES:
+            return
 
-    def _validate(self) -> None:
-        """
-        Validate the entity.
-        """
         for attr_name in ["EXECUTABLE_KIND", "TASKS_KINDS", "RUN_KINDS"]:
             if getattr(self, attr_name) is None:
                 raise EntityError(f"{attr_name} must be set")

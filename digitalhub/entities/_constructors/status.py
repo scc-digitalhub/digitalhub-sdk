@@ -12,22 +12,24 @@ from digitalhub.utils.exceptions import BuilderError
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.entity.status import Status
 
+StatusT = typing.TypeVar("StatusT", bound="Status")
 
-def build_status(status_cls: Status, **kwargs) -> Status:
+
+def build_status(status_cls: type[StatusT], **kwargs) -> StatusT:
     """
     Build entity status object. This method is used to build entity
     status.
 
     Parameters
     ----------
-    status_cls : Status
+    status_cls : type[Status]
         Entity status class.
     **kwargs : dict
         Keyword arguments.
 
     Returns
     -------
-    Status
+    StatusT
         Entity status object.
     """
     kwargs = parse_arguments(**kwargs)

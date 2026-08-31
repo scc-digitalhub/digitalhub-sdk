@@ -34,6 +34,7 @@ class Run(ContextEntity, UnversionedMixin, MetricsMixin):
     """
 
     ENTITY_TYPE = EntityTypes.RUN.value
+    _obj_attr = (*ContextEntity._obj_attr, "extensions")
 
     def __init__(
         self,
@@ -56,8 +57,6 @@ class Run(ContextEntity, UnversionedMixin, MetricsMixin):
         self.name = name
         self._init_metrics_state()
 
-        # Attributes to be included in __repr__
-        self._obj_attr.extend(["name"])
         init_run_extensions(self, extensions)
 
     ##############################
@@ -106,7 +105,7 @@ class Run(ContextEntity, UnversionedMixin, MetricsMixin):
             self.end_execution()
 
         self.refresh()
-        if not self.local_execution:
+        if not self.local_execution():
             status.pop("state", None)
         new_status = {**self.status.to_dict(), **status}
         self.set_status(new_status)

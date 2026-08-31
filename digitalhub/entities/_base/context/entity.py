@@ -18,6 +18,8 @@ if typing.TYPE_CHECKING:
 
 
 class ContextEntity(Entity):
+    _obj_attr = (*Entity._obj_attr, "project", "id", "name")
+
     def __init__(
         self,
         project: str,
@@ -31,9 +33,6 @@ class ContextEntity(Entity):
         self.project = project
         self.name: str
         self.id: str
-
-        # Different behaviour for versioned and unversioned
-        self._obj_attr.extend(["project", "id", "name"])
 
     ##############################
     #  Save / Refresh / Export

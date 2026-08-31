@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import typing
 from abc import abstractmethod
+from collections.abc import Callable
 
 from digitalhub.entities._constructors.metadata import build_metadata
 from digitalhub.entities._constructors.name import build_name
@@ -47,6 +48,10 @@ class EntityBuilder:
             raise BuilderError("ENTITY_STATUS_CLASS must be set")
         if self.ENTITY_KIND is None:
             raise BuilderError("ENTITY_KIND must be set")
+
+        validate_runtime_attributes: Callable[[], None] | None = getattr(self, "_validate_runtime_attributes", None)
+        if validate_runtime_attributes is not None:
+            validate_runtime_attributes()
 
     def build_name(self, name: str) -> str:
         """

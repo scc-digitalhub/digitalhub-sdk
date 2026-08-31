@@ -15,6 +15,8 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities._mixin.runtime_entity.builder import RuntimeEntityBuilder
     from digitalhub.runtimes.builder import RuntimeBuilder
 
+BuilderT = typing.TypeVar("BuilderT")
+
 
 class BuilderRegistry:
     """
@@ -48,9 +50,7 @@ class BuilderRegistry:
         builder : type[EntityBuilder] | type[RuntimeEntityBuilder]
             The builder class to register. It will be instantiated immediately.
         """
-        if name in self._entity_builders:
-            raise BuilderError(f"Builder {name} already exists.")
-        self._entity_builders[name] = builder()
+        self._add_builder(self._entity_builders, name, builder, f"Builder {name} already exists.")
 
     def add_runtime_builder(self, name: str, builder: type[RuntimeBuilder]) -> None:
         """
@@ -63,9 +63,7 @@ class BuilderRegistry:
         builder : type[RuntimeBuilder]
             The builder class to register. It will be instantiated immediately.
         """
-        if name in self._runtime_builders:
-            raise BuilderError(f"Builder {name} already exists.")
-        self._runtime_builders[name] = builder()
+        self._add_builder(self._runtime_builders, name, builder, f"Builder {name} already exists.")
 
     def add_generic_entity_builder(
         self,
@@ -82,9 +80,23 @@ class BuilderRegistry:
         builder : type[EntityBuilder] | type[RuntimeEntityBuilder]
             The builder class to register. It will be instantiated immediately.
         """
-        if entity_type in self._generic_entity_builders:
-            raise BuilderError(f"Generic builder for {entity_type} already exists.")
-        self._generic_entity_builders[entity_type] = builder()
+        self._add_builder(
+            self._generic_entity_builders,
+            entity_type,
+            builder,
+            f"Generic builder for {entity_type} already exists.",
+        )
+
+    @staticmethod
+    def _add_builder(
+        registry: dict[str, BuilderT],
+        name: str,
+        builder: type[BuilderT],
+        duplicate_error: str,
+    ) -> None:
+        if name in registry:
+            raise BuilderError(duplicate_error)
+        registry[name] = builder()
 
     def get_entity_builder(
         self,
@@ -154,14 +166,23 @@ class BuilderRegistry:
         """
         try:
             module = import_module(FactoryEnum.REG_ENTITIES.value)
+            entity_builders = self._entity_builders.copy()
+            generic_entity_builders = self._generic_entity_builders.copy()
 
             # Register core entities
             for k, b in getattr(module, FactoryEnum.REG_ENTITIES_VAR.value, []):
-                self.add_entity_builder(k, b)
+                self._add_builder(entity_builders, k, b, f"Builder {k} already exists.")
 
             # Register generic fallback entities
             for k, b in getattr(module, FactoryEnum.REG_GENERIC_ENTITIES_VAR.value, []):
-                self.add_generic_entity_builder(k, b)
+                self._add_builder(
+                    generic_entity_builders,
+                    k,
+                    b,
+                    f"Generic builder for {k} already exists.",
+                )
+
+            self._entity_builders, self._generic_entity_builders = entity_builders, generic_entity_builders
 
         except Exception as e:
             raise RuntimeError("Error registering core entities.") from e
@@ -183,16 +204,21 @@ class BuilderRegistry:
         Register all runtime builders and their entities into the registry.
         """
         try:
+            entity_builders = self._entity_builders.copy()
+            runtime_builders = self._runtime_builders.copy()
+
             for package in list_runtimes():
                 module = import_module(package)
 
                 # Register workflows, functions, tasks and runs entities builders
                 for k, b in getattr(module, FactoryEnum.REG_ENTITIES_VAR.value, []):
-                    self.add_entity_builder(k, b)
+                    self._add_builder(entity_builders, k, b, f"Builder {k} already exists.")
 
                 # Register runtime builders
                 for k, b in getattr(module, FactoryEnum.REG_RUNTIME_VAR.value, []):
-                    self.add_runtime_builder(k, b)
+                    self._add_builder(runtime_builders, k, b, f"Builder {k} already exists.")
+
+            self._entity_builders, self._runtime_builders = entity_builders, runtime_builders
         except Exception as e:
             raise RuntimeError("Error registering runtime entities.") from e
 

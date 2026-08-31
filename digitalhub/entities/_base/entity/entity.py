@@ -29,7 +29,7 @@ class Entity(Base):
     ENTITY_TYPE: str
 
     # Attributes to render as dict. Need to be expanded in subclasses.
-    _obj_attr: ClassVar[list[str]] = ["kind", "metadata", "spec", "status", "user", "key"]
+    _obj_attr: ClassVar[tuple[str, ...]] = ("kind", "metadata", "spec", "status", "user", "key")
 
     def __init__(
         self,
@@ -170,7 +170,7 @@ class Entity(Base):
     def to_dict(self) -> dict:
         """
         Override default to_dict method to add the possibility to exclude
-        some attributes. This requires to set a list of _obj_attr
+        some attributes. This requires setting the _obj_attr tuple
         attributes in the subclass.
 
         Returns

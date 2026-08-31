@@ -22,6 +22,7 @@ class ModelGeneric(ContextEntity, VersionedMixin, MaterialMixin, GenericMixin):
     """Generic model entity that preserves runtime fields without model-specific methods."""
 
     ENTITY_TYPE = EntityTypes.MODEL.value
+    _obj_attr = (*ContextEntity._obj_attr, "extensions")
 
     def __init__(
         self,

@@ -62,6 +62,16 @@ class Project(Entity):
     """
 
     ENTITY_TYPE = EntityTypes.PROJECT.value
+    _obj_attr = (*Entity._obj_attr, "id", "name")
+    _CONTEXT_ENTITY_SECTIONS = (
+        f"{EntityTypes.ARTIFACT.value}s",
+        f"{EntityTypes.DATAITEM.value}s",
+        f"{EntityTypes.MODEL.value}s",
+    )
+    _EXECUTABLE_ENTITY_SECTIONS = (
+        f"{EntityTypes.FUNCTION.value}s",
+        f"{EntityTypes.WORKFLOW.value}s",
+    )
 
     def __init__(
         self,
@@ -79,8 +89,6 @@ class Project(Entity):
         self.id = name
         self.name = name
         self.key = base_special_ops_processor.build_project_key(self.name)
-
-        self._obj_attr.extend(["id", "name"])
 
         # Set client
         self._client = get_client()
@@ -251,12 +259,10 @@ class Project(Entity):
                     # Import entity from local ref
                     if has_local_scheme(ref):
                         try:
-                            # Artifacts, Dataitems and Models
-                            if entity_type in entity_types[:3]:
+                            if entity_type in self._CONTEXT_ENTITY_SECTIONS:
                                 crud_processor.import_context_entity(file=ref, reset_id=reset_id, context=self.name)
 
-                            # Functions and Workflows
-                            elif entity_type in entity_types[3:]:
+                            elif entity_type in self._EXECUTABLE_ENTITY_SECTIONS:
                                 executable_processor.import_executable_entity(
                                     file=ref, reset_id=reset_id, context=self.name
                                 )
@@ -302,12 +308,10 @@ class Project(Entity):
                 # Load entity if not embedded and there is a ref
                 if not embedded and ref is not None and has_local_scheme(ref):
                     try:
-                        # Artifacts, Dataitems and Models
-                        if entity_type in entity_types[:3]:
+                        if entity_type in self._CONTEXT_ENTITY_SECTIONS:
                             crud_processor.load_context_entity(ref)
 
-                        # Functions and Workflows
-                        elif entity_type in entity_types[3:]:
+                        elif entity_type in self._EXECUTABLE_ENTITY_SECTIONS:
                             executable_processor.load_executable_entity(ref)
 
                     except FileNotFoundError:
@@ -342,13 +346,7 @@ class Project(Entity):
         list
             Entity types.
         """
-        return [
-            f"{EntityTypes.ARTIFACT.value}s",
-            f"{EntityTypes.DATAITEM.value}s",
-            f"{EntityTypes.MODEL.value}s",
-            f"{EntityTypes.FUNCTION.value}s",
-            f"{EntityTypes.WORKFLOW.value}s",
-        ]
+        return [*self._CONTEXT_ENTITY_SECTIONS, *self._EXECUTABLE_ENTITY_SECTIONS]
 
     ##############################
     #  Properties
@@ -601,7 +599,7 @@ class Project(Entity):
         -------
         digitalhub.load_artifact
         """
-        return self.crud.artifact.load_entity(file)
+        return self.crud.artifact.load(file)
 
     @_auto_refresh
     def update_artifact(
@@ -896,7 +894,7 @@ class Project(Entity):
         -------
         digitalhub.load_dataitem
         """
-        return self.crud.dataitem.load_entity(file)
+        return self.crud.dataitem.load(file)
 
     @_auto_refresh
     def update_dataitem(
@@ -1271,7 +1269,7 @@ class Project(Entity):
         -------
         digitalhub.load_model
         """
-        return self.crud.model.load_entity(file)
+        return self.crud.model.load(file)
 
     @_auto_refresh
     def update_model(
@@ -1430,7 +1428,7 @@ class Project(Entity):
         -------
         digitalhub.load_function
         """
-        return self.crud.function.load_entity(file)
+        return self.crud.function.load(file)
 
     @_auto_refresh
     def update_function(
@@ -1589,7 +1587,7 @@ class Project(Entity):
         -------
         digitalhub.load_workflow
         """
-        return self.crud.workflow.load_entity(file)
+        return self.crud.workflow.load(file)
 
     @_auto_refresh
     def update_workflow(
@@ -1727,7 +1725,7 @@ class Project(Entity):
         -------
         digitalhub.load_task
         """
-        return self.crud.task.load_entity(file)
+        return self.crud.task.load(file)
 
     @_auto_refresh
     def update_task(
@@ -1865,7 +1863,7 @@ class Project(Entity):
         -------
         digitalhub.load_run
         """
-        return self.crud.run.load_entity(file)
+        return self.crud.run.load(file)
 
     @_auto_refresh
     def update_run(
@@ -2014,7 +2012,7 @@ class Project(Entity):
         -------
         digitalhub.load_trigger
         """
-        return self.crud.trigger.load_entity(file)
+        return self.crud.trigger.load(file)
 
     @_auto_refresh
     def update_trigger(
@@ -2136,7 +2134,7 @@ class Project(Entity):
         -------
         digitalhub.load_secret
         """
-        return self.crud.secret.load_entity(file)
+        return self.crud.secret.load(file)
 
     @_auto_refresh
     def update_secret(

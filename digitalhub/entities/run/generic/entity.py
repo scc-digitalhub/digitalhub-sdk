@@ -23,6 +23,7 @@ class RunGeneric(ContextEntity, UnversionedMixin, MetricsMixin, GenericMixin):
     """Generic run entity that preserves runtime fields without run-specific methods."""
 
     ENTITY_TYPE = EntityTypes.RUN.value
+    _obj_attr = (*ContextEntity._obj_attr, "extensions")
 
     def __init__(
         self,

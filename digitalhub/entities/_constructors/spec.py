@@ -9,8 +9,10 @@ import typing
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.entity.spec import Spec, SpecValidator
 
+SpecT = typing.TypeVar("SpecT", bound="Spec")
 
-def build_spec(spec_cls: Spec, spec_validator: SpecValidator, **kwargs) -> Spec:
+
+def build_spec(spec_cls: type[SpecT], spec_validator: type[SpecValidator], **kwargs) -> SpecT:
     """
     Build entity spec object. This method is used to build entity
     specifications and is used to validate the parameters passed
@@ -18,16 +20,16 @@ def build_spec(spec_cls: Spec, spec_validator: SpecValidator, **kwargs) -> Spec:
 
     Parameters
     ----------
-    spec_cls : Spec
+    spec_cls : type[Spec]
         Spec class.
-    spec_validator : SpecValidator
+    spec_validator : type[SpecValidator]
         Spec validator class.
     **kwargs : dict
         Keyword arguments for the constructor.
 
     Returns
     -------
-    Spec
+    SpecT
         Spec object.
     """
     kwargs = spec_validator(**kwargs).to_dict()

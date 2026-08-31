@@ -36,7 +36,6 @@ class MaterialMixin:
 
     def _init_material_extensions(self, extensions: list[dict] | None = None) -> None:
         self.extensions = extensions if extensions is not None else []
-        self._obj_attr.extend(["extensions"])
 
     @refresh_decorator
     def as_file(self) -> list[str]:

@@ -26,6 +26,7 @@ class Artifact(ContextEntity, VersionedMixin, MaterialMixin):
     """
 
     ENTITY_TYPE = EntityTypes.ARTIFACT.value
+    _obj_attr = (*ContextEntity._obj_attr, "extensions")
 
     def __init__(
         self,

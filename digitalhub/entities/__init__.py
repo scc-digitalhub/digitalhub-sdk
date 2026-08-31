@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from digitalhub.entities._commons.enums import EntityTypes, OpType
 from digitalhub.entities.artifact.artifact.crud import log_artifact
 from digitalhub.entities.artifact.crud import (
@@ -117,8 +119,10 @@ from digitalhub.entities.workflow.crud import (
     update_workflow,
 )
 
+EntityOperation = Callable[..., object]
+
 # Operation registry: maps entity type to operation functions
-OPS_REGISTRY = {
+OPS_REGISTRY: dict[EntityTypes, dict[OpType, EntityOperation]] = {
     EntityTypes.ARTIFACT: {
         OpType.NEW: new_artifact,
         OpType.LOG_GENERIC: log_generic_artifact,

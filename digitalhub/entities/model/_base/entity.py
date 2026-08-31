@@ -23,6 +23,7 @@ class Model(ContextEntity, VersionedMixin, MaterialMixin, MetricsMixin):
     """
 
     ENTITY_TYPE = EntityTypes.MODEL.value
+    _obj_attr = (*ContextEntity._obj_attr, "extensions")
 
     def __init__(
         self,
