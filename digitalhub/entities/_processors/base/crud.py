@@ -411,12 +411,14 @@ class BaseEntityCRUDProcessor:
         dict
             Response data from the backend delete operation.
         """
-        if kwargs.pop("clean_context", True):
-            delete_context(entity_name)
+        clean_context = kwargs.pop("clean_context", True)
         client = get_client()
-        return self._delete_base_entity(
+        response = self._delete_base_entity(
             client,
             entity_type,
             entity_name,
             **kwargs,
         )
+        if clean_context:
+            delete_context(entity_name)
+        return response
