@@ -4,13 +4,12 @@
 
 from __future__ import annotations
 
-from requests import get
-
 from digitalhub.stores.client.auth.auth_handler import AuthenticationHandler
 from digitalhub.stores.client.auth.config_manager import ConfigManager
 from digitalhub.stores.client.auth.refresh import TokenRefreshService
 from digitalhub.stores.client.common.config import get_client_config
 from digitalhub.stores.client.common.enums import AuthType
+from digitalhub.stores.client.http.transport import request
 
 
 class ClientConfigurator:
@@ -153,14 +152,16 @@ class ClientConfigurator:
 
         # Handle authentication errors with token refresh
         kwargs = self.get_auth_parameters()
-        response = get(url, timeout=get_client_config().http_timeout, **kwargs)
+        response = request("GET", url, **kwargs)
         try:
             response.raise_for_status()
         except Exception:
             if response.status_code == 401 and self.evaluate_refresh():
                 kwargs = self.get_auth_parameters()
-                return get(url, timeout=get_client_config().http_timeout, **kwargs)
-            raise
+                response = request("GET", url, **kwargs)
+                response.raise_for_status()
+            else:
+                raise
         return self._config_manager.get_credentials_and_config()
 
     def set_current_profile(self, profile: str) -> None:
@@ -197,7 +198,7 @@ class ClientConfigurator:
         """
         endpoint = self.get_endpoint()
         url = endpoint + get_client_config().well_known_conf
-        response = get(url, timeout=get_client_config().http_timeout)
+        response = request("GET", url)
         response.raise_for_status()
         data: dict = response.json()
         return data.get(get_client_config().k8s_resource_profiles, [])

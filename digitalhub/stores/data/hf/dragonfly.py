@@ -9,10 +9,8 @@ import os
 import requests
 from requests.adapters import HTTPAdapter
 
-dragonfly = False
 NODE_IP = os.environ.get("NODE_IP")
-if NODE_IP is None:
-    dragonfly = True
+dragonfly = NODE_IP is not None
 
 
 class DragonflyAdapter(HTTPAdapter):

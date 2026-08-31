@@ -40,7 +40,12 @@ class ContextBuilder:
             # then call __init__ to properly set up the context
             ctx = Context.__new__(Context)
             self._instances[project.name] = ctx
-            ctx.__init__(project)
+            try:
+                ctx.__init__(project)
+            except BaseException:
+                if self._instances.get(project.name) is ctx:
+                    self._instances.pop(project.name)
+                raise
         return self._instances[project.name]
 
     def get(self, project: str) -> Context:

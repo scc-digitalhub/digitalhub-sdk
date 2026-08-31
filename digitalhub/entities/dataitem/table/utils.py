@@ -48,7 +48,8 @@ def read_data_sample(
         read_df_params = {}
     reader = get_reader_by_engine(engine)
     read_df_params[reader.get_limit_arg_name()] = 10
-    return get_store(source).read_df(
+    store_source = source[0] if isinstance(source, list) else source
+    return get_store(store_source).read_df(
         source,
         file_format=file_format,
         engine=engine,

@@ -10,7 +10,6 @@ from warnings import warn
 
 from digitalhub.stores.client.auth.enums import ConfigurationVars, CredentialsVars, SetCreds
 from digitalhub.stores.client.auth.file_module import (
-    ini_file_exists,
     load_dotenv_file,
     load_file,
     load_key,
@@ -43,9 +42,6 @@ class ConfigManager:
 
         # Indicates if configuration is stored in-memory only (True) or persisted to file (False).
         self._in_memory: bool = False
-
-        # Try to write initial configuration to file if it does not exist yet. If writing fails, switch to in-memory mode.
-        self._write_file()
 
         # Flag to indicate if credentials have been reloaded from environment variables during retry logic.
         self._reloaded_from_env: bool = False
@@ -238,7 +234,7 @@ class ConfigManager:
 
     def update_in_memory(self, variables: dict) -> None:
         """
-        Update credentials in memory and persist to file.
+        Update credentials in memory.
 
         Parameters
         ----------
@@ -247,18 +243,20 @@ class ConfigManager:
         """
         self._credentials.update(variables)
 
-    def _write_file(self) -> None:
-        """
-        Write current configuration and credentials to the .dhcore file
-        if file does not exist yet.
-        """
+    def save_credentials(self, variables: dict) -> None:
+        """Save refreshed credentials to the active storage."""
+        if self._in_memory:
+            self.update_in_memory({k.upper(): v for k, v in variables.items()})
+            return
+
         try:
-            if not ini_file_exists():
-                variables = {k: v for k, v in {**self._configuration, **self._credentials}.items() if v is not None}
-                self.export_to_env(variables)
-                self.export_to_ini(variables)
+            self.export_to_ini(variables)
+            self.export_to_env(variables)
+            self.reload_credentials()
+            self.load_to_env()
         except (ClientError, OSError):
             self._in_memory = True
+            self.update_in_memory({k.upper(): v for k, v in variables.items()})
             warn("Configuration file is not writable. Credentials will be stored in memory only for this session.")
 
     ##############################

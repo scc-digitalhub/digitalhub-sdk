@@ -142,6 +142,10 @@ def set_client_config(config: ClientConfig) -> None:
     global _default_config
     _default_config = config
 
+    from digitalhub.stores.client.base.factory import client_factory
+
+    client_factory.reset()
+
 
 def reset_client_config() -> None:
     """
@@ -151,5 +155,4 @@ def reset_client_config() -> None:
     --------
     >>> reset_client_config()
     """
-    global _default_config
-    _default_config = ClientConfig()
+    set_client_config(ClientConfig())

@@ -175,10 +175,12 @@ class SqlStore(Store):
         table = self._get_table_name(path)
         sql_engine = self._check_factory(schema=schema)
 
-        sa_table = Table(table, MetaData(), autoload_with=sql_engine)
-        stm = select(sa_table)
-
-        return reader.read_table(stm, sql_engine, **kwargs)
+        try:
+            sa_table = Table(table, MetaData(), autoload_with=sql_engine)
+            stm = select(sa_table)
+            return reader.read_table(stm, sql_engine, **kwargs)
+        finally:
+            sql_engine.dispose()
 
     def query(
         self,
@@ -211,7 +213,10 @@ class SqlStore(Store):
         reader = self._get_reader(engine)
         schema = self._get_schema(path)
         sql_engine = self._check_factory(schema=schema)
-        return reader.read_table(query, sql_engine)
+        try:
+            return reader.read_table(query, sql_engine)
+        finally:
+            sql_engine.dispose()
 
     def write_df(
         self,
@@ -274,10 +279,12 @@ class SqlStore(Store):
         schema = parsed.get("schema")
         table = parsed.get("table")
         engine = self._check_factory(schema=schema)
-        with engine.begin() as connection:
-            connection.exec_driver_sql(sql)
-        engine.dispose()
-        return schema, table
+        try:
+            with engine.begin() as connection:
+                connection.exec_driver_sql(sql)
+            return schema, table
+        finally:
+            engine.dispose()
 
     def get_schema_from_table(self, table: str, schema: str | None = None) -> dict:
         """
@@ -296,10 +303,12 @@ class SqlStore(Store):
             A dictionary representing the schema of the SQL table, with column names as keys and data types as values.
         """
         engine = self._check_factory(schema=schema)
-        inspector = inspect(engine)
-        columns = inspector.get_columns(table, schema=schema)
-        engine.dispose()
-        return get_schema_from_columns(columns)
+        try:
+            inspector = inspect(engine)
+            columns = inspector.get_columns(table, schema=schema)
+            return get_schema_from_columns(columns)
+        finally:
+            engine.dispose()
 
     ##############################
     # Wrapper methods
@@ -364,23 +373,23 @@ class SqlStore(Store):
         """
         engine = self._check_factory(schema=schema)
 
-        # Read the table from the database
-        sa_table = Table(table, MetaData(), autoload_with=engine)
-        stm = select(sa_table)
-        with engine.begin() as conn:
-            result: list[Row] = conn.execute(stm).fetchall()
+        try:
+            # Read the table from the database
+            sa_table = Table(table, MetaData(), autoload_with=engine)
+            stm = select(sa_table)
+            with engine.begin() as conn:
+                result: list[Row] = conn.execute(stm).fetchall()
 
-        # Parse the result
-        data = {col: [row[idx] for row in result] for idx, col in enumerate(sa_table.columns.keys())}
+            # Parse the result
+            data = {col: [row[idx] for row in result] for idx, col in enumerate(sa_table.columns.keys())}
 
-        # Convert the result to a pyarrow table and
-        # write the pyarrow table to a Parquet file
-        arrow_table = pa.Table.from_pydict(data)
-        pq.write_table(arrow_table, dst)
-
-        engine.dispose()
-
-        return dst
+            # Convert the result to a pyarrow table and
+            # write the pyarrow table to a Parquet file
+            arrow_table = pa.Table.from_pydict(data)
+            pq.write_table(arrow_table, dst)
+            return dst
+        finally:
+            engine.dispose()
 
     def _upload_table(self, df: Any, schema: str, table: str, **kwargs) -> str:
         """
@@ -410,9 +419,11 @@ class SqlStore(Store):
         """
         reader = get_reader_by_object(df)
         engine = self._check_factory()
-        reader.write_table(df, table, engine, schema, **kwargs)
-        engine.dispose()
-        return f"sql://{engine.url.database}/{schema}/{table}"
+        try:
+            reader.write_table(df, table, engine, schema, **kwargs)
+            return f"sql://{engine.url.database}/{schema}/{table}"
+        finally:
+            engine.dispose()
 
     ##############################
     # Helper methods
@@ -554,7 +565,8 @@ class SqlStore(Store):
             The SQLAlchemy engine to test for connectivity.
         """
         try:
-            engine.connect()
+            with engine.connect():
+                pass
         except SQLAlchemyError as e:
             logger.debug(f"Database connection failed ({engine.url}), disposing engine.", exc_info=True)
             engine.dispose()

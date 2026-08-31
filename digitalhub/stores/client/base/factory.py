@@ -26,6 +26,9 @@ class ClientFactory:
     def __init__(self) -> None:
         self._client: Client | None = None
 
+    def reset(self) -> None:
+        self._client = None
+
     def build(
         self,
         configurator: ClientConfigurator | None = None,

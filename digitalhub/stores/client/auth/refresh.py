@@ -8,13 +8,14 @@ import typing
 from typing import Any
 from warnings import warn
 
-from requests import get, post
+from requests.exceptions import HTTPError
 
 from digitalhub.stores.client.auth.enums import ConfigurationVars, CredentialsVars
 from digitalhub.stores.client.common.config import get_client_config
 from digitalhub.stores.client.common.enums import AuthType
 from digitalhub.stores.client.common.logger import log_request_response
 from digitalhub.stores.client.common.utils import sanitize_endpoint, set_urlencoded_content_type
+from digitalhub.stores.client.http.transport import request
 from digitalhub.utils.exceptions import ClientError
 from digitalhub.utils.logger.logger import get_logger
 
@@ -97,7 +98,7 @@ class TokenRefreshService:
         try:
             self.refresh_credentials()
             return True
-        except Exception:
+        except (ClientError, HTTPError):
             logger.debug("Credential refresh failed, evaluating retry.", exc_info=True)
             if not self._config_manager.eval_retry():
                 if self._config_manager.in_memory:
@@ -130,7 +131,7 @@ class TokenRefreshService:
         url = sanitize_endpoint(url) + get_client_config().api_auth_check
 
         kwargs = self._auth_handler.get_auth_parameters()
-        response = get(url, timeout=get_client_config().http_timeout, **kwargs)
+        response = request("GET", url, **kwargs)
         log_request_response(logger, response)
 
         return response.status_code == 200
@@ -196,7 +197,7 @@ class TokenRefreshService:
         url = sanitize_endpoint(endpoint_issuer + get_client_config().well_known_openid_conf)
 
         # Call issuer to get refresh endpoint
-        response = get(url, timeout=get_client_config().http_timeout)
+        response = request("GET", url)
         log_request_response(logger, response)
 
         response.raise_for_status()
@@ -226,7 +227,7 @@ class TokenRefreshService:
             Raw HTTP response for caller handling.
         """
         req_kwargs = {"data": kwargs, **set_urlencoded_content_type()}
-        response = post(url, timeout=get_client_config().http_timeout, **req_kwargs)
+        response = request("POST", url, **req_kwargs)
         log_request_response(logger, response)
         return response
 
@@ -259,12 +260,4 @@ class TokenRefreshService:
             if key.removeprefix(prefix) in response:
                 response[key] = response.pop(key.removeprefix(prefix))
 
-        # Write new credentials to file if possible, otherwise update in-memory configuration
-        if not self._config_manager.in_memory:
-            self._config_manager.export_to_ini(response)
-            self._config_manager.export_to_env(response)
-            self._config_manager.reload_credentials()
-            self._config_manager.load_to_env()
-        else:
-            variables = {k.upper(): v for k, v in response.items()}
-            self._config_manager.update_in_memory(variables)
+        self._config_manager.save_credentials(response)
