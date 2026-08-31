@@ -77,7 +77,7 @@ class BaseEntitySpecialOpsProcessor:
             for u in users:
                 if u["user"] == user:
                     kwargs["id"] = u["id"]
-                break
+                    break
             else:
                 raise ValueError(f"User '{user}' does not have access to project.")
 

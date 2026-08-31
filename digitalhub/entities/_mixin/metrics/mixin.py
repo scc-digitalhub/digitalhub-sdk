@@ -37,8 +37,8 @@ class MetricsMixin:
         ValueError
             If the entity does not have metrics.
         """
-        if self._entity_has_metrics is not None:
-            return self._entity_has_metrics
+        if self._entity_has_metrics is True:
+            return True
         self._entity_has_metrics = bool(self._read_metrics()) or bool(self.status.metrics)
         return self._entity_has_metrics
 

@@ -86,21 +86,21 @@ class Run(ContextEntity, UnversionedMixin, MetricsMixin):
         self.refresh()
 
         self.start_execution()
-        self._setup_execution()
-
         try:
-            status = self._get_runtime().run(self.to_dict())
+            self._setup_execution()
+            try:
+                status = self._get_runtime().run(self.to_dict())
 
-        # Handle exceptions and set run status and message
-        except Exception as e:
-            self.refresh()
-            if self.local_execution():
-                self.status.state = State.ERROR.value
-            self.status.message = str(e)
-            self.save(update=True)
-            raise
+            # Handle exceptions and set run status and message
+            except Exception as e:
+                self.refresh()
+                if self.local_execution():
+                    self.status.state = State.ERROR.value
+                self.status.message = str(e)
+                self.save(update=True)
+                raise
 
-        # Unset run in context
+        # Unset run in context after setup or execution
         finally:
             self.end_execution()
 
@@ -191,16 +191,20 @@ class Run(ContextEntity, UnversionedMixin, MetricsMixin):
         """
         Start run execution.
         """
-        self._context().set_run(self)
-        if self.local_execution():
-            # Check run state
-            if self.status.state not in (State.BUILT.value, State.STOPPED.value):
-                raise EntityError("Run is not in a state to run.")
+        if self.local_execution() and self.status.state not in (State.BUILT.value, State.STOPPED.value):
+            raise EntityError("Run is not in a state to run.")
 
-            self.status.state = State.READY.value
-            self.save(update=True)
-            self.status.state = State.RUNNING.value
-            self.save(update=True)
+        context = self._context()
+        context.set_run(self)
+        try:
+            if self.local_execution():
+                self.status.state = State.READY.value
+                self.save(update=True)
+                self.status.state = State.RUNNING.value
+                self.save(update=True)
+        except BaseException:
+            context.unset_run()
+            raise
 
     def end_execution(self) -> None:
         """

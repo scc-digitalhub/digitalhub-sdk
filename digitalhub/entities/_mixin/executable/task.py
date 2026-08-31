@@ -197,13 +197,13 @@ class ExecutableTaskMixin(ExecutableBaseMixin):
         EntityError
             If no task exists for the action or the action is not supported.
         """
-        self._raise_if_not_exists(action)
+        existing_task = self.get_task(action)
         task_store = self._task_store()
 
         kwargs["project"] = self.project
         kwargs["kind"] = entity_factory.get_task_kind_from_action(self.kind, action)
         kwargs[self.ENTITY_TYPE] = self._get_executable_string()
-        kwargs["uuid"] = task_store[action].id
+        kwargs["uuid"] = existing_task.id
 
         task: Task = entity_factory.build_entity_from_params(**kwargs)
         task.save(update=True)
@@ -225,8 +225,9 @@ class ExecutableTaskMixin(ExecutableBaseMixin):
         dict
             Backend deletion response.
         """
+        task = self.get_task(action)
         task_store = self._task_store()
-        resp = delete_task(task_store[action].key, cascade=cascade)
+        resp = delete_task(task.key, cascade=cascade)
         task_store.pop(action, None)
         return resp
 
@@ -250,14 +251,17 @@ class ExecutableTaskMixin(ExecutableBaseMixin):
         EntityError
             If the action is not supported.
         """
+        try:
+            existing_task = self.get_task(action)
+        except EntityError:
+            return self.new_task(action, **kwargs)
+
         task_store = self._task_store()
-        if task_store.get(action) is None:
-            self.new_task(action, **kwargs)
-            return task_store[action]
 
         kwargs["project"] = self.project
         kwargs[self.ENTITY_TYPE] = self._get_executable_string()
         kwargs["kind"] = entity_factory.get_task_kind_from_action(self.kind, action)
+        kwargs["uuid"] = existing_task.id
 
         task: Task = entity_factory.build_entity_from_params(**kwargs)
         task.save(update=True)
