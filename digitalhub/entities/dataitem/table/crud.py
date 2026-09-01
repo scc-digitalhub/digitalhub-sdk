@@ -36,7 +36,7 @@ def _eval_source(
     data: Dataframe | None = None,  # type: ignore
     sql: str | None = None,
 ) -> str:
-    if (source is None) == (data is None) == (sql is None):
+    if sum(value is not None for value in (source, data, sql)) != 1:
         raise ValueError("Either source, data, or sql must be provided.")
     if source is not None:
         return SourceTypes.SOURCE.value
