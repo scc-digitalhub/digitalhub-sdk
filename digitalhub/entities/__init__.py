@@ -6,7 +6,8 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from digitalhub.entities._commons.enums import EntityTypes, OpType
-from digitalhub.entities.artifact.artifact.crud import log_artifact
+from digitalhub.entities.artifact._base.crud import new_artifact
+from digitalhub.entities.artifact.artifact.crud import log_artifact, register_artifact
 from digitalhub.entities.artifact.crud import (
     delete_artifact,
     get_artifact,
@@ -14,10 +15,9 @@ from digitalhub.entities.artifact.crud import (
     import_artifact,
     list_artifacts,
     load_artifact,
-    new_artifact,
     update_artifact,
 )
-from digitalhub.entities.artifact.generic.crud import log_generic_artifact
+from digitalhub.entities.artifact.generic.crud import log_generic_artifact, register_generic_artifact
 from digitalhub.entities.containerimage.crud import (
     delete_containerimage,
     get_containerimage,
@@ -28,7 +28,8 @@ from digitalhub.entities.containerimage.crud import (
     new_containerimage,
     update_containerimage,
 )
-from digitalhub.entities.dataitem.croissant.crud import log_croissant
+from digitalhub.entities.dataitem._base.crud import new_dataitem
+from digitalhub.entities.dataitem.croissant.crud import log_croissant, register_croissant
 from digitalhub.entities.dataitem.crud import (
     delete_dataitem,
     get_dataitem,
@@ -36,12 +37,11 @@ from digitalhub.entities.dataitem.crud import (
     import_dataitem,
     list_dataitems,
     load_dataitem,
-    new_dataitem,
     update_dataitem,
 )
-from digitalhub.entities.dataitem.dataitem.crud import log_dataitem
-from digitalhub.entities.dataitem.generic.crud import log_generic_dataitem
-from digitalhub.entities.dataitem.table.crud import log_table
+from digitalhub.entities.dataitem.dataitem.crud import log_dataitem, register_dataitem
+from digitalhub.entities.dataitem.generic.crud import log_generic_dataitem, register_generic_dataitem
+from digitalhub.entities.dataitem.table.crud import log_table, register_table
 from digitalhub.entities.function.crud import (
     delete_function,
     get_function,
@@ -52,6 +52,7 @@ from digitalhub.entities.function.crud import (
     new_function,
     update_function,
 )
+from digitalhub.entities.model._base.crud import new_model
 from digitalhub.entities.model.crud import (
     delete_model,
     get_model,
@@ -59,16 +60,15 @@ from digitalhub.entities.model.crud import (
     import_model,
     list_models,
     load_model,
-    new_model,
     update_model,
 )
-from digitalhub.entities.model.generic.crud import log_generic_model
-from digitalhub.entities.model.huggingface.crud import log_huggingface
-from digitalhub.entities.model.mlflow.crud import log_mlflow
-from digitalhub.entities.model.model.crud import log_model
-from digitalhub.entities.model.sklearn.crud import log_sklearn
-from digitalhub.entities.model.tvm_ir.crud import log_tvm_ir
-from digitalhub.entities.model.tvm_so.crud import log_tvm_so
+from digitalhub.entities.model.generic.crud import log_generic_model, register_generic_model
+from digitalhub.entities.model.huggingface.crud import log_huggingface, register_huggingface
+from digitalhub.entities.model.mlflow.crud import log_mlflow, register_mlflow
+from digitalhub.entities.model.model.crud import log_model, register_model
+from digitalhub.entities.model.sklearn.crud import log_sklearn, register_sklearn
+from digitalhub.entities.model.tvm_ir.crud import log_tvm_ir, register_tvm_ir
+from digitalhub.entities.model.tvm_so.crud import log_tvm_so, register_tvm_so
 from digitalhub.entities.project.crud import (
     delete_project,
     get_or_create_project,
@@ -127,6 +127,8 @@ OPS_REGISTRY: dict[EntityTypes, dict[OpType, EntityOperation]] = {
         OpType.NEW: new_artifact,
         OpType.LOG_GENERIC: log_generic_artifact,
         OpType.LOG_ARTIFACT: log_artifact,
+        OpType.REGISTER_GENERIC: register_generic_artifact,
+        OpType.REGISTER_ARTIFACT: register_artifact,
         OpType.IMPORT: import_artifact,
         OpType.LOAD: load_artifact,
         OpType.GET: get_artifact,
@@ -141,6 +143,10 @@ OPS_REGISTRY: dict[EntityTypes, dict[OpType, EntityOperation]] = {
         OpType.LOG_DATAITEM: log_dataitem,
         OpType.LOG_TABLE: log_table,
         OpType.LOG_CROISSANT: log_croissant,
+        OpType.REGISTER_GENERIC: register_generic_dataitem,
+        OpType.REGISTER_DATAITEM: register_dataitem,
+        OpType.REGISTER_TABLE: register_table,
+        OpType.REGISTER_CROISSANT: register_croissant,
         OpType.IMPORT: import_dataitem,
         OpType.LOAD: load_dataitem,
         OpType.GET: get_dataitem,
@@ -158,6 +164,13 @@ OPS_REGISTRY: dict[EntityTypes, dict[OpType, EntityOperation]] = {
         OpType.LOG_HUGGINGFACE: log_huggingface,
         OpType.LOG_TVM_IR: log_tvm_ir,
         OpType.LOG_TVM_SO: log_tvm_so,
+        OpType.REGISTER_GENERIC: register_generic_model,
+        OpType.REGISTER_MODEL: register_model,
+        OpType.REGISTER_MLFLOW: register_mlflow,
+        OpType.REGISTER_SKLEARN: register_sklearn,
+        OpType.REGISTER_HUGGINGFACE: register_huggingface,
+        OpType.REGISTER_TVM_IR: register_tvm_ir,
+        OpType.REGISTER_TVM_SO: register_tvm_so,
         OpType.IMPORT: import_model,
         OpType.LOAD: load_model,
         OpType.GET: get_model,

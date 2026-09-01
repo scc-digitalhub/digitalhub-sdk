@@ -116,3 +116,16 @@ class OpType(str, Enum):
     LOG_HUGGINGFACE = "log_huggingface"
     LOG_TVM_IR = "log_tvm_ir"
     LOG_TVM_SO = "log_tvm_so"
+
+    # Register operations
+    REGISTER_GENERIC = "register_generic"
+    REGISTER_ARTIFACT = "register_artifact"
+    REGISTER_DATAITEM = "register_dataitem"
+    REGISTER_TABLE = "register_table"
+    REGISTER_CROISSANT = "register_croissant"
+    REGISTER_MODEL = "register_model"
+    REGISTER_MLFLOW = "register_mlflow"
+    REGISTER_SKLEARN = "register_sklearn"
+    REGISTER_HUGGINGFACE = "register_huggingface"
+    REGISTER_TVM_IR = "register_tvm_ir"
+    REGISTER_TVM_SO = "register_tvm_so"

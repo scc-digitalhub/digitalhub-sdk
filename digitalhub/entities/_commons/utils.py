@@ -9,12 +9,14 @@ import typing
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
+from urllib.parse import unquote, urlparse
 
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.utils.exceptions import BackendError
 from digitalhub.utils.file_utils import eval_zip_sources
 from digitalhub.utils.generic_utils import slugify_string
 from digitalhub.utils.logger.logger import get_logger
+from digitalhub.utils.uri_utils import SchemeCategory, map_uri_scheme
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._mixin.versioned.protocol import VersionedEntityProtocol
@@ -240,11 +242,20 @@ def build_log_name_from_source(source: str | list[str]) -> str:
     if isinstance(source, list):
         if len(source) != 1:
             raise ValueError("A name is required when logging multiple sources.")
-        source_path = Path(source[0])
-    else:
-        source_path = Path(source)
+        source = source[0]
 
-    source_name = source_path.stem if source_path.is_file() else source_path.name
+    source_category = map_uri_scheme(source)
+    if source_category == SchemeCategory.SQL.value:
+        from digitalhub.stores.data.sql.store import SqlStore
+
+        source_name = SqlStore._parse_path(source)["table"]
+    elif source_category == SchemeCategory.LOCAL.value:
+        source_path = Path(source)
+        source_name = source_path.stem if source_path.is_file() else source_path.name
+    else:
+        parsed_source = urlparse(source)
+        source_path = Path(unquote(parsed_source.path.rstrip("/")))
+        source_name = source_path.stem or parsed_source.netloc
     return slugify_string(source_name)
 
 

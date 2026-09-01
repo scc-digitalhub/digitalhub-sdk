@@ -41,7 +41,7 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities.task._base.entity import Task
     from digitalhub.entities.trigger._base.entity import Trigger
     from digitalhub.entities.workflow._base.entity import Workflow
-    from digitalhub.utils.types import Dataframe
+    from digitalhub.utils.types import Dataframe, SourcesOrListOfSources
 
 
 def _auto_refresh(method):
@@ -513,6 +513,60 @@ class Project(Entity):
         )
 
     @_auto_refresh
+    def register_artifact(
+        self,
+        source: SourcesOrListOfSources,
+        name: str | None = None,
+        uuid: str | None = None,
+        version: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
+        embedded: bool = False,
+        extensions: list[dict] | None = None,
+        **kwargs,
+    ) -> Artifact:
+        """Register an artifact that already exists in a supported store."""
+        return self.crud.artifact.register_artifact(
+            source=source,
+            name=name,
+            uuid=uuid,
+            version=version,
+            description=description,
+            labels=labels,
+            embedded=embedded,
+            extensions=extensions,
+            **kwargs,
+        )
+
+    @_auto_refresh
+    def register_generic_artifact(
+        self,
+        kind: str,
+        source: SourcesOrListOfSources,
+        name: str | None = None,
+        uuid: str | None = None,
+        version: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
+        embedded: bool = False,
+        extensions: list[dict] | None = None,
+        **kwargs,
+    ) -> Artifact:
+        """Register an artifact of an unknown kind."""
+        return self.crud.artifact.register(
+            kind=kind,
+            source=source,
+            name=name,
+            uuid=uuid,
+            version=version,
+            description=description,
+            labels=labels,
+            embedded=embedded,
+            extensions=extensions,
+            **kwargs,
+        )
+
+    @_auto_refresh
     def get_artifact(
         self,
         identifier: str,
@@ -804,6 +858,112 @@ class Project(Entity):
             version=version,
             description=description,
             labels=labels,
+            **kwargs,
+        )
+
+    @_auto_refresh
+    def register_dataitem(
+        self,
+        source: SourcesOrListOfSources,
+        name: str | None = None,
+        uuid: str | None = None,
+        version: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
+        embedded: bool = False,
+        extensions: list[dict] | None = None,
+        **kwargs,
+    ) -> Dataitem:
+        """Register a dataitem that already exists in a supported store."""
+        return self.crud.dataitem.register_dataitem(
+            source=source,
+            name=name,
+            uuid=uuid,
+            version=version,
+            description=description,
+            labels=labels,
+            embedded=embedded,
+            extensions=extensions,
+            **kwargs,
+        )
+
+    @_auto_refresh
+    def register_generic_dataitem(
+        self,
+        kind: str,
+        source: SourcesOrListOfSources,
+        name: str | None = None,
+        uuid: str | None = None,
+        version: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
+        embedded: bool = False,
+        extensions: list[dict] | None = None,
+        **kwargs,
+    ) -> Dataitem:
+        """Register a dataitem of an unknown kind."""
+        return self.crud.dataitem.register(
+            kind=kind,
+            source=source,
+            name=name,
+            uuid=uuid,
+            version=version,
+            description=description,
+            labels=labels,
+            embedded=embedded,
+            extensions=extensions,
+            **kwargs,
+        )
+
+    @_auto_refresh
+    def register_table(
+        self,
+        source: SourcesOrListOfSources,
+        name: str | None = None,
+        uuid: str | None = None,
+        version: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
+        embedded: bool = False,
+        extensions: list[dict] | None = None,
+        **kwargs,
+    ) -> Dataitem:
+        """Register a table dataitem that already exists in a supported store."""
+        return self.crud.dataitem.register_table(
+            source=source,
+            name=name,
+            uuid=uuid,
+            version=version,
+            description=description,
+            labels=labels,
+            embedded=embedded,
+            extensions=extensions,
+            **kwargs,
+        )
+
+    @_auto_refresh
+    def register_croissant(
+        self,
+        source: SourcesOrListOfSources,
+        name: str | None = None,
+        uuid: str | None = None,
+        version: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
+        embedded: bool = False,
+        extensions: list[dict] | None = None,
+        **kwargs,
+    ) -> Dataitem:
+        """Register a Croissant dataitem that already exists in a supported store."""
+        return self.crud.dataitem.register_croissant(
+            source=source,
+            name=name,
+            uuid=uuid,
+            version=version,
+            description=description,
+            labels=labels,
+            embedded=embedded,
+            extensions=extensions,
             **kwargs,
         )
 
@@ -1179,6 +1339,190 @@ class Project(Entity):
             version=version,
             description=description,
             labels=labels,
+            **kwargs,
+        )
+
+    @_auto_refresh
+    def register_model(
+        self,
+        source: SourcesOrListOfSources,
+        name: str | None = None,
+        uuid: str | None = None,
+        version: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
+        embedded: bool = False,
+        extensions: list[dict] | None = None,
+        **kwargs,
+    ) -> Model:
+        """Register a model that already exists in a supported store."""
+        return self.crud.model.register_model(
+            source=source,
+            name=name,
+            uuid=uuid,
+            version=version,
+            description=description,
+            labels=labels,
+            embedded=embedded,
+            extensions=extensions,
+            **kwargs,
+        )
+
+    @_auto_refresh
+    def register_generic_model(
+        self,
+        kind: str,
+        source: SourcesOrListOfSources,
+        name: str | None = None,
+        uuid: str | None = None,
+        version: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
+        embedded: bool = False,
+        extensions: list[dict] | None = None,
+        **kwargs,
+    ) -> Model:
+        """Register a model of an unknown kind."""
+        return self.crud.model.register(
+            kind=kind,
+            source=source,
+            name=name,
+            uuid=uuid,
+            version=version,
+            description=description,
+            labels=labels,
+            embedded=embedded,
+            extensions=extensions,
+            **kwargs,
+        )
+
+    @_auto_refresh
+    def register_mlflow(
+        self,
+        source: SourcesOrListOfSources,
+        name: str | None = None,
+        uuid: str | None = None,
+        version: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
+        embedded: bool = False,
+        extensions: list[dict] | None = None,
+        **kwargs,
+    ) -> Model:
+        """Register a MLflow model that already exists in a supported store."""
+        return self.crud.model.register_mlflow(
+            source=source,
+            name=name,
+            uuid=uuid,
+            version=version,
+            description=description,
+            labels=labels,
+            embedded=embedded,
+            extensions=extensions,
+            **kwargs,
+        )
+
+    @_auto_refresh
+    def register_sklearn(
+        self,
+        source: SourcesOrListOfSources,
+        name: str | None = None,
+        uuid: str | None = None,
+        version: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
+        embedded: bool = False,
+        extensions: list[dict] | None = None,
+        **kwargs,
+    ) -> Model:
+        """Register a scikit-learn model that already exists in a supported store."""
+        return self.crud.model.register_sklearn(
+            source=source,
+            name=name,
+            uuid=uuid,
+            version=version,
+            description=description,
+            labels=labels,
+            embedded=embedded,
+            extensions=extensions,
+            **kwargs,
+        )
+
+    @_auto_refresh
+    def register_huggingface(
+        self,
+        source: SourcesOrListOfSources,
+        name: str | None = None,
+        uuid: str | None = None,
+        version: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
+        embedded: bool = False,
+        extensions: list[dict] | None = None,
+        **kwargs,
+    ) -> Model:
+        """Register a Hugging Face model that already exists in a supported store."""
+        return self.crud.model.register_huggingface(
+            source=source,
+            name=name,
+            uuid=uuid,
+            version=version,
+            description=description,
+            labels=labels,
+            embedded=embedded,
+            extensions=extensions,
+            **kwargs,
+        )
+
+    @_auto_refresh
+    def register_tvm_ir(
+        self,
+        source: SourcesOrListOfSources,
+        name: str | None = None,
+        uuid: str | None = None,
+        version: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
+        embedded: bool = False,
+        extensions: list[dict] | None = None,
+        **kwargs,
+    ) -> Model:
+        """Register a TVM IR model that already exists in a supported store."""
+        return self.crud.model.register_tvm_ir(
+            source=source,
+            name=name,
+            uuid=uuid,
+            version=version,
+            description=description,
+            labels=labels,
+            embedded=embedded,
+            extensions=extensions,
+            **kwargs,
+        )
+
+    @_auto_refresh
+    def register_tvm_so(
+        self,
+        source: SourcesOrListOfSources,
+        name: str | None = None,
+        uuid: str | None = None,
+        version: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
+        embedded: bool = False,
+        extensions: list[dict] | None = None,
+        **kwargs,
+    ) -> Model:
+        """Register a TVM SO model that already exists in a supported store."""
+        return self.crud.model.register_tvm_so(
+            source=source,
+            name=name,
+            uuid=uuid,
+            version=version,
+            description=description,
+            labels=labels,
+            embedded=embedded,
+            extensions=extensions,
             **kwargs,
         )
 

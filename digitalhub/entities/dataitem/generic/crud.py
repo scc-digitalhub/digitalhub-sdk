@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.entities.dataitem._base.crud import log_base_dataitem
+from digitalhub.entities.dataitem._base.crud import log_base_dataitem, register_base_dataitem
 from digitalhub.utils.types import SourcesOrListOfSources
 
 if typing.TYPE_CHECKING:
@@ -40,5 +40,34 @@ def log_generic_dataitem(
         version=version,
         description=description,
         labels=labels,
+        **kwargs,
+    )
+
+
+def register_generic_dataitem(
+    project: str,
+    kind: str,
+    source: SourcesOrListOfSources,
+    name: str | None = None,
+    uuid: str | None = None,
+    version: str | None = None,
+    description: str | None = None,
+    labels: list[str] | None = None,
+    embedded: bool = False,
+    extensions: list[dict] | None = None,
+    **kwargs,
+) -> DataitemGeneric:
+    """Register a dataitem of an unknown kind."""
+    return register_base_dataitem(
+        project=project,
+        source=source,
+        entity_kind=kind,
+        name=name,
+        uuid=uuid,
+        version=version,
+        description=description,
+        labels=labels,
+        embedded=embedded,
+        extensions=extensions,
         **kwargs,
     )

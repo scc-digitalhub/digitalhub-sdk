@@ -101,6 +101,10 @@ class EntityCRUD(typing.Generic[EntityT]):
         """Create and upload an entity."""
         return typing.cast("EntityT", self._call_op(OpType.LOG_GENERIC, **kwargs))
 
+    def register(self, **kwargs) -> EntityT:
+        """Register an entity that already exists in a supported store."""
+        return typing.cast("EntityT", self._call_op(OpType.REGISTER_GENERIC, **kwargs))
+
     def get(self, *args, **kwargs) -> EntityT:
         """Get entity from backend."""
         return typing.cast("EntityT", self._call_op(OpType.GET, *args, **kwargs))
@@ -140,6 +144,10 @@ class EntityCRUDArtifact(EntityCRUD["Artifact"]):
         """Create and upload an artifact entity."""
         return typing.cast("ArtifactArtifact", self._call_op(OpType.LOG_ARTIFACT, **kwargs))
 
+    def register_artifact(self, **kwargs) -> ArtifactArtifact:
+        """Register an artifact entity."""
+        return typing.cast("ArtifactArtifact", self._call_op(OpType.REGISTER_ARTIFACT, **kwargs))
+
 
 class EntityCRUDDataitem(EntityCRUD["Dataitem"]):
     """CRUD manager for dataitem entities."""
@@ -155,6 +163,18 @@ class EntityCRUDDataitem(EntityCRUD["Dataitem"]):
     def log_croissant(self, **kwargs) -> DataitemCroissant:
         """Create and upload a Croissant model entity."""
         return typing.cast("DataitemCroissant", self._call_op(OpType.LOG_CROISSANT, **kwargs))
+
+    def register_dataitem(self, **kwargs) -> DataitemDataitem:
+        """Register a dataitem entity."""
+        return typing.cast("DataitemDataitem", self._call_op(OpType.REGISTER_DATAITEM, **kwargs))
+
+    def register_table(self, **kwargs) -> DataitemTable:
+        """Register a table dataitem entity."""
+        return typing.cast("DataitemTable", self._call_op(OpType.REGISTER_TABLE, **kwargs))
+
+    def register_croissant(self, **kwargs) -> DataitemCroissant:
+        """Register a Croissant dataitem entity."""
+        return typing.cast("DataitemCroissant", self._call_op(OpType.REGISTER_CROISSANT, **kwargs))
 
 
 class EntityCRUDModel(EntityCRUD["Model"]):
@@ -183,6 +203,30 @@ class EntityCRUDModel(EntityCRUD["Model"]):
     def log_tvm_so(self, **kwargs) -> ModelTvmSo:
         """Create and upload a TVM SO model entity."""
         return typing.cast("ModelTvmSo", self._call_op(OpType.LOG_TVM_SO, **kwargs))
+
+    def register_model(self, **kwargs) -> ModelModel:
+        """Register a model entity."""
+        return typing.cast("ModelModel", self._call_op(OpType.REGISTER_MODEL, **kwargs))
+
+    def register_mlflow(self, **kwargs) -> ModelMlflow:
+        """Register a MLflow model entity."""
+        return typing.cast("ModelMlflow", self._call_op(OpType.REGISTER_MLFLOW, **kwargs))
+
+    def register_sklearn(self, **kwargs) -> ModelSklearn:
+        """Register a scikit-learn model entity."""
+        return typing.cast("ModelSklearn", self._call_op(OpType.REGISTER_SKLEARN, **kwargs))
+
+    def register_huggingface(self, **kwargs) -> ModelHuggingface:
+        """Register a Huggingface model entity."""
+        return typing.cast("ModelHuggingface", self._call_op(OpType.REGISTER_HUGGINGFACE, **kwargs))
+
+    def register_tvm_ir(self, **kwargs) -> ModelTvmIr:
+        """Register a TVM IR model entity."""
+        return typing.cast("ModelTvmIr", self._call_op(OpType.REGISTER_TVM_IR, **kwargs))
+
+    def register_tvm_so(self, **kwargs) -> ModelTvmSo:
+        """Register a TVM SO model entity."""
+        return typing.cast("ModelTvmSo", self._call_op(OpType.REGISTER_TVM_SO, **kwargs))
 
 
 class CRUDManager:
