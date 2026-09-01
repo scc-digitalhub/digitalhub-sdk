@@ -8,10 +8,11 @@ import typing
 from pathlib import Path
 
 from digitalhub.entities._base.versioned.entity import VersionedEntity
+from digitalhub.entities._commons.enums import State
 from digitalhub.entities._commons.utils import refresh_decorator
 from digitalhub.entities._processors.processors import context_processor
 from digitalhub.stores.data.api import get_store
-from digitalhub.utils.exceptions import BackendError
+from digitalhub.utils.exceptions import BackendError, EntityError, EntityErrorFileNotFound, StoreError
 from digitalhub.utils.logger.logger import get_logger
 from digitalhub.utils.types import SourcesOrListOfSources
 
@@ -21,6 +22,7 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities._base.metadata.entity import Metadata
 
 logger = get_logger(__name__)
+MAX_FILES_IN_STATUS = 100
 
 
 class MaterialEntity(VersionedEntity):
@@ -144,17 +146,43 @@ class MaterialEntity(VersionedEntity):
         >>> entity.spec.path = "s3://bucket/data/"
         >>> entity.upload("./data")
         """
-        # Get store and upload object
-        store = get_store(self.spec.path)
-        paths = store.upload(
-            source,
-            self.spec.path,
-            keep_dir_structure=keep_dir_structure,
-        )
+        self.status.state = State.UPLOADING.value
+        self.save(update=True)
 
-        # Update files info
-        files_info = store.get_file_info(self.spec.path, paths)
-        self._update_files_info(files_info)
+        store = get_store(self.spec.path)
+        error: Exception | None = None
+        try:
+            paths = store.upload(
+                source,
+                self.spec.path,
+                keep_dir_structure=keep_dir_structure,
+            )
+
+            files_info = store.get_file_info(self.spec.path, paths)
+            self._update_files_info(files_info)
+            uploaded = True
+            msg = None
+        except FileNotFoundError as e:
+            uploaded = False
+            msg = f"Upload failed: {e}. Please verify that the specified source files are correct and exist."
+            exception = EntityErrorFileNotFound
+            error = e
+        except (StoreError, OSError, ValueError, NotImplementedError) as e:
+            uploaded = False
+            msg = f"Upload failed: {e}"
+            exception = EntityError
+            error = e
+
+        self.status.message = msg
+
+        if uploaded:
+            self.status.state = State.READY.value
+            self.save(update=True)
+            return
+
+        self.status.state = State.ERROR.value
+        self.save(update=True)
+        raise exception(msg) from error
 
     ##############################
     #  Public Helpers
@@ -215,6 +243,9 @@ class MaterialEntity(VersionedEntity):
         """
         if files_info is None:
             return
+        if len(files_info) <= MAX_FILES_IN_STATUS:
+            self.status.files = files_info
+            return
         self._log_files_info(files_info)
 
     def _log_files_info(self, files_info: list[dict]) -> None:
@@ -229,64 +260,14 @@ class MaterialEntity(VersionedEntity):
         if not files_info:
             return
 
-        if not self._has_files_info():
-            self.status.files = []
-            self.save(update=True)
-            current_files = []
-            migrate_status_files = False
-        else:
-            if self.status.files:
-                self.refresh()
-            current_files = self.files
-            migrate_status_files = bool(self.status.files)
-
-        updated_files = self._merge_files_info(current_files, files_info)
+        self.status.files = []
+        self.save(update=True)
         context_processor.update_files_info(
             self.project,
             self.ENTITY_TYPE,
             self.id,
-            updated_files,
+            files_info,
         )
-
-        if migrate_status_files:
-            self.status.files = []
-            self.save(update=True)
-
-    @staticmethod
-    def _merge_files_info(current_files: list[dict], new_files: list[dict]) -> list[dict]:
-        """
-        Merge files info by path, keeping the latest value for duplicates.
-
-        Parameters
-        ----------
-        current_files : list[dict]
-            Current files info.
-        new_files : list[dict]
-            New files info to merge.
-
-        Returns
-        -------
-        list[dict]
-            Merged files info.
-        """
-        merged_files = list(current_files)
-        path_index = {
-            file_info["path"]: index
-            for index, file_info in enumerate(merged_files)
-            if file_info.get("path") is not None
-        }
-
-        for file_info in new_files:
-            path = file_info.get("path")
-            if path is None or path not in path_index:
-                if path is not None:
-                    path_index[path] = len(merged_files)
-                merged_files.append(file_info)
-                continue
-
-            merged_files[path_index[path]] = file_info
-
-        return merged_files
 
     def _get_files_info(self) -> list[dict]:
         """
