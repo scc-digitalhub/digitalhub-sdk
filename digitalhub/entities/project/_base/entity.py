@@ -62,7 +62,7 @@ class Project(Entity):
     """
 
     ENTITY_TYPE = EntityTypes.PROJECT.value
-    _obj_attr = (*Entity._obj_attr, "id", "name")
+    _obj_attr = (*Entity._obj_attr, "id", "name", "extensions")
     _CONTEXT_ENTITY_SECTIONS = (
         f"{EntityTypes.ARTIFACT.value}s",
         f"{EntityTypes.DATAITEM.value}s",
@@ -80,11 +80,13 @@ class Project(Entity):
         metadata: Metadata,
         spec: ProjectSpec,
         status: ProjectStatus,
+        extensions: list[dict] | None = None,
         user: str | None = None,
     ) -> None:
         super().__init__(kind, metadata, spec, status, user)
         self.spec: ProjectSpec
         self.status: ProjectStatus
+        self.extensions = extensions if extensions is not None else []
 
         self.id = name
         self.name = name

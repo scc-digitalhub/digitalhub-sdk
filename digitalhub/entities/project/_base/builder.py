@@ -31,6 +31,7 @@ class ProjectProjectBuilder(EntityBuilder):
         labels: list[str] | None = None,
         config: dict | None = None,
         context: str | None = None,
+        extensions: list[dict] | None = None,
         **kwargs,
     ) -> Project:
         """
@@ -50,6 +51,8 @@ class ProjectProjectBuilder(EntityBuilder):
             DHCore environment configuration.
         context : str
             The context local folder of the project.
+        extensions : list[dict]
+            List of extensions to apply.
         **kwargs : dict
             Spec keyword arguments.
 
@@ -77,6 +80,7 @@ class ProjectProjectBuilder(EntityBuilder):
             metadata=metadata,
             spec=spec,
             status=status,
+            extensions=extensions,
         )
 
     def from_dict(self, obj: dict) -> Project:
@@ -115,6 +119,7 @@ class ProjectProjectBuilder(EntityBuilder):
         metadata = self.build_metadata(**obj.get("metadata", {}))
         spec = self.build_spec(**obj.get("spec", {}))
         status = self.build_status(**obj.get("status", {}))
+        extensions = obj.get("extensions", [])
         user = obj.get("user")
         return {
             "name": name,
@@ -122,5 +127,6 @@ class ProjectProjectBuilder(EntityBuilder):
             "metadata": metadata,
             "spec": spec,
             "status": status,
+            "extensions": extensions,
             "user": user,
         }

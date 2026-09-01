@@ -47,7 +47,7 @@ def test_serialization_attributes_are_immutable_class_contracts() -> None:
 
     assert Entity._obj_attr == entity_attributes
     assert ContextEntity._obj_attr == context_attributes
-    assert Project._obj_attr == (*entity_attributes, "id", "name")
+    assert Project._obj_attr == (*entity_attributes, "id", "name", "extensions")
 
     for entity_class in (Artifact, ArtifactGeneric, Dataitem, Model, ModelGeneric):
         assert entity_class._obj_attr == material_attributes

@@ -26,6 +26,7 @@ def new_project(
     config: dict | None = None,
     source: str | None = None,
     setup_kwargs: dict | None = None,
+    extensions: list[dict] | None = None,
 ) -> Project:
     """
     Create a new object.
@@ -44,6 +45,8 @@ def new_project(
         The context local folder of the project.
     setup_kwargs : dict
         Setup keyword arguments passed to setup_project() function.
+    extensions : list[dict]
+        List of extensions to apply.
 
     Returns
     -------
@@ -63,6 +66,7 @@ def new_project(
         labels=labels,
         config=config,
         source=source,
+        extensions=extensions,
     )
     return setup_project(obj, setup_kwargs)
 
@@ -177,6 +181,7 @@ def get_or_create_project(
     config: dict | None = None,
     context: str | None = None,
     setup_kwargs: dict | None = None,
+    extensions: list[dict] | None = None,
 ) -> Project:
     """
     Try to get project. If not exists, create it.
@@ -191,6 +196,8 @@ def get_or_create_project(
         Folder where the project will saves its context locally.
     setup_kwargs : dict
         Setup keyword arguments passed to setup_project() function.
+    extensions : list[dict]
+        List of extensions to apply when creating the project.
 
     Returns
     -------
@@ -210,6 +217,7 @@ def get_or_create_project(
             config=config,
             setup_kwargs=setup_kwargs,
             source=context,
+            extensions=extensions,
         )
 
 
