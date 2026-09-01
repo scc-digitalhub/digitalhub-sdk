@@ -21,6 +21,7 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities._mixin.material.status import MaterialStatus
 
 logger = get_logger(__name__)
+MAX_FILES_IN_STATUS = 100
 
 
 class MaterialMixin:
@@ -39,6 +40,13 @@ class MaterialMixin:
 
     @refresh_decorator
     def as_file(self) -> list[str]:
+        """Download the entity's files to a temporary local directory.
+
+        Returns
+        -------
+        list[str]
+            Paths to the downloaded files.
+        """
         store = get_store(self.spec.path)
         dst = store._build_temp()
         return store.download(self.spec.path, dst=dst)
@@ -49,6 +57,21 @@ class MaterialMixin:
         destination: str | None = None,
         overwrite: bool = False,
     ) -> str:
+        """Download the entity's files to a local destination.
+
+        Parameters
+        ----------
+        destination : str, optional
+            Local destination directory. If omitted, use the project context
+            directory for this entity type.
+        overwrite : bool, default=False
+            Whether to overwrite existing files.
+
+        Returns
+        -------
+        str
+            Destination path returned by the store.
+        """
         store = get_store(self.spec.path)
 
         if destination is None:
@@ -64,6 +87,23 @@ class MaterialMixin:
         source: SourcesOrListOfSources,
         keep_dir_structure: bool = False,
     ) -> None:
+        """Upload local files to the entity's storage path.
+
+        Parameters
+        ----------
+        source : SourcesOrListOfSources
+            Local file or files to upload.
+        keep_dir_structure : bool, default=False
+            Whether to preserve the source directory structure.
+
+        Raises
+        ------
+        EntityErrorFileNotFound
+            If a source file does not exist.
+        EntityError
+            If the upload fails for another supported storage or filesystem
+            error.
+        """
         self.status.state = State.UPLOADING.value
         self.save(update=True)
 
@@ -103,6 +143,13 @@ class MaterialMixin:
 
     @property
     def files(self) -> list[dict]:
+        """Return metadata for files associated with the entity.
+
+        Returns
+        -------
+        list[dict]
+            File metadata from the files API or the entity status.
+        """
         if self._has_files_info():
             files_info = self._get_files_info()
             if files_info:
@@ -114,11 +161,11 @@ class MaterialMixin:
     def _has_files_info(self) -> bool:
         return self.status.files is not None
 
-    def get_file_paths(self) -> list[str]:
-        return [f.get("path") for f in self.files]
-
     def _update_files_info(self, files_info: list[dict] | None = None) -> None:
         if files_info is None:
+            return
+        if len(files_info) <= MAX_FILES_IN_STATUS:
+            self.status.files = files_info
             return
         self._log_files_info(files_info)
 
@@ -126,49 +173,14 @@ class MaterialMixin:
         if not files_info:
             return
 
-        if not self._has_files_info():
-            self.status.files = []
-            self.save(update=True)
-            current_files = []
-            migrate_status_files = False
-        else:
-            if self.status.files:
-                self.refresh()
-            current_files = self.files
-            migrate_status_files = bool(self.status.files)
-
-        updated_files = self._merge_files_info(current_files, files_info)
+        self.status.files = []
+        self.save(update=True)
         material_processor.update_files_info(
             self.project,
             self.ENTITY_TYPE,
             self.id,
-            updated_files,
+            files_info,
         )
-
-        if migrate_status_files:
-            self.status.files = []
-            self.save(update=True)
-
-    @staticmethod
-    def _merge_files_info(current_files: list[dict], new_files: list[dict]) -> list[dict]:
-        merged_files = list(current_files)
-        path_index = {
-            file_info["path"]: index
-            for index, file_info in enumerate(merged_files)
-            if file_info.get("path") is not None
-        }
-
-        for file_info in new_files:
-            path = file_info.get("path")
-            if path is None or path not in path_index:
-                if path is not None:
-                    path_index[path] = len(merged_files)
-                merged_files.append(file_info)
-                continue
-
-            merged_files[path_index[path]] = file_info
-
-        return merged_files
 
     def _get_files_info(self) -> list[dict]:
         try:
