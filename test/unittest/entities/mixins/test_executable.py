@@ -1,7 +1,10 @@
-import importlib
 from unittest.mock import Mock
 
+import pytest
+
+import digitalhub.entities._mixin.executable.task as task_module
 from digitalhub.entities._mixin.executable.mixin import ExecutableMixin
+from digitalhub.utils.exceptions import EntityError
 
 
 class StubExecutable(ExecutableMixin):
@@ -27,23 +30,37 @@ def test_list_task_does_not_forward_project_twice() -> None:
     assert executable._list_tasks.call_args.kwargs["q"] == "query"
 
 
-def test_raise_if_exists_checks_resolved_task_kind(monkeypatch) -> None:
+def test_new_task_builds_and_caches_task_when_action_is_missing(monkeypatch) -> None:
     executable = StubExecutable()
-    executable._check_task_in_backend = Mock(return_value=False)
-    method_module = importlib.import_module(executable._raise_if_exists.__module__)
-    monkeypatch.setattr(method_module.entity_factory, "get_task_kind_from_action", Mock(return_value="task-kind"))
+    task = Mock()
+    list_tasks = Mock(return_value=[])
+    build_entity = Mock(return_value=task)
+    monkeypatch.setattr(task_module.crud_processor, "list_context_entities", list_tasks)
+    monkeypatch.setattr(task_module.entity_factory, "get_task_kind_from_action", Mock(return_value="task-kind"))
+    monkeypatch.setattr(task_module.entity_factory, "build_entity_from_params", build_entity)
 
-    executable._raise_if_exists("build")
+    result = executable.new_task("build", name="task")
 
-    executable._check_task_in_backend.assert_called_once_with("task-kind")
+    assert result is task
+    assert executable._task_store()["build"] is task
+    task.save.assert_called_once_with()
+    build_entity.assert_called_once_with(
+        name="task",
+        project="project",
+        function="function-kind://project/function-name:function-id",
+        kind="task-kind",
+    )
 
 
-def test_raise_if_not_exists_checks_resolved_task_kind(monkeypatch) -> None:
+def test_new_task_rejects_existing_action(monkeypatch) -> None:
     executable = StubExecutable()
-    executable._check_task_in_backend = Mock(return_value=True)
-    method_module = importlib.import_module(executable._raise_if_not_exists.__module__)
-    monkeypatch.setattr(method_module.entity_factory, "get_task_kind_from_action", Mock(return_value="task-kind"))
+    list_tasks = Mock(return_value=[Mock()])
+    build_entity = Mock()
+    monkeypatch.setattr(task_module.crud_processor, "list_context_entities", list_tasks)
+    monkeypatch.setattr(task_module.entity_factory, "get_task_kind_from_action", Mock(return_value="task-kind"))
+    monkeypatch.setattr(task_module.entity_factory, "build_entity_from_params", build_entity)
 
-    executable._raise_if_not_exists("build")
+    with pytest.raises(EntityError, match="Task 'build' already exists"):
+        executable.new_task("build")
 
-    executable._check_task_in_backend.assert_called_once_with("task-kind")
+    build_entity.assert_not_called()

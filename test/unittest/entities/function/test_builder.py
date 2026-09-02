@@ -28,8 +28,27 @@ def test_entity_builder_rejects_incomplete_runtime_configuration() -> None:
 
 
 def test_entity_builder_accepts_complete_runtime_configuration() -> None:
-    ValidRuntimeBuilder()
+    builder = ValidRuntimeBuilder()
+
+    assert builder.get_executable_kind() == "function-valid"
+    assert builder.get_action_from_task_kind("task-valid") == "valid"
+    assert builder.get_task_kind_from_action("valid") == "task-valid"
+    assert builder.get_run_kind_from_action("valid") == "run-valid"
 
 
-def test_generic_builder_does_not_require_runtime_configuration() -> None:
-    FunctionGenericBuilder()
+def test_function_generic_builder_builds_entity_without_runtime_configuration() -> None:
+    function = FunctionGenericBuilder().build(
+        project="my-project",
+        name="handler",
+        kind="python",
+        uuid="function-id",
+        code_src="function.py",
+        handler="handler",
+    )
+
+    assert function.project == "my-project"
+    assert function.name == "handler"
+    assert function.id == "function-id"
+    assert function.kind == "python"
+    assert function.spec.code_src == "function.py"
+    assert function.spec.handler == "handler"

@@ -343,6 +343,27 @@ def test_log_dataitem_specialized_delegates_to_implementation(crud_module, log_n
     )
 
 
+def test_update_dataitem_delegates_entity_fields(monkeypatch) -> None:
+    entity = SimpleNamespace(
+        project="my-project",
+        ENTITY_TYPE=EntityTypes.DATAITEM.value,
+        id="dataitem-id",
+        to_dict=Mock(return_value={"metadata": {"name": "data"}}),
+    )
+    update_entity = Mock(return_value="dataitem")
+    monkeypatch.setattr(context_crud.crud_processor, "update_context_entity", update_entity)
+
+    result = context_crud.update_dataitem(entity)
+
+    assert result == "dataitem"
+    update_entity.assert_called_once_with(
+        project="my-project",
+        entity_type=EntityTypes.DATAITEM.value,
+        entity_id="dataitem-id",
+        entity_dict={"metadata": {"name": "data"}},
+    )
+
+
 @pytest.mark.parametrize(
     ("function_name", "processor_name", "kwargs", "expected_kwargs"),
     [

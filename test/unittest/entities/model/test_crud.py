@@ -1,3 +1,4 @@
+from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
@@ -160,51 +161,39 @@ def test_new_model_delegates_to_context_processor(monkeypatch) -> None:
     )
 
 
-def test_log_base_model_validates_source_and_builds_storage_kwargs(monkeypatch) -> None:
-    eval_source = Mock()
-    build_name = Mock(return_value="inferred-model")
-    build_kwargs = Mock(return_value={"path": "s3://bucket/model.bin", "format": "bin"})
-    log_entity = Mock(return_value="model")
-    monkeypatch.setattr(base_crud, "eval_local_source", eval_source)
-    monkeypatch.setattr(base_crud, "build_log_name_from_source", build_name)
-    monkeypatch.setattr(base_crud, "build_log_kwargs", build_kwargs)
-    monkeypatch.setattr(base_crud.material_processor, "log_material_entity", log_entity)
+def test_log_base_model_builds_payload_for_local_source(monkeypatch, tmp_path) -> None:
+    source = tmp_path / "model.bin"
+    source.write_bytes(b"model")
+    captured = {}
 
-    source = ["./model.bin"]
+    def log_material_entity(**kwargs):
+        captured.update(kwargs)
+        return "logged-model"
+
+    monkeypatch.setattr(base_crud.material_processor, "log_material_entity", log_material_entity)
+
     result = base_crud.log_base_model(
         project="my-project",
         kind="custom-model",
-        source=source,
-        version="1",
-        description="A model",
-        labels=["production"],
-        format="bin",
-    )
-
-    assert result == "model"
-    eval_source.assert_called_once_with(source)
-    build_name.assert_called_once_with(source)
-    build_kwargs.assert_called_once_with(
-        "my-project",
-        "inferred-model",
-        entity_type=EntityTypes.MODEL.value,
-        source=source,
-        path=None,
-        format="bin",
-    )
-    log_entity.assert_called_once_with(
-        source=source,
-        project="my-project",
-        name="inferred-model",
-        kind="custom-model",
-        drop_existing=False,
-        entity_type=EntityTypes.MODEL.value,
-        version="1",
-        description="A model",
-        labels=["production"],
+        source=str(source),
         path="s3://bucket/model.bin",
         format="bin",
     )
+
+    assert result == "logged-model"
+    assert captured == {
+        "source": str(source),
+        "project": "my-project",
+        "name": "model",
+        "kind": "custom-model",
+        "drop_existing": False,
+        "entity_type": EntityTypes.MODEL.value,
+        "version": None,
+        "description": None,
+        "labels": None,
+        "format": "bin",
+        "path": "s3://bucket/model.bin",
+    }
 
 
 def test_log_generic_model_delegates_to_base(monkeypatch) -> None:
@@ -366,3 +355,24 @@ def test_model_read_operations_delegate_to_processor(
         processor.assert_called_once_with(expected_kwargs["file"])
     else:
         processor.assert_called_once_with(**expected_kwargs)
+
+
+def test_update_model_delegates_entity_fields(monkeypatch) -> None:
+    entity = SimpleNamespace(
+        project="my-project",
+        ENTITY_TYPE=EntityTypes.MODEL.value,
+        id="model-id",
+        to_dict=Mock(return_value={"metadata": {"name": "model"}}),
+    )
+    update_entity = Mock(return_value="model")
+    monkeypatch.setattr(context_crud.crud_processor, "update_context_entity", update_entity)
+
+    result = context_crud.update_model(entity)
+
+    assert result == "model"
+    update_entity.assert_called_once_with(
+        project="my-project",
+        entity_type=EntityTypes.MODEL.value,
+        entity_id="model-id",
+        entity_dict={"metadata": {"name": "model"}},
+    )

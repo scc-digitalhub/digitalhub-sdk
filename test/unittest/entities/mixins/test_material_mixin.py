@@ -20,39 +20,6 @@ class MaterialEntityForTest(MaterialMixin):
         self.refresh = Mock()
 
 
-@pytest.mark.parametrize("file_count", [0, 100])
-def test_update_files_info_stores_small_file_sets_on_status(file_count: int, monkeypatch) -> None:
-    entity = MaterialEntityForTest()
-    files_info = [{"path": f"file-{index}"} for index in range(file_count)]
-    update_files_info = Mock()
-    monkeypatch.setattr(material_mixin.material_processor, "update_files_info", update_files_info)
-
-    entity._update_files_info(files_info)
-
-    assert entity.status.files == files_info
-    update_files_info.assert_not_called()
-
-
-@pytest.mark.parametrize("initial_files", [None, [{"path": "small-file"}]])
-def test_update_files_info_uses_files_api_without_migrating_status_files(initial_files, monkeypatch) -> None:
-    entity = MaterialEntityForTest()
-    entity.status.files = initial_files
-    files_info = [{"path": f"file-{index}"} for index in range(101)]
-    update_files_info = Mock()
-    monkeypatch.setattr(material_mixin.material_processor, "update_files_info", update_files_info)
-
-    entity._update_files_info(files_info)
-
-    assert entity.status.files == []
-    entity.save.assert_called_once_with(update=True)
-    update_files_info.assert_called_once_with(
-        "my-project",
-        "artifact",
-        "entity-id",
-        files_info,
-    )
-
-
 def test_init_material_extensions_defaults_to_empty_list() -> None:
     entity = MaterialEntityForTest()
 
@@ -105,7 +72,6 @@ def test_download_uses_context_or_explicit_destination(
 def test_upload_sets_ready_state_and_logs_file_info(monkeypatch) -> None:
     entity = MaterialEntityForTest()
     entity.spec = SimpleNamespace(path="store://material")
-    entity._update_files_info = Mock()
     store = Mock()
     store.upload.return_value = ["file.txt"]
     store.get_file_info.return_value = [{"path": "file.txt"}]
@@ -115,6 +81,7 @@ def test_upload_sets_ready_state_and_logs_file_info(monkeypatch) -> None:
 
     assert entity.status.state == "READY"
     assert entity.status.message is None
+    assert entity.status.files == [{"path": "file.txt"}]
     assert entity.save.call_count == 2
     entity.save.assert_any_call(update=True)
     store.upload.assert_called_once_with(
@@ -123,7 +90,29 @@ def test_upload_sets_ready_state_and_logs_file_info(monkeypatch) -> None:
         keep_dir_structure=True,
     )
     store.get_file_info.assert_called_once_with("store://material", ["file.txt"])
-    entity._update_files_info.assert_called_once_with([{"path": "file.txt"}])
+
+
+def test_upload_stores_large_file_metadata_in_backend(monkeypatch) -> None:
+    entity = MaterialEntityForTest()
+    entity.spec = SimpleNamespace(path="store://material")
+    files_info = [{"path": f"file-{index}"} for index in range(101)]
+    store = Mock()
+    store.upload.return_value = [file_info["path"] for file_info in files_info]
+    store.get_file_info.return_value = files_info
+    update_files_info = Mock()
+    monkeypatch.setattr(material_mixin, "get_store", Mock(return_value=store))
+    monkeypatch.setattr(material_mixin.material_processor, "update_files_info", update_files_info)
+
+    entity.upload("/source")
+
+    assert entity.status.state == "READY"
+    assert entity.status.files == []
+    update_files_info.assert_called_once_with(
+        "my-project",
+        "artifact",
+        "entity-id",
+        files_info,
+    )
 
 
 def test_upload_converts_missing_source_to_entity_error(monkeypatch) -> None:

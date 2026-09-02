@@ -28,8 +28,25 @@ def test_workflow_builder_rejects_incomplete_runtime_configuration() -> None:
 
 
 def test_workflow_builder_accepts_complete_runtime_configuration() -> None:
-    ValidRuntimeBuilder()
+    builder = ValidRuntimeBuilder()
+
+    assert builder.get_executable_kind() == "workflow-valid"
+    assert builder.get_action_from_task_kind("task-valid") == "valid"
+    assert builder.get_task_kind_from_action("valid") == "task-valid"
+    assert builder.get_run_kind_from_action("valid") == "run-valid"
 
 
-def test_workflow_generic_builder_does_not_require_runtime_configuration() -> None:
-    WorkflowGenericBuilder()
+def test_workflow_generic_builder_builds_entity_without_runtime_configuration() -> None:
+    workflow = WorkflowGenericBuilder().build(
+        project="my-project",
+        name="workflow",
+        kind="python-workflow",
+        uuid="workflow-id",
+        code_src="workflow.py",
+    )
+
+    assert workflow.project == "my-project"
+    assert workflow.name == "workflow"
+    assert workflow.id == "workflow-id"
+    assert workflow.kind == "python-workflow"
+    assert workflow.spec.code_src == "workflow.py"

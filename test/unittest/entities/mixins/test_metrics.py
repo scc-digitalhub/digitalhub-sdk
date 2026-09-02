@@ -64,15 +64,22 @@ def test_log_metric_initializes_status_and_updates_backend(monkeypatch) -> None:
     entity.status = SimpleNamespace(metrics=None)
     entity.save = Mock()
     entity._init_metrics_state()
-    entity._read_metrics = Mock(return_value={})
-    update_metric = Mock()
+    backend_metrics = {}
+
+    def read_metrics(**kwargs):
+        return backend_metrics.copy()
+
+    def update_metric(project, entity_type, entity_id, key, value):
+        backend_metrics[key] = value
+
+    monkeypatch.setattr(metrics_mixin.metrics_processor, "read_metrics", read_metrics)
     monkeypatch.setattr(metrics_mixin.metrics_processor, "update_metric", update_metric)
 
     entity.log_metric("accuracy", 0.9)
 
     assert entity.status.metrics == {}
+    assert entity.metrics == {"accuracy": [0.9]}
     entity.save.assert_called_once_with(update=True)
-    update_metric.assert_called_once_with("project", "artifact", "entity-id", "accuracy", [0.9])
 
 
 def test_log_metric_appends_to_existing_backend_metric(monkeypatch) -> None:
@@ -82,10 +89,17 @@ def test_log_metric_appends_to_existing_backend_metric(monkeypatch) -> None:
     entity.id = "entity-id"
     entity.status = SimpleNamespace(metrics=None)
     entity._init_metrics_state()
-    entity._read_metrics = Mock(return_value={"accuracy": [0.8]})
-    update_metric = Mock()
+    backend_metrics = {"accuracy": [0.8]}
+
+    def read_metrics(**kwargs):
+        return backend_metrics.copy()
+
+    def update_metric(project, entity_type, entity_id, key, value):
+        backend_metrics[key] = value
+
+    monkeypatch.setattr(metrics_mixin.metrics_processor, "read_metrics", read_metrics)
     monkeypatch.setattr(metrics_mixin.metrics_processor, "update_metric", update_metric)
 
     entity.log_metric("accuracy", 0.9)
 
-    update_metric.assert_called_once_with("project", "artifact", "entity-id", "accuracy", [0.8, 0.9])
+    assert entity.metrics == {"accuracy": [0.8, 0.9]}

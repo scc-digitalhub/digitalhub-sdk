@@ -28,8 +28,25 @@ def test_task_builder_rejects_incomplete_runtime_configuration() -> None:
 
 
 def test_task_builder_accepts_complete_runtime_configuration() -> None:
-    ValidRuntimeBuilder()
+    builder = ValidRuntimeBuilder()
+
+    assert builder.get_executable_kind() == "function-valid"
+    assert builder.get_action_from_task_kind("task-valid") == "valid"
+    assert builder.get_task_kind_from_action("valid") == "task-valid"
+    assert builder.get_run_kind_from_action("valid") == "run-valid"
 
 
-def test_task_generic_builder_does_not_require_runtime_configuration() -> None:
-    TaskGenericBuilder()
+def test_task_generic_builder_builds_entity_without_runtime_configuration() -> None:
+    task = TaskGenericBuilder().build(
+        project="my-project",
+        kind="python-task",
+        uuid="task-id",
+        labels=["batch"],
+        function="function-key",
+    )
+
+    assert task.project == "my-project"
+    assert task.id == "task-id"
+    assert task.kind == "python-task"
+    assert task.metadata.labels == ["batch"]
+    assert task.spec.function == "function-key"

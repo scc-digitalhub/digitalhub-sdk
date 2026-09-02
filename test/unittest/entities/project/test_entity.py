@@ -789,32 +789,6 @@ def test_import_entities_delegate_to_crud_manager(method_name: str, manager_name
 @pytest.mark.parametrize(
     ("method_name", "manager_name"),
     [
-        ("load_artifact", "artifact"),
-        ("load_dataitem", "dataitem"),
-        ("load_model", "model"),
-        ("load_function", "function"),
-        ("load_workflow", "workflow"),
-        ("load_task", "task"),
-        ("load_run", "run"),
-        ("load_trigger", "trigger"),
-        ("load_secret", "secret"),
-    ],
-)
-def test_load_entity_with_manager_mock_delegates_to_crud_manager(method_name: str, manager_name: str) -> None:
-    loaded = object()
-    project, manager = _project_with_manager(manager_name)
-    manager.load.return_value = loaded
-
-    result = getattr(project, method_name)("entity.yaml")
-
-    assert result is loaded
-    manager.load.assert_called_once_with("entity.yaml")
-    project.refresh.assert_called_once_with()
-
-
-@pytest.mark.parametrize(
-    ("method_name", "manager_name"),
-    [
         ("update_artifact", "artifact"),
         ("update_dataitem", "dataitem"),
         ("update_model", "model"),
@@ -968,13 +942,20 @@ def test_refresh_reads_project_and_updates_attributes(monkeypatch) -> None:
     project._update_attributes.assert_called_once_with(refreshed)
 
 
-def test_export_refreshes_and_writes_project(monkeypatch, tmp_path) -> None:
+def test_export_writes_references_for_non_embedded_entities(monkeypatch, tmp_path) -> None:
     project = object.__new__(Project)
     project.name = "project"
     project.ENTITY_TYPE = "project"
     project.spec = SimpleNamespace(source=str(tmp_path))
-    project._refresh_to_dict = Mock(return_value={"spec": {}})
-    project._export_not_embedded = Mock(return_value={"spec": {}})
+    project._refresh_to_dict = Mock(
+        return_value={"spec": {"artifacts": [{"key": "artifact-key", "metadata": {}}]}}
+    )
+    artifact = SimpleNamespace(export=Mock(return_value="artifact.yaml"))
+    read_entity = Mock(return_value=artifact)
+    monkeypatch.setattr(
+        "digitalhub.entities.project._base.entity.crud_processor.read_context_entity",
+        read_entity,
+    )
     write_yaml = Mock()
     monkeypatch.setattr("digitalhub.entities.project._base.entity.write_yaml", write_yaml)
 
@@ -983,8 +964,57 @@ def test_export_refreshes_and_writes_project(monkeypatch, tmp_path) -> None:
     expected_path = tmp_path / "projects-project.yaml"
     assert result == str(expected_path)
     project._refresh_to_dict.assert_called_once_with()
-    project._export_not_embedded.assert_called_once_with({"spec": {}})
-    write_yaml.assert_called_once_with(expected_path, {"spec": {}})
+    read_entity.assert_called_once_with("artifact-key")
+    artifact.export.assert_called_once_with()
+    write_yaml.assert_called_once_with(
+        expected_path,
+        {"spec": {"artifacts": [{"key": "artifact-key", "metadata": {"ref": "artifact.yaml"}}]}},
+    )
+
+
+def test_export_skips_embedded_entities(monkeypatch, tmp_path) -> None:
+    project = object.__new__(Project)
+    project.name = "project"
+    project.ENTITY_TYPE = "project"
+    project.spec = SimpleNamespace(source=str(tmp_path))
+    project._refresh_to_dict = Mock(
+        return_value={
+            "spec": {
+                "artifacts": [
+                    {
+                        "key": "artifact-key",
+                        "metadata": {"embedded": True},
+                        "spec": {"path": "artifact.bin"},
+                    }
+                ]
+            }
+        }
+    )
+    read_entity = Mock()
+    monkeypatch.setattr(
+        "digitalhub.entities.project._base.entity.crud_processor.read_context_entity",
+        read_entity,
+    )
+    write_yaml = Mock()
+    monkeypatch.setattr("digitalhub.entities.project._base.entity.write_yaml", write_yaml)
+
+    project.export()
+
+    read_entity.assert_not_called()
+    write_yaml.assert_called_once_with(
+        tmp_path / "projects-project.yaml",
+        {
+            "spec": {
+                "artifacts": [
+                    {
+                        "key": "artifact-key",
+                        "metadata": {"embedded": True},
+                        "spec": {"path": "artifact.bin"},
+                    }
+                ]
+            }
+        },
+    )
 
 
 def test_search_entity_delegates_to_search_processor(monkeypatch) -> None:

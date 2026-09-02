@@ -3,7 +3,9 @@ from unittest.mock import Mock
 
 import digitalhub.entities._processors.context.run as run_module
 from digitalhub.entities._processors.context.run import ContextEntityRunProcessor
+from digitalhub.entities.log._base.entity import Log
 from digitalhub.stores.client.common.enums import ApiCategories, BackendOperations
+from digitalhub.utils.generic_utils import encode_string
 
 
 def _context() -> tuple[SimpleNamespace, Mock, object]:
@@ -16,12 +18,23 @@ def _context() -> tuple[SimpleNamespace, Mock, object]:
 
 def test_read_run_logs_builds_logs_and_decodes_content(monkeypatch) -> None:
     context, client, api = _context()
-    logs = [{"key": "log-key", "content": "encoded-content"}, {"key": "other-key"}]
+    logs = [
+        {
+            "project": "project",
+            "name": "run-log",
+            "id": "log-id",
+            "spec": {"run": "run-id"},
+            "content": encode_string("run finished"),
+        },
+        {
+            "project": "project",
+            "name": "other-log",
+            "id": "other-id",
+            "spec": {"run": "run-id"},
+        },
+    ]
     client.read_object.return_value = logs
-    log_entities = [Mock(), Mock()]
-    build_entity = Mock(side_effect=log_entities)
     monkeypatch.setattr(run_module, "get_context", Mock(return_value=context))
-    monkeypatch.setattr(run_module.entity_factory, "build_entity_from_dict", build_entity)
 
     result = ContextEntityRunProcessor().read_run_logs(
         "project",
@@ -30,7 +43,9 @@ def test_read_run_logs_builds_logs_and_decodes_content(monkeypatch) -> None:
         state="READY",
     )
 
-    assert result == log_entities
+    assert all(isinstance(log, Log) for log in result)
+    assert [log.kind for log in result] == ["log", "log"]
+    assert [log.text for log in result] == ["run finished", None]
     client.build_api.assert_called_once_with(
         ApiCategories.CONTEXT.value,
         BackendOperations.LOGS.value,
@@ -39,11 +54,6 @@ def test_read_run_logs_builds_logs_and_decodes_content(monkeypatch) -> None:
         entity_id="run-id",
     )
     client.read_object.assert_called_once_with(api, state="READY")
-    build_entity.assert_any_call({"key": "log-key", "kind": "log"})
-    build_entity.assert_any_call({"key": "other-key", "kind": "log"})
-    log_entities[0].set_content.assert_called_once_with("encoded-content")
-    log_entities[1].set_content.assert_called_once_with(None)
-    assert logs == [{"key": "log-key", "kind": "log"}, {"key": "other-key", "kind": "log"}]
 
 
 def test_stop_entity_creates_backend_operation(monkeypatch) -> None:

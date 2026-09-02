@@ -46,17 +46,17 @@ class Log(ContextEntity, VersionedMixin):
     #  Log methods
     ##############################
 
-    def set_content(self, content: str) -> None:
+    def set_content(self, content: str | None) -> None:
         """
         Set log content.
 
         Parameters
         ----------
-        content : str
+        content : str | None
             Log content.
         """
         self._content = content
-        self._text = decode_base64_string(content)
+        self._text = decode_base64_string(content) if content is not None else None
 
     @property
     def text(self) -> str | None:

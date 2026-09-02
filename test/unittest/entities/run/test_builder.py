@@ -28,8 +28,28 @@ def test_run_builder_rejects_incomplete_runtime_configuration() -> None:
 
 
 def test_run_builder_accepts_complete_runtime_configuration() -> None:
-    ValidRuntimeBuilder()
+    builder = ValidRuntimeBuilder()
+
+    assert builder.get_executable_kind() == "function-valid"
+    assert builder.get_action_from_task_kind("task-valid") == "valid"
+    assert builder.get_task_kind_from_action("valid") == "task-valid"
+    assert builder.get_run_kind_from_action("valid") == "run-valid"
 
 
-def test_run_generic_builder_does_not_require_runtime_configuration() -> None:
-    RunGenericBuilder()
+def test_run_generic_builder_builds_entity_without_runtime_configuration() -> None:
+    run = RunGenericBuilder().build(
+        project="my-project",
+        kind="python-run",
+        name="run-name",
+        uuid="run-id",
+        task="task-id",
+        local_execution=True,
+        extensions=[{"key": "value"}],
+    )
+
+    assert run.project == "my-project"
+    assert run.id == "run-id"
+    assert run.kind == "python-run"
+    assert run.spec.task == "task-id"
+    assert run.spec.local_execution is True
+    assert run.extensions == [{"key": "value"}]
