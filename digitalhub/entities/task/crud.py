@@ -264,8 +264,6 @@ def delete_task(
         Entity ID.
     cascade : bool
         Cascade delete.
-    **kwargs : dict
-        Parameters to pass to the API call.
 
     Returns
     -------
