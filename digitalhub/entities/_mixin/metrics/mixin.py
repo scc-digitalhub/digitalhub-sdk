@@ -107,6 +107,48 @@ class MetricsMixin:
         A metric is named by a key and value (single number or list of numbers).
         The metric by default is put in a list or appended to an existing list.
         If single_value is True, the value will be a single number.
+
+        Parameters
+        ----------
+        key : str
+            Key of the metric.
+        value : MetricType
+            Value of the metric.
+        overwrite : bool
+            If True, overwrite existing metric.
+        single_value : bool
+            If True, value is a single value.
+
+        Examples
+        --------
+        Log a new value in a list
+        >>> entity.log_metric("loss", 0.002)
+
+        Append a new value in a list
+        >>> entity.log_metric("loss", 0.0019)
+
+        Log a list of values and append them to existing metric:
+        >>> entity.log_metric(
+        ...     "loss",
+        ...     [
+        ...         0.0018,
+        ...         0.0015,
+        ...     ],
+        ... )
+
+        Log a single value (not represented as list):
+        >>> entity.log_metric(
+        ...     "accuracy",
+        ...     0.9,
+        ...     single_value=True,
+        ... )
+
+        Log a list of values and overwrite existing metric:
+        >>> entity.log_metric(
+        ...     "accuracy",
+        ...     [0.8, 0.9],
+        ...     overwrite=True,
+        ... )
         """
         self._log_metric(key, value, overwrite, single_value)
 
@@ -118,6 +160,55 @@ class MetricsMixin:
         """
         Log metrics into entity status. If a metric is a list, it will be logged as a list.
         Otherwise, it will be logged as a single value.
+
+        Parameters
+        ----------
+        metrics : dict[str, MetricType]
+            Dict of metrics to log.
+        overwrite : bool
+            If True, overwrite existing metrics.
+
+        Examples
+        --------
+        Log multiple metrics at once
+        >>> entity.log_metrics(
+        ...     {
+        ...         "loss": 0.002,
+        ...         "accuracy": 0.95,
+        ...     }
+        ... )
+
+        Log metrics with lists and single values
+        >>> entity.log_metrics(
+        ...     {
+        ...         "loss": [
+        ...             0.1,
+        ...             0.05,
+        ...         ],
+        ...         "epoch": 10,
+        ...     }
+        ... )
+
+        Append to existing metrics (default behavior)
+        >>> entity.log_metrics(
+        ...     {
+        ...         "loss": 0.001,
+        ...         "accuracy": 0.96,
+        ...     }
+        ... )  # Appends to existing
+
+        Overwrite existing metrics
+        >>> entity.log_metrics(
+        ...     {
+        ...         "loss": 0.0005,
+        ...         "accuracy": 0.98,
+        ...     },
+        ...     overwrite=True,
+        ... )
+
+        See Also
+        --------
+        log_metric
         """
         stored_metrics = self._read_metrics()
         for key, value in metrics.items():
