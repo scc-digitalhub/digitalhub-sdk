@@ -27,39 +27,33 @@ def log_dataitem(
     **kwargs,
 ) -> DataitemDataitem:
     """
-    Create and upload an object.
+    Create and upload a dataitem entity.
 
     Parameters
     ----------
     project : str
         Project name.
-    name : str
-        Object name.
+    name : str, optional
+        Entity name. If omitted, it is inferred from ``source``.
     source : SourcesOrListOfSources
-        Dataitem location on local path.
-    drop_existing : bool
+        Local dataitem source path or paths.
+    drop_existing : bool, default=False
         Whether to drop existing entity with the same name.
-    path : str
-        Destination path of the dataitem. If not provided, it's generated.
-    version : str
-        Version stored in entity metadata.
-    description : str
-        Dataitem description.
-    labels : list[str]
-        Dataitem labels.
+    path : str, optional
+        Destination path. If omitted, it is generated.
+    version : str, optional
+        Entity version.
+    description : str, optional
+        Human-readable entity description.
+    labels : list[str], optional
+        Entity labels.
     **kwargs : dict
-        New dataitem spec parameters.
+        Additional dataitem specification parameters.
 
     Returns
     -------
     DataitemDataitem
-        Object instance.
-
-    Examples
-    --------
-    >>> obj = log_dataitem(project="my-project",
-                           name="my-dataitem-dataitem",
-                           source="./local-path")
+        Created dataitem entity with uploaded files.
     """
     kind_warning(
         requested_kind=kwargs.pop("kind", None),
@@ -92,7 +86,37 @@ def register_dataitem(
     extensions: list[dict] | None = None,
     **kwargs,
 ) -> DataitemDataitem:
-    """Register a dataitem that already exists in a supported store."""
+    """
+    Register a dataitem entity for an existing source.
+
+    Parameters
+    ----------
+    project : str
+        Project name.
+    source : SourcesOrListOfSources
+        Path or URI of the existing dataitem.
+    name : str, optional
+        Entity name. If omitted, it is inferred from ``source``.
+    uuid : str, optional
+        Entity identifier.
+    version : str, optional
+        Entity version.
+    description : str, optional
+        Human-readable entity description.
+    labels : list[str], optional
+        Entity labels.
+    embedded : bool, default=False
+        Whether to embed the entity specification in the project specification.
+    extensions : list[dict], optional
+        Entity extensions.
+    **kwargs : dict
+        Additional dataitem specification parameters.
+
+    Returns
+    -------
+    DataitemDataitem
+        Registered dataitem entity.
+    """
     return register_base_dataitem(
         project=project,
         source=source,

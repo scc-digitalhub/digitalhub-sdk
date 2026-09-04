@@ -14,6 +14,37 @@ import digitalhub.entities.model.tvm_ir.crud as tvm_ir_crud
 import digitalhub.entities.model.tvm_so.crud as tvm_so_crud
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
 
+MODEL_SPEC_FIELDS = {
+    "framework",
+    "algorithm",
+    "parameters",
+    "flavor",
+    "model_config",
+    "input_datasets",
+    "signature",
+    "base_model",
+    "model_id",
+    "model_revision",
+    "entry",
+    "inputs",
+    "outputs",
+    "source_format",
+    "keep_params_in_input",
+    "sanitize_input_names",
+    "target",
+    "opt_level",
+    "manifest",
+}
+
+
+def assert_base_model_call_without_none_spec(mock: Mock, expected: dict) -> None:
+    actual = {
+        key: value
+        for key, value in mock.call_args.kwargs.items()
+        if key not in MODEL_SPEC_FIELDS or value is not None
+    }
+    assert actual == expected
+
 
 def test_register_model_delegates_to_base_with_specific_kind(monkeypatch) -> None:
     register_base_model = Mock(return_value="model")
@@ -26,17 +57,20 @@ def test_register_model_delegates_to_base_with_specific_kind(monkeypatch) -> Non
     )
 
     assert result == "model"
-    register_base_model.assert_called_once_with(
-        project="my-project",
-        source="s3://my-bucket/models/model.bin",
-        entity_kind=EntityKinds.MODEL_MODEL.value,
-        name="model",
-        uuid=None,
-        version=None,
-        description=None,
-        labels=None,
-        embedded=False,
-        extensions=None,
+    assert_base_model_call_without_none_spec(
+        register_base_model,
+        {
+            "project": "my-project",
+            "source": "s3://my-bucket/models/model.bin",
+            "entity_kind": EntityKinds.MODEL_MODEL.value,
+            "name": "model",
+            "uuid": None,
+            "version": None,
+            "description": None,
+            "labels": None,
+            "embedded": False,
+            "extensions": None,
+        },
     )
 
 
@@ -74,6 +108,8 @@ def test_register_base_model_passes_source_as_path(monkeypatch) -> None:
         source=["s3://my-bucket/models/model.bin"],
         entity_kind=EntityKinds.MODEL_MODEL.value,
         name="model",
+        framework=None,
+        algorithm="resnet",
     )
 
     assert result == "model"
@@ -88,6 +124,7 @@ def test_register_base_model_passes_source_as_path(monkeypatch) -> None:
         embedded=False,
         path="s3://my-bucket/models/model.bin",
         extensions=None,
+        algorithm="resnet",
     )
 
 
@@ -112,17 +149,20 @@ def test_register_model_specialized_delegates_to_base(crud_module, register_name
     )
 
     assert result == "model"
-    register_base_model.assert_called_once_with(
-        project="my-project",
-        source="s3://my-bucket/models/model.bin",
-        entity_kind=entity_kind,
-        name="model",
-        uuid=None,
-        version=None,
-        description=None,
-        labels=None,
-        embedded=False,
-        extensions=None,
+    assert_base_model_call_without_none_spec(
+        register_base_model,
+        {
+            "project": "my-project",
+            "source": "s3://my-bucket/models/model.bin",
+            "entity_kind": entity_kind,
+            "name": "model",
+            "uuid": None,
+            "version": None,
+            "description": None,
+            "labels": None,
+            "embedded": False,
+            "extensions": None,
+        },
     )
 
 
@@ -178,6 +218,8 @@ def test_log_base_model_builds_payload_for_local_source(monkeypatch, tmp_path) -
         source=str(source),
         path="s3://bucket/model.bin",
         format="bin",
+        framework=None,
+        algorithm="resnet",
     )
 
     assert result == "logged-model"
@@ -191,6 +233,7 @@ def test_log_base_model_builds_payload_for_local_source(monkeypatch, tmp_path) -
         "version": None,
         "description": None,
         "labels": None,
+        "algorithm": "resnet",
         "format": "bin",
         "path": "s3://bucket/model.bin",
     }
@@ -256,17 +299,20 @@ def test_log_model_specialized_delegates_to_base(crud_module, log_name, kind, mo
     )
 
     assert result == "model"
-    log_base_model.assert_called_once_with(
-        project="my-project",
-        name="model",
-        kind=kind,
-        source="./model.bin",
-        drop_existing=True,
-        path="s3://bucket/model.bin",
-        version="1",
-        description="A model",
-        labels=["production"],
-        format="bin",
+    assert_base_model_call_without_none_spec(
+        log_base_model,
+        {
+            "project": "my-project",
+            "name": "model",
+            "kind": kind,
+            "source": "./model.bin",
+            "drop_existing": True,
+            "path": "s3://bucket/model.bin",
+            "version": "1",
+            "description": "A model",
+            "labels": ["production"],
+            "format": "bin",
+        },
     )
 
 

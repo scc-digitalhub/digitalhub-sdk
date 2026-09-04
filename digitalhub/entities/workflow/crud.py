@@ -28,39 +28,33 @@ def new_workflow(
     **kwargs,
 ) -> Workflow:
     """
-    Create a new object.
+    Create a new workflow entity in the backend.
 
     Parameters
     ----------
     project : str
         Project name.
     name : str
-        Object name.
+        Entity name.
+    kind : str
+        Entity kind.
     uuid : str
-        ID of the object.
-    version : str
-        Version stored in entity metadata.
-    description : str
-        Description of the object (human readable).
-    labels : list[str]
-        List of labels.
-    embedded : bool
-        Flag to determine if object spec must be embedded in project spec.
+        Entity identifier.
+    version : str, optional
+        Entity version.
+    description : str, optional
+        Human-readable entity description.
+    labels : list[str], optional
+        Entity labels.
+    embedded : bool, default=False
+        Whether to embed the entity specification in the project specification.
     **kwargs : dict
-        Spec keyword arguments.
+        Additional entity specification parameters.
 
     Returns
     -------
     Workflow
-        Object instance.
-
-    Examples
-    --------
-    >>> obj = new_function(project="my-project",
-    >>>                    name="my-workflow",
-    >>>                    kind="kfp",
-    >>>                    code_src="pipeline.py",
-    >>>                    handler="pipeline-handler")
+        Created workflow entity.
     """
     return crud_processor.create_context_entity(
         project=project,
@@ -82,31 +76,21 @@ def get_workflow(
     entity_id: str | None = None,
 ) -> Workflow:
     """
-    Get object from backend.
+    Get a workflow entity from the backend.
 
     Parameters
     ----------
     identifier : str
-        Entity key (store://...) or entity name.
-    project : str
-        Project name.
-    entity_id : str
-        Entity ID.
+        Entity name or entity key (``store://<project>/<entity_type>/<kind>/<(name>:)<uuid>``).
+    project : str, optional
+        Project name. Required when ``identifier`` is an entity name.
+    entity_id : str, optional
+        Entity identifier. If omitted, the latest version is returned.
 
     Returns
     -------
     Workflow
-        Object instance.
-
-    Examples
-    --------
-    Using entity key:
-    >>> obj = get_workflow("store://my-workflow-key")
-
-    Using entity name:
-    >>> obj = get_workflow("my-workflow-name"
-    >>>                    project="my-project",
-    >>>                    entity_id="my-workflow-id")
+        Retrieved workflow entity.
     """
     return crud_processor.read_context_entity(
         identifier=identifier,
@@ -121,28 +105,19 @@ def get_workflow_versions(
     project: str | None = None,
 ) -> list[Workflow]:
     """
-    Get object versions from backend.
+    Get all versions of a workflow entity from the backend.
 
     Parameters
     ----------
     identifier : str
-        Entity key (store://...) or entity name.
-    project : str
-        Project name.
+        Entity name or entity key (``store://<project>/<entity_type>/<kind>/<(name>:)<uuid>``).
+    project : str, optional
+        Project name. Required when ``identifier`` is an entity name.
 
     Returns
     -------
     list[Workflow]
-        List of object instances.
-
-    Examples
-    --------
-    Using entity key:
-    >>> obj = get_workflow_versions("store://my-workflow-key")
-
-    Using entity name:
-    >>> obj = get_workflow_versions("my-workflow-name"
-    >>>                             project="my-project")
+        All versions of the workflow entity.
     """
     return crud_processor.read_context_entity_versions(
         identifier=identifier,
@@ -163,37 +138,33 @@ def list_workflows(
     versions: str | None = None,
 ) -> list[Workflow]:
     """
-    List all latest version objects from backend.
+    List workflow entities in a project.
 
     Parameters
     ----------
     project : str
         Project name.
-    q : str
-        Query string to filter objects.
-    name : str
-        Object name.
-    kind : str
-        Kind of the object.
-    user : str
-        User that created the object.
-    state : str
-        Object state.
-    created : str
+    q : str, optional
+        Query string used to filter entities.
+    name : str, optional
+        Entity name used to filter results.
+    kind : str, optional
+        Entity kind used to filter results.
+    user : str, optional
+        User who created the entity.
+    state : str, optional
+        Entity state used to filter results.
+    created : str, optional
         Creation date filter.
-    updated : str
+    updated : str, optional
         Update date filter.
-    versions : str
-        Object version, default is latest.
+    versions : str, optional
+        Version filter. Defaults to the latest version.
 
     Returns
     -------
     list[Workflow]
-        List of object instances.
-
-    Examples
-    --------
-    >>> objs = list_workflows(project="my-project")
+        Workflow entities matching the filters.
     """
     return crud_processor.list_context_entities(
         project=project,
@@ -216,69 +187,62 @@ def import_workflow(
     context: str | None = None,
 ) -> Workflow:
     """
-    Import an object from a YAML file or from a storage key.
+    Import a workflow entity from a YAML file or entity key.
 
     Parameters
     ----------
-    file : str
-        Path to the YAML file.
-    key : str
-        Entity key (store://...).
-    reset_id : bool
-        Flag to determine if the ID of executable entities should be reset.
-    context : str
-        Project name to use for context resolution.
+    file : str, optional
+        Path to a YAML file containing the entity descriptor. Provide either
+        ``file`` or ``key``.
+    key : str, optional
+        Entity key (``store://<project>/<entity_type>/<kind>/<(name>:)<uuid>``). Provide
+        either ``file`` or ``key``.
+    reset_id : bool, default=False
+        Whether to generate a new entity identifier instead of preserving the
+        identifier from the imported entity.
+    context : str, optional
+        Project name used for context resolution. If omitted, the project from
+        the entity descriptor is used.
 
     Returns
     -------
     Workflow
-        Object instance.
-
-    Examples
-    --------
-    >>> obj = import_workflow("my-workflow.yaml")
+        Imported workflow entity.
     """
     return executable_processor.import_executable_entity(file, key, reset_id, context)
 
 
 def load_workflow(file: str) -> Workflow:
     """
-    Load object from a YAML file and update an existing object into the backend.
+    Load a workflow entity from a YAML file.
 
     Parameters
     ----------
     file : str
-        Path to YAML file.
+        Path to a YAML file containing the entity descriptor.
 
     Returns
     -------
     Workflow
-        Object instance.
-
-    Examples
-    --------
-    >>> obj = load_workflow("my-workflow.yaml")
+        Loaded workflow entity. An existing entity is updated when it can be
+        identified; otherwise, a new entity is created.
     """
     return executable_processor.load_executable_entity(file)
 
 
 def update_workflow(entity: Workflow) -> Workflow:
     """
-    Update object. Note that object spec are immutable.
+    Update a workflow entity in the backend.
 
     Parameters
     ----------
     entity : Workflow
-        Object to update.
+        Entity to update. The entity specification is immutable.
 
     Returns
     -------
     Workflow
-        Entity updated.
-
-    Examples
-    --------
-    >>> obj = update_workflow(obj)
+        Updated workflow entity.
     """
     return crud_processor.update_context_entity(
         project=entity.project,
@@ -296,36 +260,29 @@ def delete_workflow(
     cascade: bool = True,
 ) -> dict:
     """
-    Delete object from backend.
+    Delete one or more versions of a workflow entity from the backend.
 
     Parameters
     ----------
     identifier : str
-        Entity key (store://...) or entity name.
-    project : str
-        Project name.
-    entity_id : str
-        Entity ID.
-    delete_all_versions : bool
-        Delete all versions of the named entity.
-        If True, use entity name instead of entity key as identifier.
-    cascade : bool
-        Cascade delete.
+        Entity name or entity key (``store://<project>/<entity_type>/<kind>/<(name>:)<uuid>``). Use an entity name
+        when ``delete_all_versions`` is True.
+    project : str, optional
+        Project name. Required when ``identifier`` is an entity name.
+    entity_id : str, optional
+        Identifier of the version to delete. Required when
+        ``delete_all_versions`` is False and ``identifier`` does not contain
+        the version identifier.
+    delete_all_versions : bool, default=False
+        Whether to delete all versions of the named entity. When False, only
+        one version is deleted.
+    cascade : bool, default=True
+        Whether to request cascade deletion from the backend.
 
     Returns
     -------
     dict
-        Response from backend.
-
-    Examples
-    --------
-    If delete_all_versions is False:
-    >>> obj = delete_workflow("store://my-workflow-key")
-
-    Otherwise:
-    >>> obj = delete_workflow("workflow-name",
-    >>>                       project="my-project",
-    >>>                       delete_all_versions=True)
+        Response data from the backend.
     """
     return crud_processor.delete_context_entity(
         identifier=identifier,

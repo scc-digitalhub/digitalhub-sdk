@@ -22,40 +22,46 @@ def log_sklearn(
     path: str | None = None,
     description: str | None = None,
     labels: list[str] | None = None,
+    version: str | None = None,
+    framework: str | None = None,
+    algorithm: str | None = None,
+    parameters: dict | None = None,
     **kwargs,
 ) -> ModelSklearn:
     """
-    Create and upload an object.
+    Create and upload a scikit-learn model entity.
 
     Parameters
     ----------
     project : str
         Project name.
-    name : str
-        Object name.
+    name : str, optional
+        Entity name. If omitted, it is inferred from ``source``.
     source : SourcesOrListOfSources
-        Model location on local path.
-    drop_existing : bool
+        Local model source path or paths.
+    drop_existing : bool, default=False
         Whether to drop existing entity with the same name.
-    path : str
-        Destination path of the model. If not provided, it's generated.
-    description : str
-        Model description.
-    labels : list[str]
-        Model labels.
+    path : str, optional
+        Destination path. If omitted, it is generated.
+    description : str, optional
+        Human-readable entity description.
+    labels : list[str], optional
+        Entity labels.
+    version : str, optional
+        Entity version.
+    framework : str, optional
+        Model framework.
+    algorithm : str, optional
+        Model algorithm.
+    parameters : dict, optional
+        Model parameters.
     **kwargs : dict
-        New model spec parameters.
+        Additional model specification parameters.
 
     Returns
     -------
     ModelSklearn
-        Object instance.
-
-    Examples
-    --------
-    >>> obj = log_sklearn(project="my-project",
-    >>>                         name="my-sklearn-model",
-    >>>                         source="./local-path")
+        Created scikit-learn model entity with uploaded files.
     """
     return log_base_model(
         project=project,
@@ -64,8 +70,12 @@ def log_sklearn(
         source=source,
         drop_existing=drop_existing,
         path=path,
+        version=version,
         description=description,
         labels=labels,
+        framework=framework,
+        algorithm=algorithm,
+        parameters=parameters,
         **kwargs,
     )
 
@@ -80,9 +90,48 @@ def register_sklearn(
     labels: list[str] | None = None,
     embedded: bool = False,
     extensions: list[dict] | None = None,
+    framework: str | None = None,
+    algorithm: str | None = None,
+    parameters: dict | None = None,
     **kwargs,
 ) -> ModelSklearn:
-    """Register a scikit-learn model that already exists in a supported store."""
+    """
+    Register a scikit-learn model entity for an existing source.
+
+    Parameters
+    ----------
+    project : str
+        Project name.
+    source : SourcesOrListOfSources
+        Path or URI of the existing model.
+    name : str, optional
+        Entity name. If omitted, it is inferred from ``source``.
+    uuid : str, optional
+        Entity identifier.
+    version : str, optional
+        Entity version.
+    description : str, optional
+        Human-readable entity description.
+    labels : list[str], optional
+        Entity labels.
+    embedded : bool, default=False
+        Whether to embed the entity specification in the project specification.
+    extensions : list[dict], optional
+        Entity extensions.
+    framework : str, optional
+        Model framework.
+    algorithm : str, optional
+        Model algorithm.
+    parameters : dict, optional
+        Model parameters.
+    **kwargs : dict
+        Additional model specification parameters.
+
+    Returns
+    -------
+    ModelSklearn
+        Registered scikit-learn model entity.
+    """
     return register_base_model(
         project=project,
         source=source,
@@ -94,5 +143,8 @@ def register_sklearn(
         labels=labels,
         embedded=embedded,
         extensions=extensions,
+        framework=framework,
+        algorithm=algorithm,
+        parameters=parameters,
         **kwargs,
     )

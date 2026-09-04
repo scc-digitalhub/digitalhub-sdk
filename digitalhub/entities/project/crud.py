@@ -29,33 +29,29 @@ def new_project(
     extensions: list[dict] | None = None,
 ) -> Project:
     """
-    Create a new object.
+    Create a new project entity.
 
     Parameters
     ----------
     name : str
-        Object name.
-    description : str
-        Description of the object (human readable).
-    labels : list[str]
-        List of labels.
-    config : dict
+        Project name.
+    description : str, optional
+        Human-readable project description.
+    labels : list[str], optional
+        Project labels.
+    config : dict, optional
         DHCore environment configuration.
-    source : str
-        The context local folder of the project.
-    setup_kwargs : dict
-        Setup keyword arguments passed to setup_project() function.
-    extensions : list[dict]
-        List of extensions to apply.
+    source : str, optional
+        Local project context folder. Defaults to the current directory.
+    setup_kwargs : dict, optional
+        Keyword arguments passed to ``setup_project``.
+    extensions : list[dict], optional
+        Extensions to apply to the project.
 
     Returns
     -------
     Project
-        Object instance.
-
-    Examples
-    --------
-    >>> obj = new_project("my-project")
+        Created project entity.
     """
     if source is None:
         source = "./"
@@ -76,23 +72,19 @@ def get_project(
     setup_kwargs: dict | None = None,
 ) -> Project:
     """
-    Retrieves project details from backend.
+    Get a project entity from the backend.
 
     Parameters
     ----------
     name : str
-        The Project name.
-    setup_kwargs : dict
-        Setup keyword arguments passed to setup_project() function.
+        Project name.
+    setup_kwargs : dict, optional
+        Keyword arguments passed to ``setup_project``.
 
     Returns
     -------
     Project
-        Object instance.
-
-    Examples
-    --------
-    >>> obj = get_project("my-project")
+        Retrieved project entity.
     """
     obj = base_crud_processor.read_project_entity(
         entity_type=ENTITY_TYPE,
@@ -107,25 +99,22 @@ def import_project(
     reset_id: bool = False,
 ) -> Project:
     """
-    Import object into backend from a YAML file or key.
+    Import a project entity from a YAML file.
 
     Parameters
     ----------
     file : str
-        Path to YAML file.
-    setup_kwargs : dict
-        Setup keyword arguments passed to setup_project() function.
-    reset_id : bool
-        Flag to determine if the ID of project entities should be reset.
+        Path to a YAML file containing the project descriptor.
+    setup_kwargs : dict, optional
+        Keyword arguments passed to ``setup_project``.
+    reset_id : bool, default=False
+        Whether to generate a new entity identifier instead of preserving the
+        identifier from the imported project.
 
     Returns
     -------
     Project
-        Object instance.
-
-    Examples
-    --------
-    >>> obj = import_project("my-project.yaml")
+        Imported project entity.
     """
     obj = base_crud_processor.import_project_entity(
         file=file,
@@ -139,23 +128,19 @@ def load_project(
     setup_kwargs: dict | None = None,
 ) -> Project:
     """
-    Load object from a YAML file and update an existing object into the backend.
+    Load a project entity from a YAML file.
 
     Parameters
     ----------
     file : str
-        Path to YAML file.
-    setup_kwargs : dict
-        Setup keyword arguments passed to setup_project() function.
+        Path to a YAML file containing the project descriptor.
+    setup_kwargs : dict, optional
+        Keyword arguments passed to ``setup_project``.
 
     Returns
     -------
     Project
-        Object instance.
-
-    Examples
-    --------
-    >>> obj = load_project("my-project.yaml")
+        Loaded project entity.
     """
     obj = base_crud_processor.load_project_entity(file=file)
     return setup_project(obj, setup_kwargs)
@@ -163,13 +148,12 @@ def load_project(
 
 def list_projects() -> list[Project]:
     """
-    List projects in backend.
-
+    List project entities from the backend.
 
     Returns
     -------
-    list
-        List of objects.
+    list[Project]
+        Project entities in the backend.
     """
     return base_crud_processor.list_project_entities(ENTITY_TYPE)
 
@@ -184,25 +168,29 @@ def get_or_create_project(
     extensions: list[dict] | None = None,
 ) -> Project:
     """
-    Try to get project. If not exists, create it.
+    Get a project entity or create it if it does not exist.
 
     Parameters
     ----------
     name : str
         Project name.
-    config : dict
+    description : str, optional
+        Human-readable project description used when creating the project.
+    labels : list[str], optional
+        Project labels used when creating the project.
+    config : dict, optional
         DHCore environment configuration.
-    context : str
-        Folder where the project will saves its context locally.
-    setup_kwargs : dict
-        Setup keyword arguments passed to setup_project() function.
-    extensions : list[dict]
-        List of extensions to apply when creating the project.
+    context : str, optional
+        Local project context folder used when creating the project.
+    setup_kwargs : dict, optional
+        Keyword arguments passed to ``setup_project``.
+    extensions : list[dict], optional
+        Extensions to apply when creating the project.
 
     Returns
     -------
     Project
-        Object instance.
+        Retrieved or created project entity.
     """
     try:
         return get_project(
@@ -223,21 +211,17 @@ def get_or_create_project(
 
 def update_project(entity: Project) -> Project:
     """
-    Update object. Note that object spec are immutable.
+    Update a project entity.
 
     Parameters
     ----------
     entity : Project
-        Object to update.
+        Entity to update. The entity specification is immutable.
 
     Returns
     -------
     Project
-        The updated object.
-
-    Examples
-    --------
-    >>> obj = update_project(obj)
+        Updated project entity.
     """
     return base_crud_processor.update_project_entity(
         entity_type=entity.ENTITY_TYPE,
@@ -252,25 +236,21 @@ def delete_project(
     clean_context: bool = True,
 ) -> dict:
     """
-    Delete a project.
+    Delete a project entity.
 
     Parameters
     ----------
     name : str
         Project name.
-    cascade : bool
-        Flag to determine if delete is cascading.
-    clean_context : bool
-        Flag to determine if context will be deleted.
+    cascade : bool, default=True
+        Whether to request cascade deletion from the backend.
+    clean_context : bool, default=True
+        Whether to delete the project's local context.
 
     Returns
     -------
     dict
-        Response from backend.
-
-    Examples
-    --------
-    >>> delete_project("my-project")
+        Response data from the backend.
     """
     return base_crud_processor.delete_project_entity(
         entity_type=ENTITY_TYPE,
@@ -292,34 +272,35 @@ def search_entity(
     labels: list[str] | None = None,
 ) -> tuple[list[ContextEntity], list[dict]]:
     """
-    Search objects from backend. It returns both existing entities
-    and deleted entities.
+    Search project entities in the backend.
+
+    The result includes both existing and deleted entities.
 
     Parameters
     ----------
     project_name : str
         Project name.
-    query : str
+    query : str, optional
         Search query.
-    entity_types : list[str]
-        Entity types.
-    name : str
-        Entity name.
-    kind : str
-        Entity kind.
-    created : str
-        Entity creation date.
-    updated : str
-        Entity update date.
-    description : str
-        Entity description.
-    labels : list[str]
-        Entity labels.
+    entity_types : list[str], optional
+        Entity types used to filter results.
+    name : str, optional
+        Entity name used to filter results.
+    kind : str, optional
+        Entity kind used to filter results.
+    created : str, optional
+        Entity creation date filter.
+    updated : str, optional
+        Entity update date filter.
+    description : str, optional
+        Entity description filter.
+    labels : list[str], optional
+        Entity labels used to filter results.
 
     Returns
     -------
-    list[ContextEntity|dict]
-        List of object instances.
+    tuple[list[ContextEntity], list[dict]]
+        A tuple containing existing entities and deleted entity records.
     """
     return search_processor.search_entity(
         project_name,

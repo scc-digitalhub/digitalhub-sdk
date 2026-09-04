@@ -34,6 +34,8 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities.dataitem._base.entity import Dataitem
     from digitalhub.entities.function._base.entity import Function
     from digitalhub.entities.model._base.entity import Model
+    from digitalhub.entities.model.mlflow.models import Dataset, Signature
+    from digitalhub.entities.model.tvm_ir.spec import TvmSourceFormat
     from digitalhub.entities.project._base.spec import ProjectSpec
     from digitalhub.entities.project._base.status import ProjectStatus
     from digitalhub.entities.run._base.entity import Run
@@ -88,7 +90,7 @@ class Project(Entity):
         self.status: ProjectStatus
         self.extensions = extensions if extensions is not None else []
 
-        self.id = name
+        self.id = name  # Unique identifier for the project
         self.name = name
         self.key = base_special_ops_processor.build_project_key(self.name)
 
@@ -433,9 +435,9 @@ class Project(Entity):
         **kwargs,
     ) -> Artifact:
         """
-        Create a new artifact.
+        Create an artifact entity in the current project.
 
-        See also
+        See Also
         -------
         digitalhub.new_artifact
         """
@@ -462,6 +464,7 @@ class Project(Entity):
         version: str | None = None,
         description: str | None = None,
         labels: list[str] | None = None,
+        src_path: str | None = None,
         **kwargs,
     ) -> Artifact:
         """
@@ -479,6 +482,7 @@ class Project(Entity):
             version=version,
             description=description,
             labels=labels,
+            src_path=src_path,
             **kwargs,
         )
 
@@ -525,6 +529,7 @@ class Project(Entity):
         labels: list[str] | None = None,
         embedded: bool = False,
         extensions: list[dict] | None = None,
+        src_path: str | None = None,
         **kwargs,
     ) -> Artifact:
         """Register an artifact that already exists in a supported store."""
@@ -537,6 +542,7 @@ class Project(Entity):
             labels=labels,
             embedded=embedded,
             extensions=extensions,
+            src_path=src_path,
             **kwargs,
         )
 
@@ -575,9 +581,9 @@ class Project(Entity):
         entity_id: str | None = None,
     ) -> Artifact:
         """
-        Get artifact from backend.
+        Get an artifact entity from the current project.
 
-        See also
+        See Also
         -------
         digitalhub.get_artifact
         """
@@ -592,9 +598,9 @@ class Project(Entity):
         identifier: str,
     ) -> list[Artifact]:
         """
-        Get artifact versions from backend.
+        Get all versions of an artifact entity from the current project.
 
-        See also
+        See Also
         -------
         digitalhub.get_artifact_versions
         """
@@ -613,9 +619,9 @@ class Project(Entity):
         versions: str | None = None,
     ) -> list[Artifact]:
         """
-        List all latest version artifacts from backend.
+        List artifact entities in the current project.
 
-        See also
+        See Also
         -------
         digitalhub.list_artifacts
         """
@@ -638,9 +644,9 @@ class Project(Entity):
         reset_id: bool = True,
     ) -> Artifact:
         """
-        Import artifact into backend from a YAML file or key.
+        Import an artifact entity into the current project.
 
-        See also
+        See Also
         -------
         digitalhub.import_artifact
         """
@@ -649,9 +655,9 @@ class Project(Entity):
     @_auto_refresh
     def load_artifact(self, file: str) -> Artifact:
         """
-        Load artifact from a YAML file.
+        Load an artifact entity from a YAML file.
 
-        See also
+        See Also
         -------
         digitalhub.load_artifact
         """
@@ -663,9 +669,9 @@ class Project(Entity):
         entity: Artifact,
     ) -> Artifact:
         """
-        Update artifact.
+        Update an artifact entity in the current project.
 
-        See also
+        See Also
         -------
         digitalhub.update_artifact
         """
@@ -680,9 +686,9 @@ class Project(Entity):
         cascade: bool = True,
     ) -> None:
         """
-        Delete artifact from backend.
+        Delete an artifact entity from the current project.
 
-        See also
+        See Also
         -------
         digitalhub.delete_artifact
         """
@@ -712,9 +718,9 @@ class Project(Entity):
         **kwargs,
     ) -> Dataitem:
         """
-        Create a new dataitem.
+        Create a dataitem entity in the current project.
 
-        See also
+        See Also
         -------
         digitalhub.new_dataitem
         """
@@ -808,6 +814,7 @@ class Project(Entity):
         file_format: str | None = None,
         read_df_params: dict | None = None,
         engine: str | None = None,
+        schema: dict | None = None,
         **kwargs,
     ) -> Dataitem:
         """
@@ -830,6 +837,7 @@ class Project(Entity):
             file_format=file_format,
             read_df_params=read_df_params,
             engine=engine,
+            schema=schema,
             **kwargs,
         )
 
@@ -928,6 +936,7 @@ class Project(Entity):
         labels: list[str] | None = None,
         embedded: bool = False,
         extensions: list[dict] | None = None,
+        schema: dict | None = None,
         **kwargs,
     ) -> Dataitem:
         """Register a table dataitem that already exists in a supported store."""
@@ -940,6 +949,7 @@ class Project(Entity):
             labels=labels,
             embedded=embedded,
             extensions=extensions,
+            schema=schema,
             **kwargs,
         )
 
@@ -976,9 +986,9 @@ class Project(Entity):
         entity_id: str | None = None,
     ) -> Dataitem:
         """
-        Get dataitem from backend.
+        Get a dataitem entity from the current project.
 
-        See also
+        See Also
         -------
         digitalhub.get_dataitem
         """
@@ -993,9 +1003,9 @@ class Project(Entity):
         identifier: str,
     ) -> list[Dataitem]:
         """
-        Get dataitem versions from backend.
+        Get all versions of a dataitem entity from the current project.
 
-        See also
+        See Also
         -------
         digitalhub.get_dataitem_versions
         """
@@ -1014,9 +1024,9 @@ class Project(Entity):
         versions: str | None = None,
     ) -> list[Dataitem]:
         """
-        List all latest version dataitems from backend.
+        List dataitem entities in the current project.
 
-        See also
+        See Also
         -------
         digitalhub.list_dataitems
         """
@@ -1039,9 +1049,9 @@ class Project(Entity):
         reset_id: bool = True,
     ) -> Dataitem:
         """
-        Import dataitem into backend from a YAML file or key.
+        Import a dataitem entity into the current project.
 
-        See also
+        See Also
         -------
         digitalhub.import_dataitem
         """
@@ -1050,9 +1060,9 @@ class Project(Entity):
     @_auto_refresh
     def load_dataitem(self, file: str) -> Dataitem:
         """
-        Load dataitem from a YAML file.
+        Load a dataitem entity from a YAML file.
 
-        See also
+        See Also
         -------
         digitalhub.load_dataitem
         """
@@ -1064,9 +1074,9 @@ class Project(Entity):
         entity: Dataitem,
     ) -> Dataitem:
         """
-        Update dataitem.
+        Update a dataitem entity in the current project.
 
-        See also
+        See Also
         -------
         digitalhub.update_dataitem
         """
@@ -1081,9 +1091,9 @@ class Project(Entity):
         cascade: bool = True,
     ) -> None:
         """
-        Delete dataitem from backend.
+        Delete a dataitem entity from the current project.
 
-        See also
+        See Also
         -------
         digitalhub.delete_dataitem
         """
@@ -1113,9 +1123,9 @@ class Project(Entity):
         **kwargs,
     ) -> Model:
         """
-        Create a new model.
+        Create a model entity in the current project.
 
-        See also
+        See Also
         -------
         digitalhub.new_model
         """
@@ -1142,6 +1152,9 @@ class Project(Entity):
         version: str | None = None,
         description: str | None = None,
         labels: list[str] | None = None,
+        framework: str | None = None,
+        algorithm: str | None = None,
+        parameters: dict | None = None,
         **kwargs,
     ) -> Model:
         """
@@ -1159,6 +1172,9 @@ class Project(Entity):
             version=version,
             description=description,
             labels=labels,
+            framework=framework,
+            algorithm=algorithm,
+            parameters=parameters,
             **kwargs,
         )
 
@@ -1204,6 +1220,13 @@ class Project(Entity):
         version: str | None = None,
         description: str | None = None,
         labels: list[str] | None = None,
+        framework: str | None = None,
+        algorithm: str | None = None,
+        parameters: dict | None = None,
+        flavor: str | None = None,
+        model_config: dict | None = None,
+        input_datasets: list[Dataset] | None = None,
+        signature: Signature | None = None,
         **kwargs,
     ) -> Model:
         """
@@ -1221,6 +1244,13 @@ class Project(Entity):
             version=version,
             description=description,
             labels=labels,
+            framework=framework,
+            algorithm=algorithm,
+            parameters=parameters,
+            flavor=flavor,
+            model_config=model_config,
+            input_datasets=input_datasets,
+            signature=signature,
             **kwargs,
         )
 
@@ -1234,6 +1264,9 @@ class Project(Entity):
         version: str | None = None,
         description: str | None = None,
         labels: list[str] | None = None,
+        framework: str | None = None,
+        algorithm: str | None = None,
+        parameters: dict | None = None,
         **kwargs,
     ) -> Model:
         """
@@ -1251,6 +1284,9 @@ class Project(Entity):
             version=version,
             description=description,
             labels=labels,
+            framework=framework,
+            algorithm=algorithm,
+            parameters=parameters,
             **kwargs,
         )
 
@@ -1264,6 +1300,12 @@ class Project(Entity):
         version: str | None = None,
         description: str | None = None,
         labels: list[str] | None = None,
+        framework: str | None = None,
+        algorithm: str | None = None,
+        parameters: dict | None = None,
+        base_model: str | None = None,
+        model_id: str | None = None,
+        model_revision: str | None = None,
         **kwargs,
     ) -> Model:
         """
@@ -1281,6 +1323,12 @@ class Project(Entity):
             version=version,
             description=description,
             labels=labels,
+            framework=framework,
+            algorithm=algorithm,
+            parameters=parameters,
+            base_model=base_model,
+            model_id=model_id,
+            model_revision=model_revision,
             **kwargs,
         )
 
@@ -1294,6 +1342,15 @@ class Project(Entity):
         version: str | None = None,
         description: str | None = None,
         labels: list[str] | None = None,
+        framework: str | None = None,
+        algorithm: str | None = None,
+        parameters: dict | None = None,
+        entry: str | None = None,
+        inputs: list[dict] | None = None,
+        outputs: list[dict] | None = None,
+        source_format: TvmSourceFormat | None = None,
+        keep_params_in_input: bool | None = None,
+        sanitize_input_names: bool | None = None,
         **kwargs,
     ) -> Model:
         """
@@ -1311,6 +1368,15 @@ class Project(Entity):
             version=version,
             description=description,
             labels=labels,
+            framework=framework,
+            algorithm=algorithm,
+            parameters=parameters,
+            entry=entry,
+            inputs=inputs,
+            outputs=outputs,
+            source_format=source_format,
+            keep_params_in_input=keep_params_in_input,
+            sanitize_input_names=sanitize_input_names,
             **kwargs,
         )
 
@@ -1324,6 +1390,15 @@ class Project(Entity):
         version: str | None = None,
         description: str | None = None,
         labels: list[str] | None = None,
+        framework: str | None = None,
+        algorithm: str | None = None,
+        parameters: dict | None = None,
+        entry: str | None = None,
+        inputs: list[dict] | None = None,
+        outputs: list[dict] | None = None,
+        target: str | None = None,
+        opt_level: int | None = None,
+        manifest: dict | None = None,
         **kwargs,
     ) -> Model:
         """
@@ -1341,6 +1416,15 @@ class Project(Entity):
             version=version,
             description=description,
             labels=labels,
+            framework=framework,
+            algorithm=algorithm,
+            parameters=parameters,
+            entry=entry,
+            inputs=inputs,
+            outputs=outputs,
+            target=target,
+            opt_level=opt_level,
+            manifest=manifest,
             **kwargs,
         )
 
@@ -1355,6 +1439,9 @@ class Project(Entity):
         labels: list[str] | None = None,
         embedded: bool = False,
         extensions: list[dict] | None = None,
+        framework: str | None = None,
+        algorithm: str | None = None,
+        parameters: dict | None = None,
         **kwargs,
     ) -> Model:
         """Register a model that already exists in a supported store."""
@@ -1367,6 +1454,9 @@ class Project(Entity):
             labels=labels,
             embedded=embedded,
             extensions=extensions,
+            framework=framework,
+            algorithm=algorithm,
+            parameters=parameters,
             **kwargs,
         )
 
@@ -1409,6 +1499,13 @@ class Project(Entity):
         labels: list[str] | None = None,
         embedded: bool = False,
         extensions: list[dict] | None = None,
+        framework: str | None = None,
+        algorithm: str | None = None,
+        parameters: dict | None = None,
+        flavor: str | None = None,
+        model_config: dict | None = None,
+        input_datasets: list[Dataset] | None = None,
+        signature: Signature | None = None,
         **kwargs,
     ) -> Model:
         """Register a MLflow model that already exists in a supported store."""
@@ -1421,6 +1518,13 @@ class Project(Entity):
             labels=labels,
             embedded=embedded,
             extensions=extensions,
+            framework=framework,
+            algorithm=algorithm,
+            parameters=parameters,
+            flavor=flavor,
+            model_config=model_config,
+            input_datasets=input_datasets,
+            signature=signature,
             **kwargs,
         )
 
@@ -1435,6 +1539,9 @@ class Project(Entity):
         labels: list[str] | None = None,
         embedded: bool = False,
         extensions: list[dict] | None = None,
+        framework: str | None = None,
+        algorithm: str | None = None,
+        parameters: dict | None = None,
         **kwargs,
     ) -> Model:
         """Register a scikit-learn model that already exists in a supported store."""
@@ -1447,6 +1554,9 @@ class Project(Entity):
             labels=labels,
             embedded=embedded,
             extensions=extensions,
+            framework=framework,
+            algorithm=algorithm,
+            parameters=parameters,
             **kwargs,
         )
 
@@ -1461,6 +1571,12 @@ class Project(Entity):
         labels: list[str] | None = None,
         embedded: bool = False,
         extensions: list[dict] | None = None,
+        framework: str | None = None,
+        algorithm: str | None = None,
+        parameters: dict | None = None,
+        base_model: str | None = None,
+        model_id: str | None = None,
+        model_revision: str | None = None,
         **kwargs,
     ) -> Model:
         """Register a Hugging Face model that already exists in a supported store."""
@@ -1473,6 +1589,12 @@ class Project(Entity):
             labels=labels,
             embedded=embedded,
             extensions=extensions,
+            framework=framework,
+            algorithm=algorithm,
+            parameters=parameters,
+            base_model=base_model,
+            model_id=model_id,
+            model_revision=model_revision,
             **kwargs,
         )
 
@@ -1487,6 +1609,15 @@ class Project(Entity):
         labels: list[str] | None = None,
         embedded: bool = False,
         extensions: list[dict] | None = None,
+        framework: str | None = None,
+        algorithm: str | None = None,
+        parameters: dict | None = None,
+        entry: str | None = None,
+        inputs: list[dict] | None = None,
+        outputs: list[dict] | None = None,
+        source_format: TvmSourceFormat | None = None,
+        keep_params_in_input: bool | None = None,
+        sanitize_input_names: bool | None = None,
         **kwargs,
     ) -> Model:
         """Register a TVM IR model that already exists in a supported store."""
@@ -1499,6 +1630,15 @@ class Project(Entity):
             labels=labels,
             embedded=embedded,
             extensions=extensions,
+            framework=framework,
+            algorithm=algorithm,
+            parameters=parameters,
+            entry=entry,
+            inputs=inputs,
+            outputs=outputs,
+            source_format=source_format,
+            keep_params_in_input=keep_params_in_input,
+            sanitize_input_names=sanitize_input_names,
             **kwargs,
         )
 
@@ -1513,6 +1653,15 @@ class Project(Entity):
         labels: list[str] | None = None,
         embedded: bool = False,
         extensions: list[dict] | None = None,
+        framework: str | None = None,
+        algorithm: str | None = None,
+        parameters: dict | None = None,
+        entry: str | None = None,
+        inputs: list[dict] | None = None,
+        outputs: list[dict] | None = None,
+        target: str | None = None,
+        opt_level: int | None = None,
+        manifest: dict | None = None,
         **kwargs,
     ) -> Model:
         """Register a TVM SO model that already exists in a supported store."""
@@ -1525,6 +1674,15 @@ class Project(Entity):
             labels=labels,
             embedded=embedded,
             extensions=extensions,
+            framework=framework,
+            algorithm=algorithm,
+            parameters=parameters,
+            entry=entry,
+            inputs=inputs,
+            outputs=outputs,
+            target=target,
+            opt_level=opt_level,
+            manifest=manifest,
             **kwargs,
         )
 
@@ -1535,9 +1693,9 @@ class Project(Entity):
         entity_id: str | None = None,
     ) -> Model:
         """
-        Get model from backend.
+        Get a model entity from the current project.
 
-        See also
+        See Also
         -------
         digitalhub.get_model
         """
@@ -1552,9 +1710,9 @@ class Project(Entity):
         identifier: str,
     ) -> list[Model]:
         """
-        Get model versions from backend.
+        Get all versions of a model entity from the current project.
 
-        See also
+        See Also
         -------
         digitalhub.get_model_versions
         """
@@ -1573,9 +1731,9 @@ class Project(Entity):
         versions: str | None = None,
     ) -> list[Model]:
         """
-        List all latest version models from backend.
+        List model entities in the current project.
 
-        See also
+        See Also
         -------
         digitalhub.list_models
         """
@@ -1598,9 +1756,9 @@ class Project(Entity):
         reset_id: bool = True,
     ) -> Model:
         """
-        Import model into backend from a YAML file or key.
+        Import a model entity into the current project.
 
-        See also
+        See Also
         -------
         digitalhub.import_model
         """
@@ -1609,9 +1767,9 @@ class Project(Entity):
     @_auto_refresh
     def load_model(self, file: str) -> Model:
         """
-        Load model from a YAML file.
+        Load a model entity from a YAML file.
 
-        See also
+        See Also
         -------
         digitalhub.load_model
         """
@@ -1623,9 +1781,9 @@ class Project(Entity):
         entity: Model,
     ) -> Model:
         """
-        Update model.
+        Update a model entity in the current project.
 
-        See also
+        See Also
         -------
         digitalhub.update_model
         """
@@ -1640,9 +1798,9 @@ class Project(Entity):
         cascade: bool = True,
     ) -> None:
         """
-        Delete model from backend.
+        Delete a model entity from the current project.
 
-        See also
+        See Also
         -------
         digitalhub.delete_model
         """
@@ -1670,9 +1828,9 @@ class Project(Entity):
         **kwargs,
     ) -> Function:
         """
-        Create a new function.
+        Create a function entity in the current project.
 
-        See also
+        See Also
         -------
         digitalhub.new_function
         """
@@ -1694,9 +1852,9 @@ class Project(Entity):
         entity_id: str | None = None,
     ) -> Function:
         """
-        Get function from backend.
+        Get a function entity from the current project.
 
-        See also
+        See Also
         -------
         digitalhub.get_function
         """
@@ -1711,9 +1869,9 @@ class Project(Entity):
         identifier: str,
     ) -> list[Function]:
         """
-        Get function versions from backend.
+        Get all versions of a function entity from the current project.
 
-        See also
+        See Also
         -------
         digitalhub.get_function_versions
         """
@@ -1732,9 +1890,9 @@ class Project(Entity):
         versions: str | None = None,
     ) -> list[Function]:
         """
-        List all latest version functions from backend.
+        List function entities in the current project.
 
-        See also
+        See Also
         -------
         digitalhub.list_functions
         """
@@ -1757,9 +1915,9 @@ class Project(Entity):
         reset_id: bool = True,
     ) -> Function:
         """
-        Import function into backend from a YAML file or key.
+        Import a function entity into the current project.
 
-        See also
+        See Also
         -------
         digitalhub.import_function
         """
@@ -1768,9 +1926,9 @@ class Project(Entity):
     @_auto_refresh
     def load_function(self, file: str) -> Function:
         """
-        Load function from a YAML file.
+        Load a function entity from a YAML file.
 
-        See also
+        See Also
         -------
         digitalhub.load_function
         """
@@ -1782,9 +1940,9 @@ class Project(Entity):
         entity: Function,
     ) -> Function:
         """
-        Update function.
+        Update a function entity in the current project.
 
-        See also
+        See Also
         -------
         digitalhub.update_function
         """
@@ -1799,9 +1957,9 @@ class Project(Entity):
         cascade: bool = True,
     ) -> None:
         """
-        Delete function from backend.
+        Delete a function entity from the current project.
 
-        See also
+        See Also
         -------
         digitalhub.delete_function
         """
@@ -1829,9 +1987,9 @@ class Project(Entity):
         **kwargs,
     ) -> Workflow:
         """
-        Create a new workflow.
+        Create a workflow entity in the current project.
 
-        See also
+        See Also
         -------
         digitalhub.new_workflow
         """
@@ -1853,9 +2011,9 @@ class Project(Entity):
         entity_id: str | None = None,
     ) -> Workflow:
         """
-        Get workflow from backend.
+        Get a workflow entity from the current project.
 
-        See also
+        See Also
         -------
         digitalhub.get_workflow
         """
@@ -1870,9 +2028,9 @@ class Project(Entity):
         identifier: str,
     ) -> list[Workflow]:
         """
-        Get workflow versions from backend.
+        Get all versions of a workflow entity from the current project.
 
-        See also
+        See Also
         -------
         digitalhub.get_workflow_versions
         """
@@ -1891,9 +2049,9 @@ class Project(Entity):
         versions: str | None = None,
     ) -> list[Workflow]:
         """
-        List all latest version workflows from backend.
+        List workflow entities in the current project.
 
-        See also
+        See Also
         -------
         digitalhub.list_workflows
         """
@@ -1916,9 +2074,9 @@ class Project(Entity):
         reset_id: bool = True,
     ) -> Workflow:
         """
-        Import workflow into backend from a YAML file or key.
+        Import a workflow entity into the current project.
 
-        See also
+        See Also
         -------
         digitalhub.import_workflow
         """
@@ -1927,9 +2085,9 @@ class Project(Entity):
     @_auto_refresh
     def load_workflow(self, file: str) -> Workflow:
         """
-        Load workflow from a YAML file.
+        Load a workflow entity from a YAML file.
 
-        See also
+        See Also
         -------
         digitalhub.load_workflow
         """
@@ -1941,9 +2099,9 @@ class Project(Entity):
         entity: Workflow,
     ) -> Workflow:
         """
-        Update workflow.
+        Update a workflow entity in the current project.
 
-        See also
+        See Also
         -------
         digitalhub.update_workflow
         """
@@ -1958,9 +2116,9 @@ class Project(Entity):
         cascade: bool = True,
     ) -> None:
         """
-        Delete workflow from backend.
+        Delete a workflow entity from the current project.
 
-        See also
+        See Also
         -------
         digitalhub.delete_workflow
         """
@@ -1987,9 +2145,9 @@ class Project(Entity):
         **kwargs,
     ) -> Task:
         """
-        Create a new task.
+        Create a task entity in the current project.
 
-        See also
+        See Also
         -------
         digitalhub.new_task
         """
@@ -2006,9 +2164,9 @@ class Project(Entity):
     @_auto_refresh
     def get_task(self, identifier: str) -> Task:
         """
-        Get task from backend.
+        Get an unversioned task entity from the current project.
 
-        See also
+        See Also
         -------
         digitalhub.get_task
         """
@@ -2028,9 +2186,9 @@ class Project(Entity):
         workflow: str | None = None,
     ) -> list[Task]:
         """
-        List all latest version tasks from backend.
+        List task entities in the current project.
 
-        See also
+        See Also
         -------
         digitalhub.list_tasks
         """
@@ -2054,9 +2212,9 @@ class Project(Entity):
         reset_id: bool = True,
     ) -> Task:
         """
-        Import task into backend from a YAML file or key.
+        Import a task entity into the current project.
 
-        See also
+        See Also
         -------
         digitalhub.import_task
         """
@@ -2065,9 +2223,9 @@ class Project(Entity):
     @_auto_refresh
     def load_task(self, file: str) -> Task:
         """
-        Load task from a YAML file.
+        Load a task entity from a YAML file.
 
-        See also
+        See Also
         -------
         digitalhub.load_task
         """
@@ -2079,9 +2237,9 @@ class Project(Entity):
         entity: Task,
     ) -> Task:
         """
-        Update task.
+        Update a task entity in the current project.
 
-        See also
+        See Also
         -------
         digitalhub.update_task
         """
@@ -2095,9 +2253,9 @@ class Project(Entity):
         cascade: bool = True,
     ) -> None:
         """
-        Delete task from backend.
+        Delete an unversioned task entity from the current project.
 
-        See also
+        See Also
         -------
         digitalhub.delete_task
         """
@@ -2122,9 +2280,9 @@ class Project(Entity):
         **kwargs,
     ) -> Run:
         """
-        Create a new run.
+        Create a run entity in the current project.
 
-        See also
+        See Also
         -------
         digitalhub.new_run
         """
@@ -2140,9 +2298,9 @@ class Project(Entity):
     @_auto_refresh
     def get_run(self, identifier: str) -> Run:
         """
-        Get run from backend.
+        Get an unversioned run entity from the current project.
 
-        See also
+        See Also
         -------
         digitalhub.get_run
         """
@@ -2164,9 +2322,9 @@ class Project(Entity):
         action: str | None = None,
     ) -> list[Run]:
         """
-        List all latest runs from backend.
+        List run entities in the current project.
 
-        See also
+        See Also
         -------
         digitalhub.list_runs
         """
@@ -2192,9 +2350,9 @@ class Project(Entity):
         reset_id: bool = True,
     ) -> Run:
         """
-        Import run into backend from a YAML file or key.
+        Import a run entity into the current project.
 
-        See also
+        See Also
         -------
         digitalhub.import_run
         """
@@ -2203,9 +2361,9 @@ class Project(Entity):
     @_auto_refresh
     def load_run(self, file: str) -> Run:
         """
-        Load run from a YAML file.
+        Load a run entity from a YAML file.
 
-        See also
+        See Also
         -------
         digitalhub.load_run
         """
@@ -2217,9 +2375,9 @@ class Project(Entity):
         entity: Run,
     ) -> Run:
         """
-        Update run.
+        Update a run entity in the current project.
 
-        See also
+        See Also
         -------
         digitalhub.update_run
         """
@@ -2232,9 +2390,9 @@ class Project(Entity):
         entity_id: str,
     ) -> None:
         """
-        Delete run from backend.
+        Delete an unversioned run entity from the current project.
 
-        See also
+        See Also
         -------
         digitalhub.delete_run
         """
@@ -2263,9 +2421,9 @@ class Project(Entity):
         **kwargs,
     ) -> Trigger:
         """
-        Create a new trigger.
+        Create a trigger entity in the current project.
 
-        See also
+        See Also
         -------
         digitalhub.new_trigger
         """
@@ -2290,9 +2448,9 @@ class Project(Entity):
         entity_id: str | None = None,
     ) -> Trigger:
         """
-        Get trigger from backend.
+        Get a trigger entity from the current project.
 
-        See also
+        See Also
         -------
         digitalhub.get_trigger
         """
@@ -2315,9 +2473,9 @@ class Project(Entity):
         task: str | None = None,
     ) -> list[Trigger]:
         """
-        List all latest version triggers from backend.
+        List trigger entities in the current project.
 
-        See also
+        See Also
         -------
         digitalhub.list_triggers
         """
@@ -2341,9 +2499,9 @@ class Project(Entity):
         reset_id: bool = True,
     ) -> Trigger:
         """
-        Import trigger into backend from a YAML file or key.
+        Import a trigger entity into the current project.
 
-        See also
+        See Also
         -------
         digitalhub.import_trigger
         """
@@ -2352,9 +2510,9 @@ class Project(Entity):
     @_auto_refresh
     def load_trigger(self, file: str) -> Trigger:
         """
-        Load trigger from a YAML file.
+        Load a trigger entity from a YAML file.
 
-        See also
+        See Also
         -------
         digitalhub.load_trigger
         """
@@ -2366,9 +2524,9 @@ class Project(Entity):
         entity: Trigger,
     ) -> Trigger:
         """
-        Update trigger.
+        Update a trigger entity in the current project.
 
-        See also
+        See Also
         -------
         digitalhub.update_trigger
         """
@@ -2381,9 +2539,9 @@ class Project(Entity):
         entity_id: str | None = None,
     ) -> None:
         """
-        Delete trigger from backend.
+        Delete a trigger entity from the current project.
 
-        See also
+        See Also
         -------
         digitalhub.delete_trigger
         """
@@ -2408,9 +2566,9 @@ class Project(Entity):
         **kwargs,
     ) -> Secret:
         """
-        Create a new secret.
+        Create a secret entity in the current project.
 
-        See also
+        See Also
         -------
         digitalhub.new_secret
         """
@@ -2431,9 +2589,9 @@ class Project(Entity):
         entity_id: str | None = None,
     ) -> Secret:
         """
-        Get secret from backend.
+        Get a secret entity from the current project.
 
-        See also
+        See Also
         -------
         digitalhub.get_secret
         """
@@ -2447,9 +2605,9 @@ class Project(Entity):
         self,
     ) -> list[Secret]:
         """
-        List all latest version secrets from backend.
+        List the latest versions of secret entities in the current project.
 
-        See also
+        See Also
         -------
         digitalhub.list_secrets
         """
@@ -2463,9 +2621,9 @@ class Project(Entity):
         reset_id: bool = True,
     ) -> Secret:
         """
-        Import secret into backend from a YAML file or key.
+        Import a secret entity into the current project.
 
-        See also
+        See Also
         -------
         digitalhub.import_secret
         """
@@ -2474,9 +2632,9 @@ class Project(Entity):
     @_auto_refresh
     def load_secret(self, file: str) -> Secret:
         """
-        Load secret from a YAML file.
+        Load a secret entity from a YAML file.
 
-        See also
+        See Also
         -------
         digitalhub.load_secret
         """
@@ -2488,9 +2646,9 @@ class Project(Entity):
         entity: Secret,
     ) -> Secret:
         """
-        Update secret.
+        Update a secret entity in the current project.
 
-        See also
+        See Also
         -------
         digitalhub.update_secret
         """
@@ -2504,9 +2662,9 @@ class Project(Entity):
         delete_all_versions: bool = False,
     ) -> None:
         """
-        Delete secret from backend.
+        Delete a secret entity from the current project.
 
-        See also
+        See Also
         -------
         digitalhub.delete_secret
         """
@@ -2531,9 +2689,9 @@ class Project(Entity):
         **kwargs,
     ) -> Containerimage:
         """
-        Create and upload a containerimage.
+        Create a container image entity in the current project.
 
-        See also
+        See Also
         -------
         digitalhub.new_containerimage
         """
@@ -2553,9 +2711,9 @@ class Project(Entity):
         entity_id: str | None = None,
     ) -> Containerimage:
         """
-        Get containerimage from backend.
+        Get a container image entity from the current project.
 
-        See also
+        See Also
         -------
         digitalhub.get_containerimage
         """
@@ -2570,9 +2728,9 @@ class Project(Entity):
         identifier: str,
     ) -> list[Containerimage]:
         """
-        Get containerimage versions from backend.
+        Get all versions of a container image entity from the current project.
 
-        See also
+        See Also
         -------
         digitalhub.get_containerimage_versions
         """
@@ -2589,9 +2747,9 @@ class Project(Entity):
         updated: str | None = None,
     ) -> list[Containerimage]:
         """
-        List all latest containerimages from backend.
+        List container image entities in the current project.
 
-        See also
+        See Also
         -------
         digitalhub.list_containerimages
         """
@@ -2612,9 +2770,9 @@ class Project(Entity):
         reset_id: bool = True,
     ) -> Containerimage:
         """
-        Import containerimage into backend from a YAML file or key.
+        Import a container image entity into the current project.
 
-        See also
+        See Also
         -------
         digitalhub.import_containerimage
         """
@@ -2626,9 +2784,9 @@ class Project(Entity):
         entity: Containerimage,
     ) -> Containerimage:
         """
-        Update containerimage.
+        Update a container image entity in the current project.
 
-        See also
+        See Also
         -------
         digitalhub.update_containerimage
         """
@@ -2643,9 +2801,9 @@ class Project(Entity):
         cascade: bool = True,
     ) -> None:
         """
-        Delete containerimage from backend.
+        Delete a container image entity from the current project.
 
-        See also
+        See Also
         -------
         digitalhub.delete_containerimage
         """

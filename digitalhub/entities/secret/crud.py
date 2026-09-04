@@ -29,37 +29,31 @@ def new_secret(
     **kwargs,
 ) -> Secret:
     """
-    Create a new object.
+    Create a new secret entity in the backend.
 
     Parameters
     ----------
     project : str
         Project name.
     name : str
-        Object name.
-    uuid : str
-        ID of the object.
-    description : str
-        Description of the object (human readable).
-    labels : list[str]
-        List of labels.
-    embedded : bool
-        Flag to determine if object spec must be embedded in project spec.
+        Entity name.
+    uuid : str, optional
+        Entity identifier.
+    description : str, optional
+        Human-readable entity description.
+    labels : list[str], optional
+        Entity labels.
+    embedded : bool, default=False
+        Whether to embed the entity specification in the project specification.
     secret_value : str
-        Value of the secret.
+        Secret value. This parameter is required.
     **kwargs : dict
-        Spec keyword arguments.
+        Additional entity specification parameters.
 
     Returns
     -------
     Secret
-        Object instance.
-
-    Examples
-    --------
-    >>> obj = new_secret(project="my-project",
-    >>>                  name="my-secret",
-    >>>                  secret_value="my-secret-value")
+        Created secret entity.
     """
     if secret_value is None:
         raise ValueError("secret_value must be provided.")
@@ -84,31 +78,22 @@ def get_secret(
     entity_id: str | None = None,
 ) -> Secret:
     """
-    Get object from backend.
+    Get a secret entity from the backend.
 
     Parameters
     ----------
     identifier : str
-        Entity key (store://...) or entity name.
-    project : str
-        Project name.
-    entity_id : str
-        Entity ID.
+        Entity name or entity key (``store://<project>/<entity_type>/<kind>/<(name>:)<uuid>``).
+    project : str, optional
+        Project name. Required when ``identifier`` is an entity name.
+    entity_id : str, optional
+        Entity identifier used to select a specific version when
+        ``identifier`` is an entity key.
 
     Returns
     -------
     Secret
-        Object instance.
-
-    Examples
-    --------
-    Using entity key:
-    >>> obj = get_secret("store://my-secret-key")
-
-    Using entity name:
-    >>> obj = get_secret("my-secret-name"
-    >>>                  project="my-project",
-    >>>                  entity_id="my-secret-id")
+        Retrieved secret entity.
     """
     if not is_valid_key(identifier):
         if project is None:
@@ -128,7 +113,7 @@ def get_secret(
 
 def list_secrets(project: str) -> list[Secret]:
     """
-    List all latest version objects from backend.
+    List the latest versions of secret entities in a project.
 
     Parameters
     ----------
@@ -138,11 +123,7 @@ def list_secrets(project: str) -> list[Secret]:
     Returns
     -------
     list[Secret]
-        List of object instances.
-
-    Examples
-    --------
-    >>> objs = list_secrets(project="my-project")
+        Latest versions of secret entities in the project.
     """
     return crud_processor.list_context_entities(
         project=project,
@@ -157,69 +138,62 @@ def import_secret(
     context: str | None = None,
 ) -> Secret:
     """
-    Import an object from a YAML file or from a storage key.
+    Import a secret entity from a YAML file or entity key.
 
     Parameters
     ----------
-    file : str
-        Path to the YAML file.
-    key : str
-        Entity key (store://...).
-    reset_id : bool
-        Flag to determine if the ID of executable entities should be reset.
-    context : str
-        Project name to use for context resolution.
+    file : str, optional
+        Path to a YAML file containing the entity descriptor. Provide either
+        ``file`` or ``key``.
+    key : str, optional
+        Entity key (``store://<project>/<entity_type>/<kind>/<(name>:)<uuid>``). Provide either
+        ``file`` or ``key``.
+    reset_id : bool, default=False
+        Whether to generate a new entity identifier instead of preserving the
+        identifier from the imported entity.
+    context : str, optional
+        Project name used for context resolution. If omitted, the project from
+        the entity descriptor is used.
 
     Returns
     -------
     Secret
-        Object instance.
-
-    Examples
-    --------
-    >>> obj = import_secret("my-secret.yaml")
+        Imported secret entity.
     """
     return crud_processor.import_context_entity(file, key, reset_id, context)
 
 
 def load_secret(file: str) -> Secret:
     """
-    Load object from a YAML file and update an existing object into the backend.
+    Load a secret entity from a YAML file.
 
     Parameters
     ----------
     file : str
-        Path to YAML file.
+        Path to a YAML file containing the entity descriptor.
 
     Returns
     -------
     Secret
-        Object instance.
-
-    Examples
-    --------
-    >>> obj = load_secret("my-secret.yaml")
+        Loaded secret entity. An existing entity is updated when it can be
+        identified; otherwise, a new entity is created.
     """
     return crud_processor.load_context_entity(file)
 
 
 def update_secret(entity: Secret) -> Secret:
     """
-    Update object. Note that object spec are immutable.
+    Update a secret entity in the backend.
 
     Parameters
     ----------
     entity : Secret
-        Object to update.
+        Entity to update. The entity specification is immutable.
 
     Returns
     -------
     Secret
-        Entity updated.
-
-    Examples
-    --------
-    >>> obj = update_secret(obj)
+        Updated secret entity.
     """
     return crud_processor.update_context_entity(
         project=entity.project,
@@ -236,34 +210,27 @@ def delete_secret(
     delete_all_versions: bool = False,
 ) -> dict:
     """
-    Delete object from backend.
+    Delete one or more versions of a secret entity from the backend.
 
     Parameters
     ----------
     identifier : str
-        Entity key (store://...) or entity name.
-    project : str
-        Project name.
-    entity_id : str
-        Entity ID.
-    delete_all_versions : bool
-        Delete all versions of the named entity.
-        If True, use entity name instead of entity key as identifier.
+        Entity name or entity key (``store://<project>/<entity_type>/<kind>/<(name>:)<uuid>``). Use an entity name
+        when ``delete_all_versions`` is True.
+    project : str, optional
+        Project name. Required when ``identifier`` is an entity name.
+    entity_id : str, optional
+        Identifier of the version to delete. Required when
+        ``delete_all_versions`` is False and ``identifier`` does not contain
+        the version identifier.
+    delete_all_versions : bool, default=False
+        Whether to delete all versions of the named entity. When False, only
+        one version is deleted.
 
     Returns
     -------
     dict
-        Response from backend.
-
-    Examples
-    --------
-    If delete_all_versions is False:
-    >>> obj = delete_secret("store://my-secret-key")
-
-    Otherwise:
-    >>> obj = delete_secret("my-secret-name"
-    >>>                     project="my-project",
-    >>>                     delete_all_versions=True)
+        Response data from the backend.
     """
     return crud_processor.delete_context_entity(
         identifier=identifier,

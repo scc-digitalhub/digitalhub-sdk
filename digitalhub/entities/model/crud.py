@@ -21,31 +21,21 @@ def get_model(
     entity_id: str | None = None,
 ) -> Model:
     """
-    Get object from backend.
+    Get a model entity from the backend.
 
     Parameters
     ----------
     identifier : str
-        Entity key (store://...) or entity name.
-    project : str
-        Project name.
-    entity_id : str
-        Entity ID.
+        Entity name or entity key (``store://<project>/<entity_type>/<kind>/<(name>:)<uuid>``).
+    project : str, optional
+        Project name. Required when ``identifier`` is an entity name.
+    entity_id : str, optional
+        Entity identifier. If omitted, the latest version is returned.
 
     Returns
     -------
     Model
-        Object instance.
-
-    Examples
-    --------
-    Using entity key:
-    >>> obj = get_model("store://my-model-key")
-
-    Using entity name:
-    >>> obj = get_model("my-model-name"
-    >>>                 project="my-project",
-    >>>                 entity_id="my-model-id")
+        Retrieved model entity.
     """
     return crud_processor.read_context_entity(
         identifier=identifier,
@@ -60,28 +50,19 @@ def get_model_versions(
     project: str | None = None,
 ) -> list[Model]:
     """
-    Get object versions from backend.
+    Get all versions of a model entity from the backend.
 
     Parameters
     ----------
     identifier : str
-        Entity key (store://...) or entity name.
-    project : str
-        Project name.
+        Entity name or entity key (``store://<project>/<entity_type>/<kind>/<(name>:)<uuid>``).
+    project : str, optional
+        Project name. Required when ``identifier`` is an entity name.
 
     Returns
     -------
     list[Model]
-        List of object instances.
-
-    Examples
-    --------
-    Using entity key:
-    >>> objs = get_model_versions("store://my-model-key")
-
-    Using entity name:
-    >>> objs = get_model_versions("my-model-name",
-    >>>                           project="my-project")
+        All versions of the model entity.
     """
     return crud_processor.read_context_entity_versions(
         identifier=identifier,
@@ -102,37 +83,33 @@ def list_models(
     versions: str | None = None,
 ) -> list[Model]:
     """
-    List all latest version objects from backend.
+    List model entities in a project.
 
     Parameters
     ----------
     project : str
         Project name.
-    q : str
-        Query string to filter objects.
-    name : str
-        Object name.
-    kind : str
-        Kind of the object.
-    user : str
-        User that created the object.
-    state : str
-        Object state.
-    created : str
+    q : str, optional
+        Query string used to filter entities.
+    name : str, optional
+        Entity name used to filter results.
+    kind : str, optional
+        Entity kind used to filter results.
+    user : str, optional
+        User who created the entity.
+    state : str, optional
+        Entity state used to filter results.
+    created : str, optional
         Creation date filter.
-    updated : str
+    updated : str, optional
         Update date filter.
-    versions : str
-        Object version, default is latest.
+    versions : str, optional
+        Version filter. Defaults to the latest version.
 
     Returns
     -------
     list[Model]
-        List of object instances.
-
-    Examples
-    --------
-    >>> objs = list_models(project="my-project")
+        Model entities matching the filters.
     """
     return crud_processor.list_context_entities(
         project=project,
@@ -155,69 +132,62 @@ def import_model(
     context: str | None = None,
 ) -> Model:
     """
-    Import an object from a YAML file or from a storage key.
+    Import a model entity from a YAML file or entity key.
 
     Parameters
     ----------
-    file : str
-        Path to the YAML file.
-    key : str
-        Entity key (store://...).
-    reset_id : bool
-        Flag to determine if the ID of executable entities should be reset.
-    context : str
-        Project name to use for context resolution.
+    file : str, optional
+        Path to a YAML file containing the entity descriptor. Provide either
+        ``file`` or ``key``.
+    key : str, optional
+        Entity key (``store://<project>/<entity_type>/<kind>/<(name>:)<uuid>``). Provide
+        either ``file`` or ``key``.
+    reset_id : bool, default=False
+        Whether to generate a new entity identifier instead of preserving the
+        identifier from the imported entity.
+    context : str, optional
+        Project name used for context resolution. If omitted, the project from
+        the entity descriptor is used.
 
     Returns
     -------
     Model
-        Object instance.
-
-    Examples
-    --------
-    >>> obj = import_model("my-model.yaml")
+        Imported model entity.
     """
     return crud_processor.import_context_entity(file, key, reset_id, context)
 
 
 def load_model(file: str) -> Model:
     """
-    Load object from a YAML file and update an existing object into the backend.
+    Load a model entity from a YAML file.
 
     Parameters
     ----------
     file : str
-        Path to YAML file.
+        Path to a YAML file containing the entity descriptor.
 
     Returns
     -------
     Model
-        Object instance.
-
-    Examples
-    --------
-    >>> obj = load_model("my-model.yaml")
+        Loaded model entity. An existing entity is updated when it can be
+        identified; otherwise, a new entity is created.
     """
     return crud_processor.load_context_entity(file)
 
 
 def update_model(entity: Model) -> Model:
     """
-    Update object. Note that object spec are immutable.
+    Update a model entity in the backend.
 
     Parameters
     ----------
     entity : Model
-        Object to update.
+        Entity to update. The entity specification is immutable.
 
     Returns
     -------
     Model
-        Entity updated.
-
-    Examples
-    --------
-    >>> obj = get_model("store://my-model-key")
+        Updated model entity.
     """
     return crud_processor.update_context_entity(
         project=entity.project,
@@ -235,36 +205,29 @@ def delete_model(
     cascade: bool = True,
 ) -> dict:
     """
-    Delete object from backend.
+    Delete one or more versions of a model entity from the backend.
 
     Parameters
     ----------
     identifier : str
-        Entity key (store://...) or entity name.
-    project : str
-        Project name.
-    entity_id : str
-        Entity ID.
-    delete_all_versions : bool
-        Delete all versions of the named entity.
-        If True, use entity name instead of entity key as identifier.
-    cascade : bool
-        Cascade delete.
+        Entity name or entity key (``store://<project>/<entity_type>/<kind>/<(name>:)<uuid>``). Use an entity name
+        when ``delete_all_versions`` is True.
+    project : str, optional
+        Project name. Required when ``identifier`` is an entity name.
+    entity_id : str, optional
+        Identifier of the version to delete. Required when
+        ``delete_all_versions`` is False and ``identifier`` does not contain
+        the version identifier.
+    delete_all_versions : bool, default=False
+        Whether to delete all versions of the named entity. When False, only
+        one version is deleted.
+    cascade : bool, default=True
+        Whether to request cascade deletion from the backend.
 
     Returns
     -------
     dict
-        Response from backend.
-
-    Examples
-    --------
-    If delete_all_versions is False:
-    >>> obj = delete_model("store://my-model-key")
-
-    Otherwise:
-    >>> obj = delete_model("my-model-name",
-    >>>                    project="my-project",
-    >>>                    delete_all_versions=True)
+        Response data from the backend.
     """
     return crud_processor.delete_context_entity(
         identifier=identifier,

@@ -32,44 +32,38 @@ def new_model(
     **kwargs,
 ) -> Model:
     """
-    Create a new object.
+    Create a new model entity in the backend.
 
     Parameters
     ----------
     project : str
         Project name.
     name : str
-        Object name.
+        Entity name.
     kind : str
-        Kind the object.
-    uuid : str
-        ID of the object.
-    version : str
-        Version stored in entity metadata.
-    description : str
-        Description of the object (human readable).
-    labels : list[str]
-        List of labels.
-    embedded : bool
-        Flag to determine if object spec must be embedded in project spec.
-    path : str
-        Object path on local file system or remote storage. It is also the destination path of upload() method.
-    extensions : list[dict]
-        List of extensions.
+        Entity kind.
+    uuid : str, optional
+        Entity identifier.
+    version : str, optional
+        Entity version.
+    description : str, optional
+        Human-readable entity description.
+    labels : list[str], optional
+        Entity labels.
+    embedded : bool, default=False
+        Whether to embed the entity specification in the project specification.
+    path : str, optional
+        Entity path on the local file system or remote storage. It is also the
+        destination path for uploads.
+    extensions : list[dict], optional
+        Entity extensions.
     **kwargs : dict
-        Spec keyword arguments.
+        Additional entity specification parameters.
 
     Returns
     -------
     Model
-        Object instance.
-
-    Examples
-    --------
-    >>> obj = new_model(project="my-project",
-    >>>                    name="my-model",
-    >>>                    kind="model",
-    >>>                    path="s3://my-bucket/my-key")
+        Created model entity.
     """
     return crud_processor.create_context_entity(
         project=project,
@@ -100,43 +94,37 @@ def log_base_model(
     **kwargs,
 ) -> Model:
     """
-    Create and upload an object.
+    Create a model entity and upload a local source.
 
     Parameters
     ----------
     project : str
         Project name.
-    name : str
-        Object name.
     kind : str
-        return material_processor.log_material_entity(
+        Entity kind.
     source : SourcesOrListOfSources
-        Model location on local path.
-    drop_existing : bool
-        Whether to drop existing entity with the same name.
-    path : str
-        Destination path of the model. If not provided, it's generated.
-    version : str
-        Version stored in entity metadata.
-    description : str
-        Model description.
-    labels : list[str]
-        Model labels.
+        Local model source path or paths.
+    name : str, optional
+        Entity name. If omitted, it is inferred from ``source``.
+    drop_existing : bool, default=False
+        Whether to remove an existing entity with the same name.
+    path : str, optional
+        Destination path. If omitted, it is generated.
+    version : str, optional
+        Entity version.
+    description : str, optional
+        Human-readable entity description.
+    labels : list[str], optional
+        Entity labels.
     **kwargs : dict
-        New model spec parameters.
+        Additional model specification parameters.
 
     Returns
     -------
     Model
-        Object instance.
-
-    Examples
-    --------
-    >>> obj = log_base_model(project="my-project",
-    >>>                      name="my-model",
-    >>>                      kind="model",
-    >>>                      source="./local-path")
+        Created model entity with uploaded files.
     """
+    kwargs = {key: value for key, value in kwargs.items() if value is not None}
     eval_local_source(source)
     if name is None:
         name = build_log_name_from_source(source)
@@ -175,7 +163,40 @@ def register_base_model(
     extensions: list[dict] | None = None,
     **kwargs,
 ) -> Model:
-    """Register a model by creating an entity for an existing source."""
+    """
+    Register a model entity for an existing source.
+
+    Parameters
+    ----------
+    project : str
+        Project name.
+    source : SourcesOrListOfSources
+        Path or URI of the existing model.
+    entity_kind : str
+        Entity kind.
+    name : str, optional
+        Entity name. If omitted, it is inferred from ``source``.
+    uuid : str, optional
+        Entity identifier.
+    version : str, optional
+        Entity version.
+    description : str, optional
+        Human-readable entity description.
+    labels : list[str], optional
+        Entity labels.
+    embedded : bool, default=False
+        Whether to embed the entity specification in the project specification.
+    extensions : list[dict], optional
+        Entity extensions.
+    **kwargs : dict
+        Additional model specification parameters.
+
+    Returns
+    -------
+    Model
+        Registered model entity.
+    """
+    kwargs = {key: value for key, value in kwargs.items() if value is not None}
     kind_warning(
         requested_kind=kwargs.pop("kind", None),
         set_kind=entity_kind,

@@ -25,10 +25,36 @@ def log_generic_dataitem(
     labels: list[str] | None = None,
     **kwargs,
 ) -> DataitemGeneric:
-    """Create and upload a dataitem of an unknown kind.
+    """
+    Create and upload a dataitem of a dynamic kind.
 
-    version : str
-        Version stored in entity metadata.
+    Parameters
+    ----------
+    project : str
+        Project name.
+    kind : str
+        Entity kind.
+    source : SourcesOrListOfSources
+        Local dataitem source path or paths.
+    name : str, optional
+        Entity name. If omitted, it is inferred from ``source``.
+    drop_existing : bool, default=False
+        Whether to remove an existing entity with the same name.
+    path : str, optional
+        Destination path. If omitted, it is generated.
+    version : str, optional
+        Entity version.
+    description : str, optional
+        Human-readable entity description.
+    labels : list[str], optional
+        Entity labels.
+    **kwargs : dict
+        Additional entity specification parameters.
+
+    Returns
+    -------
+    DataitemGeneric
+        Created dataitem entity with uploaded files.
     """
     return log_base_dataitem(
         project=project,
@@ -57,7 +83,39 @@ def register_generic_dataitem(
     extensions: list[dict] | None = None,
     **kwargs,
 ) -> DataitemGeneric:
-    """Register a dataitem of an unknown kind."""
+    """
+    Register a dataitem of a dynamic kind for an existing source.
+
+    Parameters
+    ----------
+    project : str
+        Project name.
+    kind : str
+        Entity kind.
+    source : SourcesOrListOfSources
+        Path or URI of the existing dataitem.
+    name : str, optional
+        Entity name. If omitted, it is inferred from ``source``.
+    uuid : str, optional
+        Entity identifier.
+    version : str, optional
+        Entity version.
+    description : str, optional
+        Human-readable entity description.
+    labels : list[str], optional
+        Entity labels.
+    embedded : bool, default=False
+        Whether to embed the entity specification in the project specification.
+    extensions : list[dict], optional
+        Entity extensions.
+    **kwargs : dict
+        Additional entity specification parameters.
+
+    Returns
+    -------
+    DataitemGeneric
+        Registered dataitem entity.
+    """
     return register_base_dataitem(
         project=project,
         source=source,

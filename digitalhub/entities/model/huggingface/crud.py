@@ -22,40 +22,55 @@ def log_huggingface(
     path: str | None = None,
     description: str | None = None,
     labels: list[str] | None = None,
+    version: str | None = None,
+    framework: str | None = None,
+    algorithm: str | None = None,
+    parameters: dict | None = None,
+    base_model: str | None = None,
+    model_id: str | None = None,
+    model_revision: str | None = None,
     **kwargs,
 ) -> ModelHuggingface:
     """
-    Create and upload an object.
+    Create and upload a Hugging Face model entity.
 
     Parameters
     ----------
     project : str
         Project name.
-    name : str
-        Object name.
+    name : str, optional
+        Entity name. If omitted, it is inferred from ``source``.
     source : SourcesOrListOfSources
-        Model location on local path.
-    drop_existing : bool
+        Local model source path or paths.
+    drop_existing : bool, default=False
         Whether to drop existing entity with the same name.
-    path : str
-        Destination path of the model. If not provided, it's generated.
-    description : str
-        Model description.
-    labels : list[str]
-        Model labels.
+    path : str, optional
+        Destination path. If omitted, it is generated.
+    description : str, optional
+        Human-readable entity description.
+    labels : list[str], optional
+        Entity labels.
+    version : str, optional
+        Entity version.
+    framework : str, optional
+        Model framework.
+    algorithm : str, optional
+        Model algorithm.
+    parameters : dict, optional
+        Model parameters.
+    base_model : str, optional
+        Base model identifier.
+    model_id : str, optional
+        Hugging Face model identifier.
+    model_revision : str, optional
+        Hugging Face model revision.
     **kwargs : dict
-        New model spec parameters.
+        Additional model specification parameters.
 
     Returns
     -------
     ModelHuggingface
-        Object instance.
-
-    Examples
-    --------
-    >>> obj = log_huggingface(project="my-project",
-    >>>                             name="my-huggingface-model",
-    >>>                             source="./local-path")
+        Created Hugging Face model entity with uploaded files.
     """
     return log_base_model(
         project=project,
@@ -66,6 +81,13 @@ def log_huggingface(
         path=path,
         description=description,
         labels=labels,
+        version=version,
+        framework=framework,
+        algorithm=algorithm,
+        parameters=parameters,
+        base_model=base_model,
+        model_id=model_id,
+        model_revision=model_revision,
         **kwargs,
     )
 
@@ -80,9 +102,57 @@ def register_huggingface(
     labels: list[str] | None = None,
     embedded: bool = False,
     extensions: list[dict] | None = None,
+    framework: str | None = None,
+    algorithm: str | None = None,
+    parameters: dict | None = None,
+    base_model: str | None = None,
+    model_id: str | None = None,
+    model_revision: str | None = None,
     **kwargs,
 ) -> ModelHuggingface:
-    """Register a Hugging Face model that already exists in a supported store."""
+    """
+    Register a Hugging Face model entity for an existing source.
+
+    Parameters
+    ----------
+    project : str
+        Project name.
+    source : SourcesOrListOfSources
+        Path or URI of the existing model.
+    name : str, optional
+        Entity name. If omitted, it is inferred from ``source``.
+    uuid : str, optional
+        Entity identifier.
+    version : str, optional
+        Entity version.
+    description : str, optional
+        Human-readable entity description.
+    labels : list[str], optional
+        Entity labels.
+    embedded : bool, default=False
+        Whether to embed the entity specification in the project specification.
+    extensions : list[dict], optional
+        Entity extensions.
+    framework : str, optional
+        Model framework.
+    algorithm : str, optional
+        Model algorithm.
+    parameters : dict, optional
+        Model parameters.
+    base_model : str, optional
+        Base model identifier.
+    model_id : str, optional
+        Hugging Face model identifier.
+    model_revision : str, optional
+        Hugging Face model revision.
+    **kwargs : dict
+        Additional model specification parameters.
+
+    Returns
+    -------
+    ModelHuggingface
+        Registered Hugging Face model entity.
+    """
     return register_base_model(
         project=project,
         source=source,
@@ -94,5 +164,11 @@ def register_huggingface(
         labels=labels,
         embedded=embedded,
         extensions=extensions,
+        framework=framework,
+        algorithm=algorithm,
+        parameters=parameters,
+        base_model=base_model,
+        model_id=model_id,
+        model_revision=model_revision,
         **kwargs,
     )

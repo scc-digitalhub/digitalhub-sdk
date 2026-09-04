@@ -31,43 +31,41 @@ def new_trigger(
     **kwargs,
 ) -> Trigger:
     """
-    Create a new object.
+    Create a new trigger entity in the backend.
 
     Parameters
     ----------
     project : str
         Project name.
     name : str
-        Object name.
+        Entity name.
     kind : str
-        Kind the object.
+        Entity kind.
     task : str
-        Task string.
-    function : str
-        Function string.
-    workflow : str
-        Workflow string.
-    uuid : str
-        ID of the object.
-    description : str
-        Description of the object (human readable).
-    labels : list[str]
-        List of labels.
-    embedded : bool
-        Flag to determine if object spec must be embedded in project spec.
+        Task reference.
+    function : str, optional
+        Function reference. Provide either ``function`` or ``workflow``.
+    workflow : str, optional
+        Workflow reference. Provide either ``workflow`` or ``function``. If
+        both are provided, the workflow is used.
+    uuid : str, optional
+        Entity identifier.
+    description : str, optional
+        Human-readable entity description.
+    labels : list[str], optional
+        Entity labels.
+    embedded : bool, default=False
+        Whether to embed the entity specification in the project specification.
+    template : dict, optional
+        Trigger template. If omitted, a template is built from ``task`` and the
+        selected executable reference.
     **kwargs : dict
-        Spec keyword arguments.
+        Additional entity specification parameters.
 
     Returns
     -------
     Trigger
-        Object instance.
-
-    Examples
-    --------
-    >>> obj = new_trigger(project="my-project",
-    >>>                   kind="trigger",
-    >>>                   name="my-trigger",)
+        Created trigger entity.
     """
     if workflow is None:
         if function is None:
@@ -113,31 +111,21 @@ def get_trigger(
     entity_id: str | None = None,
 ) -> Trigger:
     """
-    Get object from backend.
+    Get a trigger entity from the backend.
 
     Parameters
     ----------
     identifier : str
-        Entity key (store://...) or entity name.
-    project : str
-        Project name.
-    entity_id : str
-        Entity ID.
+        Entity name or entity key (``store://<project>/<entity_type>/<kind>/<(name>:)<uuid>``).
+    project : str, optional
+        Project name. Required when ``identifier`` is an entity name.
+    entity_id : str, optional
+        Entity identifier. If omitted, the latest version is returned.
 
     Returns
     -------
     Trigger
-        Object instance.
-
-    Examples
-    --------
-    Using entity key:
-    >>> obj = get_trigger("store://my-trigger-key")
-
-    Using entity name:
-    >>> obj = get_trigger("my-trigger-name"
-    >>>                  project="my-project",
-    >>>                  entity_id="my-trigger-id")
+        Retrieved trigger entity.
     """
     return crud_processor.read_context_entity(
         identifier=identifier,
@@ -160,39 +148,35 @@ def list_triggers(
     task: str | None = None,
 ) -> list[Trigger]:
     """
-    List all latest version objects from backend.
+    List trigger entities in a project.
 
     Parameters
     ----------
     project : str
         Project name.
-    q : str
-        Query string to filter objects.
-    name : str
-        Object name.
-    kind : str
-        Kind of the object.
-    user : str
-        User that created the object.
-    state : str
-        Object state.
-    created : str
+    q : str, optional
+        Query string used to filter entities.
+    name : str, optional
+        Entity name used to filter results.
+    kind : str, optional
+        Entity kind used to filter results.
+    user : str, optional
+        User who created the entity.
+    state : str, optional
+        Entity state used to filter results.
+    created : str, optional
         Creation date filter.
-    updated : str
+    updated : str, optional
         Update date filter.
-    versions : str
-        Object version, default is latest.
-    task : str
-        Task string filter.
+    versions : str, optional
+        Version filter. Defaults to the latest version.
+    task : str, optional
+        Task reference used to filter results.
 
     Returns
     -------
     list[Trigger]
-        List of object instances.
-
-    Examples
-    --------
-    >>> objs = list_triggers(project="my-project")
+        Trigger entities matching the filters.
     """
     return crud_processor.list_context_entities(
         project=project,
@@ -216,69 +200,62 @@ def import_trigger(
     context: str | None = None,
 ) -> Trigger:
     """
-    Import an object from a YAML file or from a storage key.
+    Import a trigger entity from a YAML file or entity key.
 
     Parameters
     ----------
-    file : str
-        Path to the YAML file.
-    key : str
-        Entity key (store://...).
-    reset_id : bool
-        Flag to determine if the ID of executable entities should be reset.
-    context : str
-        Project name to use for context resolution.
+    file : str, optional
+        Path to a YAML file containing the entity descriptor. Provide either
+        ``file`` or ``key``.
+    key : str, optional
+        Entity key (``store://<project>/<entity_type>/<kind>/<(name>:)<uuid>``). Provide either
+        ``file`` or ``key``.
+    reset_id : bool, default=False
+        Whether to generate a new entity identifier instead of preserving the
+        identifier from the imported entity.
+    context : str, optional
+        Project name used for context resolution. If omitted, the project from
+        the entity descriptor is used.
 
     Returns
     -------
     Trigger
-        Object instance.
-
-    Examples
-    --------
-    >>> obj = import_trigger("my-trigger.yaml")
+        Imported trigger entity.
     """
     return crud_processor.import_context_entity(file, key, reset_id, context)
 
 
 def load_trigger(file: str) -> Trigger:
     """
-    Load object from a YAML file and update an existing object into the backend.
+    Load a trigger entity from a YAML file.
 
     Parameters
     ----------
     file : str
-        Path to YAML file.
+        Path to a YAML file containing the entity descriptor.
 
     Returns
     -------
     Trigger
-        Object instance.
-
-    Examples
-    --------
-    >>> obj = load_trigger("my-trigger.yaml")
+        Loaded trigger entity. An existing entity is updated when it can be
+        identified; otherwise, a new entity is created.
     """
     return crud_processor.load_context_entity(file)
 
 
 def update_trigger(entity: Trigger) -> Trigger:
     """
-    Update object. Note that object spec are immutable.
+    Update a trigger entity in the backend.
 
     Parameters
     ----------
     entity : Trigger
-        Object to update.
+        Entity to update. The entity specification is immutable.
 
     Returns
     -------
     Trigger
-        Entity updated.
-
-    Examples
-    --------
-    >>> obj = update_trigger(obj)
+        Updated trigger entity.
     """
     return crud_processor.update_context_entity(
         project=entity.project,
@@ -294,30 +271,22 @@ def delete_trigger(
     entity_id: str | None = None,
 ) -> dict:
     """
-    Delete object from backend.
+    Delete a trigger entity from the backend.
 
     Parameters
     ----------
     identifier : str
-        Entity key (store://...) or entity name.
-    project : str
-        Project name.
-    entity_id : str
-        Entity ID.
+        Entity name or entity key (``store://<project>/<entity_type>/<kind>/<(name>:)<uuid>``).
+    project : str, optional
+        Project name. Required when ``identifier`` is an entity name.
+    entity_id : str, optional
+        Identifier of the version to delete. Required when ``identifier`` does
+        not contain the version identifier.
 
     Returns
     -------
     dict
-        Response from backend.
-
-    Examples
-    --------
-    If delete_all_versions is False:
-    >>> obj = delete_trigger("store://my-trigger-key")
-
-    Otherwise:
-    >>> obj = delete_trigger("my-trigger-name"
-    >>>                      project="my-project")
+        Response data from the backend.
     """
     return crud_processor.delete_context_entity(
         identifier=identifier,

@@ -71,6 +71,7 @@ def test_register_base_dataitem_passes_source_as_path(monkeypatch) -> None:
         source=["s3://my-bucket/data/data.csv"],
         entity_kind=EntityKinds.DATAITEM_DATAITEM.value,
         name="data",
+        format=None,
     )
 
     assert result == "dataitem"
@@ -106,18 +107,21 @@ def test_register_dataitem_specialized_delegates_to_base(crud_module, register_n
     )
 
     assert result == "dataitem"
-    register_base_dataitem.assert_called_once_with(
-        project="my-project",
-        source="s3://my-bucket/data/data.csv",
-        entity_kind=entity_kind,
-        name="data",
-        uuid=None,
-        version=None,
-        description=None,
-        labels=None,
-        embedded=False,
-        extensions=None,
-    )
+    expected_kwargs = {
+        "project": "my-project",
+        "source": "s3://my-bucket/data/data.csv",
+        "entity_kind": entity_kind,
+        "name": "data",
+        "uuid": None,
+        "version": None,
+        "description": None,
+        "labels": None,
+        "embedded": False,
+        "extensions": None,
+    }
+    if register_name == "register_table":
+        expected_kwargs["schema"] = None
+    register_base_dataitem.assert_called_once_with(**expected_kwargs)
 
 
 def test_new_dataitem_delegates_to_context_processor(monkeypatch) -> None:

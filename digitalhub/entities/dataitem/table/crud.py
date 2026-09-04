@@ -58,6 +58,8 @@ def log_table(
     file_format: str | None = None,
     read_df_params: dict | None = None,
     engine: str | None = "pandas",
+    version: str | None = None,
+    schema: dict | None = None,
     **kwargs,
 ) -> Dataitem:
     """
@@ -67,43 +69,46 @@ def log_table(
     ----------
     project : str
         Project name.
-    name : str
-        Object name.
+    name : str, optional
+        Entity name.
     source : SourcesOrListOfSources
         Dataitem location on local path. Alternative to data or sql.
     data : Dataframe
         Dataframe to log. Alternative to source or sql.
     sql : str
         SQL query to log. Alternative to source or data.
-    drop_existing : bool
+    drop_existing : bool, default=False
         Whether to drop existing entity with the same name.
-    path : str
-        Destination path of the dataitem. If not provided, it's generated.
-    description : str
-        Dataitem description.
-    labels : list[str]
-        Dataitem labels.
-    file_format : str
+    path : str, optional
+        Destination path. If omitted, it is generated.
+    description : str, optional
+        Human-readable entity description.
+    labels : list[str], optional
+        Entity labels.
+    file_format : str, optional
         Extension of the file source (parquet, csv, json, xlsx, txt).
-    read_df_params : dict
+    read_df_params : dict, optional
         Parameters to pass to the dataframe reader.
-    engine : str
+    engine : str, default="pandas"
         Dataframe engine (pandas, polars, etc.).
+    version : str, optional
+        Entity version.
+    schema : dict, optional
+        Table schema. If omitted, it is inferred from the data.
     **kwargs : dict
-        New dataitem spec parameters.
+        Additional dataitem specification parameters.
 
     Returns
     -------
     Dataitem
-        Object instance.
-
-    Examples
-    --------
-    >>> obj = log_dataitem(project="my-project",
-    >>>                    name="my-dataitem",
-    >>>                    kind="table",
-    >>>                    data=df)
+        Created table dataitem entity with uploaded files.
     """
+
+    kwargs = {
+        key: value
+        for key, value in {**kwargs, "version": version, "schema": schema}.items()
+        if value is not None
+    }
 
     data_source = _eval_source(source, data, sql)
 
@@ -199,9 +204,42 @@ def register_table(
     labels: list[str] | None = None,
     embedded: bool = False,
     extensions: list[dict] | None = None,
+    schema: dict | None = None,
     **kwargs,
 ) -> Dataitem:
-    """Register a table dataitem that already exists in a supported store."""
+    """
+    Register a table dataitem entity for an existing source.
+
+    Parameters
+    ----------
+    project : str
+        Project name.
+    source : SourcesOrListOfSources
+        Path or URI of the existing table dataitem.
+    name : str, optional
+        Entity name. If omitted, it is inferred from ``source``.
+    uuid : str, optional
+        Entity identifier.
+    version : str, optional
+        Entity version.
+    description : str, optional
+        Human-readable entity description.
+    labels : list[str], optional
+        Entity labels.
+    embedded : bool, default=False
+        Whether to embed the entity specification in the project specification.
+    extensions : list[dict], optional
+        Entity extensions.
+    schema : dict, optional
+        Table schema.
+    **kwargs : dict
+        Additional dataitem specification parameters.
+
+    Returns
+    -------
+    Dataitem
+        Registered table dataitem entity.
+    """
     return register_base_dataitem(
         project=project,
         source=source,
@@ -213,5 +251,6 @@ def register_table(
         labels=labels,
         embedded=embedded,
         extensions=extensions,
+        schema=schema,
         **kwargs,
     )

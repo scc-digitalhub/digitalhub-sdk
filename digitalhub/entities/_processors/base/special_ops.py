@@ -21,7 +21,7 @@ class BaseEntitySpecialOpsProcessor:
         entity_id: str,
     ) -> str:
         """
-        Build a storage key for a project entity.
+        Build an entity key for a project entity.
 
         Creates a standardized key string for project identification
         and storage, handling both local and remote client contexts.

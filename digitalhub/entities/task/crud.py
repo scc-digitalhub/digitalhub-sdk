@@ -27,37 +27,31 @@ def new_task(
     **kwargs,
 ) -> Task:
     """
-    Create a new object.
+    Create a new task entity in the backend.
 
     Parameters
     ----------
     project : str
         Project name.
     kind : str
-        Kind the object.
-    uuid : str
-        ID of the object.
-    name : str
-        Name stored in entity metadata.
-    labels : list[str]
-        List of labels.
-    function : str
-        Name of the executable associated with the task.
-    workflow : str
-        Name of the workflow associated with the task.
+        Entity kind.
+    uuid : str, optional
+        Entity identifier.
+    name : str, optional
+        Entity name.
+    labels : list[str], optional
+        Entity labels.
+    function : str, optional
+        Function reference associated with the task.
+    workflow : str, optional
+        Workflow reference associated with the task.
     **kwargs : dict
-        Spec keyword arguments.
+        Additional entity specification parameters.
 
     Returns
     -------
     Task
-        Object instance.
-
-    Examples
-    --------
-    >>> obj = new_task(project="my-project",
-    >>>                kind="python+job",
-    >>>                function="function-string")
+        Created task entity.
     """
     return crud_processor.create_context_entity(
         project=project,
@@ -74,28 +68,20 @@ def new_task(
 
 def get_task(identifier: str, project: str | None = None) -> Task:
     """
-    Get object from backend.
+    Get an unversioned task entity from the backend.
 
     Parameters
     ----------
     identifier : str
-        Entity key (store://...) or entity ID.
-    project : str
-        Project name.
+        Entity ID or entity key in the format
+        ``store://<project>/<entity_type>/<kind>/<uuid>``.
+    project : str, optional
+        Project name. Required when ``identifier`` is an entity ID.
 
     Returns
     -------
     Task
-        Object instance.
-
-    Examples
-    --------
-    Using entity key:
-    >>> obj = get_task("store://my-task-key")
-
-    Using entity ID:
-    >>> obj = get_task("my-task-id"
-    >>>               project="my-project")
+        Retrieved task entity.
     """
     return crud_processor.read_unversioned_entity(
         identifier=identifier,
@@ -117,39 +103,35 @@ def list_tasks(
     workflow: str | None = None,
 ) -> list[Task]:
     """
-    List all latest version objects from backend.
+    List task entities in a project.
 
     Parameters
     ----------
     project : str
         Project name.
-    q : str
-        Query string to filter objects.
-    name : str
-        Object name.
-    kind : str
-        Kind of the object.
-    user : str
-        User that created the object.
-    state : str
-        Object state.
-    created : str
+    q : str, optional
+        Query string used to filter entities.
+    name : str, optional
+        Entity name used to filter results.
+    kind : str, optional
+        Entity kind used to filter results.
+    user : str, optional
+        User who created the entity.
+    state : str, optional
+        Entity state used to filter results.
+    created : str, optional
         Creation date filter.
-    updated : str
+    updated : str, optional
         Update date filter.
-    function : str
-        Function key filter.
-    workflow : str
-        Workflow key filter.
+    function : str, optional
+        Function reference used to filter results.
+    workflow : str, optional
+        Workflow reference used to filter results.
 
     Returns
     -------
     list[Task]
-        List of object instances.
-
-    Examples
-    --------
-    >>> objs = list_tasks(project="my-project")
+        Task entities matching the filters.
     """
     return crud_processor.list_context_entities(
         project=project,
@@ -173,69 +155,63 @@ def import_task(
     context: str | None = None,
 ) -> Task:
     """
-    Import an object from a YAML file or from a storage key.
+    Import a task entity from a YAML file or entity key.
 
     Parameters
     ----------
-    file : str
-        Path to the YAML file.
-    key : str
-        Entity key (store://...).
-    reset_id : bool
-        Flag to determine if the ID of executable entities should be reset.
-    context : str
-        Project name to use for context resolution.
+    file : str, optional
+        Path to a YAML file containing the entity descriptor. Provide either
+        ``file`` or ``key``.
+    key : str, optional
+        Entity key in the format
+        ``store://<project>/<entity_type>/<kind>/<uuid>``. Provide either
+        ``file`` or ``key``.
+    reset_id : bool, default=False
+        Whether to generate a new entity identifier instead of preserving the
+        identifier from the imported entity.
+    context : str, optional
+        Project name used for context resolution. If omitted, the project from
+        the entity descriptor is used.
 
     Returns
     -------
     Task
-        Object instance.
-
-    Example
-    -------
-    >>> obj = import_task("my-task.yaml")
+        Imported task entity.
     """
     return crud_processor.import_context_entity(file, key, reset_id, context)
 
 
 def load_task(file: str) -> Task:
     """
-    Load object from a YAML file and update an existing object into the backend.
+    Load a task entity from a YAML file.
 
     Parameters
     ----------
     file : str
-        Path to YAML file.
+        Path to a YAML file containing the entity descriptor.
 
     Returns
     -------
     Task
-        Object instance.
-
-    Examples
-    --------
-    >>> obj = load_task("my-task.yaml")
+        Loaded task entity. An existing entity is updated when it can be
+        identified; otherwise, a new entity is created.
     """
     return crud_processor.load_context_entity(file)
 
 
 def update_task(entity: Task) -> Task:
     """
-    Update object. Note that object spec are immutable.
+    Update a task entity in the backend.
 
     Parameters
     ----------
     entity : Task
-        Object to update.
+        Entity to update. The entity specification is immutable.
 
     Returns
     -------
     Task
-        Entity updated.
-
-    Examples
-    --------
-    >>> obj = update_task(obj)
+        Updated task entity.
     """
     return crud_processor.update_context_entity(
         project=entity.project,
@@ -252,27 +228,25 @@ def delete_task(
     cascade: bool = True,
 ) -> dict:
     """
-    Delete object from backend.
+    Delete an unversioned task entity from the backend.
 
     Parameters
     ----------
     identifier : str
-        Entity key (store://...) or entity name.
-    project : str
-        Project name.
-    entity_id : str
-        Entity ID.
-    cascade : bool
-        Cascade delete.
+        Entity ID or entity key in the format
+        ``store://<project>/<entity_type>/<kind>/<uuid>``.
+    project : str, optional
+        Project name. Required when ``identifier`` is an entity ID.
+    entity_id : str, optional
+        Identifier of the entity to delete. If omitted, ``identifier`` is
+        used.
+    cascade : bool, default=True
+        Whether to request cascade deletion from the backend.
 
     Returns
     -------
     dict
-        Response from backend.
-
-    Examples
-    --------
-    >>> obj = delete_task("store://my-task-key")
+        Response data from the backend.
     """
     return crud_processor.delete_context_entity(
         identifier=identifier,

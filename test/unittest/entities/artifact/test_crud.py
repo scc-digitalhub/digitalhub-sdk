@@ -58,6 +58,7 @@ def test_register_base_artifact_uses_source_as_path_and_infers_name(monkeypatch)
         embedded=False,
         extensions=None,
         src_path="s3://my-bucket/incoming/my-model.pkl",
+        format=None,
     )
 
     assert result == "artifact"
@@ -149,6 +150,7 @@ def test_register_artifact_unwraps_single_source(monkeypatch) -> None:
         labels=None,
         embedded=False,
         extensions=None,
+        src_path=None,
     )
 
 
@@ -349,6 +351,7 @@ def test_log_artifact_warns_and_delegates_to_base(monkeypatch) -> None:
         version="1",
         description="An artifact",
         labels=["production"],
+        src_path=None,
         format="bin",
     )
 

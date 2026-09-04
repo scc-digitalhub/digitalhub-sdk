@@ -26,35 +26,29 @@ def new_run(
     **kwargs,
 ) -> Run:
     """
-    Create a new object.
+    Create a new run entity in the backend.
 
     Parameters
     ----------
     project : str
         Project name.
     kind : str
-        Kind the object.
-    uuid : str
-        ID of the object.
-    name : str
-        Name stored in entity metadata.
-    labels : list[str]
-        List of labels.
-    task : str
-        Name of the task associated with the run.
+        Entity kind.
+    uuid : str, optional
+        Entity identifier.
+    name : str, optional
+        Entity name.
+    labels : list[str], optional
+        Entity labels.
+    task : str, optional
+        Task reference associated with the run.
     **kwargs : dict
-        Spec keyword arguments.
+        Additional entity specification parameters.
 
     Returns
     -------
     Run
-        Object instance.
-
-    Examples
-    --------
-    >>> obj = new_run(project="my-project",
-    >>>               kind="python+run",
-    >>>               task="task-string")
+        Created run entity.
     """
     return crud_processor.create_context_entity(
         project=project,
@@ -73,28 +67,20 @@ def get_run(
     project: str | None = None,
 ) -> Run:
     """
-    Get object from backend.
+    Get an unversioned run entity from the backend.
 
     Parameters
     ----------
     identifier : str
-        Entity key (store://...) or entity ID.
-    project : str
-        Project name.
+        Entity ID or entity key in the format
+        ``store://<project>/<entity_type>/<kind>/<uuid>``.
+    project : str, optional
+        Project name. Required when ``identifier`` is an entity ID.
 
     Returns
     -------
     Run
-        Object instance.
-
-    Examples
-    --------
-    Using entity key:
-    >>> obj = get_run("store://my-run-key")
-
-    Using entity ID:
-    >>> obj = get_run("my-run-id"
-    >>>               project="my-project")
+        Retrieved run entity.
     """
     return crud_processor.read_unversioned_entity(
         identifier=identifier,
@@ -118,43 +104,39 @@ def list_runs(
     action: str | None = None,
 ) -> list[Run]:
     """
-    List all latest version objects from backend.
+    List run entities in a project.
 
     Parameters
     ----------
     project : str
         Project name.
-    q : str
-        Query string to filter objects.
-    name : str
-        Object name.
-    kind : str
-        Kind of the object.
-    user : str
-        User that created the object.
-    state : str
-        Object state.
-    created : str
+    q : str, optional
+        Query string used to filter entities.
+    name : str, optional
+        Entity name used to filter results.
+    kind : str, optional
+        Entity kind used to filter results.
+    user : str, optional
+        User who created the entity.
+    state : str, optional
+        Entity state used to filter results.
+    created : str, optional
         Creation date filter.
-    updated : str
+    updated : str, optional
         Update date filter.
-    function : str
-        Function key filter.
-    workflow : str
-        Workflow key filter.
-    task : str
-        Task string filter.
-    action : str
-        Action name filter.
+    function : str, optional
+        Function reference used to filter results.
+    workflow : str, optional
+        Workflow reference used to filter results.
+    task : str, optional
+        Task reference used to filter results.
+    action : str, optional
+        Action name used to filter results.
 
     Returns
     -------
-    list[Model]
-        List of object instances.
-
-    Examples
-    --------
-    >>> objs = list_runs(project="my-project")
+    list[Run]
+        Run entities matching the filters.
     """
     return crud_processor.list_context_entities(
         project=project,
@@ -180,69 +162,63 @@ def import_run(
     context: str | None = None,
 ) -> Run:
     """
-    Import an object from a YAML file or from a storage key.
+    Import a run entity from a YAML file or entity key.
 
     Parameters
     ----------
-    file : str
-        Path to the YAML file.
-    key : str
-        Entity key (store://...).
-    reset_id : bool
-        Flag to determine if the ID of executable entities should be reset.
-    context : str
-        Project name to use for context resolution.
+    file : str, optional
+        Path to a YAML file containing the entity descriptor. Provide either
+        ``file`` or ``key``.
+    key : str, optional
+        Entity key in the format
+        ``store://<project>/<entity_type>/<kind>/<uuid>``. Provide either
+        ``file`` or ``key``.
+    reset_id : bool, default=False
+        Whether to generate a new entity identifier instead of preserving the
+        identifier from the imported entity.
+    context : str, optional
+        Project name used for context resolution. If omitted, the project from
+        the entity descriptor is used.
 
     Returns
     -------
     Run
-        Object instance.
-
-    Example
-    -------
-    >>> obj = import_run("my-run.yaml")
+        Imported run entity.
     """
     return crud_processor.import_context_entity(file, key, reset_id, context)
 
 
 def load_run(file: str) -> Run:
     """
-    Load object from a YAML file and update an existing object into the backend.
+    Load a run entity from a YAML file.
 
     Parameters
     ----------
     file : str
-        Path to YAML file.
+        Path to a YAML file containing the entity descriptor.
 
     Returns
     -------
     Run
-        Object instance.
-
-    Examples
-    --------
-    >>> obj = load_run("my-run.yaml")
+        Loaded run entity. An existing entity is updated when it can be
+        identified; otherwise, a new entity is created.
     """
     return crud_processor.load_context_entity(file)
 
 
 def update_run(entity: Run) -> Run:
     """
-    Update object. Note that object spec are immutable.
+    Update a run entity in the backend.
 
     Parameters
     ----------
     entity : Run
-        Object to update.
+        Entity to update. The entity specification is immutable.
 
     Returns
     -------
     Run
-        Entity updated.
-
-    Examples
-    --------
-    >>> obj = update_run(obj)
+        Updated run entity.
     """
     return crud_processor.update_context_entity(
         project=entity.project,
@@ -258,29 +234,23 @@ def delete_run(
     entity_id: str | None = None,
 ) -> dict:
     """
-    Delete object from backend.
+    Delete an unversioned run entity from the backend.
 
     Parameters
     ----------
     identifier : str
-        Entity key (store://...) or entity name.
-    project : str
-        Project name.
-    entity_id : str
-        Entity ID.
+        Entity ID or entity key in the format
+        ``store://<project>/<entity_type>/<kind>/<uuid>``.
+    project : str, optional
+        Project name. Required when ``identifier`` is an entity ID.
+    entity_id : str, optional
+        Identifier of the entity to delete. If omitted, ``identifier`` is
+        used.
 
     Returns
     -------
     dict
-        Response from backend.
-
-    Examples
-    --------
-    >>> obj = delete_run("store://my-run-key")
-    >>> obj = delete_run(
-    ...     "my-run-id",
-    ...     project="my-project",
-    ... )
+        Response data from the backend.
     """
     return crud_processor.delete_context_entity(
         identifier=identifier,

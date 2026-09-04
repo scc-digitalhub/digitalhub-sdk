@@ -33,40 +33,37 @@ def log_croissant(
     path: str | None = None,
     description: str | None = None,
     labels: list[str] | None = None,
+    version: str | None = None,
     **kwargs,
 ) -> DataitemCroissant:
     """
-    Create and upload an object.
+    Create and upload a Croissant dataitem entity.
 
     Parameters
     ----------
     project : str
         Project name.
     name : str
-        Object name.
+        Entity name.
     source : str
-        Metadata JSON file path.
-    drop_existing : bool
+        Croissant metadata JSON file path.
+    drop_existing : bool, default=False
         Whether to drop existing entity with the same name.
-    path : str
-        Destination path of the dataitem. If not provided, it's generated.
-    description : str
-        Dataitem description.
-    labels : list[str]
-        Dataitem labels.
+    path : str, optional
+        Destination path. If omitted, it is generated.
+    description : str, optional
+        Human-readable entity description.
+    labels : list[str], optional
+        Entity labels.
+    version : str, optional
+        Entity version.
     **kwargs : dict
-        New dataitem spec parameters.
+        Additional dataitem specification parameters.
 
     Returns
     -------
     DataitemCroissant
-        Object instance.
-
-    Examples
-    --------
-    >>> obj = log_croissant(project="my-project",
-    >>>                     name="my-croissant",
-    >>>                     source="./metadata.json")
+        Created Croissant dataitem entity with uploaded files.
     """
     # Validate the source and transform it to point to the
     # metadata.json file if it's a directory
@@ -95,6 +92,7 @@ def log_croissant(
             drop_existing=drop_existing,
             description=description,
             labels=labels,
+            version=version,
             **kwargs,
         )
     except EntityErrorFileNotFound as e:
@@ -129,7 +127,37 @@ def register_croissant(
     extensions: list[dict] | None = None,
     **kwargs,
 ) -> DataitemCroissant:
-    """Register a Croissant dataitem that already exists in a supported store."""
+    """
+    Register a Croissant dataitem entity for an existing source.
+
+    Parameters
+    ----------
+    project : str
+        Project name.
+    source : SourcesOrListOfSources
+        Path or URI of the existing Croissant dataitem.
+    name : str, optional
+        Entity name. If omitted, it is inferred from ``source``.
+    uuid : str, optional
+        Entity identifier.
+    version : str, optional
+        Entity version.
+    description : str, optional
+        Human-readable entity description.
+    labels : list[str], optional
+        Entity labels.
+    embedded : bool, default=False
+        Whether to embed the entity specification in the project specification.
+    extensions : list[dict], optional
+        Entity extensions.
+    **kwargs : dict
+        Additional dataitem specification parameters.
+
+    Returns
+    -------
+    DataitemCroissant
+        Registered Croissant dataitem entity.
+    """
     return register_base_dataitem(
         project=project,
         source=source,
