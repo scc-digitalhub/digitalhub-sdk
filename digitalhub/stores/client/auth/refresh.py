@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import typing
 from typing import Any
-from warnings import warn
 
 from requests.exceptions import HTTPError
 
@@ -51,6 +50,8 @@ class TokenRefreshService:
         if not self._auth_handler.is_refreshable():
             raise ClientError(f"Auth type {self._auth_handler.auth_type} does not support refresh.")
 
+        logger.debug("Starting credential refresh with auth type '%s'.", self._auth_handler.auth_type)
+
         # Get credentials and configuration
         creds = self._config_manager.get_credentials_and_config()
 
@@ -58,6 +59,7 @@ class TokenRefreshService:
         if (url := creds.get(ConfigurationVars.OAUTH2_TOKEN_ENDPOINT.value)) is None:
             url = self._get_refresh_endpoint()
         url = sanitize_endpoint(url)
+        logger.debug("Refresh endpoint resolved; sending credential refresh request.")
 
         # Execute the appropriate auth flow
         response = self._evaluate_auth_flow(url, creds)
@@ -65,11 +67,15 @@ class TokenRefreshService:
         # Raise an error if the response indicates failure
         response.raise_for_status()
 
+        refreshed_credentials = response.json()
+        logger.debug("Refresh request succeeded; persisting fields: %s", sorted(refreshed_credentials))
+
         # Export new credentials to file
-        self._export_new_creds(response.json())
+        self._export_new_creds(refreshed_credentials)
 
         # Re-evaluate auth type
         self._auth_handler.evaluate_auth_type()
+        logger.debug("Credential refresh completed successfully.")
 
     def evaluate_refresh(self, check_token_validity: bool = False) -> bool:
         """
@@ -95,28 +101,33 @@ class TokenRefreshService:
                 )
                 return False
             logger.debug("Current token is invalid or expired, attempting refresh.")
-        try:
-            self.refresh_credentials()
-            return True
-        except (ClientError, HTTPError):
-            logger.debug("Credential refresh failed, evaluating retry.", exc_info=True)
-            if not self._config_manager.eval_retry():
-                if self._config_manager.in_memory:
-                    warn(
-                        "Failed to refresh credentials after retry attempt, and configuration is in-memory only."
-                        " Please check your credentials and make sure they are up to date."
-                        " (refresh tokens, password, etc.)."
-                    )
-                    return False
-                warn(
-                    "Failed to refresh credentials after retry"
-                    " (checked credentials from file and env)."
-                    " Please check your credentials"
-                    " and make sure they are up to date."
-                    " (refresh tokens, password, etc.)."
+        max_attempts = get_client_config().max_refresh_attempts
+        attempt = 1
+        while attempt <= max_attempts:
+            logger.debug("Starting credential refresh attempt %d.", attempt)
+            try:
+                self.refresh_credentials()
+                logger.debug("Credential refresh attempt %d succeeded.", attempt)
+                return True
+            except (ClientError, HTTPError) as error:
+                logger.debug(
+                    "Credential refresh attempt %d failed with %s; evaluating fallback.",
+                    attempt,
+                    type(error).__name__,
+                    exc_info=True,
                 )
-                return False
-            return self.evaluate_refresh()
+                if attempt >= max_attempts:
+                    logger.debug(
+                        "Credential refresh stopped after reaching the maximum of %d attempts.",
+                        max_attempts,
+                    )
+                    raise
+                should_retry = self._config_manager.eval_retry()
+                logger.debug("Credential refresh fallback decision after attempt %d: %s.", attempt, should_retry)
+                if not should_retry:
+                    logger.debug("Credential refresh stopped after attempt %d.", attempt)
+                    raise
+                attempt += 1
 
     def _test_token_validity(self) -> bool:
         """

@@ -8,7 +8,7 @@ from requests.exceptions import Timeout as RequestsTimeout
 import digitalhub.stores.client.http.handler as handler_module
 import digitalhub.stores.client.http.transport as transport_module
 from digitalhub.stores.client.http.handler import HttpRequestHandler
-from digitalhub.utils.exceptions import BackendError, UnauthorizedError
+from digitalhub.utils.exceptions import BackendError, ForbiddenError, UnauthorizedError
 
 
 def test_request_refreshes_credentials_only_once(monkeypatch) -> None:
@@ -51,6 +51,25 @@ def test_request_returns_replay_result_after_refresh(monkeypatch) -> None:
     assert result == {"result": "ok"}
     assert request.call_count == 2
     assert request.call_args.kwargs["headers"] == {"Authorization": "Bearer refreshed"}
+
+
+def test_request_does_not_refresh_credentials_on_forbidden(monkeypatch) -> None:
+    configurator = Mock()
+    configurator.get_endpoint.return_value = "https://example.test"
+    configurator.get_auth_parameters.side_effect = lambda kwargs: kwargs
+
+    request = Mock(return_value=object())
+    monkeypatch.setattr(handler_module, "request", request)
+
+    handler = HttpRequestHandler(configurator)
+    handler._response_processor = Mock()
+    handler._response_processor.process.side_effect = ForbiddenError()
+
+    with pytest.raises(ForbiddenError):
+        handler.execute_request("GET", "/resource")
+
+    configurator.evaluate_refresh.assert_not_called()
+    assert request.call_count == 1
 
 
 @pytest.mark.parametrize(

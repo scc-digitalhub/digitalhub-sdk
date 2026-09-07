@@ -21,6 +21,9 @@ from digitalhub.stores.client.auth.file_module import (
 from digitalhub.stores.client.common.utils import sanitize_endpoint
 from digitalhub.utils.exceptions import ClientError
 from digitalhub.utils.generic_utils import list_enum
+from digitalhub.utils.logger.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class ConfigManager:
@@ -161,13 +164,15 @@ class ConfigManager:
 
     def reload_credentials_from_env(self) -> None:
         """
-        Reload credentials from environment where env > file precedence.
-        Its a partial reload only from env variables used as fallback.
+        Reload credentials from environment only.
+
+        This switches the active credential source for the current session.
         """
         variables = list_enum(CredentialsVars)
         env_config = self._read_env(variables)
-        file_config = self._read_file(variables, self.current_profile)
-        self._credentials = {**file_config, **{k: v for k, v in env_config.items() if v is not None}}
+        self._credentials = env_config
+        self._reloaded_from_env = True
+        logger.debug("Credential source switched to environment variables for the current session.")
 
     def eval_retry(self) -> bool:
         """
@@ -178,15 +183,21 @@ class ConfigManager:
         bool
             True if a retry action was performed, otherwise False.
         """
+        # Do not revisit file credentials after switching to environment credentials.
+        if self._reloaded_from_env:
+            logger.debug("Credential source is locked to environment variables; skipping file reload.")
+            return False
+
         # Compare cached and file credentials. If different, reload in cache.
         if self._credentials != self.load_credentials():
+            logger.debug("File credentials changed; reloading credentials from the active profile.")
             self.reload_credentials()
             return True
 
         # Check if we need to reload from env only
         if not self._reloaded_from_env:
+            logger.debug("File credential retry did not resolve authentication; switching to environment variables.")
             self.reload_credentials_from_env()
-            self._reloaded_from_env = True
             return True
 
         return False
@@ -246,17 +257,24 @@ class ConfigManager:
     def save_credentials(self, variables: dict) -> None:
         """Save refreshed credentials to the active storage."""
         if self._in_memory:
+            logger.debug("Persisting refreshed credentials in memory only.")
             self.update_in_memory({k.upper(): v for k, v in variables.items()})
             return
 
         try:
             self.export_to_ini(variables)
             self.export_to_env(variables)
-            self.reload_credentials()
+            if self._reloaded_from_env:
+                self.update_in_memory({k.upper(): v for k, v in variables.items()})
+                logger.debug("Persisted refreshed credentials and kept environment credentials active in memory.")
+            else:
+                self.reload_credentials()
+                logger.debug("Persisted refreshed credentials and reloaded the active file profile.")
             self.load_to_env()
         except (ClientError, OSError):
             self._in_memory = True
             self.update_in_memory({k.upper(): v for k, v in variables.items()})
+            logger.warning("Credential persistence failed; refreshed credentials will remain in memory only.")
             warn("Configuration file is not writable. Credentials will be stored in memory only for this session.")
 
     ##############################

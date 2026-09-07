@@ -80,6 +80,7 @@ class ClientConfig:
     ##################################
 
     # Authentication defaults
+    max_refresh_attempts: int = 3
     oauth2_grant_type: str = "refresh_token"
     oauth2_scope: str = "credentials"
 
