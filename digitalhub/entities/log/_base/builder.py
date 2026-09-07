@@ -5,13 +5,13 @@
 from __future__ import annotations
 
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
-from digitalhub.entities._mixin.versioned.builder import VersionedBuilder
+from digitalhub.entities._base.entity.builder import EntityBuilder
 from digitalhub.entities.log._base.entity import Log
 from digitalhub.entities.log._base.spec import LogSpec, LogValidator
 from digitalhub.entities.log._base.status import LogStatus
 
 
-class LogLogBuilder(VersionedBuilder):
+class LogLogBuilder(EntityBuilder):
     """
     LogLogBuilder builder.
     """
@@ -25,12 +25,13 @@ class LogLogBuilder(VersionedBuilder):
 
     def build(
         self,
-        kind: str,
         project: str,
-        name: str,
-        uuid: str | None = None,
+        kind: str,
+        uuid: str,
+        run: str,
         description: str | None = None,
         labels: list[str] | None = None,
+        extensions: list | None = None,
         **kwargs,
     ) -> Log:
         """
@@ -40,16 +41,18 @@ class LogLogBuilder(VersionedBuilder):
         ----------
         project : str
             Project name.
-        name : str
-            Object name.
         kind : str
-            Kind the object.
+            Kind of the log entity.
         uuid : str
             ID of the object.
-        description : str
+        run : str
+            Run ID associated with the log.
+        description : str | None
             Description of the object (human readable).
-        labels : list[str]
+        labels : list[str] | None
             List of labels.
+        extensions : list | None
+            List of extensions.
         **kwargs : dict
             Spec keyword arguments.
 
@@ -58,11 +61,9 @@ class LogLogBuilder(VersionedBuilder):
         Log
             Object instance.
         """
-        name = self.build_name(name)
         uuid = self.build_uuid(uuid)
         metadata = self.build_metadata(
             project=project,
-            name=name,
             description=description,
             labels=labels,
         )
@@ -70,10 +71,63 @@ class LogLogBuilder(VersionedBuilder):
         status = self.build_status()
         return self.build_entity(
             project=project,
-            name=name,
             uuid=uuid,
+            run=run,
             kind=kind,
             metadata=metadata,
             spec=spec,
             status=status,
+            extensions=extensions,
         )
+
+    def from_dict(self, obj: dict) -> Log:
+        """
+        Create a new object from dictionary.
+
+        Parameters
+        ----------
+        obj : dict
+            Dictionary to create object from.
+
+        Returns
+        -------
+        Log
+            Object instance.
+        """
+        parsed_dict = self._parse_dict(obj)
+        return self.build_entity(**parsed_dict)
+
+    def _parse_dict(self, obj: dict) -> dict:
+        """
+        Get dictionary and parse it to a valid entity dictionary.
+
+        Parameters
+        ----------
+        obj : dict
+            Dictionary to parse.
+
+        Returns
+        -------
+        dict
+            A dictionary containing the attributes of the entity instance.
+        """
+        project = obj.get("project")
+        kind = obj.get("kind")
+        uuid = self.build_uuid(obj.get("id"))
+        run = obj.get("run")
+        metadata = self.build_metadata(**obj.get("metadata", {}))
+        spec = self.build_spec(**obj.get("spec", {}))
+        status = self.build_status(**obj.get("status", {}))
+        user = obj.get("user")
+        extensions = obj.get("extensions")
+        return {
+            "project": project,
+            "uuid": uuid,
+            "kind": kind,
+            "run": run,
+            "metadata": metadata,
+            "spec": spec,
+            "status": status,
+            "user": user,
+            "extensions": extensions,
+        }

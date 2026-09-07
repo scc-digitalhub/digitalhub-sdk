@@ -10,12 +10,12 @@ from digitalhub.utils.generic_utils import encode_string
 def build_log() -> Log:
     return Log(
         project="my-project",
-        name="run-log",
         uuid="log-id",
         kind=EntityKinds.LOG_LOG.value,
         metadata=Metadata(name="run-log"),
-        spec=LogSpec(run="run-id"),
+        spec=LogSpec(),
         status=LogStatus(state=State.CREATED.value),
+        run="run-id",
     )
 
 
@@ -36,10 +36,9 @@ def test_set_content_decodes_base64_and_exposes_text() -> None:
     assert log.text == "log output\nfinished"
 
 
-def test_log_spec_stores_run_and_timestamp() -> None:
-    spec = LogSpec(run="run-id", timestamp=123)
+def test_log_spec_stores_timestamp() -> None:
+    spec = LogSpec(timestamp=123)
 
-    assert spec.run == "run-id"
     assert spec.timestamp == 123
 
 
@@ -47,7 +46,6 @@ def test_log_builder_builds_entity() -> None:
     log = LogLogBuilder().build(
         kind=EntityKinds.LOG_LOG.value,
         project="my-project",
-        name="run-log",
         uuid="log-id",
         description="Run output",
         labels=["job"],
@@ -58,11 +56,11 @@ def test_log_builder_builds_entity() -> None:
     assert isinstance(log, Log)
     assert log.ENTITY_TYPE == EntityTypes.LOG.value
     assert log.project == "my-project"
-    assert log.name == "run-log"
-    assert log.id == "log-id"
+    assert log.metadata.name is not None
+    assert log.uuid == "log-id"
     assert log.kind == EntityKinds.LOG_LOG.value
     assert log.metadata.description == "Run output"
     assert log.metadata.labels == ["job"]
-    assert log.spec.run == "run-id"
+    assert log.run == "run-id"
     assert log.spec.timestamp == 123
     assert log.status.state == State.CREATED.value

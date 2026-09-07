@@ -14,12 +14,10 @@ class LogSpec(Spec):
 
     def __init__(
         self,
-        run: str,
         timestamp: int | None = None,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
-        self.run = run
         self.timestamp = timestamp
 
 
@@ -27,9 +25,6 @@ class LogValidator(SpecValidator):
     """
     LogValidator validator.
     """
-
-    run: str
-    """Run id."""
 
     timestamp: int | None = None
     """Timestamp of the log."""

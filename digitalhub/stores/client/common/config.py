@@ -63,8 +63,8 @@ class ClientConfig:
 
     # API level defaults
     max_api_level: int = 20
-    min_api_level: int = 15
-    lib_version: int = 15
+    min_api_level: int = 16
+    lib_version: int = 16
 
     # Configuration file path
     config_ini_path: Path = field(default_factory=_get_config_file_path)
