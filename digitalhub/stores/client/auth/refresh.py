@@ -259,12 +259,4 @@ class TokenRefreshService:
             if key.removeprefix(prefix) in response:
                 response[key] = response.pop(key.removeprefix(prefix))
 
-        # Write new credentials to file if possible, otherwise update in-memory configuration
-        if not self._config_manager.in_memory:
-            self._config_manager.export_to_ini(response)
-            self._config_manager.export_to_env(response)
-            self._config_manager.reload_credentials()
-            self._config_manager.load_to_env()
-        else:
-            variables = {k.upper(): v for k, v in response.items()}
-            self._config_manager.update_in_memory(variables)
+        self._config_manager.save_credentials(response)

@@ -165,13 +165,14 @@ class ConfigManager:
 
     def reload_credentials_from_env(self) -> None:
         """
-        Reload credentials from environment where env > file precedence.
-        Its a partial reload only from env variables used as fallback.
+        Reload credentials from environment only.
+
+        This switches the active credential source for the current session.
         """
         variables = list_enum(CredentialsVars)
         env_config = self._read_env(variables)
-        file_config = self._read_file(variables, self.current_profile)
-        self._credentials = {**file_config, **{k: v for k, v in env_config.items() if v is not None}}
+        self._credentials = env_config
+        self._reloaded_from_env = True
 
     def eval_retry(self) -> bool:
         """
@@ -182,18 +183,16 @@ class ConfigManager:
         bool
             True if a retry action was performed, otherwise False.
         """
+        if self._reloaded_from_env:
+            return False
+
         # Compare cached and file credentials. If different, reload in cache.
         if self._credentials != self.load_credentials():
             self.reload_credentials()
             return True
 
-        # Check if we need to reload from env only
-        if not self._reloaded_from_env:
-            self.reload_credentials_from_env()
-            self._reloaded_from_env = True
-            return True
-
-        return False
+        self.reload_credentials_from_env()
+        return True
 
     ##############################
     # Export methods
@@ -246,6 +245,25 @@ class ConfigManager:
             Variables to update.
         """
         self._credentials.update(variables)
+
+    def save_credentials(self, variables: dict) -> None:
+        """Save refreshed credentials to the active storage."""
+        if self._in_memory:
+            self.update_in_memory({k.upper(): v for k, v in variables.items()})
+            return
+
+        try:
+            self.export_to_ini(variables)
+            self.export_to_env(variables)
+            if self._reloaded_from_env:
+                self.update_in_memory({k.upper(): v for k, v in variables.items()})
+            else:
+                self.reload_credentials()
+            self.load_to_env()
+        except (ClientError, OSError):
+            self._in_memory = True
+            self.update_in_memory({k.upper(): v for k, v in variables.items()})
+            warn("Configuration file is not writable. Credentials will be stored in memory only for this session.")
 
     def _write_file(self) -> None:
         """
