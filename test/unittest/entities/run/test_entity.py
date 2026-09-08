@@ -3,8 +3,11 @@ from unittest.mock import Mock
 
 import pytest
 
+from digitalhub.entities._base.metadata.entity import Metadata
 from digitalhub.entities._commons.enums import State
 from digitalhub.entities.run._base.entity import Run
+from digitalhub.entities.run._base.spec import RunSpec
+from digitalhub.entities.run._base.status import RunStatus
 from digitalhub.utils.exceptions import EntityError
 
 
@@ -33,6 +36,20 @@ def test_start_execution_validates_state_before_registering_run() -> None:
         run.start_execution()
 
     context.set_run.assert_not_called()
+
+
+def test_run_serialization_keeps_explicit_name_after_backend_refresh() -> None:
+    run = Run(
+        project="my-project",
+        name="named-run",
+        uuid="run-id",
+        kind="python+job:run",
+        metadata=Metadata(name="run-id"),
+        spec=RunSpec(task="python+job://my-project/task-id"),
+        status=RunStatus(state=State.CREATED.value),
+    )
+
+    assert run.to_dict()["metadata"]["name"] == "named-run"
 
 
 def test_start_execution_rolls_back_registration_when_state_save_fails() -> None:
