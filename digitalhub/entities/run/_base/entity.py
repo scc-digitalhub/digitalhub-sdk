@@ -59,13 +59,6 @@ class Run(ContextEntity, UnversionedMixin, MetricsMixin):
 
         init_run_extensions(self, extensions)
 
-    def to_dict(self) -> dict:
-        """Serialize the run using its explicit name in metadata."""
-        obj = super().to_dict()
-        if self.name is not None and "metadata" in obj:
-            obj["metadata"]["name"] = self.name
-        return obj
-
     ##############################
     #  Run Methods
     ##############################

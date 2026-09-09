@@ -38,20 +38,6 @@ def test_start_execution_validates_state_before_registering_run() -> None:
     context.set_run.assert_not_called()
 
 
-def test_run_serialization_keeps_explicit_name_after_backend_refresh() -> None:
-    run = Run(
-        project="my-project",
-        name="named-run",
-        uuid="run-id",
-        kind="python+job:run",
-        metadata=Metadata(name="run-id"),
-        spec=RunSpec(task="python+job://my-project/task-id"),
-        status=RunStatus(state=State.CREATED.value),
-    )
-
-    assert run.to_dict()["metadata"]["name"] == "named-run"
-
-
 def test_start_execution_rolls_back_registration_when_state_save_fails() -> None:
     run = object.__new__(Run)
     run.status = SimpleNamespace(state=State.BUILT.value)
