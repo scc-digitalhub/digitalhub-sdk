@@ -3,11 +3,8 @@ from unittest.mock import Mock
 
 import pytest
 
-from digitalhub.entities._base.metadata.entity import Metadata
 from digitalhub.entities._commons.enums import State
 from digitalhub.entities.run._base.entity import Run
-from digitalhub.entities.run._base.spec import RunSpec
-from digitalhub.entities.run._base.status import RunStatus
 from digitalhub.utils.exceptions import EntityError
 
 
