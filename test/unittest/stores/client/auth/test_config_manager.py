@@ -1,7 +1,7 @@
 from unittest.mock import Mock
 
-from digitalhub.stores.client.auth.enums import ConfigurationVars, CredentialsVars
 from digitalhub.stores.client.auth.config_manager import ConfigManager
+from digitalhub.stores.client.auth.enums import ConfigurationVars, CredentialsVars
 from digitalhub.utils.exceptions import ClientError
 
 
