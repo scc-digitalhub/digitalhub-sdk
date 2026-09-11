@@ -92,7 +92,7 @@ def log_base_artifact(
     description: str | None = None,
     labels: list[str] | None = None,
     **kwargs,
-)-> Artifact:
+) -> Artifact:
     """
     Create an artifact entity and upload a local source.
 

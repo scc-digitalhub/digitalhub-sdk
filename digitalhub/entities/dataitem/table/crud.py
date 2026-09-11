@@ -105,9 +105,7 @@ def log_table(
     """
 
     kwargs = {
-        key: value
-        for key, value in {**kwargs, "version": version, "schema": schema}.items()
-        if value is not None
+        key: value for key, value in {**kwargs, "version": version, "schema": schema}.items() if value is not None
     }
 
     data_source = _eval_source(source, data, sql)
