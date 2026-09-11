@@ -262,19 +262,21 @@ class ConfigManager:
 
         try:
             self.export_to_ini(variables)
-            self.export_to_env(variables)
-            if self._reloaded_from_env:
-                self.update_in_memory({k.upper(): v for k, v in variables.items()})
-                logger.debug("Persisted refreshed credentials and kept environment credentials active in memory.")
-            else:
-                self.reload_credentials()
-                logger.debug("Persisted refreshed credentials and reloaded the active file profile.")
-            self.load_to_env()
         except (ClientError, OSError):
             self._in_memory = True
             self.update_in_memory({k.upper(): v for k, v in variables.items()})
             logger.warning("Credential persistence failed; refreshed credentials will remain in memory only.")
             warn("Configuration file is not writable. Credentials will be stored in memory only for this session.")
+            return
+
+        self.export_to_env(variables)
+        if self._reloaded_from_env:
+            self.update_in_memory({k.upper(): v for k, v in variables.items()})
+            logger.debug("Persisted refreshed credentials and kept environment credentials active in memory.")
+        else:
+            self.reload_credentials()
+            logger.debug("Persisted refreshed credentials and reloaded the active file profile.")
+        self.load_to_env()
 
     def _write_file(self) -> None:
         """
