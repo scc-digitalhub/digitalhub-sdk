@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import os
 from typing import Any, ClassVar
-from warnings import warn
 
 from digitalhub.stores.client.auth.enums import ConfigurationVars, CredentialsVars, SetCreds
 from digitalhub.stores.client.auth.file_module import (
@@ -232,7 +231,7 @@ class ConfigManager:
         try:
             write_dotenv(variables)
         except (ClientError, OSError):
-            warn("Failed to write credentials to .env file.")
+            logger.debug("Failed to write credentials to .env file.")
 
     def load_to_env(self) -> None:
         """
@@ -241,7 +240,7 @@ class ConfigManager:
         try:
             load_dotenv_file()
         except (ClientError, OSError):
-            warn("Failed to load credentials from .env file.")
+            logger.debug("Failed to load credentials from .env file.")
 
     def update_in_memory(self, variables: dict) -> None:
         """
@@ -267,7 +266,6 @@ class ConfigManager:
             self._in_memory = True
             self.update_in_memory({k.upper(): v for k, v in variables.items()})
             logger.warning("Credential persistence failed; refreshed credentials will remain in memory only.")
-            warn("Configuration file is not writable. Credentials will be stored in memory only for this session.")
             return
 
         self.export_to_env(variables)
