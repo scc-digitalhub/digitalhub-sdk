@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import typing
-from typing import Callable
+from collections.abc import Callable
 
 from digitalhub.entities._commons.enums import State
 from digitalhub.entities._processors.utils import get_context

@@ -8,7 +8,7 @@ from typing import Any, Union
 
 from pydantic import BaseModel, ValidationError
 
-MetricType = Union[float, int, list[Union[float, int]]]
+MetricType = Union[float, int, list[float | int]]
 
 
 class Metric(BaseModel):
@@ -93,7 +93,7 @@ def update_metrics(
 def handle_metric_single(
     metrics: dict[str, MetricType],
     key: str,
-    value: float | int,
+    value: float,
     overwrite: bool,
 ) -> dict:
     """
@@ -126,7 +126,7 @@ def handle_metric_single(
 def handle_metric_list_append(
     metrics: dict[str, MetricType],
     key: str,
-    value: float | int,
+    value: float,
     overwrite: bool,
 ) -> dict:
     """

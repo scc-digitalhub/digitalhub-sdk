@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Type
+from typing import Any
 from urllib.parse import urlparse
 
 import boto3
@@ -25,7 +25,7 @@ from digitalhub.utils.types import Dataframe, SourcesOrListOfSources
 logger = get_logger(__name__)
 
 # Type aliases
-S3Client = Type["botocore.client.S3"]
+S3Client = type["botocore.client.S3"]
 
 MULTIPART_THRESHOLD = 100 * 1024 * 1024
 
@@ -724,8 +724,7 @@ class S3Store(Store):
             The key.
         """
         key = urlparse(path).path.replace("\\", "/")
-        if key.startswith("/"):
-            key = key[1:]
+        key = key.removeprefix("/")
         return key
 
     def _list_objects(self, client: S3Client, bucket: str, partition: str) -> list[str]:

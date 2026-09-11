@@ -31,8 +31,7 @@ def write_dotenv(variables: dict) -> None:
         current_values = {str(key).upper(): str(value) for key, value in variables.items() if value is not None}
 
         with open(DOTENV_FILE, "w") as envfile:
-            for key, value in current_values.items():
-                envfile.write(f"{key}={value}\n")
+            envfile.writelines(f"{key}={value}\n" for key, value in current_values.items())
     except Exception as e:
         raise ClientError(f"Failed to write .env file: {e}")
 

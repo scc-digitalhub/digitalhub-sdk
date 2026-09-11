@@ -4,13 +4,8 @@
 
 from __future__ import annotations
 
-import typing
-
 from digitalhub.stores.client.base.factory import get_client
 from digitalhub.stores.client.common.enums import ApiCategories, BackendOperations
-
-if typing.TYPE_CHECKING:
-    pass
 
 
 class BaseEntitySpecialOpsProcessor:

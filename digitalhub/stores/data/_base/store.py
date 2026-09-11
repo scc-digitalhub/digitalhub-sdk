@@ -138,7 +138,7 @@ class Store:
             Specify if overwrite an existing file.
         """
         if dst.exists() and not overwrite:
-            raise StoreError(f"Destination {str(dst)} already exists.")
+            raise StoreError(f"Destination {dst!s} already exists.")
 
     @staticmethod
     def _build_path(path: str | Path) -> None:

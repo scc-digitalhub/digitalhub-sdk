@@ -30,7 +30,6 @@ class ParameterStrategy(ABC):
         dict
             Formatted parameters.
         """
-        pass
 
 
 class SearchParameterStrategy(ParameterStrategy):

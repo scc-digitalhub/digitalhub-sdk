@@ -6,9 +6,9 @@ from __future__ import annotations
 
 import re
 import typing
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
 
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.utils.exceptions import BackendError
