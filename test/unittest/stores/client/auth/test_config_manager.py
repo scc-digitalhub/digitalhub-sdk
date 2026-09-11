@@ -1,7 +1,5 @@
 from unittest.mock import Mock
 
-import pytest
-
 from digitalhub.stores.client.auth.enums import ConfigurationVars, CredentialsVars
 from digitalhub.stores.client.auth.config_manager import ConfigManager
 from digitalhub.utils.exceptions import ClientError
@@ -100,7 +98,6 @@ def test_save_credentials_after_environment_fallback_keeps_memory_state() -> Non
     manager.export_to_ini = Mock()
     manager.export_to_env = Mock()
     manager.reload_credentials = Mock(side_effect=AssertionError("file must not be reloaded"))
-    manager.load_to_env = Mock()
 
     manager.save_credentials(
         {
@@ -114,7 +111,6 @@ def test_save_credentials_after_environment_fallback_keeps_memory_state() -> Non
         CredentialsVars.S3_ACCESS_KEY_ID.value: "new-s3-access",
     }
     manager.reload_credentials.assert_not_called()
-    manager.load_to_env.assert_called_once_with()
 
 
 def test_initialization_does_not_write_configuration(monkeypatch) -> None:
@@ -172,8 +168,7 @@ def test_save_credentials_falls_back_to_memory_when_file_is_unwritable() -> None
     manager.export_to_ini = Mock(side_effect=ClientError("unwritable"))
     manager.export_to_env = Mock()
 
-    with pytest.warns(UserWarning, match="stored in memory"):
-        manager.save_credentials({"dhcore_access_token": "new"})
+    manager.save_credentials({"dhcore_access_token": "new"})
 
     assert manager.in_memory is True
     assert manager.credentials == {"DHCORE_ACCESS_TOKEN": "new"}

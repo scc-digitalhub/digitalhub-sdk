@@ -275,7 +275,7 @@ class ConfigManager:
         else:
             self.reload_credentials()
             logger.debug("Persisted refreshed credentials and reloaded the active file profile.")
-            self.load_to_env()
+        self.load_to_env()
 
     ##############################
     # Utility methods
