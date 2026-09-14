@@ -594,7 +594,7 @@ class ContextEntityCRUDProcessor:
             entity_dict,
             **kwargs,
         )
-        return entity_factory.build_entity_from_dict(obj)
+        return entity_factory.build_entity_from_dict(obj, entity_type=entity_type)
 
     def _delete_context_entity(
         self,
