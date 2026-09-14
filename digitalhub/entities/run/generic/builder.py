@@ -13,7 +13,6 @@ from digitalhub.entities._mixin.unversioned.builder import UnversionedBuilder
 from digitalhub.entities.run.generic.entity import RunGeneric
 
 
-
 class RunGenericBuilder(GenericBuilder, UnversionedBuilder):
     """Builder for generic runs that preserves arbitrary payload fields."""
 

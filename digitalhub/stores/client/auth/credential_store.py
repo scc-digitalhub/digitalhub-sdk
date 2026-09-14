@@ -61,7 +61,7 @@ class CredentialStore:
         except (ClientError, OSError):
             logger.debug("Failed to load credentials from .env file.")
 
-    def _load(self, variables: type[ConfigurationVars] | type[CredentialsVars]) -> dict[str, Any]:
+    def _load(self, variables: type[ConfigurationVars | CredentialsVars]) -> dict[str, Any]:
         keys = list_enum(variables)
         env_values = self._read_env(keys)
         file_values = self._read_file(keys, self._profile)

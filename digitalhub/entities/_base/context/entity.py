@@ -78,7 +78,12 @@ class ContextEntity(Entity):
         ContextEntity
             Entity updated.
         """
-        new_obj = crud_processor.update_context_entity(project=self.project, entity_type=self.ENTITY_TYPE, identifier=self.id, data=self.to_dict(),)
+        new_obj = crud_processor.update_context_entity(
+            self.project,
+            self.ENTITY_TYPE,
+            self.id,
+            self.to_dict(),
+        )
         self._update_attributes(new_obj)
         return self
 
@@ -102,7 +107,10 @@ class ContextEntity(Entity):
         ContextEntity
             Entity refreshed.
         """
-        new_obj = crud_processor.read_context_entity(identifier=self.key, entity_type=self.ENTITY_TYPE,)
+        new_obj = crud_processor.read_context_entity(
+            self.key,
+            entity_type=self.ENTITY_TYPE,
+        )
         self._update_attributes(new_obj)
         return self
 

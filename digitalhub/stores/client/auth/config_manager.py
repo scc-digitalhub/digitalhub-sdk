@@ -7,8 +7,8 @@ from __future__ import annotations
 import os
 from typing import Any, ClassVar
 
-from digitalhub.stores.client.auth.credential_store import CredentialStore
 from digitalhub.stores.client.auth.credential_session import CredentialSession
+from digitalhub.stores.client.auth.credential_store import CredentialStore
 from digitalhub.stores.client.auth.enums import ConfigurationVars, CredentialSource, CredentialsVars, SetCreds
 from digitalhub.stores.client.auth.file_module import (
     load_file,

@@ -78,7 +78,7 @@ def test_refresh_reads_key_and_updates_attributes(monkeypatch) -> None:
     result = entity.refresh()
 
     assert result is entity
-    read_entity.assert_called_once_with(entity.key)
+    read_entity.assert_called_once_with(entity.key, entity_type=entity.ENTITY_TYPE)
     assert entity.metadata is refreshed.metadata
 
 

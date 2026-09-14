@@ -408,15 +408,17 @@ class ContextEntityCRUDProcessor:
         if context is None:
             context = dict_obj["project"]
 
+        _, entity_type, _, _, _ = parse_identifier(dict_obj["key"])
+
         ctx = get_context(context)
-        obj = entity_factory.build_entity_from_dict(dict_obj)
+        obj = entity_factory.build_entity_from_dict(dict_obj, entity_type=entity_type)
         if reset_id:
             new_id = build_uuid()
             obj.id = new_id
             obj.metadata.version = new_id
         try:
             bck_obj = self._create_context_entity(ctx, obj.ENTITY_TYPE, obj.to_dict())
-            new_obj: ContextEntity = entity_factory.build_entity_from_dict(bck_obj)
+            new_obj: ContextEntity = entity_factory.build_entity_from_dict(bck_obj, entity_type=entity_type)
         except EntityAlreadyExistsError:
             raise EntityError(f"Entity {obj.name} already exists. If you want to update it, use load instead.")
         return new_obj
@@ -427,7 +429,8 @@ class ContextEntityCRUDProcessor:
     ) -> ContextEntity:
         dict_obj: dict = read_yaml(file)
         context = get_context(dict_obj["project"])
-        obj: ContextEntity = entity_factory.build_entity_from_dict(dict_obj)
+        _, entity_type, _, _, _ = parse_identifier(dict_obj["key"])
+        obj: ContextEntity = entity_factory.build_entity_from_dict(dict_obj, entity_type=entity_type)
         try:
             self._update_context_entity(context, obj.ENTITY_TYPE, obj.id, obj.to_dict())
         except EntityNotExistsError:
@@ -507,7 +510,7 @@ class ContextEntityCRUDProcessor:
         objs = self._list_context_entities(context, entity_type, **kwargs)
         objects = []
         for o in objs:
-            entity: ContextEntity = entity_factory.build_entity_from_dict(o)
+            entity: ContextEntity = entity_factory.build_entity_from_dict(o, entity_type=entity_type)
             objects.append(entity)
         return objects
 
