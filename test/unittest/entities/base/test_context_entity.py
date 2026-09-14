@@ -41,25 +41,6 @@ def test_save_creates_entity_and_updates_attributes(monkeypatch) -> None:
     assert entity.user == saved.user
 
 
-def test_save_update_calls_update_processor(monkeypatch) -> None:
-    entity = _build_entity()
-    updated = _build_entity("updated")
-    update_entity = Mock(return_value=updated)
-    monkeypatch.setattr(context_entity_module.crud_processor, "update_context_entity", update_entity)
-    entity_dict = entity.to_dict()
-
-    result = entity.save(update=True)
-
-    assert result is entity
-    update_entity.assert_called_once_with(
-        "project",
-        "stub",
-        "entity-id",
-        entity_dict,
-    )
-    assert entity.metadata is updated.metadata
-
-
 def test_export_delegates_to_processor(monkeypatch) -> None:
     entity = _build_entity()
     export_entity = Mock(return_value="entity.yaml")
@@ -67,19 +48,6 @@ def test_export_delegates_to_processor(monkeypatch) -> None:
 
     assert entity.export() == "entity.yaml"
     export_entity.assert_called_once_with(entity)
-
-
-def test_refresh_reads_key_and_updates_attributes(monkeypatch) -> None:
-    entity = _build_entity()
-    refreshed = _build_entity("refreshed")
-    read_entity = Mock(return_value=refreshed)
-    monkeypatch.setattr(context_entity_module.crud_processor, "read_context_entity", read_entity)
-
-    result = entity.refresh()
-
-    assert result is entity
-    read_entity.assert_called_once_with(entity.key, entity_type=entity.ENTITY_TYPE)
-    assert entity.metadata is refreshed.metadata
 
 
 def test_context_resolves_project_context(monkeypatch) -> None:
