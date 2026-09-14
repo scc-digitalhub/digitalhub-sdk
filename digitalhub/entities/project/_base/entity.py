@@ -287,7 +287,7 @@ class Project(Entity):
                         entity["metadata"]["version"] = new_id
 
                     try:
-                        entity_factory.build_entity_from_dict(entity).save()
+                        entity_factory.build_entity_from_dict(entity, entity_type=entity_type).save()
                     except EntityAlreadyExistsError:
                         pass
 

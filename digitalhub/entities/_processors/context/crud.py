@@ -383,7 +383,8 @@ class ContextEntityCRUDProcessor:
         )
         objects = []
         for o in objs:
-            entity: ContextEntity = entity_factory.build_entity_from_dict(o)
+            _, entity_type, _, _, _ = parse_identifier(o["key"])
+            entity: ContextEntity = entity_factory.build_entity_from_dict(o, entity_type=entity_type)
             objects.append(entity)
         return objects
 

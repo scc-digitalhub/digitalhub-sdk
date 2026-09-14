@@ -16,7 +16,7 @@ from digitalhub.utils.exceptions import BuilderError, EntityError, EntityErrorFi
 
 if typing.TYPE_CHECKING:
     from digitalhub.context.context import Context
-    from digitalhub.entities._base.material.protocol import MaterialEntityProtocol
+    from digitalhub.entities._mixin.material.protocol import MaterialEntityProtocol
     from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
     from digitalhub.entities.dataitem.table.entity import DataitemTable
     from digitalhub.utils.types import Dataframe, SourcesOrListOfSources
@@ -222,7 +222,7 @@ class ContextEntityMaterialProcessor:
         new_obj: MaterialEntityProtocol = self.crud_processor._create_context_entity(
             context, obj.ENTITY_TYPE, obj.to_dict()
         )
-        return entity_factory.build_entity_from_dict(new_obj)
+        return entity_factory.build_entity_from_dict(new_obj, entity_type=obj.ENTITY_TYPE)
 
     def _validate_entity_type(
         self,

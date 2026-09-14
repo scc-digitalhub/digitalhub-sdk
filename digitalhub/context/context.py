@@ -137,4 +137,4 @@ class Context:
             entity_id=run_id,
         )
         run_dict = self.client.read_object(api=api)
-        return entity_factory.build_entity_from_dict(obj=run_dict)
+        return entity_factory.build_entity_from_dict(obj=run_dict, entity_type=EntityTypes.RUN.value)

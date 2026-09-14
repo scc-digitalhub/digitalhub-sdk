@@ -54,7 +54,7 @@ class ExecutableTaskMixin(ExecutableBaseMixin):
             if not isinstance(task, dict):
                 continue
 
-            task_obj: Task = entity_factory.build_entity_from_dict(task)
+            task_obj: Task = entity_factory.build_entity_from_dict(task, entity_type=EntityTypes.TASK.value)
 
             try:
                 task_obj.save()

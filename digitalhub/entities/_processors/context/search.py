@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.entities._processors.utils import get_context
+from digitalhub.entities._processors.utils import get_context, parse_identifier
 from digitalhub.stores.client.common.enums import ApiCategories, BackendOperations
 from digitalhub.utils.exceptions import BackendError
 from digitalhub.utils.logger.logger import get_logger
@@ -57,7 +57,8 @@ class ContextEntitySearchProcessor:
         dead_entities = []
         for entity in entities_dict["content"]:
             try:
-                living_entity = crud_processor.read_context_entity(entity["key"])
+                _, entity_type, _, _, _ = parse_identifier(entity["key"])
+                living_entity = crud_processor.read_context_entity(entity["key"], entity_type=entity_type)
                 living_entities.append(living_entity)
             except BackendError:
                 logger.debug(
