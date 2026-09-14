@@ -16,6 +16,13 @@ class SetCreds(Enum):
     DH_PROFILE = "DH_NAME"
 
 
+class CredentialSource(Enum):
+    """Active source of credentials for the current client session."""
+
+    FILE = "file"
+    ENV = "env"
+
+
 class ConfigurationVars(Enum):
     """
     List of supported configuration variables.

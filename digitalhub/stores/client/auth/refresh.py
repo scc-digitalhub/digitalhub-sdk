@@ -9,7 +9,7 @@ from typing import Any
 
 from requests.exceptions import HTTPError
 
-from digitalhub.stores.client.auth.enums import ConfigurationVars, CredentialsVars
+from digitalhub.stores.client.auth.enums import ConfigurationVars, CredentialSource, CredentialsVars
 from digitalhub.stores.client.common.config import get_client_config
 from digitalhub.stores.client.common.enums import AuthType
 from digitalhub.stores.client.common.logger import log_request_response
@@ -21,7 +21,7 @@ from digitalhub.utils.logger.logger import get_logger
 if typing.TYPE_CHECKING:
     from requests import Response
 
-    from digitalhub.stores.client.auth.auth_handler import AuthenticationHandler
+    from digitalhub.stores.client.auth.auth_session import AuthSession
     from digitalhub.stores.client.auth.config_manager import ConfigManager
 
 logger = get_logger(__name__)
@@ -35,10 +35,10 @@ class TokenRefreshService:
     def __init__(
         self,
         config_manager: ConfigManager,
-        auth_handler: AuthenticationHandler,
+        auth_session: AuthSession,
     ) -> None:
         self._config_manager = config_manager
-        self._auth_handler = auth_handler
+        self._auth_session = auth_session
 
     def refresh_credentials(self) -> None:
         """
@@ -47,10 +47,10 @@ class TokenRefreshService:
         Exchanges personal access tokens or refreshes OAuth2 tokens depending
         on the current authentication type. Persists new credentials to file.
         """
-        if not self._auth_handler.is_refreshable():
-            raise ClientError(f"Auth type {self._auth_handler.auth_type} does not support refresh.")
+        if not self._auth_session.is_refreshable():
+            raise ClientError(f"Auth type {self._auth_session.auth_type} does not support refresh.")
 
-        logger.debug("Starting credential refresh with auth type '%s'.", self._auth_handler.auth_type)
+        logger.debug("Starting credential refresh with auth type '%s'.", self._auth_session.auth_type)
 
         # Get credentials and configuration
         creds = self._config_manager.get_credentials_and_config()
@@ -73,8 +73,6 @@ class TokenRefreshService:
         # Export new credentials to file
         self._export_new_creds(refreshed_credentials)
 
-        # Re-evaluate auth type
-        self._auth_handler.evaluate_auth_type()
         logger.debug("Credential refresh completed successfully.")
 
     def evaluate_refresh(self, check_token_validity: bool = False) -> bool:
@@ -122,17 +120,16 @@ class TokenRefreshService:
                         max_attempts,
                     )
                     raise
-                was_reloaded_from_env = self._config_manager.reloaded_from_env
+                was_using_env = self._config_manager.credential_source is CredentialSource.ENV
                 should_retry = self._config_manager.eval_retry()
                 logger.debug("Credential refresh fallback decision after attempt %d: %s.", attempt, should_retry)
                 if not should_retry:
                     logger.debug("Credential refresh stopped after attempt %d.", attempt)
                     raise
 
-                self._auth_handler.evaluate_auth_type()
-                switched_to_env = not was_reloaded_from_env and self._config_manager.reloaded_from_env
-                if switched_to_env and self._auth_handler.auth_type != AuthType.EXCHANGE.value:
-                    if self._auth_handler.auth_type not in [AuthType.OAUTH2.value, AuthType.ACCESS_TOKEN.value]:
+                switched_to_env = not was_using_env and self._config_manager.credential_source is CredentialSource.ENV
+                if switched_to_env and self._auth_session.auth_type != AuthType.EXCHANGE.value:
+                    if self._auth_session.auth_type not in [AuthType.OAUTH2.value, AuthType.ACCESS_TOKEN.value]:
                         logger.debug(
                             "Environment credentials are not refreshable; stopping credential refresh fallback."
                         )
@@ -140,7 +137,7 @@ class TokenRefreshService:
                     if self._test_token_validity():
                         logger.debug("Environment access token is valid; skipping environment credential refresh.")
                         return True
-                    if self._auth_handler.auth_type == AuthType.ACCESS_TOKEN.value:
+                    if self._auth_session.auth_type == AuthType.ACCESS_TOKEN.value:
                         logger.debug("Environment access token is invalid and has no refresh token.")
                         return False
 
@@ -158,7 +155,7 @@ class TokenRefreshService:
             raise ClientError("API endpoint not set.")
         url = sanitize_endpoint(url) + get_client_config().api_auth_check
 
-        kwargs = self._auth_handler.get_auth_parameters()
+        kwargs = self._auth_session.get_auth_parameters()
         response = request("GET", url, **kwargs)
         log_request_response(logger, response)
 
@@ -184,7 +181,7 @@ class TokenRefreshService:
             raise ClientError("Client id not set.")
 
         # Handling of token refresh
-        if self._auth_handler.auth_type == AuthType.OAUTH2.value:
+        if self._auth_session.auth_type == AuthType.OAUTH2.value:
             return self._call_refresh_endpoint(
                 url,
                 client_id=client_id,

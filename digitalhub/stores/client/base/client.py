@@ -9,6 +9,7 @@ from typing import Any
 from digitalhub.stores.client.auth.client_configurator import ClientConfigurator
 from digitalhub.stores.client.builders.api import ClientApiBuilder
 from digitalhub.stores.client.builders.params import ClientParametersBuilder
+from digitalhub.stores.client.common.config import get_client_config
 from digitalhub.stores.client.common.utils import (
     increment_page_number,
     read_page_number,
@@ -325,7 +326,6 @@ class Client:
     def get_credentials_and_config(self) -> dict:
         """
         Get current authentication credentials and configuration.
-        Eventually refreshes tokens if expired.
 
         Returns
         -------
@@ -333,6 +333,10 @@ class Client:
             Current authentication credentials and configuration.
         """
         return self._configurator.get_credentials_and_config()
+
+    def validate_credentials(self) -> None:
+        """Validate current credentials through the DHCore auth endpoint."""
+        self._http_handler.execute_request("GET", get_client_config().api_auth_check)
 
     def set_current_profile(self, profile: str) -> None:
         """
@@ -365,4 +369,5 @@ class Client:
         list[str]
             Kubernetes resource profile names.
         """
-        return self._configurator.get_k8s_resource_profiles()
+        data = self._http_handler.execute_request("GET", get_client_config().well_known_conf)
+        return data.get(get_client_config().k8s_resource_profiles, [])

@@ -4,12 +4,10 @@
 
 from __future__ import annotations
 
-from digitalhub.stores.client.auth.auth_handler import AuthenticationHandler
+from digitalhub.stores.client.auth.auth_session import AuthSession
 from digitalhub.stores.client.auth.config_manager import ConfigManager
 from digitalhub.stores.client.auth.refresh import TokenRefreshService
-from digitalhub.stores.client.common.config import get_client_config
 from digitalhub.stores.client.common.enums import AuthType
-from digitalhub.stores.client.http.transport import request
 
 
 class ClientConfigurator:
@@ -34,12 +32,12 @@ class ClientConfigurator:
         Initialize DHCore configurator and evaluate authentication type.
         """
         self._config_manager = ConfigManager()
-        self._auth_handler = AuthenticationHandler(self._config_manager)
+        self._auth_session = AuthSession(self._config_manager.credential_session)
         self._token_refresh_service = TokenRefreshService(
             self._config_manager,
-            self._auth_handler,
+            self._auth_session,
         )
-        self.set_auth_type()
+        self._bootstrap_authentication()
 
     ##############################
     # Credentials methods
@@ -62,36 +60,10 @@ class ClientConfigurator:
     # Auth methods
     ##############################
 
-    def set_auth_type(self) -> None:
-        """
-        Determine authentication type from available credentials.
-
-        Evaluates credentials in priority order: EXCHANGE (personal access token),
-        OAUTH2 (access + refresh tokens), ACCESS_TOKEN (access only), BASIC
-        (username + password). For EXCHANGE type, automatically exchanges the
-        personal access token and switches to file-based credentials storage.
-        """
-        # Initial evaluation
-        self._auth_handler.evaluate_auth_type()
-
-        # If we have an exchange token, we need to get a new access token.
-        # Therefore, we change the origin to file, where the refresh token is written.
-        if self._auth_handler.auth_type == AuthType.EXCHANGE.value:
+    def _bootstrap_authentication(self) -> None:
+        """Exchange a personal access token during client initialization."""
+        if self._auth_session.auth_type == AuthType.EXCHANGE.value:
             self.refresh_credentials()
-
-    def refreshable_auth_types(self) -> bool:
-        """
-        Check if current authentication supports token refresh.
-
-        Returns True for OAUTH2 (refresh token) and EXCHANGE (personal access token),
-        False for BASIC and ACCESS_TOKEN.
-
-        Returns
-        -------
-        bool
-            Whether authentication type supports refresh.
-        """
-        return self._auth_handler.is_refreshable()
 
     def get_auth_parameters(self, kwargs: dict | None = None) -> dict:
         """
@@ -110,7 +82,7 @@ class ClientConfigurator:
         dict
             Modified kwargs with authentication parameters.
         """
-        return self._auth_handler.get_auth_parameters(kwargs)
+        return self._auth_session.get_auth_parameters(kwargs)
 
     def refresh_credentials(self) -> None:
         """
@@ -141,27 +113,12 @@ class ClientConfigurator:
     def get_credentials_and_config(self) -> dict:
         """
         Get current authentication credentials and configuration.
-        Evaluate credentials validity before returning.
 
         Returns
         -------
         dict
             Current authentication credentials and configuration.
         """
-        url = self.get_endpoint() + get_client_config().api_auth_check
-
-        # Handle authentication errors with token refresh
-        kwargs = self.get_auth_parameters()
-        response = request("GET", url, **kwargs)
-        try:
-            response.raise_for_status()
-        except Exception:
-            if response.status_code == 401 and self.evaluate_refresh():
-                kwargs = self.get_auth_parameters()
-                response = request("GET", url, **kwargs)
-                response.raise_for_status()
-            else:
-                raise
         return self._config_manager.get_credentials_and_config()
 
     def set_current_profile(self, profile: str) -> None:
@@ -174,7 +131,6 @@ class ClientConfigurator:
             Name of the credentials profile to set.
         """
         self._config_manager.set_current_profile(profile)
-        self._auth_handler.evaluate_auth_type()
 
     def get_current_profile(self) -> str:
         """
@@ -186,19 +142,3 @@ class ClientConfigurator:
             Name of the current credentials profile.
         """
         return self._config_manager.current_profile
-
-    def get_k8s_resource_profiles(self) -> list[str]:
-        """
-        Get the Kubernetes resource profile list from the current credentials.
-
-        Returns
-        -------
-        list[str]
-            Kubernetes resource profile names.
-        """
-        endpoint = self.get_endpoint()
-        url = endpoint + get_client_config().well_known_conf
-        response = request("GET", url)
-        response.raise_for_status()
-        data: dict = response.json()
-        return data.get(get_client_config().k8s_resource_profiles, [])

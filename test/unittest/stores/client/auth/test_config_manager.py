@@ -1,13 +1,16 @@
 from unittest.mock import Mock
 
+import digitalhub.stores.client.auth.credential_store as credential_store_module
+from digitalhub.stores.client.auth.credential_session import CredentialSession
 from digitalhub.stores.client.auth.config_manager import ConfigManager
-from digitalhub.stores.client.auth.enums import ConfigurationVars, CredentialsVars
+from digitalhub.stores.client.auth.enums import ConfigurationVars, CredentialSource, CredentialsVars
 from digitalhub.utils.exceptions import ClientError
 
 
-def test_configuration_and_credentials_use_their_declared_precedence(monkeypatch) -> None:
+def test_configuration_and_credentials_use_file_precedence(monkeypatch) -> None:
     manager = ConfigManager.__new__(ConfigManager)
     manager._current_profile = "default"
+    manager._credential_store = credential_store_module.CredentialStore("default")
     env_values = {
         ConfigurationVars.DHCORE_ENDPOINT.value: "https://env.example.test",
         CredentialsVars.DHCORE_ACCESS_TOKEN.value: "env-access",
@@ -19,12 +22,12 @@ def test_configuration_and_credentials_use_their_declared_precedence(monkeypatch
     }
 
     monkeypatch.setattr(
-        ConfigManager,
+        credential_store_module.CredentialStore,
         "_read_env",
         staticmethod(lambda variables: {key: env_values.get(key) for key in variables}),
     )
     monkeypatch.setattr(
-        ConfigManager,
+        credential_store_module.CredentialStore,
         "_read_file",
         staticmethod(lambda variables, profile: {key: file_values.get(key) for key in variables}),
     )
@@ -32,50 +35,29 @@ def test_configuration_and_credentials_use_their_declared_precedence(monkeypatch
     configuration = manager.load_configuration()
     credentials = manager.load_credentials()
 
-    assert configuration[ConfigurationVars.DHCORE_ENDPOINT.value] == "https://env.example.test"
+    assert configuration[ConfigurationVars.DHCORE_ENDPOINT.value] == "https://file.example.test"
     assert credentials[CredentialsVars.DHCORE_ACCESS_TOKEN.value] == "file-access"
     assert credentials[CredentialsVars.DHCORE_USER.value] == "env-user"
-
-
-def test_reload_credentials_from_env_does_not_read_file(monkeypatch) -> None:
-    manager = ConfigManager.__new__(ConfigManager)
-    manager._current_profile = "default"
-    env_values = {
-        CredentialsVars.DHCORE_ACCESS_TOKEN.value: "env-access",
-        CredentialsVars.S3_ACCESS_KEY_ID.value: "env-s3-access",
-    }
-    read_file = Mock(side_effect=AssertionError("file must not be read"))
-
-    monkeypatch.setattr(
-        ConfigManager,
-        "_read_env",
-        staticmethod(lambda variables: {key: env_values.get(key) for key in variables}),
-    )
-    monkeypatch.setattr(ConfigManager, "_read_file", staticmethod(read_file))
-
-    manager.reload_credentials_from_env()
-
-    assert manager.credentials[CredentialsVars.DHCORE_ACCESS_TOKEN.value] == "env-access"
-    assert manager.credentials[CredentialsVars.S3_ACCESS_KEY_ID.value] == "env-s3-access"
-    read_file.assert_not_called()
 
 
 def test_eval_retry_stops_reading_file_after_environment_fallback(monkeypatch) -> None:
     manager = ConfigManager.__new__(ConfigManager)
     manager._current_profile = "default"
-    manager._credentials = {CredentialsVars.DHCORE_ACCESS_TOKEN.value: "file-access"}
-    manager._reloaded_from_env = False
+    manager._credential_store = credential_store_module.CredentialStore("default")
+    manager._credential_session = CredentialSession(
+        {CredentialsVars.DHCORE_ACCESS_TOKEN.value: "file-access"}
+    )
     file_credentials = {CredentialsVars.DHCORE_ACCESS_TOKEN.value: "file-access"}
     manager.load_credentials = Mock(return_value=file_credentials)
     env_values = {CredentialsVars.DHCORE_ACCESS_TOKEN.value: "env-access"}
 
     monkeypatch.setattr(
-        ConfigManager,
+        credential_store_module.CredentialStore,
         "_read_env",
         staticmethod(lambda variables: {key: env_values.get(key) for key in variables}),
     )
     monkeypatch.setattr(
-        ConfigManager,
+        credential_store_module.CredentialStore,
         "_read_file",
         staticmethod(Mock(side_effect=AssertionError("file must not be read after fallback"))),
     )
@@ -89,12 +71,15 @@ def test_eval_retry_stops_reading_file_after_environment_fallback(monkeypatch) -
 
 def test_save_credentials_after_environment_fallback_keeps_memory_state() -> None:
     manager = ConfigManager.__new__(ConfigManager)
+    manager._credential_store = credential_store_module.CredentialStore("default")
     manager._in_memory = False
-    manager._reloaded_from_env = True
-    manager._credentials = {
-        CredentialsVars.DHCORE_ACCESS_TOKEN.value: "env-access",
-        CredentialsVars.S3_ACCESS_KEY_ID.value: "old-s3-access",
-    }
+    manager._credential_session = CredentialSession(
+        {
+            CredentialsVars.DHCORE_ACCESS_TOKEN.value: "env-access",
+            CredentialsVars.S3_ACCESS_KEY_ID.value: "old-s3-access",
+        }
+    )
+    manager._credential_session.use_environment(manager.credentials)
     manager.export_to_ini = Mock()
     manager.export_to_env = Mock()
     manager.reload_credentials = Mock(side_effect=AssertionError("file must not be reloaded"))
@@ -132,7 +117,7 @@ def test_initialization_does_not_write_configuration(monkeypatch) -> None:
 def test_save_credentials_persists_and_reloads() -> None:
     manager = ConfigManager.__new__(ConfigManager)
     manager._in_memory = False
-    manager._reloaded_from_env = False
+    manager._credential_session = CredentialSession({})
     manager.export_to_ini = Mock()
     manager.export_to_env = Mock()
     manager.reload_credentials = Mock()
@@ -150,7 +135,7 @@ def test_save_credentials_persists_and_reloads() -> None:
 def test_save_credentials_updates_in_memory_without_persistence() -> None:
     manager = ConfigManager.__new__(ConfigManager)
     manager._in_memory = True
-    manager._credentials = {}
+    manager._credential_session = CredentialSession({})
     manager.export_to_ini = Mock()
     manager.export_to_env = Mock()
 
@@ -164,7 +149,7 @@ def test_save_credentials_updates_in_memory_without_persistence() -> None:
 def test_save_credentials_falls_back_to_memory_when_file_is_unwritable() -> None:
     manager = ConfigManager.__new__(ConfigManager)
     manager._in_memory = False
-    manager._credentials = {}
+    manager._credential_session = CredentialSession({})
     manager.export_to_ini = Mock(side_effect=ClientError("unwritable"))
     manager.export_to_env = Mock()
 

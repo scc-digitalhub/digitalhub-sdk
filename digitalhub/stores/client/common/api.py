@@ -29,6 +29,11 @@ def get_credentials_and_config() -> dict:
     return get_client().get_credentials_and_config()
 
 
+def validate_credentials() -> None:
+    """Validate current credentials through the DHCore auth endpoint."""
+    get_client().validate_credentials()
+
+
 def set_current_profile(profile: str) -> None:
     """
     Set the current credentials profile.
