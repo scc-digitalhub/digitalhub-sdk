@@ -92,7 +92,7 @@ class TokenRefreshService:
         Returns
         -------
         bool
-            True if token refresh succeeded, False if all attempts failed.
+            True if credentials are ready for a request retry, False otherwise.
         """
         if check_token_validity:
             if self._test_token_validity():
@@ -122,11 +122,28 @@ class TokenRefreshService:
                         max_attempts,
                     )
                     raise
+                was_reloaded_from_env = self._config_manager.reloaded_from_env
                 should_retry = self._config_manager.eval_retry()
                 logger.debug("Credential refresh fallback decision after attempt %d: %s.", attempt, should_retry)
                 if not should_retry:
                     logger.debug("Credential refresh stopped after attempt %d.", attempt)
                     raise
+
+                self._auth_handler.evaluate_auth_type()
+                switched_to_env = not was_reloaded_from_env and self._config_manager.reloaded_from_env
+                if switched_to_env and self._auth_handler.auth_type != AuthType.EXCHANGE.value:
+                    if self._auth_handler.auth_type not in [AuthType.OAUTH2.value, AuthType.ACCESS_TOKEN.value]:
+                        logger.debug(
+                            "Environment credentials are not refreshable; stopping credential refresh fallback."
+                        )
+                        return False
+                    if self._test_token_validity():
+                        logger.debug("Environment access token is valid; skipping environment credential refresh.")
+                        return True
+                    if self._auth_handler.auth_type == AuthType.ACCESS_TOKEN.value:
+                        logger.debug("Environment access token is invalid and has no refresh token.")
+                        return False
+
                 attempt += 1
 
     def _test_token_validity(self) -> bool:
@@ -244,7 +261,7 @@ class TokenRefreshService:
 
     def _export_new_creds(self, response: dict[str, Any]) -> None:
         """
-        Save refreshed credentials and switch to file-based storage.
+        Save refreshed credentials while preserving the active credential source.
 
         Persists new tokens (access_token, refresh_token, etc.) to configuration
         file with proper key formatting.

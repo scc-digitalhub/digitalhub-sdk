@@ -130,7 +130,7 @@ class ClientConfigurator:
         Returns
         -------
         bool
-            True if token refresh is applicable, otherwise False.
+            True if credentials are ready for a request retry, otherwise False.
         """
         return self._token_refresh_service.evaluate_refresh(check_token_validity=check_token_validity)
 
