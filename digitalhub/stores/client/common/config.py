@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import logging
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 
@@ -23,7 +23,7 @@ def _get_config_file_path() -> Path:
     if dh_config_env is not None:
         try:
             return Path(dh_config_env)
-        except Exception:
+        except (TypeError, ValueError):
             logging.getLogger(__name__).warning(
                 "Invalid DH_CONFIG value %r; falling back to default config path",
                 dh_config_env,
@@ -67,8 +67,8 @@ class ClientConfig:
     lib_version: int = 15
 
     # Configuration file path
-    config_ini_path: Path = _get_config_file_path()
-    config_env_path: str = str(config_ini_path.parent / ".env")
+    config_ini_path: Path = field(default_factory=_get_config_file_path)
+    config_env_path: str = field(init=False)
 
     # API structure
     api_base: str = "/api/v1"
@@ -88,6 +88,9 @@ class ClientConfig:
     pat_subject_token_type: str = "urn:ietf:params:oauth:token-type:pat"
     pat_grant_type: str = "urn:ietf:params:oauth:grant-type:token-exchange"
     pat_scope: str = "credentials"
+
+    def __post_init__(self) -> None:
+        self.config_env_path = str(self.config_ini_path.parent / ".env")
 
     # Prefixes vars
     dhcore: str = "dhcore_"
@@ -140,6 +143,10 @@ def set_client_config(config: ClientConfig) -> None:
     global _default_config
     _default_config = config
 
+    from digitalhub.stores.client.base.factory import client_factory
+
+    client_factory.reset()
+
 
 def reset_client_config() -> None:
     """
@@ -149,5 +156,4 @@ def reset_client_config() -> None:
     --------
     >>> reset_client_config()
     """
-    global _default_config
-    _default_config = ClientConfig()
+    set_client_config(ClientConfig())

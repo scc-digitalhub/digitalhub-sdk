@@ -5,12 +5,10 @@
 from __future__ import annotations
 
 import os
-from typing import Any
-from warnings import warn
+from typing import Any, ClassVar
 
 from digitalhub.stores.client.auth.enums import ConfigurationVars, CredentialsVars, SetCreds
 from digitalhub.stores.client.auth.file_module import (
-    ini_file_exists,
     load_dotenv_file,
     load_file,
     load_key,
@@ -33,7 +31,7 @@ class ConfigManager:
     """
 
     # List of all configuration and credential keys for easy access and validation.
-    keys = [*list_enum(ConfigurationVars), *list_enum(CredentialsVars)]
+    keys: ClassVar[list[str]] = [*list_enum(ConfigurationVars), *list_enum(CredentialsVars)]
 
     def __init__(self) -> None:
         # Current credentials profile name.
@@ -46,9 +44,6 @@ class ConfigManager:
 
         # Indicates if configuration is stored in-memory only (True) or persisted to file (False).
         self._in_memory: bool = False
-
-        # Try to write initial configuration to file if it does not exist yet. If writing fails, switch to in-memory mode.
-        self._write_file()
 
         # Flag to indicate if credentials have been reloaded from environment variables during retry logic.
         self._reloaded_from_env: bool = False
@@ -187,6 +182,7 @@ class ConfigManager:
         bool
             True if a retry action was performed, otherwise False.
         """
+        # Do not revisit file credentials after switching to environment credentials.
         if self._reloaded_from_env:
             logger.debug("Credential source is locked to environment variables; skipping file reload.")
             return False
@@ -197,9 +193,13 @@ class ConfigManager:
             self.reload_credentials()
             return True
 
-        logger.debug("File credential retry did not resolve authentication; switching to environment variables.")
-        self.reload_credentials_from_env()
-        return True
+        # Check if we need to reload from env only
+        if not self._reloaded_from_env:
+            logger.debug("File credential retry did not resolve authentication; switching to environment variables.")
+            self.reload_credentials_from_env()
+            return True
+
+        return False
 
     ##############################
     # Export methods
@@ -216,7 +216,7 @@ class ConfigManager:
         """
         try:
             write_file(variables, self._current_profile)
-        except Exception:
+        except (ClientError, OSError):
             raise ClientError("Failed to write credentials to file.")
 
     def export_to_env(self, variables: dict) -> None:
@@ -230,8 +230,8 @@ class ConfigManager:
         """
         try:
             write_dotenv(variables)
-        except Exception:
-            warn("Failed to write credentials to .env file.")
+        except (ClientError, OSError):
+            logger.debug("Failed to write credentials to .env file.")
 
     def load_to_env(self) -> None:
         """
@@ -239,12 +239,12 @@ class ConfigManager:
         """
         try:
             load_dotenv_file()
-        except Exception:
-            warn("Failed to load credentials from .env file.")
+        except (ClientError, OSError):
+            logger.debug("Failed to load credentials from .env file.")
 
     def update_in_memory(self, variables: dict) -> None:
         """
-        Update credentials in memory and persist to file.
+        Update credentials in memory.
 
         Parameters
         ----------
@@ -266,7 +266,6 @@ class ConfigManager:
             self._in_memory = True
             self.update_in_memory({k.upper(): v for k, v in variables.items()})
             logger.warning("Credential persistence failed; refreshed credentials will remain in memory only.")
-            warn("Configuration file is not writable. Credentials will be stored in memory only for this session.")
             return
 
         self.export_to_env(variables)
@@ -277,20 +276,6 @@ class ConfigManager:
             self.reload_credentials()
             logger.debug("Persisted refreshed credentials and reloaded the active file profile.")
         self.load_to_env()
-
-    def _write_file(self) -> None:
-        """
-        Write current configuration and credentials to the .dhcore file
-        if file does not exist yet.
-        """
-        try:
-            if not ini_file_exists():
-                variables = {k: v for k, v in {**self._configuration, **self._credentials}.items() if v is not None}
-                self.export_to_env(variables)
-                self.export_to_ini(variables)
-        except Exception:
-            self._in_memory = True
-            warn("Configuration file is not writable. Credentials will be stored in memory only for this session.")
 
     ##############################
     # Utility methods

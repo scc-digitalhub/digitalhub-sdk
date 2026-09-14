@@ -7,9 +7,7 @@ from __future__ import annotations
 import typing
 from warnings import warn
 
-from requests.exceptions import ConnectionError as RequestsConnectionError
-from requests.exceptions import HTTPError, JSONDecodeError, RequestException
-from requests.exceptions import Timeout as RequestsTimeout
+from requests.exceptions import HTTPError, JSONDecodeError
 
 from digitalhub.stores.client.common.config import get_client_config
 from digitalhub.stores.client.common.logger import log_request_response
@@ -38,10 +36,6 @@ class ResponseProcessor:
     Handles API version validation, error parsing, and response body parsing
     to dictionary. Supports API versions {MIN_API_LEVEL} to {MAX_API_LEVEL}.
     """
-
-    min_api_level: int = get_client_config().min_api_level
-    max_api_level: int = get_client_config().max_api_level
-    lib_version: int = get_client_config().lib_version
 
     def process(self, response: Response) -> dict:
         """
@@ -81,11 +75,12 @@ class ResponseProcessor:
         if "X-Api-Level" not in response.headers:
             return
 
+        config = get_client_config()
         core_api_level = int(response.headers["X-Api-Level"])
-        if not (self.min_api_level <= core_api_level <= self.max_api_level):
+        if not (config.min_api_level <= core_api_level <= config.max_api_level):
             raise ClientError("Backend API level not supported.")
 
-        if self.lib_version < core_api_level:
+        if config.lib_version < core_api_level:
             warn("Backend API level is higher than library version. You should consider updating the library.")
 
     @staticmethod
@@ -131,15 +126,6 @@ class ResponseProcessor:
 
         except HTTPError as e:
             self._handle_http_error(response, e)
-
-        except RequestsTimeout as e:
-            raise TimeoutError("Request to DHCore backend timed out.") from e
-
-        except RequestsConnectionError as e:
-            raise ConnectionError("Unable to connect to DHCore backend.") from e
-
-        except RequestException as e:
-            raise BackendError(f"Some error occurred. {e}") from e
 
         except Exception as e:
             raise RuntimeError(f"Some error occurred: {e}") from e

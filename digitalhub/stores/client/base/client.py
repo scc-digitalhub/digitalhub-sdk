@@ -8,7 +8,6 @@ from typing import Any
 
 from digitalhub.stores.client.auth.client_configurator import ClientConfigurator
 from digitalhub.stores.client.builders.api import ClientApiBuilder
-from digitalhub.stores.client.builders.key import ClientKeyBuilder
 from digitalhub.stores.client.builders.params import ClientParametersBuilder
 from digitalhub.stores.client.common.utils import (
     increment_page_number,
@@ -39,7 +38,6 @@ class Client:
         self,
         configurator: ClientConfigurator | None = None,
         api_builder: ClientApiBuilder | None = None,
-        key_builder: ClientKeyBuilder | None = None,
         params_builder: ClientParametersBuilder | None = None,
         http_handler: HttpRequestHandler | None = None,
     ) -> None:
@@ -52,8 +50,6 @@ class Client:
             Configurator for credentials and authentication. If None, creates default instance.
         api_builder : ClientApiBuilder
             Builder for API endpoints. If None, creates default instance.
-        key_builder : ClientKeyBuilder
-            Builder for entity keys. If None, creates default instance.
         params_builder : ClientParametersBuilder
             Builder for request parameters. If None, creates default instance.
         http_handler : HttpRequestHandler
@@ -62,9 +58,8 @@ class Client:
         # Configurator
         self._configurator = configurator if configurator is not None else ClientConfigurator()
 
-        # API, key and parameters builders
+        # API and parameters builders
         self._api_builder = api_builder if api_builder is not None else ClientApiBuilder()
-        self._key_builder = key_builder if key_builder is not None else ClientKeyBuilder()
         self._params_builder = params_builder if params_builder is not None else ClientParametersBuilder()
 
         # HTTP request handling
@@ -286,26 +281,6 @@ class Client:
             API formatted.
         """
         return self._api_builder.build_api(category, operation, **kwargs)
-
-    def build_key(self, category: str, *args, **kwargs) -> str:
-        """
-        Build the key for the client.
-
-        Parameters
-        ----------
-        category : str
-            Key category.
-        *args : tuple
-            Additional arguments.
-        **kwargs : dict
-            Additional parameters.
-
-        Returns
-        -------
-        str
-            Key formatted.
-        """
-        return self._key_builder.build_key(category, *args, **kwargs)
 
     def build_parameters(self, category: str, operation: str, **kwargs) -> dict:
         """

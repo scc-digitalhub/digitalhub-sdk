@@ -8,9 +8,6 @@ from digitalhub.stores.client.common.config import get_client_config
 from digitalhub.stores.client.common.enums import ApiCategories, BackendOperations
 from digitalhub.utils.exceptions import BackendError
 
-API_BASE = get_client_config().api_base
-API_CONTEXT = get_client_config().api_context
-
 
 class ClientApiBuilder:
     """
@@ -55,20 +52,21 @@ class ClientApiBuilder:
         str
             API formatted.
         """
+        api_base = get_client_config().api_base
         entity_type = kwargs["entity_type"] + "s"
         if operation in (
             BackendOperations.CREATE.value,
             BackendOperations.LIST.value,
         ):
-            return f"{API_BASE}/{entity_type}"
+            return f"{api_base}/{entity_type}"
         elif operation in (
             BackendOperations.READ.value,
             BackendOperations.UPDATE.value,
             BackendOperations.DELETE.value,
         ):
-            return f"{API_BASE}/{entity_type}/{kwargs['entity_name']}"
+            return f"{api_base}/{entity_type}/{kwargs['entity_name']}"
         elif operation == BackendOperations.SHARE.value:
-            return f"{API_BASE}/{entity_type}/{kwargs['entity_name']}/share"
+            return f"{api_base}/{entity_type}/{kwargs['entity_name']}/share"
         raise BackendError(f"Invalid operation '{operation}' for entity type '{entity_type}' in DHCore.")
 
     def build_api_context(self, operation: str, **kwargs) -> str:
@@ -87,9 +85,10 @@ class ClientApiBuilder:
         str
             The formatted context API endpoint.
         """
+        api_context = get_client_config().api_context
         project = kwargs["project"]
         if operation == BackendOperations.SEARCH.value:
-            return f"{API_CONTEXT}/{project}/solr/search/item"
+            return f"{api_context}/{project}/solr/search/item"
 
         entity_type = kwargs["entity_type"] + "s"
         if operation in (
@@ -97,27 +96,27 @@ class ClientApiBuilder:
             BackendOperations.LIST.value,
             BackendOperations.DELETE_ALL_VERSIONS.value,
         ):
-            return f"{API_CONTEXT}/{project}/{entity_type}"
+            return f"{api_context}/{project}/{entity_type}"
         elif operation in (
             BackendOperations.READ.value,
             BackendOperations.UPDATE.value,
             BackendOperations.DELETE.value,
         ):
-            return f"{API_CONTEXT}/{project}/{entity_type}/{kwargs['entity_id']}"
+            return f"{api_context}/{project}/{entity_type}/{kwargs['entity_id']}"
         elif operation == BackendOperations.LOGS.value:
-            return f"{API_CONTEXT}/{project}/{entity_type}/{kwargs['entity_id']}/logs"
+            return f"{api_context}/{project}/{entity_type}/{kwargs['entity_id']}/logs"
         elif operation == BackendOperations.STOP.value:
-            return f"{API_CONTEXT}/{project}/{entity_type}/{kwargs['entity_id']}/stop"
+            return f"{api_context}/{project}/{entity_type}/{kwargs['entity_id']}/stop"
         elif operation == BackendOperations.RESUME.value:
-            return f"{API_CONTEXT}/{project}/{entity_type}/{kwargs['entity_id']}/resume"
+            return f"{api_context}/{project}/{entity_type}/{kwargs['entity_id']}/resume"
         elif operation == BackendOperations.DATA.value:
-            return f"{API_CONTEXT}/{project}/{entity_type}/data"
+            return f"{api_context}/{project}/{entity_type}/data"
         elif operation == BackendOperations.FILES.value:
-            return f"{API_CONTEXT}/{project}/{entity_type}/{kwargs['entity_id']}/files/info"
+            return f"{api_context}/{project}/{entity_type}/{kwargs['entity_id']}/files/info"
         elif operation == BackendOperations.METRICS.value:
             if kwargs["metric_name"] is not None:
-                return f"{API_CONTEXT}/{project}/{entity_type}/{kwargs['entity_id']}/metrics/{kwargs['metric_name']}"
+                return f"{api_context}/{project}/{entity_type}/{kwargs['entity_id']}/metrics/{kwargs['metric_name']}"
             else:
-                return f"{API_CONTEXT}/{project}/{entity_type}/{kwargs['entity_id']}/metrics"
+                return f"{api_context}/{project}/{entity_type}/{kwargs['entity_id']}/metrics"
 
         raise BackendError(f"Invalid operation '{operation}' for entity type '{entity_type}' in DHCore.")
