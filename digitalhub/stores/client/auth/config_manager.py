@@ -182,10 +182,10 @@ class ConfigManager:
         bool
             True if a retry action was performed, otherwise False.
         """
-        # Do not revisit file credentials after switching to environment credentials.
+        # Keep using environment credentials after switching away from the file.
         if self._reloaded_from_env:
-            logger.debug("Credential source is locked to environment variables; skipping file reload.")
-            return False
+            logger.debug("Credential source is environment variables; keeping it for the next refresh attempt.")
+            return True
 
         # Compare cached and file credentials. If different, reload in cache.
         if self._credentials != self.load_credentials():
@@ -354,6 +354,10 @@ class ConfigManager:
     @property
     def current_profile(self) -> str:
         return self._current_profile
+
+    @property
+    def reloaded_from_env(self) -> bool:
+        return self._reloaded_from_env
 
     @property
     def configuration(self) -> dict:
