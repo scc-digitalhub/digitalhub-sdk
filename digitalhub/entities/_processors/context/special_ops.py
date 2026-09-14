@@ -62,15 +62,9 @@ class ContextEntitySpecialOpsProcessor:
         str
             The constructed context entity key string.
         """
-        context = get_context(project)
-        return context.client.build_key(
-            ApiCategories.CONTEXT.value,
-            project=context.name,
-            entity_type=entity_type,
-            entity_kind=entity_kind,
-            entity_name=entity_name,
-            entity_id=entity_id,
-        )
+        if entity_id is None:
+            return f"store://{project}/{entity_type}/{entity_kind}/{entity_name}"
+        return f"store://{project}/{entity_type}/{entity_kind}/{entity_name}:{entity_id}"
 
     def read_secret_data(
         self,
