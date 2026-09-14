@@ -14,8 +14,8 @@ def test_search_entity_builds_query_and_separates_dead_records(monkeypatch) -> N
     client.build_api.return_value = api
     client.read_object.return_value = {
         "content": [
-            {"key": "live-key"},
-            {"key": "dead-key", "kind": "function"},
+            {"key": "store://context-project/function/function/function:live-id"},
+            {"key": "store://context-project/function/function/function:dead-id", "kind": "function"},
         ]
     }
     context = SimpleNamespace(name="context-project", client=client)
@@ -30,7 +30,10 @@ def test_search_entity_builds_query_and_separates_dead_records(monkeypatch) -> N
         state="READY",
     )
 
-    assert result == (["live-entity"], [{"key": "dead-key", "kind": "function"}])
+    assert result == (
+        ["live-entity"],
+        [{"key": "store://context-project/function/function/function:dead-id", "kind": "function"}],
+    )
     client.build_parameters.assert_called_once_with(
         ApiCategories.CONTEXT.value,
         BackendOperations.SEARCH.value,
@@ -50,5 +53,5 @@ def test_search_entity_builds_query_and_separates_dead_records(monkeypatch) -> N
         project="context-project",
     )
     client.read_object.assert_called_once_with(api, query="pipeline", state="READY")
-    read_entity.assert_any_call("live-key")
-    read_entity.assert_any_call("dead-key")
+    read_entity.assert_any_call("store://context-project/function/function/function:live-id", entity_type="function")
+    read_entity.assert_any_call("store://context-project/function/function/function:dead-id", entity_type="function")

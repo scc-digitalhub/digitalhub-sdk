@@ -39,7 +39,11 @@ def test_import_executable_reads_file_resets_id_and_imports_tasks(monkeypatch) -
     imported.import_tasks = Mock()
     build_entity = Mock(side_effect=[executable, imported])
     create_entity = Mock(return_value={"kind": "function", "id": "new-id"})
-    monkeypatch.setattr(executable_module, "read_yaml", Mock(return_value=[{"project": "project"}, {"kind": "task"}]))
+    monkeypatch.setattr(
+        executable_module,
+        "read_yaml",
+        Mock(return_value=[{"project": "project", "key": "store://project/function/function/function:entity-id"}, {"kind": "task"}]),
+    )
     monkeypatch.setattr(executable_module, "get_context", Mock(return_value=_context()))
     monkeypatch.setattr(executable_module.entity_factory, "build_entity_from_dict", build_entity)
     monkeypatch.setattr(executable_module, "build_uuid", Mock(return_value="new-id"))
@@ -58,7 +62,11 @@ def test_import_executable_converts_duplicate_error(monkeypatch) -> None:
     crud_processor = Mock()
     processor = ContextEntityExecutableProcessor(crud_processor)
     executable = _executable()
-    monkeypatch.setattr(executable_module, "read_yaml", Mock(return_value={"project": "project"}))
+    monkeypatch.setattr(
+        executable_module,
+        "read_yaml",
+        Mock(return_value={"project": "project", "key": "store://project/function/function/function:entity-id"}),
+    )
     monkeypatch.setattr(executable_module, "get_context", Mock(return_value=_context()))
     monkeypatch.setattr(executable_module.entity_factory, "build_entity_from_dict", Mock(return_value=executable))
     crud_processor._create_context_entity.side_effect = EntityAlreadyExistsError("exists")
@@ -72,7 +80,11 @@ def test_load_executable_updates_existing_entity_and_imports_tasks(monkeypatch) 
     processor = ContextEntityExecutableProcessor(crud_processor)
     executable = _executable()
     executable.import_tasks = Mock()
-    monkeypatch.setattr(executable_module, "read_yaml", Mock(return_value=[{"project": "project"}, {"kind": "task"}]))
+    monkeypatch.setattr(
+        executable_module,
+        "read_yaml",
+        Mock(return_value=[{"project": "project", "key": "store://project/function/function/function:entity-id"}, {"kind": "task"}]),
+    )
     monkeypatch.setattr(executable_module, "get_context", Mock(return_value=_context()))
     monkeypatch.setattr(executable_module.entity_factory, "build_entity_from_dict", Mock(return_value=executable))
 
@@ -95,7 +107,11 @@ def test_load_executable_creates_missing_entity(monkeypatch) -> None:
     processor = ContextEntityExecutableProcessor(crud_processor)
     executable = _executable()
     executable.import_tasks = Mock()
-    monkeypatch.setattr(executable_module, "read_yaml", Mock(return_value={"project": "project"}))
+    monkeypatch.setattr(
+        executable_module,
+        "read_yaml",
+        Mock(return_value={"project": "project", "key": "store://project/function/function/function:entity-id"}),
+    )
     monkeypatch.setattr(executable_module, "get_context", Mock(return_value=_context()))
     monkeypatch.setattr(executable_module.entity_factory, "build_entity_from_dict", Mock(return_value=executable))
 
