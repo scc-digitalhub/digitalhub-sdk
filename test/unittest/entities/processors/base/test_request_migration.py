@@ -5,9 +5,10 @@
 from unittest.mock import Mock
 
 from digitalhub.entities._processors.base.crud import BaseEntityCRUDProcessor
-from digitalhub.stores.client.common.enums import ApiType, BEOps
-from digitalhub.stores.client.compiler.apis.utils import base_entity_ra, base_ra
+from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
+from digitalhub.stores.client.compiler.options import DeleteOptions, NoOptions
+from digitalhub.stores.client.compiler.targets import BaseCollectionTarget, BaseEntityTarget
 
 
 def test_create_base_entity_uses_backend_operation_request() -> None:
@@ -21,8 +22,9 @@ def test_create_base_entity_uses_backend_operation_request() -> None:
     client.execute.assert_called_once_with(
         ClientOp(
             category=ApiType.BASE,
-            operation=BEOps.CREATE,
-            route_args=base_ra("project"),
+            operation=BackendOp.CREATE,
+            target=BaseCollectionTarget("project"),
+            options=NoOptions(),
             payload=entity,
         )
     )
@@ -38,8 +40,9 @@ def test_read_base_entity_uses_only_ra() -> None:
     client.execute.assert_called_once_with(
         ClientOp(
             category=ApiType.BASE,
-            operation=BEOps.READ,
-            route_args=base_entity_ra("project", "demo"),
+            operation=BackendOp.READ,
+            target=BaseEntityTarget("project", "demo"),
+            options=NoOptions(),
         )
     )
 
@@ -57,8 +60,9 @@ def test_list_base_entities_uses_paginated_execution() -> None:
     client.execute_list.assert_called_once_with(
         ClientOp(
             category=ApiType.BASE,
-            operation=BEOps.LIST,
-            route_args=base_ra("project"),
+            operation=BackendOp.LIST,
+            target=BaseCollectionTarget("project"),
+            options=NoOptions(),
         )
     )
 
@@ -74,8 +78,9 @@ def test_update_base_entity_uses_backend_operation_request() -> None:
     client.execute.assert_called_once_with(
         ClientOp(
             category=ApiType.BASE,
-            operation=BEOps.UPDATE,
-            route_args=base_entity_ra("project", "demo"),
+            operation=BackendOp.UPDATE,
+            target=BaseEntityTarget("project", "demo"),
+            options=NoOptions(),
             payload=entity,
         )
     )
@@ -96,8 +101,8 @@ def test_delete_base_entity_uses_semantic_parameters() -> None:
     client.execute.assert_called_once_with(
         ClientOp(
             category=ApiType.BASE,
-            operation=BEOps.DELETE,
-            route_args=base_entity_ra("project", "demo"),
-            params={"cascade": True},
+            operation=BackendOp.DELETE,
+            target=BaseEntityTarget("project", "demo"),
+            options=DeleteOptions(cascade=True),
         )
     )

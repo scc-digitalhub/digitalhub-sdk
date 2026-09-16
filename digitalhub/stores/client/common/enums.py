@@ -132,7 +132,7 @@ class OpsType(Enum):
     CONFIG_K8S_RESOURCE_PROFILES = "config.k8s_resource_profiles"
 
 
-class BEOps(Enum):
+class BackendOp(Enum):
     """
     Backend operations.
     """

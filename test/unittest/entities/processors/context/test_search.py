@@ -7,9 +7,10 @@ from unittest.mock import Mock
 
 import digitalhub.entities._processors.context.search as search_module
 from digitalhub.entities._processors.context.search import ContextEntitySearchProcessor
-from digitalhub.stores.client.common.enums import ApiType, BEOps
-from digitalhub.stores.client.compiler.apis.utils import ctx_ra
+from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
+from digitalhub.stores.client.compiler.options import SearchOptions
+from digitalhub.stores.client.compiler.targets import ContextProjectTarget
 from digitalhub.utils.exceptions import BackendError
 
 
@@ -40,19 +41,9 @@ def test_search_entity_builds_query_and_separates_dead_records(monkeypatch) -> N
     client.execute.assert_called_once_with(
         ClientOp(
             category=ApiType.CONTEXT,
-            operation=BEOps.SEARCH,
-            route_args=ctx_ra("context-project"),
-            params={
-                "query": "pipeline",
-                "entity_types": None,
-                "name": None,
-                "kind": None,
-                "created": None,
-                "updated": None,
-                "description": None,
-                "labels": None,
-                "state": "READY",
-            },
+            operation=BackendOp.SEARCH,
+            target=ContextProjectTarget("context-project"),
+            options=SearchOptions(query="pipeline", state="READY"),
         )
     )
     read_entity.assert_any_call("store://context-project/function/function/function:live-id", entity_type="function")

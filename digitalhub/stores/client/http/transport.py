@@ -11,7 +11,7 @@ from requests.exceptions import RequestException
 
 from digitalhub.stores.client.common.logger import log_request_response
 from digitalhub.stores.client.http.errors import raise_for_transport_error
-from digitalhub.stores.client.http.request import BERequest
+from digitalhub.stores.client.http.request import BackendReq
 from digitalhub.utils.logger.logger import get_logger
 
 if typing.TYPE_CHECKING:
@@ -33,7 +33,7 @@ class HttpTransport:
 
     def execute(
         self,
-        backend_request: BERequest,
+        backend_request: BackendReq,
         *,
         attempt: int = 1,
         retry_reason: str | None = None,

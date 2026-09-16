@@ -14,7 +14,7 @@ from digitalhub.stores.client.common.enums import OpsType
 
 
 @dataclass(frozen=True, slots=True)
-class BERequest:
+class BackendReq:
     """Immutable description of one request sent to DigitalHub Core."""
 
     method: str
@@ -36,7 +36,7 @@ class BERequest:
         operation: str | OpsType = OpsType.HTTP_REQUEST,
         authenticate: bool = True,
         **kwargs: Any,
-    ) -> BERequest:
+    ) -> BackendReq:
         request_options = dict(kwargs)
         return cls(
             method=method,
@@ -58,7 +58,7 @@ class BERequest:
         operation: str | OpsType = OpsType.HTTP_REQUEST,
         authenticate: bool = True,
         **kwargs: Any,
-    ) -> BERequest:
+    ) -> BackendReq:
         return cls.from_http(
             "GET",
             api,
@@ -75,7 +75,7 @@ class BERequest:
         operation: str | OpsType = OpsType.HTTP_REQUEST,
         authenticate: bool = True,
         **kwargs: Any,
-    ) -> BERequest:
+    ) -> BackendReq:
         return cls.from_http(
             "POST",
             api,
@@ -92,7 +92,7 @@ class BERequest:
         operation: str | OpsType = OpsType.HTTP_REQUEST,
         authenticate: bool = True,
         **kwargs: Any,
-    ) -> BERequest:
+    ) -> BackendReq:
         return cls.from_http(
             "PUT",
             api,
@@ -109,7 +109,7 @@ class BERequest:
         operation: str | OpsType = OpsType.HTTP_REQUEST,
         authenticate: bool = True,
         **kwargs: Any,
-    ) -> BERequest:
+    ) -> BackendReq:
         return cls.from_http(
             "DELETE",
             api,

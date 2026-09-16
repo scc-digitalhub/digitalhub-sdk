@@ -7,8 +7,8 @@ from __future__ import annotations
 import typing
 
 from digitalhub.context.api import get_context
-from digitalhub.stores.client.factory import get_client
 from digitalhub.stores.client.common.enums import ConfigurationVars
+from digitalhub.stores.client.factory import get_client
 from digitalhub.stores.data.builder import store_builder
 
 if typing.TYPE_CHECKING:

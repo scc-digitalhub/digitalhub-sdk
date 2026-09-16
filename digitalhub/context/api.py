@@ -9,10 +9,10 @@ import typing
 from digitalhub.context.builder import context_builder
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.factory.entity import entity_factory
-from digitalhub.stores.client.factory import get_client
-from digitalhub.stores.client.common.enums import ApiType, BEOps
-from digitalhub.stores.client.compiler.apis.utils import base_entity_ra
+from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
+from digitalhub.stores.client.compiler.targets import BaseEntityTarget
+from digitalhub.stores.client.factory import get_client
 from digitalhub.utils.exceptions import ContextError, EntityNotExistsError
 
 if typing.TYPE_CHECKING:
@@ -81,8 +81,8 @@ def get_context_from_remote(project: str) -> Context:
         obj = get_client().execute(
             ClientOp(
                 category=ApiType.BASE,
-                operation=BEOps.READ,
-                route_args=base_entity_ra(EntityTypes.PROJECT.value, project),
+                operation=BackendOp.READ,
+                target=BaseEntityTarget(EntityTypes.PROJECT.value, project),
             )
         )
         entity_factory.build_entity_from_dict(obj)

@@ -8,7 +8,7 @@ from dataclasses import replace
 from typing import Any
 
 from digitalhub.stores.client.auth.client_configurator import ClientConfigurator
-from digitalhub.stores.client.http.request import BERequest
+from digitalhub.stores.client.http.request import BackendReq
 from digitalhub.stores.client.http.response import ResponseProcessor
 from digitalhub.stores.client.http.transport import HttpTransport
 from digitalhub.utils.exceptions import UnauthorizedError
@@ -30,7 +30,7 @@ class HttpRequestHandler:
         self._transport = transport
         self._response_processor = ResponseProcessor()
 
-    def execute_request(self, backend_request: BERequest) -> Any:
+    def execute_request(self, backend_request: BackendReq) -> Any:
         """Execute API call with full URL construction and authentication."""
         if backend_request.authenticate:
             backend_request = self._configurator.authenticate(backend_request)
@@ -41,7 +41,7 @@ class HttpRequestHandler:
 
     def _execute_request(
         self,
-        backend_request: BERequest,
+        backend_request: BackendReq,
         *,
         retry_on_unauthorized: bool = True,
         attempt: int = 1,

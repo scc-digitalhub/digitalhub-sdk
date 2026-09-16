@@ -7,9 +7,10 @@ from unittest.mock import Mock
 
 import digitalhub.entities._processors.context.secret as secret_module
 from digitalhub.entities._processors.context.secret import ContextEntitySecretProcessor
-from digitalhub.stores.client.common.enums import ApiType, BEOps
-from digitalhub.stores.client.compiler.apis.utils import ctx_entity_ra
+from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
+from digitalhub.stores.client.compiler.options import NoOptions, OpaqueOptions
+from digitalhub.stores.client.compiler.targets import ContextCollectionTarget
 
 
 def _context() -> tuple[SimpleNamespace, Mock, object]:
@@ -33,9 +34,9 @@ def test_read_secret_data_uses_backend_operation_request(monkeypatch) -> None:
     client.execute.assert_called_once_with(
         ClientOp(
             category=ApiType.CONTEXT,
-            operation=BEOps.DATA_READ,
-            route_args=ctx_entity_ra("project", "secret"),
-            params={"params": {"keys": "token"}},
+            operation=BackendOp.DATA_READ,
+            target=ContextCollectionTarget("project", "secret"),
+            options=OpaqueOptions({"keys": "token"}),
         )
     )
 
@@ -55,8 +56,9 @@ def test_update_secret_data_uses_backend_operation_request(monkeypatch) -> None:
     client.execute.assert_called_once_with(
         ClientOp(
             category=ApiType.CONTEXT,
-            operation=BEOps.DATA_UPDATE,
-            route_args=ctx_entity_ra("project", "secret"),
+            operation=BackendOp.DATA_UPDATE,
+            target=ContextCollectionTarget("project", "secret"),
+            options=NoOptions(),
             payload=data,
         )
     )

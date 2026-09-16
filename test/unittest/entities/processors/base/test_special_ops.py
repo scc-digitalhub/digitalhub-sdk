@@ -8,9 +8,10 @@ import pytest
 
 import digitalhub.entities._processors.base.special_ops as special_ops_module
 from digitalhub.entities._processors.base.special_ops import BaseEntitySpecialOpsProcessor
-from digitalhub.stores.client.common.enums import ApiType, BEOps
-from digitalhub.stores.client.compiler.apis.utils import base_entity_ra
+from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
+from digitalhub.stores.client.compiler.options import NoOptions, ShareOptions
+from digitalhub.stores.client.compiler.targets import BaseEntityTarget
 
 
 def test_build_project_key_uses_store_scheme() -> None:
@@ -39,16 +40,17 @@ def test_unshare_finds_user_after_first_acl_entry(monkeypatch) -> None:
         call(
             ClientOp(
                 category=ApiType.BASE,
-                operation=BEOps.SHARE_READ,
-                route_args=base_entity_ra("project", "example"),
+                operation=BackendOp.SHARE_READ,
+                target=BaseEntityTarget("project", "example"),
+                options=NoOptions(),
             )
         ),
         call(
             ClientOp(
                 category=ApiType.BASE,
-                operation=BEOps.UNSHARE,
-                route_args=base_entity_ra("project", "example"),
-                params={"unshare": True, "user": "bob", "id": "bob-id"},
+                operation=BackendOp.UNSHARE,
+                target=BaseEntityTarget("project", "example"),
+                options=ShareOptions(user="bob", unshare=True, share_id="bob-id"),
             )
         ),
     ]
@@ -69,9 +71,9 @@ def test_share_creates_access_with_built_parameters(monkeypatch) -> None:
     client.execute.assert_called_once_with(
         ClientOp(
             category=ApiType.BASE,
-            operation=BEOps.SHARE,
-            route_args=base_entity_ra("project", "example"),
-            params={"unshare": False, "user": "alice", "role": "reader"},
+            operation=BackendOp.SHARE,
+            target=BaseEntityTarget("project", "example"),
+            options=ShareOptions(user="alice", role="reader"),
             payload={},
         )
     )

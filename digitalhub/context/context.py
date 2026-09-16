@@ -11,9 +11,9 @@ from pathlib import Path
 from digitalhub.entities._commons.enums import EntityTypes, Relationship
 from digitalhub.factory.entity import entity_factory
 from digitalhub.runtimes.enums import RuntimeEnvVar
-from digitalhub.stores.client.common.enums import ApiType, BEOps
-from digitalhub.stores.client.compiler.apis.utils import ctx_entity_id_ra
+from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
+from digitalhub.stores.client.compiler.targets import ContextEntityTarget
 from digitalhub.utils.exceptions import BackendError
 from digitalhub.utils.logger.logger import get_logger
 
@@ -109,8 +109,8 @@ class Context:
         run_dict = self.client.execute(
             ClientOp(
                 category=ApiType.CONTEXT,
-                operation=BEOps.READ,
-                route_args=ctx_entity_id_ra(self.name, EntityTypes.RUN.value, run_id),
+                operation=BackendOp.READ,
+                target=ContextEntityTarget(self.name, EntityTypes.RUN.value, run_id),
             )
         )
         return entity_factory.build_entity_from_dict(obj=run_dict, entity_type=EntityTypes.RUN.value)

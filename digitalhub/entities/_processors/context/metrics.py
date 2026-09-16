@@ -7,9 +7,10 @@ from __future__ import annotations
 from typing import Any
 
 from digitalhub.entities._processors.utils import get_context
-from digitalhub.stores.client.common.enums import ApiType, BEOps
-from digitalhub.stores.client.compiler.apis.utils import ctx_metric_ra
+from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
+from digitalhub.stores.client.compiler.options import MetricsOptions
+from digitalhub.stores.client.compiler.targets import ContextMetricTarget
 
 
 class ContextEntityMetricsProcessor:
@@ -24,9 +25,9 @@ class ContextEntityMetricsProcessor:
         return get_context(project).client.execute(
             ClientOp(
                 category=ApiType.CONTEXT,
-                operation=BEOps.METRICS_READ,
-                route_args=ctx_metric_ra(project, entity_type, entity_id, metric_name),
-                params={"user": user} if user is not None else {},
+                operation=BackendOp.METRICS_READ,
+                target=ContextMetricTarget(project, entity_type, entity_id, metric_name),
+                options=MetricsOptions(user=user),
             )
         )
 
@@ -42,9 +43,9 @@ class ContextEntityMetricsProcessor:
         get_context(project).client.execute(
             ClientOp(
                 category=ApiType.CONTEXT,
-                operation=BEOps.METRICS_UPDATE,
-                route_args=ctx_metric_ra(project, entity_type, entity_id, metric_name),
+                operation=BackendOp.METRICS_UPDATE,
+                target=ContextMetricTarget(project, entity_type, entity_id, metric_name),
                 payload=metric_value,
-                params={"user": user} if user is not None else {},
+                options=MetricsOptions(user=user),
             )
         )

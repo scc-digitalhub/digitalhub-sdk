@@ -23,13 +23,13 @@ from digitalhub.stores.client.common.utils import (
     with_pagination,
 )
 from digitalhub.stores.client.http.handler import HttpRequestHandler
-from digitalhub.stores.client.http.request import BERequest
+from digitalhub.stores.client.http.request import BackendReq
 from digitalhub.stores.client.http.transport import HttpTransport
 from digitalhub.utils.exceptions import BackendError, ForbiddenError, UnauthorizedError
 
 
 def test_backend_request_is_immutable_and_preserves_http_details() -> None:
-    backend_request = BERequest(
+    backend_request = BackendReq(
         method="GET",
         api="/resource",
         operation=OpsType.ENTITY_READ,
@@ -58,14 +58,14 @@ def test_backend_request_uses_configured_timeout(monkeypatch) -> None:
         lambda: Mock(http_timeout=17),
     )
 
-    backend_request = BERequest(method="GET", api="/resource")
+    backend_request = BackendReq(method="GET", api="/resource")
 
     assert backend_request.timeout == 17
     assert backend_request.to_transport_kwargs()["timeout"] == 17
 
 
 def test_with_data_replaces_payload_without_mutating_request() -> None:
-    backend_request = BERequest(
+    backend_request = BackendReq(
         method="POST",
         api="/resource",
         params={"name": "demo"},
@@ -89,7 +89,7 @@ def test_request_transformations_are_copy_on_write(monkeypatch) -> None:
         "digitalhub.stores.client.common.utils.get_client_config",
         lambda: Mock(default_page_start=0, default_page_size=10, default_sort="updated,DESC"),
     )
-    backend_request = BERequest(
+    backend_request = BackendReq(
         method="GET",
         api="/resource",
         params={"filter": "active"},
@@ -124,7 +124,7 @@ def test_request_transformations_are_copy_on_write(monkeypatch) -> None:
 
 
 def test_next_page_returns_request_with_incremented_page() -> None:
-    backend_request = BERequest(method="GET", api="/resource", params={"page": 2})
+    backend_request = BackendReq(method="GET", api="/resource", params={"page": 2})
 
     next_request = next_page(backend_request)
 
@@ -145,7 +145,7 @@ def test_handler_executes_structured_backend_request(monkeypatch) -> None:
     handler._response_processor.process.return_value = {"result": "ok"}
 
     result = handler.execute_request(
-        BERequest(
+        BackendReq(
             method="POST",
             api="/resource",
             operation="entity.create",
@@ -158,7 +158,7 @@ def test_handler_executes_structured_backend_request(monkeypatch) -> None:
 
     assert result == {"result": "ok"}
     executed_request = transport.execute.call_args.args[0]
-    assert executed_request == BERequest(
+    assert executed_request == BackendReq(
         method="POST",
         api="https://example.test/resource",
         operation="entity.create",
@@ -182,7 +182,7 @@ def test_handler_preserves_absolute_url(monkeypatch) -> None:
     handler._response_processor.process.return_value = {"result": "ok"}
 
     result = handler.execute_request(
-        BERequest(
+        BackendReq(
             method="GET",
             api="https://issuer.example/token",
             operation=OpsType.AUTH_REFRESH,
@@ -208,7 +208,7 @@ def test_request_refreshes_credentials_only_once(monkeypatch) -> None:
     handler._response_processor.process.side_effect = [UnauthorizedError(), UnauthorizedError()]
 
     with pytest.raises(UnauthorizedError):
-        handler.execute_request(BERequest(method="GET", api="/resource"))
+        handler.execute_request(BackendReq(method="GET", api="/resource"))
 
     assert transport.execute.call_count == 2
     configurator.evaluate_refresh.assert_called_once_with()
@@ -218,8 +218,8 @@ def test_request_returns_replay_result_after_refresh(monkeypatch) -> None:
     configurator = Mock()
     configurator.get_endpoint.return_value = "https://example.test"
 
-    def authenticate(backend_request: BERequest) -> BERequest:
-        return BERequest(
+    def authenticate(backend_request: BackendReq) -> BackendReq:
+        return BackendReq(
             method=backend_request.method,
             api=backend_request.api,
             operation=backend_request.operation,
@@ -240,7 +240,7 @@ def test_request_returns_replay_result_after_refresh(monkeypatch) -> None:
     handler._response_processor = Mock()
     handler._response_processor.process.side_effect = [UnauthorizedError(), {"result": "ok"}]
 
-    result = handler.execute_request(BERequest(method="GET", api="/resource"))
+    result = handler.execute_request(BackendReq(method="GET", api="/resource"))
 
     assert result == {"result": "ok"}
     assert transport.execute.call_count == 2
@@ -260,7 +260,7 @@ def test_request_does_not_refresh_credentials_on_forbidden(monkeypatch) -> None:
     handler._response_processor.process.side_effect = ForbiddenError()
 
     with pytest.raises(ForbiddenError):
-        handler.execute_request(BERequest(method="GET", api="/resource"))
+        handler.execute_request(BackendReq(method="GET", api="/resource"))
 
     configurator.evaluate_refresh.assert_not_called()
     assert transport.execute.call_count == 1
@@ -290,7 +290,7 @@ def test_request_logs_operation_attempt_and_full_request_details(monkeypatch, ca
 
     with caplog.at_level(logging.DEBUG, logger=transport_module.logger.name):
         result = transport.execute(
-            BERequest(
+            BackendReq(
                 method="GET",
                 api=full_url,
                 operation=OpsType.ENTITY_READ,
@@ -322,7 +322,7 @@ def test_request_normalizes_transport_errors(monkeypatch, transport_error, expec
     transport = HttpTransport()
 
     with pytest.raises(expected_error, match=message) as exc_info:
-        transport.execute(BERequest(method="GET", api="https://example.test/resource"))
+        transport.execute(BackendReq(method="GET", api="https://example.test/resource"))
 
     assert exc_info.value.__cause__ is transport_error
 
@@ -340,7 +340,7 @@ def test_transport_passes_backend_request_timeout(monkeypatch) -> None:
     monkeypatch.setattr(transport_module, "requests_request", requests_request)
 
     HttpTransport().execute(
-        BERequest(method="GET", api=response.url, timeout=7),
+        BackendReq(method="GET", api=response.url, timeout=7),
     )
 
     assert requests_request.call_args.kwargs["timeout"] == 7

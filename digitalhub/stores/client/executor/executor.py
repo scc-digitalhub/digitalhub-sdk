@@ -13,7 +13,7 @@ from digitalhub.stores.client.common.utils import next_page, with_pagination
 from digitalhub.stores.client.compiler.compiler import BackendOperationCompiler
 from digitalhub.stores.client.compiler.operation import ClientOp
 from digitalhub.stores.client.http.handler import HttpRequestHandler
-from digitalhub.stores.client.http.request import BERequest
+from digitalhub.stores.client.http.request import BackendReq
 from digitalhub.utils.exceptions import BackendError
 
 
@@ -44,14 +44,14 @@ class ClientOpExecutor:
     def get_k8s_resource_profiles(self) -> list[str]:
         """Get Kubernetes resource profiles from the backend configuration."""
         data = self._http_handler.execute_request(
-            BERequest.get(
+            BackendReq.get(
                 api=get_client_config().well_known_conf,
                 operation=OpsType.CONFIG_K8S_RESOURCE_PROFILES,
             )
         )
         return data.get(get_client_config().k8s_resource_profiles, [])
 
-    def _iter_paginated_responses(self, request: BERequest) -> Iterator[dict[str, Any]]:
+    def _iter_paginated_responses(self, request: BackendReq) -> Iterator[dict[str, Any]]:
         """Yield paginated responses while advancing requests immutably."""
         while True:
             response = self._http_handler.execute_request(request)

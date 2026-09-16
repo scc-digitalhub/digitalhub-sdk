@@ -5,7 +5,7 @@
 from digitalhub.stores.client.auth.auth_session import AuthSession
 from digitalhub.stores.client.auth.credential_session import CredentialSession
 from digitalhub.stores.client.common.enums import AuthType, CredentialsVars
-from digitalhub.stores.client.http.request import BERequest
+from digitalhub.stores.client.http.request import BackendReq
 
 
 def _credentials(**values: str | None) -> dict[str, str | None]:
@@ -47,7 +47,7 @@ def test_auth_session_uses_bearer_auth_for_personal_access_tokens() -> None:
 
     assert auth_session.auth_type == AuthType.EXCHANGE.value
     assert auth_session.is_refreshable() is True
-    authenticated_request = auth_session.authenticate(BERequest(method="GET", api="/resource"))
+    authenticated_request = auth_session.authenticate(BackendReq(method="GET", api="/resource"))
 
     assert authenticated_request.headers == {"Authorization": "Bearer access-token"}
 
@@ -64,14 +64,14 @@ def test_auth_session_uses_basic_auth_for_user_credentials() -> None:
 
     assert auth_session.auth_type == AuthType.BASIC.value
     assert auth_session.is_refreshable() is False
-    authenticated_request = auth_session.authenticate(BERequest(method="GET", api="/resource"))
+    authenticated_request = auth_session.authenticate(BackendReq(method="GET", api="/resource"))
 
     assert authenticated_request.options == {"auth": ("user", "password")}
 
 
 def test_auth_session_keeps_request_parameters_for_no_auth() -> None:
     auth_session = AuthSession(CredentialSession(_credentials()))
-    backend_request = BERequest(method="GET", api="/resource", params={"page": 1})
+    backend_request = BackendReq(method="GET", api="/resource", params={"page": 1})
 
     assert auth_session.auth_type == AuthType.NO_AUTH.value
     assert auth_session.is_refreshable() is False

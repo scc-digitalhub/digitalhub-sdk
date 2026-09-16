@@ -17,7 +17,7 @@ from digitalhub.stores.client.common.enums import (
 )
 from digitalhub.stores.client.common.utils import sanitize_endpoint, with_urlencoded_content_type
 from digitalhub.stores.client.http.errors import raise_for_response_error
-from digitalhub.stores.client.http.request import BERequest
+from digitalhub.stores.client.http.request import BackendReq
 from digitalhub.stores.client.http.response import parse_response_json
 from digitalhub.utils.exceptions import BackendError, ClientError
 from digitalhub.utils.logger.logger import get_logger
@@ -154,7 +154,7 @@ class TokenRefreshService:
         url = sanitize_endpoint(url) + get_client_config().api_auth_check
 
         backend_request = self._auth_session.authenticate(
-            BERequest.get(
+            BackendReq.get(
                 api=url,
                 operation=OpsType.AUTH_VALIDATE,
             ),
@@ -187,7 +187,7 @@ class TokenRefreshService:
                 "scope": get_client_config().pat_scope,
             }
 
-        request = BERequest.post(
+        request = BackendReq.post(
             api=url,
             operation=OpsType.AUTH_REFRESH,
             data=data,
@@ -218,7 +218,7 @@ class TokenRefreshService:
 
         # Call issuer to get refresh endpoint
         response = self._transport.execute(
-            BERequest.get(
+            BackendReq.get(
                 api=url,
                 operation=OpsType.AUTH_DISCOVERY,
                 authenticate=False,

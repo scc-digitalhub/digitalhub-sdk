@@ -14,9 +14,10 @@ from digitalhub.stores.client.common.config import (
     get_client_config,
     set_client_config,
 )
-from digitalhub.stores.client.common.enums import ApiType, BEOps, ConfigurationVars
+from digitalhub.stores.client.common.enums import ApiType, BackendOp, ConfigurationVars
 from digitalhub.stores.client.common.utils import sanitize_endpoint
 from digitalhub.stores.client.compiler.apis.api import ClientApiBuilder
+from digitalhub.stores.client.compiler.targets import BaseCollectionTarget, ContextCollectionTarget
 from digitalhub.stores.client.http.response import ResponseProcessor
 
 
@@ -49,14 +50,13 @@ def test_set_client_config_updates_imported_dependencies(monkeypatch, tmp_path) 
     api_builder = ClientApiBuilder()
     base_api = api_builder.build_api(
         ApiType.BASE,
-        BEOps.LIST,
-        entity_type="project",
+        BackendOp.LIST,
+        BaseCollectionTarget("project"),
     )
     context_api = api_builder.build_api(
         ApiType.CONTEXT,
-        BEOps.LIST,
-        project="project",
-        entity_type="function",
+        BackendOp.LIST,
+        ContextCollectionTarget("project", "function"),
     )
     ResponseProcessor()._check_api_version(SimpleNamespace(headers={"X-Api-Level": "30"}))
 

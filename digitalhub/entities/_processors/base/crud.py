@@ -9,10 +9,11 @@ from warnings import warn
 
 from digitalhub.context.api import delete_context
 from digitalhub.factory.entity import entity_factory
-from digitalhub.stores.client.factory import get_client
-from digitalhub.stores.client.common.enums import ApiType, BEOps
-from digitalhub.stores.client.compiler.apis.utils import base_entity_ra, base_ra
+from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
+from digitalhub.stores.client.compiler.options import DeleteOptions
+from digitalhub.stores.client.compiler.targets import BaseCollectionTarget, BaseEntityTarget
+from digitalhub.stores.client.factory import get_client
 from digitalhub.utils.exceptions import EntityAlreadyExistsError, EntityError, EntityNotExistsError
 from digitalhub.utils.io_utils import read_yaml
 
@@ -26,8 +27,8 @@ class BaseEntityCRUDProcessor:
         return client.execute(
             ClientOp(
                 category=ApiType.BASE,
-                operation=BEOps.CREATE,
-                route_args=base_ra(entity_type),
+                operation=BackendOp.CREATE,
+                target=BaseCollectionTarget(entity_type),
                 payload=entity_dict,
             )
         )
@@ -51,8 +52,8 @@ class BaseEntityCRUDProcessor:
         return client.execute(
             ClientOp(
                 category=ApiType.BASE,
-                operation=BEOps.READ,
-                route_args=base_entity_ra(entity_type, entity_name),
+                operation=BackendOp.READ,
+                target=BaseEntityTarget(entity_type, entity_name),
             )
         )
 
@@ -65,8 +66,8 @@ class BaseEntityCRUDProcessor:
         return client.execute_list(
             ClientOp(
                 category=ApiType.BASE,
-                operation=BEOps.LIST,
-                route_args=base_ra(entity_type),
+                operation=BackendOp.LIST,
+                target=BaseCollectionTarget(entity_type),
             )
         )
 
@@ -123,8 +124,8 @@ class BaseEntityCRUDProcessor:
         return client.execute(
             ClientOp(
                 category=ApiType.BASE,
-                operation=BEOps.UPDATE,
-                route_args=base_entity_ra(entity_type, entity_name),
+                operation=BackendOp.UPDATE,
+                target=BaseEntityTarget(entity_type, entity_name),
                 payload=entity_dict,
             )
         )
@@ -149,9 +150,9 @@ class BaseEntityCRUDProcessor:
         return client.execute(
             ClientOp(
                 category=ApiType.BASE,
-                operation=BEOps.DELETE,
-                route_args=base_entity_ra(entity_type, entity_name),
-                params={"cascade": cascade},
+                operation=BackendOp.DELETE,
+                target=BaseEntityTarget(entity_type, entity_name),
+                options=DeleteOptions(cascade=cascade),
             )
         )
 

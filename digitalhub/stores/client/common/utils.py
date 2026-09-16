@@ -8,42 +8,42 @@ from dataclasses import replace
 from typing import Any
 
 from digitalhub.stores.client.common.config import get_client_config
-from digitalhub.stores.client.http.request import BERequest
+from digitalhub.stores.client.http.request import BackendReq
 from digitalhub.utils.exceptions import ClientError
 from digitalhub.utils.uri_utils import has_remote_scheme
 
 
-def with_headers(request: BERequest, **headers: str) -> BERequest:
+def with_headers(request: BackendReq, **headers: str) -> BackendReq:
     """Return a request with the supplied headers merged into its headers."""
     return replace(request, headers={**request.headers, **headers})
 
 
-def with_data(request: BERequest, data: Any) -> BERequest:
+def with_data(request: BackendReq, data: Any) -> BackendReq:
     """Return a request with its payload replaced."""
     return replace(request, data=data)
 
 
-def with_bearer_token(request: BERequest, token: str) -> BERequest:
+def with_bearer_token(request: BackendReq, token: str) -> BackendReq:
     """Return a request with a bearer token header added."""
     return with_headers(request, Authorization=f"Bearer {token}")
 
 
-def with_basic_auth(request: BERequest, user: str, password: str) -> BERequest:
+def with_basic_auth(request: BackendReq, user: str, password: str) -> BackendReq:
     """Return a request with basic authentication options added."""
     return replace(request, options={**request.options, "auth": (user, password)})
 
 
-def with_json_content_type(request: BERequest) -> BERequest:
+def with_json_content_type(request: BackendReq) -> BackendReq:
     """Return a request with an application/json content type."""
     return with_headers(request, **{"Content-Type": "application/json"})
 
 
-def with_urlencoded_content_type(request: BERequest) -> BERequest:
+def with_urlencoded_content_type(request: BackendReq) -> BackendReq:
     """Return a request with a form-urlencoded content type."""
     return with_headers(request, **{"Content-Type": "application/x-www-form-urlencoded"})
 
 
-def with_pagination(request: BERequest, partial: bool = False) -> BERequest:
+def with_pagination(request: BackendReq, partial: bool = False) -> BackendReq:
     """Return a request with default pagination parameters filled in."""
     params = dict(request.params)
     params.setdefault("page", get_client_config().default_page_start)
@@ -53,7 +53,7 @@ def with_pagination(request: BERequest, partial: bool = False) -> BERequest:
     return replace(request, params=params)
 
 
-def next_page(request: BERequest) -> BERequest:
+def next_page(request: BackendReq) -> BackendReq:
     """Return a request targeting the next page."""
     return replace(request, params={**request.params, "page": request.params["page"] + 1})
 

@@ -7,9 +7,10 @@ from __future__ import annotations
 import typing
 
 from digitalhub.entities._processors.utils import get_context, parse_identifier
-from digitalhub.stores.client.common.enums import ApiType, BEOps
-from digitalhub.stores.client.compiler.apis.utils import ctx_ra
+from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
+from digitalhub.stores.client.compiler.options import SearchOptions
+from digitalhub.stores.client.compiler.targets import ContextProjectTarget
 from digitalhub.utils.exceptions import BackendError
 from digitalhub.utils.logger.logger import get_logger
 
@@ -36,23 +37,29 @@ class ContextEntitySearchProcessor:
         **kwargs,
     ) -> tuple[list[ContextEntity], list[dict]]:
         context = get_context(project)
-        params = {
-            **kwargs,
-            "query": query,
-            "entity_types": entity_types,
-            "name": name,
-            "kind": kind,
-            "created": created,
-            "updated": updated,
-            "description": description,
-            "labels": labels,
-        }
+        params = {**kwargs}
+        if query is not None:
+            params["query"] = query
+        if entity_types is not None:
+            params["entity_types"] = entity_types
+        if name is not None:
+            params["name"] = name
+        if kind is not None:
+            params["kind"] = kind
+        if created is not None:
+            params["created"] = created
+        if updated is not None:
+            params["updated"] = updated
+        if description is not None:
+            params["description"] = description
+        if labels is not None:
+            params["labels"] = labels
         entities_dict = context.client.execute(
             ClientOp(
                 category=ApiType.CONTEXT,
-                operation=BEOps.SEARCH,
-                route_args=ctx_ra(context.name),
-                params=params,
+                operation=BackendOp.SEARCH,
+                target=ContextProjectTarget(context.name),
+                options=SearchOptions(**params),
             )
         )
         living_entities = []

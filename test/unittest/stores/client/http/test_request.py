@@ -3,28 +3,28 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from digitalhub.stores.client.common.enums import OpsType
-from digitalhub.stores.client.http.request import BERequest
+from digitalhub.stores.client.http.request import BackendReq
 
 
 def test_method_factories_preserve_request_fields() -> None:
     requests = [
-        BERequest.get(
+        BackendReq.get(
             "/resource",
             operation=OpsType.ENTITY_READ,
             params={"page": 1},
             verify=False,
         ),
-        BERequest.post(
+        BackendReq.post(
             "/resource",
             operation=OpsType.ENTITY_CREATE,
             data={"name": "demo"},
         ),
-        BERequest.put(
+        BackendReq.put(
             "/resource",
             operation=OpsType.ENTITY_UPDATE,
             headers={"X-Request-ID": "request-id"},
         ),
-        BERequest.delete(
+        BackendReq.delete(
             "/resource",
             operation=OpsType.ENTITY_DELETE,
         ),

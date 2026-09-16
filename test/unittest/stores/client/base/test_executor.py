@@ -4,10 +4,11 @@ import pytest
 
 import digitalhub.stores.client.executor.executor as executor_module
 from digitalhub.stores.client.common.config import get_client_config
-from digitalhub.stores.client.common.enums import ApiType, BEOps, OpsType
+from digitalhub.stores.client.common.enums import ApiType, BackendOp, OpsType
 from digitalhub.stores.client.compiler.operation import ClientOp
+from digitalhub.stores.client.compiler.targets import ContextCollectionTarget
 from digitalhub.stores.client.executor.executor import ClientOpExecutor
-from digitalhub.stores.client.http.request import BERequest
+from digitalhub.stores.client.http.request import BackendReq
 from digitalhub.utils.exceptions import BackendError
 
 
@@ -15,7 +16,7 @@ from digitalhub.utils.exceptions import BackendError
 def executor(monkeypatch) -> tuple[ClientOpExecutor, Mock, Mock]:
     compiler = Mock()
     http_handler = Mock()
-    compiler.compile.return_value = BERequest(method="GET", api="/artifacts", params={})
+    compiler.compile.return_value = BackendReq(method="GET", api="/artifacts", params={})
     monkeypatch.setattr(executor_module, "BackendOperationCompiler", Mock(return_value=compiler))
     return ClientOpExecutor(http_handler), compiler, http_handler
 
@@ -23,7 +24,11 @@ def executor(monkeypatch) -> tuple[ClientOpExecutor, Mock, Mock]:
 def test_execute_first_stops_after_first_non_empty_page(executor) -> None:
     client_executor, compiler, http_handler = executor
     http_handler.execute_request.return_value = {"content": [{"id": "first"}, {"id": "second"}], "totalPages": 3}
-    operation = ClientOp(category=ApiType.CONTEXT, operation=BEOps.LIST)
+    operation = ClientOp(
+        category=ApiType.CONTEXT,
+        operation=BackendOp.LIST,
+        target=ContextCollectionTarget("demo", "artifact"),
+    )
 
     result = client_executor.execute_first(operation)
 
@@ -37,7 +42,13 @@ def test_execute_first_raises_for_empty_pages(executor) -> None:
     http_handler.execute_request.return_value = {"content": [], "totalPages": 1}
 
     with pytest.raises(BackendError, match="No object found"):
-        client_executor.execute_first(ClientOp(category=ApiType.CONTEXT, operation=BEOps.LIST))
+        client_executor.execute_first(
+            ClientOp(
+                category=ApiType.CONTEXT,
+                operation=BackendOp.LIST,
+                target=ContextCollectionTarget("demo", "artifact"),
+            )
+        )
 
 
 def test_get_k8s_resource_profiles_uses_http_handler(executor) -> None:
@@ -50,7 +61,7 @@ def test_get_k8s_resource_profiles_uses_http_handler(executor) -> None:
 
     assert result == ["gpu", "cpu"]
     http_handler.execute_request.assert_called_once_with(
-        BERequest(
+        BackendReq(
             method="GET",
             api=get_client_config().well_known_conf,
             operation=OpsType.CONFIG_K8S_RESOURCE_PROFILES,

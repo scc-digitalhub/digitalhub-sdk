@@ -5,7 +5,16 @@
 from __future__ import annotations
 
 from digitalhub.stores.client.common.config import get_client_config
-from digitalhub.stores.client.common.enums import ApiType, BEOps
+from digitalhub.stores.client.common.enums import ApiType, BackendOp
+from digitalhub.stores.client.compiler.targets import (
+    BaseCollectionTarget,
+    BaseEntityTarget,
+    ContextCollectionTarget,
+    ContextEntityTarget,
+    ContextMetricTarget,
+    ContextProjectTarget,
+    RouteTarget,
+)
 from digitalhub.utils.exceptions import BackendError
 
 
@@ -14,7 +23,7 @@ class ClientApiBuilder:
     This class is used to build the API for the DHCore client.
     """
 
-    def build_api(self, category: ApiType, operation: BEOps, **kwargs) -> str:
+    def build_api(self, category: ApiType, operation: BackendOp, target: RouteTarget) -> str:
         """
         Build the API for the client.
 
@@ -34,11 +43,11 @@ class ClientApiBuilder:
         """
         match category:
             case ApiType.BASE:
-                return self.build_api_base(operation, **kwargs)
+                return self.build_api_base(operation, target)
             case _:
-                return self.build_api_context(operation, **kwargs)
+                return self.build_api_context(operation, target)
 
-    def build_api_base(self, operation: BEOps, **kwargs) -> str:
+    def build_api_base(self, operation: BackendOp, target: RouteTarget) -> str:
         """
         Build the base API for the client.
 
@@ -55,18 +64,18 @@ class ClientApiBuilder:
             API formatted.
         """
         api_base = get_client_config().api_base
-        entity_type = kwargs["entity_type"] + "s"
-        match operation:
-            case BEOps.CREATE | BEOps.LIST:
-                return f"{api_base}/{entity_type}"
-            case BEOps.READ | BEOps.UPDATE | BEOps.DELETE:
-                return f"{api_base}/{entity_type}/{kwargs['entity_name']}"
-            case BEOps.SHARE:
-                return f"{api_base}/{entity_type}/{kwargs['entity_name']}/share"
+        match operation, target:
+            case BackendOp.CREATE | BackendOp.LIST, BaseCollectionTarget(entity_type):
+                return f"{api_base}/{entity_type}s"
+            case BackendOp.READ | BackendOp.UPDATE | BackendOp.DELETE | BackendOp.SHARE, BaseEntityTarget(
+                entity_type, entity_name
+            ):
+                suffix = "/share" if operation == BackendOp.SHARE else ""
+                return f"{api_base}/{entity_type}s/{entity_name}{suffix}"
             case _:
-                raise BackendError(f"Invalid operation '{operation}' for entity type '{entity_type}' in DHCore.")
+                raise BackendError(f"Invalid operation '{operation}' for target '{target}' in DHCore.")
 
-    def build_api_context(self, operation: BEOps, **kwargs) -> str:
+    def build_api_context(self, operation: BackendOp, target: RouteTarget) -> str:
         """
         Build the context API for the client.
 
@@ -83,29 +92,30 @@ class ClientApiBuilder:
             The formatted context API endpoint.
         """
         api_context = get_client_config().api_context
-        project = kwargs["project"]
-        entity_type = kwargs["entity_type"] + "s"
-        match operation:
-            case BEOps.SEARCH:
+        match operation, target:
+            case BackendOp.SEARCH, ContextProjectTarget(project):
                 return f"{api_context}/{project}/solr/search/item"
-            case BEOps.CREATE | BEOps.LIST | BEOps.DELETE_ALL_VERSIONS:
-                return f"{api_context}/{project}/{entity_type}"
-            case BEOps.READ | BEOps.UPDATE | BEOps.DELETE:
-                return f"{api_context}/{project}/{entity_type}/{kwargs['entity_id']}"
-            case BEOps.LOGS:
-                return f"{api_context}/{project}/{entity_type}/{kwargs['entity_id']}/logs"
-            case BEOps.STOP:
-                return f"{api_context}/{project}/{entity_type}/{kwargs['entity_id']}/stop"
-            case BEOps.RESUME:
-                return f"{api_context}/{project}/{entity_type}/{kwargs['entity_id']}/resume"
-            case BEOps.DATA:
-                return f"{api_context}/{project}/{entity_type}/data"
-            case BEOps.FILES:
-                return f"{api_context}/{project}/{entity_type}/{kwargs['entity_id']}/files/info"
-            case BEOps.METRICS:
-                metric_name = kwargs["metric_name"]
+            case (
+                BackendOp.CREATE | BackendOp.LIST | BackendOp.DELETE_ALL_VERSIONS | BackendOp.DATA,
+                ContextCollectionTarget(project, entity_type),
+            ):
+                suffix = "/data" if operation == BackendOp.DATA else ""
+                return f"{api_context}/{project}/{entity_type}s{suffix}"
+            case BackendOp.READ | BackendOp.UPDATE | BackendOp.DELETE, ContextEntityTarget(
+                project, entity_type, entity_id
+            ):
+                return f"{api_context}/{project}/{entity_type}s/{entity_id}"
+            case BackendOp.LOGS, ContextEntityTarget(project, entity_type, entity_id):
+                return f"{api_context}/{project}/{entity_type}s/{entity_id}/logs"
+            case BackendOp.STOP, ContextEntityTarget(project, entity_type, entity_id):
+                return f"{api_context}/{project}/{entity_type}s/{entity_id}/stop"
+            case BackendOp.RESUME, ContextEntityTarget(project, entity_type, entity_id):
+                return f"{api_context}/{project}/{entity_type}s/{entity_id}/resume"
+            case BackendOp.FILES, ContextEntityTarget(project, entity_type, entity_id):
+                return f"{api_context}/{project}/{entity_type}s/{entity_id}/files/info"
+            case BackendOp.METRICS, ContextMetricTarget(project, entity_type, entity_id, metric_name):
                 if metric_name is None:
-                    return f"{api_context}/{project}/{entity_type}/{kwargs['entity_id']}/metrics"
-                return f"{api_context}/{project}/{entity_type}/{kwargs['entity_id']}/metrics/{metric_name}"
+                    return f"{api_context}/{project}/{entity_type}s/{entity_id}/metrics"
+                return f"{api_context}/{project}/{entity_type}s/{entity_id}/metrics/{metric_name}"
             case _:
-                raise BackendError(f"Invalid operation '{operation}' in DHCore.")
+                raise BackendError(f"Invalid operation '{operation}' for target '{target}' in DHCore.")

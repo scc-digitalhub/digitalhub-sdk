@@ -8,7 +8,7 @@ from digitalhub.stores.client.auth.auth_session import AuthSession
 from digitalhub.stores.client.auth.config_manager import ConfigManager
 from digitalhub.stores.client.auth.refresh import TokenRefreshService
 from digitalhub.stores.client.common.enums import AuthType
-from digitalhub.stores.client.http.request import BERequest
+from digitalhub.stores.client.http.request import BackendReq
 from digitalhub.stores.client.http.transport import HttpTransport
 
 
@@ -63,7 +63,7 @@ class ClientConfigurator:
     # Auth methods
     ##############################
 
-    def authenticate(self, backend_request: BERequest) -> BERequest:
+    def authenticate(self, backend_request: BackendReq) -> BackendReq:
         """Return an authenticated copy of a backend request."""
         if not self._exchange_bootstrapped:
             if self._auth_session.auth_type == AuthType.EXCHANGE.value:

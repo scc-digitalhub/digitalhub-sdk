@@ -9,9 +9,10 @@ import typing
 from digitalhub.entities._commons.enums import EntityKinds
 from digitalhub.entities._processors.utils import get_context
 from digitalhub.factory.entity import entity_factory
-from digitalhub.stores.client.common.enums import ApiType, BEOps
-from digitalhub.stores.client.compiler.apis.utils import ctx_entity_id_ra
+from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
+from digitalhub.stores.client.compiler.options import LogsOptions, StopResumeOptions
+from digitalhub.stores.client.compiler.targets import ContextEntityTarget
 from digitalhub.utils.logger.logger import get_logger
 
 if typing.TYPE_CHECKING:
@@ -31,9 +32,9 @@ class ContextEntityRunProcessor:
         objects: list[dict] = get_context(project).client.execute(
             ClientOp(
                 category=ApiType.CONTEXT,
-                operation=BEOps.LOGS_READ,
-                route_args=ctx_entity_id_ra(project, entity_type, entity_id),
-                params={"state": state} if state is not None else {},
+                operation=BackendOp.LOGS_READ,
+                target=ContextEntityTarget(project, entity_type, entity_id),
+                options=LogsOptions(state=state),
             )
         )
         logs = []
@@ -55,10 +56,10 @@ class ContextEntityRunProcessor:
         get_context(project).client.execute(
             ClientOp(
                 category=ApiType.CONTEXT,
-                operation=BEOps.STOP,
-                route_args=ctx_entity_id_ra(project, entity_type, entity_id),
+                operation=BackendOp.STOP,
                 payload={},
-                params={"reason": reason} if reason is not None else {},
+                target=ContextEntityTarget(project, entity_type, entity_id),
+                options=StopResumeOptions(reason=reason),
             )
         )
 
@@ -72,9 +73,9 @@ class ContextEntityRunProcessor:
         get_context(project).client.execute(
             ClientOp(
                 category=ApiType.CONTEXT,
-                operation=BEOps.RESUME,
-                route_args=ctx_entity_id_ra(project, entity_type, entity_id),
+                operation=BackendOp.RESUME,
                 payload={},
-                params={"reason": reason} if reason is not None else {},
+                target=ContextEntityTarget(project, entity_type, entity_id),
+                options=StopResumeOptions(reason=reason),
             )
         )

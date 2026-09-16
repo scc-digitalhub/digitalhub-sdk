@@ -14,12 +14,16 @@ from digitalhub.entities._processors.utils import (
     parse_identifier,
 )
 from digitalhub.factory.entity import entity_factory
-from digitalhub.stores.client.common.enums import ApiType, BEOps
-from digitalhub.stores.client.compiler.apis.utils import (
-    ctx_entity_id_ra,
-    ctx_entity_ra,
-)
+from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
+from digitalhub.stores.client.compiler.options import (
+    DeleteAllVersionsOptions,
+    DeleteOptions,
+    ListOptions,
+    ReadAllVersionsOptions,
+    ReadOptions,
+)
+from digitalhub.stores.client.compiler.targets import ContextCollectionTarget, ContextEntityTarget
 from digitalhub.utils.exceptions import BuilderError, EntityAlreadyExistsError, EntityError, EntityNotExistsError
 from digitalhub.utils.io_utils import read_yaml, write_yaml
 
@@ -39,8 +43,8 @@ class ContextEntityCRUDProcessor:
         return context.client.execute(
             ClientOp(
                 category=ApiType.CONTEXT,
-                operation=BEOps.CREATE,
-                route_args=ctx_entity_ra(context.name, entity_type),
+                operation=BackendOp.CREATE,
+                target=ContextCollectionTarget(context.name, entity_type),
                 payload=entity_dict,
             )
         )
@@ -97,18 +101,18 @@ class ContextEntityCRUDProcessor:
             return context.client.execute_first(
                 ClientOp(
                     category=ApiType.CONTEXT,
-                    operation=BEOps.LIST,
-                    route_args=ctx_entity_ra(context.name, entity_type),
-                    params=kwargs,
+                    operation=BackendOp.LIST,
+                    target=ContextCollectionTarget(context.name, entity_type),
+                    options=ListOptions(**kwargs),
                 )
             )
 
         return context.client.execute(
             ClientOp(
                 category=ApiType.CONTEXT,
-                operation=BEOps.READ,
-                route_args=ctx_entity_id_ra(context.name, entity_type, entity_id),
-                params=kwargs,
+                operation=BackendOp.READ,
+                target=ContextEntityTarget(context.name, entity_type, entity_id),
+                options=ReadOptions(**kwargs),
             )
         )
 
@@ -167,13 +171,12 @@ class ContextEntityCRUDProcessor:
             entity_type=entity_type,
         )
 
-        params = {**kwargs, "name": entity_name, "versions": "all"}
         return context.client.execute_list(
             ClientOp(
                 category=ApiType.CONTEXT,
-                operation=BEOps.LIST,
-                route_args=ctx_entity_ra(context.name, entity_type),
-                params=params,
+                operation=BackendOp.READ_ALL_VERSIONS,
+                target=ContextCollectionTarget(context.name, entity_type),
+                options=ReadAllVersionsOptions(name=entity_name),
             )
         )
 
@@ -258,9 +261,9 @@ class ContextEntityCRUDProcessor:
         return context.client.execute_list(
             ClientOp(
                 category=ApiType.CONTEXT,
-                operation=BEOps.LIST,
-                route_args=ctx_entity_ra(context.name, entity_type),
-                params=kwargs,
+                operation=BackendOp.LIST,
+                target=ContextCollectionTarget(context.name, entity_type),
+                options=ListOptions(**kwargs),
             )
         )
 
@@ -288,8 +291,8 @@ class ContextEntityCRUDProcessor:
         return context.client.execute(
             ClientOp(
                 category=ApiType.CONTEXT,
-                operation=BEOps.UPDATE,
-                route_args=ctx_entity_id_ra(context.name, entity_type, entity_id),
+                operation=BackendOp.UPDATE,
+                target=ContextEntityTarget(context.name, entity_type, entity_id),
                 payload=entity_dict,
             )
         )
@@ -332,26 +335,27 @@ class ContextEntityCRUDProcessor:
         if unversioned:
             if entity_id is None:
                 entity_id = identifier
-            op = BEOps.DELETE
+            op = BackendOp.DELETE
         else:
             if delete_all_versions:
-                op = BEOps.DELETE_ALL_VERSIONS
-                kwargs["name"] = entity_name
+                op = BackendOp.DELETE_ALL_VERSIONS
             else:
                 if entity_id is None:
                     raise ValueError("If `delete_all_versions` is False, `entity_id` must be provided.")
-                op = BEOps.DELETE
+                op = BackendOp.DELETE
 
-        if op == BEOps.DELETE:
-            route_args = ctx_entity_id_ra(context.name, entity_type, entity_id)
+        if op == BackendOp.DELETE:
+            target = ContextEntityTarget(context.name, entity_type, entity_id)
+            options = DeleteOptions(**kwargs)
         else:
-            route_args = ctx_entity_ra(context.name, entity_type)
+            target = ContextCollectionTarget(context.name, entity_type)
+            options = DeleteAllVersionsOptions(name=entity_name, **kwargs)
         return context.client.execute(
             ClientOp(
                 category=ApiType.CONTEXT,
                 operation=op,
-                route_args=route_args,
-                params=kwargs,
+                target=target,
+                options=options,
             )
         )
 

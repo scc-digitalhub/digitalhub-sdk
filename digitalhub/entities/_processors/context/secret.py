@@ -5,9 +5,10 @@
 from __future__ import annotations
 
 from digitalhub.entities._processors.utils import get_context
-from digitalhub.stores.client.common.enums import ApiType, BEOps
-from digitalhub.stores.client.compiler.apis.utils import ctx_entity_ra
+from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
+from digitalhub.stores.client.compiler.options import OpaqueOptions
+from digitalhub.stores.client.compiler.targets import ContextCollectionTarget
 
 
 class ContextEntitySecretProcessor:
@@ -20,9 +21,9 @@ class ContextEntitySecretProcessor:
         return get_context(project).client.execute(
             ClientOp(
                 category=ApiType.CONTEXT,
-                operation=BEOps.DATA_READ,
-                route_args=ctx_entity_ra(project, entity_type),
-                params={"params": params or {}},
+                operation=BackendOp.DATA_READ,
+                target=ContextCollectionTarget(project, entity_type),
+                options=OpaqueOptions(params or {}),
             )
         )
 
@@ -35,8 +36,8 @@ class ContextEntitySecretProcessor:
         get_context(project).client.execute(
             ClientOp(
                 category=ApiType.CONTEXT,
-                operation=BEOps.DATA_UPDATE,
-                route_args=ctx_entity_ra(project, entity_type),
+                operation=BackendOp.DATA_UPDATE,
+                target=ContextCollectionTarget(project, entity_type),
                 payload=data,
             )
         )

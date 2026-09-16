@@ -9,7 +9,7 @@ from dataclasses import replace
 from digitalhub.stores.client.auth.credential_session import CredentialSession
 from digitalhub.stores.client.common.enums import AuthType, CredentialSource, CredentialsVars
 from digitalhub.stores.client.common.utils import with_basic_auth, with_bearer_token
-from digitalhub.stores.client.http.request import BERequest
+from digitalhub.stores.client.http.request import BackendReq
 
 
 class AuthSession:
@@ -42,7 +42,7 @@ class AuthSession:
         """Return whether the active authentication supports token refresh."""
         return self.auth_type in [AuthType.OAUTH2.value, AuthType.EXCHANGE.value]
 
-    def authenticate(self, backend_request: BERequest) -> BERequest:
+    def authenticate(self, backend_request: BackendReq) -> BackendReq:
         """Return an authenticated copy of a backend request."""
         creds = self.credentials
         match self.auth_type:

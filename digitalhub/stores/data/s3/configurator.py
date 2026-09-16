@@ -6,8 +6,8 @@ from __future__ import annotations
 
 from botocore.config import Config
 
-from digitalhub.stores.client.factory import get_client
 from digitalhub.stores.client.common.enums import ConfigurationVars, CredentialsVars
+from digitalhub.stores.client.factory import get_client
 
 
 class S3StoreConfigurator:

@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+from dataclasses import FrozenInstanceError
 from unittest.mock import Mock
 
 import pytest
@@ -10,10 +11,12 @@ import digitalhub.stores.client.client as client_module
 import digitalhub.stores.client.compiler.compiler as compiler_module
 from digitalhub.stores.client.client import Client
 from digitalhub.stores.client.common.config import get_client_config
-from digitalhub.stores.client.common.enums import ApiType, BEOps
-from digitalhub.stores.client.compiler.apis.utils import base_ra, ctx_entity_ra
+from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
-from digitalhub.stores.client.http.request import BERequest
+from digitalhub.stores.client.compiler.options import DeleteAllVersionsOptions, OpaqueOptions
+from digitalhub.stores.client.compiler.params.profile import ParamsProfile
+from digitalhub.stores.client.compiler.targets import BaseCollectionTarget, ContextCollectionTarget
+from digitalhub.stores.client.http.request import BackendReq
 
 
 @pytest.fixture
@@ -56,24 +59,23 @@ def test_client_builds_shared_transport(client_with_handler) -> None:
 def test_client_operation_contains_only_semantic_request_data() -> None:
     request = ClientOp(
         category=ApiType.BASE,
-        operation=BEOps.CREATE,
-        route_args=base_ra("project"),
-        params={"state": "READY"},
+        operation=BackendOp.CREATE,
+        target=BaseCollectionTarget("project"),
+        options=OpaqueOptions({"state": "READY"}),
         payload={"name": "demo"},
     )
 
-    assert request.route_args == base_ra("project")
-    assert request.params == {"state": "READY"}
+    assert request.target == BaseCollectionTarget("project")
+    assert request.options == OpaqueOptions({"state": "READY"})
     assert request.payload == {"name": "demo"}
-    assert not hasattr(request, "options")
 
-    with pytest.raises(TypeError):
-        request.route_args["entity_name"] = "other"
+    with pytest.raises(FrozenInstanceError):
+        request.target.entity_type = "other"
 
     with pytest.raises(TypeError):
         ClientOp(
             category=ApiType.BASE,
-            operation=BEOps.CREATE,
+            operation=BackendOp.CREATE,
             timeout=4,
         )
 
@@ -85,9 +87,9 @@ def test_execute_compiles_backend_operation_request(client_with_handler) -> None
     http_handler.execute_request.return_value = {"name": "demo"}
     request = ClientOp(
         category=ApiType.BASE,
-        operation=BEOps.CREATE,
-        route_args=base_ra("project"),
-        params={"state": "READY"},
+        operation=BackendOp.CREATE,
+        target=BaseCollectionTarget("project"),
+        options=OpaqueOptions({"state": "READY"}),
         payload={"name": "demo"},
     )
 
@@ -96,16 +98,12 @@ def test_execute_compiles_backend_operation_request(client_with_handler) -> None
     assert result == {"name": "demo"}
     api_builder.build_api.assert_called_once_with(
         ApiType.BASE,
-        BEOps.CREATE,
-        entity_type="project",
+        BackendOp.CREATE,
+        BaseCollectionTarget("project"),
     )
-    params_builder.build_parameters.assert_called_once_with(
-        ApiType.BASE,
-        BEOps.CREATE,
-        state="READY",
-    )
+    params_builder.build_parameters.assert_not_called()
     http_handler.execute_request.assert_called_once_with(
-        BERequest(
+        BackendReq(
             method="POST",
             api="/projects",
             operation="entity.create",
@@ -125,16 +123,21 @@ def test_execute_compiles_delete_all_versions(client_with_handler) -> None:
     http_handler.execute_request.return_value = {"deleted": True}
     request = ClientOp(
         category=ApiType.CONTEXT,
-        operation=BEOps.DELETE_ALL_VERSIONS,
-        route_args=ctx_entity_ra("demo", "artifact"),
-        params={"name": "artifact", "cascade": True},
+        operation=BackendOp.DELETE_ALL_VERSIONS,
+        target=ContextCollectionTarget("demo", "artifact"),
+        options=DeleteAllVersionsOptions(name="artifact", cascade=True),
     )
 
     result = client.execute(request)
 
     assert result == {"deleted": True}
+    params_builder.build_parameters.assert_called_once_with(
+        ApiType.CONTEXT,
+        ParamsProfile.DELETE_ALL_VERSIONS,
+        DeleteAllVersionsOptions(name="artifact", cascade=True),
+    )
     http_handler.execute_request.assert_called_once_with(
-        BERequest(
+        BackendReq(
             method="DELETE",
             api="/projects",
             operation="entity.delete",
@@ -153,7 +156,7 @@ def test_get_k8s_resource_profiles_uses_the_http_handler(client_with_handler) ->
 
     assert result == ["gpu", "cpu"]
     http_handler.execute_request.assert_called_once_with(
-        BERequest(
+        BackendReq(
             method="GET",
             api=get_client_config().well_known_conf,
             operation="config.k8s_resource_profiles",

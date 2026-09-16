@@ -4,10 +4,11 @@
 
 from __future__ import annotations
 
-from digitalhub.stores.client.factory import get_client
-from digitalhub.stores.client.common.enums import ApiType, BEOps
-from digitalhub.stores.client.compiler.apis.utils import base_entity_ra
+from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
+from digitalhub.stores.client.compiler.options import NoOptions, ShareOptions
+from digitalhub.stores.client.compiler.targets import BaseEntityTarget
+from digitalhub.stores.client.factory import get_client
 
 
 class BaseEntitySpecialOpsProcessor:
@@ -23,15 +24,16 @@ class BaseEntitySpecialOpsProcessor:
         role: str | None = None,
     ) -> None:
         client = get_client()
-        route_args = base_entity_ra(entity_type, entity_name)
+        target = BaseEntityTarget(entity_type, entity_name)
         entity_id = None
 
         if unshare:
             users = client.execute(
                 ClientOp(
                     category=ApiType.BASE,
-                    operation=BEOps.SHARE_READ,
-                    route_args=route_args,
+                    operation=BackendOp.SHARE_READ,
+                    target=target,
+                    options=NoOptions(),
                 )
             )
             for u in users:
@@ -41,27 +43,23 @@ class BaseEntitySpecialOpsProcessor:
             else:
                 raise ValueError(f"User '{user}' does not have access to project.")
 
-        params = {"unshare": unshare, "user": user}
-        if entity_id is not None:
-            params["id"] = entity_id
-        if role is not None:
-            params["role"] = role
+        options = ShareOptions(user=user, unshare=unshare, share_id=entity_id, role=role)
         if unshare:
             client.execute(
                 ClientOp(
                     category=ApiType.BASE,
-                    operation=BEOps.UNSHARE,
-                    route_args=route_args,
-                    params=params,
+                    operation=BackendOp.UNSHARE,
+                    target=target,
+                    options=options,
                 )
             )
             return
         client.execute(
             ClientOp(
                 category=ApiType.BASE,
-                operation=BEOps.SHARE,
-                route_args=route_args,
-                params=params,
+                operation=BackendOp.SHARE,
+                target=target,
+                options=options,
                 payload={},
             )
         )

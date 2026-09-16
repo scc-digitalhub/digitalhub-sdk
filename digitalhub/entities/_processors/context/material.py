@@ -10,9 +10,9 @@ from collections.abc import Callable
 from digitalhub.entities._commons.enums import State
 from digitalhub.entities._processors.utils import get_context
 from digitalhub.factory.entity import entity_factory
-from digitalhub.stores.client.common.enums import ApiType, BEOps
-from digitalhub.stores.client.compiler.apis.utils import ctx_entity_id_ra
+from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
+from digitalhub.stores.client.compiler.targets import ContextEntityTarget
 from digitalhub.utils.enums import FileExtensions
 from digitalhub.utils.exceptions import BuilderError, EntityError, EntityErrorFileNotFound, StoreError
 
@@ -57,8 +57,8 @@ class ContextEntityMaterialProcessor:
         return context.client.execute_list(
             ClientOp(
                 category=ApiType.CONTEXT,
-                operation=BEOps.FILES_READ,
-                route_args=ctx_entity_id_ra(context.name, entity_type, entity_id),
+                operation=BackendOp.FILES_READ,
+                target=ContextEntityTarget(context.name, entity_type, entity_id),
             )
         )
 
@@ -74,8 +74,8 @@ class ContextEntityMaterialProcessor:
         context.client.execute(
             ClientOp(
                 category=ApiType.CONTEXT,
-                operation=BEOps.FILES_UPDATE,
-                route_args=ctx_entity_id_ra(context.name, entity_type, entity_id),
+                operation=BackendOp.FILES_UPDATE,
+                target=ContextEntityTarget(context.name, entity_type, entity_id),
                 payload=entity_list,
             )
         )

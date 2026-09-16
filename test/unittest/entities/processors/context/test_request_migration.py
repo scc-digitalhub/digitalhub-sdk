@@ -6,9 +6,16 @@ from unittest.mock import Mock
 
 import digitalhub.entities._processors.context.crud as context_crud_module
 from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
-from digitalhub.stores.client.common.enums import ApiType, BEOps
-from digitalhub.stores.client.compiler.apis.utils import ctx_entity_id_ra, ctx_entity_ra
+from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
+from digitalhub.stores.client.compiler.options import (
+    DeleteAllVersionsOptions,
+    ListOptions,
+    NoOptions,
+    ReadAllVersionsOptions,
+    ReadOptions,
+)
+from digitalhub.stores.client.compiler.targets import ContextCollectionTarget, ContextEntityTarget
 
 
 def test_create_context_entity_uses_backend_operation_request() -> None:
@@ -23,8 +30,9 @@ def test_create_context_entity_uses_backend_operation_request() -> None:
     context.client.execute.assert_called_once_with(
         ClientOp(
             category=ApiType.CONTEXT,
-            operation=BEOps.CREATE,
-            route_args=ctx_entity_ra("demo", "artifact"),
+            operation=BackendOp.CREATE,
+            target=ContextCollectionTarget("demo", "artifact"),
+            options=NoOptions(),
             payload=entity,
         )
     )
@@ -46,9 +54,9 @@ def test_read_context_entity_by_name_uses_first_list_result(monkeypatch) -> None
     context.client.execute_first.assert_called_once_with(
         ClientOp(
             category=ApiType.CONTEXT,
-            operation=BEOps.LIST,
-            route_args=ctx_entity_ra("demo", "artifact"),
-            params={"name": "artifact"},
+            operation=BackendOp.LIST,
+            target=ContextCollectionTarget("demo", "artifact"),
+            options=ListOptions(name="artifact"),
         )
     )
 
@@ -69,8 +77,9 @@ def test_read_context_entity_by_id_uses_read_operation(monkeypatch) -> None:
     context.client.execute.assert_called_once_with(
         ClientOp(
             category=ApiType.CONTEXT,
-            operation=BEOps.READ,
-            route_args=ctx_entity_id_ra("demo", "artifact", "artifact-id"),
+            operation=BackendOp.READ,
+            target=ContextEntityTarget("demo", "artifact", "artifact-id"),
+            options=ReadOptions(),
         )
     )
 
@@ -91,9 +100,9 @@ def test_read_context_entity_versions_uses_list_operation(monkeypatch) -> None:
     context.client.execute_list.assert_called_once_with(
         ClientOp(
             category=ApiType.CONTEXT,
-            operation=BEOps.LIST,
-            route_args=ctx_entity_ra("demo", "artifact"),
-            params={"name": "artifact", "versions": "all"},
+            operation=BackendOp.READ_ALL_VERSIONS,
+            target=ContextCollectionTarget("demo", "artifact"),
+            options=ReadAllVersionsOptions(name="artifact"),
         )
     )
 
@@ -109,9 +118,9 @@ def test_list_context_entities_uses_paginated_execution() -> None:
     context.client.execute_list.assert_called_once_with(
         ClientOp(
             category=ApiType.CONTEXT,
-            operation=BEOps.LIST,
-            route_args=ctx_entity_ra("demo", "artifact"),
-            params={"q": "ready"},
+            operation=BackendOp.LIST,
+            target=ContextCollectionTarget("demo", "artifact"),
+            options=ListOptions(q="ready"),
         )
     )
 
@@ -128,8 +137,9 @@ def test_update_context_entity_uses_backend_operation_request() -> None:
     context.client.execute.assert_called_once_with(
         ClientOp(
             category=ApiType.CONTEXT,
-            operation=BEOps.UPDATE,
-            route_args=ctx_entity_id_ra("demo", "artifact", "artifact-id"),
+            operation=BackendOp.UPDATE,
+            target=ContextEntityTarget("demo", "artifact", "artifact-id"),
+            options=NoOptions(),
             payload=entity,
         )
     )
@@ -156,8 +166,8 @@ def test_delete_context_entity_all_versions_uses_semantic_parameters(monkeypatch
     context.client.execute.assert_called_once_with(
         ClientOp(
             category=ApiType.CONTEXT,
-            operation=BEOps.DELETE_ALL_VERSIONS,
-            route_args=ctx_entity_ra("demo", "artifact"),
-            params={"name": "artifact", "cascade": True},
+            operation=BackendOp.DELETE_ALL_VERSIONS,
+            target=ContextCollectionTarget("demo", "artifact"),
+            options=DeleteAllVersionsOptions(name="artifact", cascade=True),
         )
     )

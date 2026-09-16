@@ -17,7 +17,7 @@ from digitalhub.stores.client.common.enums import (
     CredentialsVars,
     OpsType,
 )
-from digitalhub.stores.client.http.request import BERequest
+from digitalhub.stores.client.http.request import BackendReq
 from digitalhub.utils.exceptions import BadRequestError, ClientError
 
 
@@ -168,7 +168,7 @@ def test_refresh_uses_request_transport(monkeypatch) -> None:
 
     transport.execute.assert_called_once()
     request = transport.execute.call_args.args[0]
-    assert isinstance(request, BERequest)
+    assert isinstance(request, BackendReq)
     assert request.method == "POST"
     assert request.api == "https://issuer.example/token"
     assert request.operation == OpsType.AUTH_REFRESH.value

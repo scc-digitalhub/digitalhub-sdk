@@ -6,7 +6,7 @@ from unittest.mock import Mock
 
 from digitalhub.stores.client.auth.client_configurator import ClientConfigurator
 from digitalhub.stores.client.common.enums import AuthType
-from digitalhub.stores.client.http.request import BERequest
+from digitalhub.stores.client.http.request import BackendReq
 
 
 def test_constructor_defers_exchange_bootstrap(monkeypatch) -> None:
@@ -39,7 +39,7 @@ def test_authenticate_bootstraps_exchange_once() -> None:
     configurator._auth_session = Mock(auth_type=AuthType.EXCHANGE.value)
     configurator._exchange_bootstrapped = False
     configurator.evaluate_refresh = Mock()
-    request = BERequest(method="GET", api="/resource")
+    request = BackendReq(method="GET", api="/resource")
 
     configurator.authenticate(request)
     configurator.authenticate(request)

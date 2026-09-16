@@ -7,9 +7,10 @@ from unittest.mock import Mock
 
 import digitalhub.entities._processors.context.metrics as metrics_module
 from digitalhub.entities._processors.context.metrics import ContextEntityMetricsProcessor
-from digitalhub.stores.client.common.enums import ApiType, BEOps
-from digitalhub.stores.client.compiler.apis.utils import ctx_metric_ra
+from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
+from digitalhub.stores.client.compiler.options import MetricsOptions
+from digitalhub.stores.client.compiler.targets import ContextMetricTarget
 
 
 def _context() -> tuple[SimpleNamespace, Mock, object]:
@@ -35,9 +36,9 @@ def test_read_metrics_uses_backend_operation_request(monkeypatch) -> None:
     client.execute.assert_called_once_with(
         ClientOp(
             category=ApiType.CONTEXT,
-            operation=BEOps.METRICS_READ,
-            route_args=ctx_metric_ra("project", "run", "run-id", "accuracy"),
-            params={"user": "user"},
+            operation=BackendOp.METRICS_READ,
+            target=ContextMetricTarget("project", "run", "run-id", "accuracy"),
+            options=MetricsOptions(user="user"),
         )
     )
 
@@ -59,9 +60,9 @@ def test_update_metric_uses_backend_operation_request(monkeypatch) -> None:
     client.execute.assert_called_once_with(
         ClientOp(
             category=ApiType.CONTEXT,
-            operation=BEOps.METRICS_UPDATE,
-            route_args=ctx_metric_ra("project", "run", "run-id", "accuracy"),
+            operation=BackendOp.METRICS_UPDATE,
+            target=ContextMetricTarget("project", "run", "run-id", "accuracy"),
             payload=[0.8, 0.9],
-            params={"user": "user"},
+            options=MetricsOptions(user="user"),
         )
     )
