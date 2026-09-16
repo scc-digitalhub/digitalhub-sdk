@@ -7,24 +7,47 @@ from __future__ import annotations
 import typing
 
 from requests import request as requests_request
-from requests.exceptions import ConnectionError as RequestsConnectionError
 from requests.exceptions import RequestException
-from requests.exceptions import Timeout as RequestsTimeout
 
-from digitalhub.stores.client.common.config import get_client_config
-from digitalhub.utils.exceptions import BackendError
+from digitalhub.stores.client.common.logger import log_request_response
+from digitalhub.stores.client.http.errors import raise_for_transport_error
+from digitalhub.stores.client.http.request import BERequest
+from digitalhub.utils.logger.logger import get_logger
 
 if typing.TYPE_CHECKING:
     from requests import Response
 
+logger = get_logger(__name__)
 
-def request(method: str, url: str, **kwargs) -> Response:
-    """Execute an HTTP request and normalize transport errors."""
-    try:
-        return requests_request(method, url, timeout=get_client_config().http_timeout, **kwargs)
-    except RequestsTimeout as e:
-        raise TimeoutError("Request to DHCore backend timed out.") from e
-    except RequestsConnectionError as e:
-        raise ConnectionError("Unable to connect to DHCore backend.") from e
-    except RequestException as e:
-        raise BackendError(f"Some error occurred. {e}") from e
+
+class HttpTransport:
+    """Send absolute backend requests and log their transport responses."""
+
+    @staticmethod
+    def _request(method: str, url: str, **kwargs) -> Response:
+        """Execute an HTTP request and normalize transport errors."""
+        try:
+            return requests_request(method, url, **kwargs)
+        except RequestException as error:
+            raise_for_transport_error(error)
+
+    def execute(
+        self,
+        backend_request: BERequest,
+        *,
+        attempt: int = 1,
+        retry_reason: str | None = None,
+    ) -> Response:
+        response = self._request(
+            backend_request.method,
+            backend_request.api,
+            **backend_request.to_transport_kwargs(),
+        )
+        log_request_response(
+            logger,
+            response,
+            operation=backend_request.operation,
+            attempt=attempt,
+            retry_reason=retry_reason,
+        )
+        return response

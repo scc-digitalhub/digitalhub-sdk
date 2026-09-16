@@ -10,20 +10,20 @@ from digitalhub.stores.data.api import get_store
 from digitalhub.utils.uri_utils import S3Schemes, SqlSchemes
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities._mixin.material.protocol import MaterialEntityProtocol
+    from digitalhub.entities._mixin.material.protocol import MaterialProtocol
     from digitalhub.stores.data._base.store import Store
     from digitalhub.stores.data.s3.store import S3Client, S3Store
     from digitalhub.stores.data.sql.store import Engine, SqlStore
 
 
-def get_store_by_entity(entity: MaterialEntityProtocol) -> Store:
+def get_store_by_entity(entity: MaterialProtocol) -> Store:
     """
     Get the store associated with the given entity
     (Artifact, Dataitem or Model).
 
     Parameters
     ----------
-    entity : MaterialEntityProtocol
+    entity : MaterialProtocol
         The entity for which to get the store.
 
     Returns

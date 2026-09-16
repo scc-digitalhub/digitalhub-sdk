@@ -1,5 +1,9 @@
-from digitalhub.stores.client.auth.enums import CredentialSource, CredentialsVars
+# SPDX-FileCopyrightText: © 2025 DSLab - Fondazione Bruno Kessler
+#
+# SPDX-License-Identifier: Apache-2.0
+
 from digitalhub.stores.client.auth.credential_session import CredentialSession
+from digitalhub.stores.client.common.enums import CredentialSource, CredentialsVars
 
 
 def test_file_credentials_are_active_initially() -> None:

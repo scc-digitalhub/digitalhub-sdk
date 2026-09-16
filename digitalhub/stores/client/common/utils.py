@@ -4,266 +4,68 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Any
 
 from digitalhub.stores.client.common.config import get_client_config
+from digitalhub.stores.client.http.request import BERequest
 from digitalhub.utils.exceptions import ClientError
 from digitalhub.utils.uri_utils import has_remote_scheme
 
 
-def ensure_headers(**kwargs) -> dict:
-    """
-    Initialize headers dictionary in kwargs.
-
-    Ensures parameter dictionary has 'headers' key for HTTP headers,
-    guaranteeing consistent structure for all parameter building methods.
-
-    Parameters
-    ----------
-    **kwargs : dict
-        Keyword arguments to format. May be empty or contain various
-        parameters for API operations.
-
-    Returns
-    -------
-    dict
-        Dictionary with guaranteed 'headers' key containing
-        empty dict if not already present.
-    """
-    if "headers" not in kwargs:
-        kwargs["headers"] = {}
-    return kwargs
+def with_headers(request: BERequest, **headers: str) -> BERequest:
+    """Return a request with the supplied headers merged into its headers."""
+    return replace(request, headers={**request.headers, **headers})
 
 
-def ensure_params(**kwargs) -> dict:
-    """
-    Initialize parameter dictionary with query parameters structure.
-
-    Ensures parameter dictionary has 'params' key for HTTP query parameters,
-    guaranteeing consistent structure for all parameter building methods.
-
-    Parameters
-    ----------
-    **kwargs : dict
-        Keyword arguments to format. May be empty or contain various
-        parameters for API operations.
-
-    Returns
-    -------
-    dict
-        Parameters dictionary with guaranteed 'params' key containing
-        empty dict if not already present.
-    """
-    if "params" not in kwargs:
-        kwargs["params"] = {}
-    return kwargs
+def with_data(request: BERequest, data: Any) -> BERequest:
+    """Return a request with its payload replaced."""
+    return replace(request, data=data)
 
 
-def add_param(key: str, value: Any | None, **kwargs) -> dict:
-    """
-    Add a single query parameter to kwargs.
-
-    Parameters
-    ----------
-    key : str
-        Parameter key.
-    value : Any
-        Parameter value.
-    **kwargs : dict
-        Keyword arguments to format. May be empty or contain various
-        parameters for API operations.
-
-    Returns
-    -------
-    dict
-        Parameters dictionary with added key-value pair in 'params'.
-    """
-    kwargs["params"][key] = value
-    return kwargs
+def with_bearer_token(request: BERequest, token: str) -> BERequest:
+    """Return a request with a bearer token header added."""
+    return with_headers(request, Authorization=f"Bearer {token}")
 
 
-def set_bearer_token(token: str, **kwargs) -> dict:
-    """
-    Set Authorization header with Bearer token.
-
-    Parameters
-    ----------
-    token : str
-        Bearer token to set in Authorization header.
-    **kwargs : dict
-        Keyword arguments to format. May be empty or contain various
-        parameters for API operations.
-
-    Returns
-    -------
-    dict
-        Dictionary with 'Authorization' header set to 'Bearer {token}'.
-    """
-    kwargs = ensure_headers(**kwargs)
-    kwargs["headers"]["Authorization"] = f"Bearer {token}"
-    return kwargs
+def with_basic_auth(request: BERequest, user: str, password: str) -> BERequest:
+    """Return a request with basic authentication options added."""
+    return replace(request, options={**request.options, "auth": (user, password)})
 
 
-def set_basic_auth(user: str, password: str, **kwargs) -> dict:
-    """
-    Set basic authentication parameters.
-
-    Parameters
-    ----------
-    user : str
-        Username for basic authentication.
-    password : str
-        Password for basic authentication.
-    **kwargs : dict
-        Keyword arguments to format. May be empty or contain various
-        parameters for API operations.
-
-    Returns
-    -------
-    dict
-        Dictionary with 'auth' key set to (user, password) tuple for basic authentication.
-    """
-    kwargs["auth"] = (user, password)
-    return kwargs
+def with_json_content_type(request: BERequest) -> BERequest:
+    """Return a request with an application/json content type."""
+    return with_headers(request, **{"Content-Type": "application/json"})
 
 
-def set_json_content_type(**kwargs) -> dict:
-    """
-    Set Content-Type header to application/json.
-
-    Ensures that the 'Content-Type' header is set to 'application/json'
-    for requests that require JSON payloads.
-
-    Parameters
-    ----------
-    **kwargs : dict
-        Keyword arguments to format. May be empty or contain various
-        parameters for API operations.
-
-    Returns
-    -------
-    dict
-        Dictionary with 'Content-Type' header set to 'application/json'.
-    """
-    kwargs = ensure_headers(**kwargs)
-    kwargs["headers"]["Content-Type"] = "application/json"
-    return kwargs
+def with_urlencoded_content_type(request: BERequest) -> BERequest:
+    """Return a request with a form-urlencoded content type."""
+    return with_headers(request, **{"Content-Type": "application/x-www-form-urlencoded"})
 
 
-def set_urlencoded_content_type(**kwargs) -> dict:
-    """
-    Set Content-Type header to application/x-www-form-urlencoded.
-
-    Ensures that the 'Content-Type' header is set to
-    'application/x-www-form-urlencoded' for requests that require
-    form-encoded payloads.
-
-    Parameters
-    ----------
-    **kwargs : dict
-        Keyword arguments to format. May be empty or contain various
-        parameters for API operations.
-
-    Returns
-    -------
-    dict
-        Dictionary with 'Content-Type' header set to
-        'application/x-www-form-urlencoded'.
-    """
-    kwargs = ensure_headers(**kwargs)
-    kwargs["headers"]["Content-Type"] = "application/x-www-form-urlencoded"
-    return kwargs
+def with_pagination(request: BERequest, partial: bool = False) -> BERequest:
+    """Return a request with default pagination parameters filled in."""
+    params = dict(request.params)
+    params.setdefault("page", get_client_config().default_page_start)
+    if not partial:
+        params.setdefault("size", get_client_config().default_page_size)
+        params.setdefault("sort", get_client_config().default_sort)
+    return replace(request, params=params)
 
 
-def set_pagination(partial: bool = False, **kwargs) -> dict:
-    """
-    Ensure pagination parameters are set in kwargs.
-
-    Parameters
-    ----------
-    **kwargs : dict
-        Keyword arguments to format. May be empty or contain various
-        parameters for API operations.
-
-    Returns
-    -------
-    dict
-        Pagination parameters set in 'params' of kwargs.
-    """
-    kwargs = ensure_params(**kwargs)
-
-    if "page" not in kwargs["params"]:
-        kwargs["params"]["page"] = get_client_config().default_page_start
-
-    if partial:
-        return kwargs
-
-    if "size" not in kwargs["params"]:
-        kwargs["params"]["size"] = get_client_config().default_page_size
-
-    if "sort" not in kwargs["params"]:
-        kwargs["params"]["sort"] = get_client_config().default_sort
-
-    return kwargs
-
-
-def read_page_number(**kwargs) -> int:
-    """
-    Read current page number from kwargs.
-
-    Parameters
-    ----------
-    **kwargs : dict
-        Keyword arguments to format. May be empty or contain various
-        parameters for API operations.
-
-    Returns
-    -------
-    int
-        Current page number.
-    """
-    return kwargs["params"]["page"]
-
-
-def increment_page_number(**kwargs) -> dict:
-    """
-    Increment page number in kwargs.
-
-    Parameters
-    ----------
-    **kwargs : dict
-        Keyword arguments to format. May be empty or contain various
-        parameters for API operations.
-
-    Returns
-    -------
-    dict
-        Parameters dictionary with incremented 'page' number in 'params'.
-    """
-    kwargs["params"]["page"] += 1
-    return kwargs
+def next_page(request: BERequest) -> BERequest:
+    """Return a request targeting the next page."""
+    return replace(request, params={**request.params, "page": request.params["page"] + 1})
 
 
 def sanitize_endpoint(endpoint: str | None = None) -> str | None:
     """
     Validate and normalize endpoint URL.
-
-    Ensures proper HTTP/HTTPS scheme, trims whitespace, and removes trailing slashes.
-
-    Parameters
-    ----------
-    endpoint : str or None
-        Endpoint URL to sanitize.
-
-    Returns
-    -------
-    str or None
-        Sanitized URL or None if input was None.
     """
     if endpoint is None:
         return
+    endpoint = endpoint.strip()
     if not has_remote_scheme(endpoint):
         raise ClientError("Invalid endpoint scheme. Must start with http:// or https://.")
 
-    endpoint = endpoint.strip()
     return endpoint.removesuffix("/")

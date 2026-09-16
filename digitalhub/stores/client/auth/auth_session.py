@@ -4,10 +4,12 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 from digitalhub.stores.client.auth.credential_session import CredentialSession
-from digitalhub.stores.client.auth.enums import CredentialSource, CredentialsVars
-from digitalhub.stores.client.common.enums import AuthType
-from digitalhub.stores.client.common.utils import set_basic_auth, set_bearer_token
+from digitalhub.stores.client.common.enums import AuthType, CredentialSource, CredentialsVars
+from digitalhub.stores.client.common.utils import with_basic_auth, with_bearer_token
+from digitalhub.stores.client.http.request import BERequest
 
 
 class AuthSession:
@@ -40,24 +42,22 @@ class AuthSession:
         """Return whether the active authentication supports token refresh."""
         return self.auth_type in [AuthType.OAUTH2.value, AuthType.EXCHANGE.value]
 
-    def get_auth_parameters(self, kwargs: dict | None = None) -> dict:
-        """Add authentication parameters for the active credentials."""
-        if kwargs is None:
-            kwargs = {}
-
+    def authenticate(self, backend_request: BERequest) -> BERequest:
+        """Return an authenticated copy of a backend request."""
         creds = self.credentials
         match self.auth_type:
             case AuthType.EXCHANGE.value | AuthType.OAUTH2.value | AuthType.ACCESS_TOKEN.value:
-                kwargs = set_bearer_token(creds[CredentialsVars.DHCORE_ACCESS_TOKEN.value], **kwargs)
+                return with_bearer_token(
+                    backend_request,
+                    creds[CredentialsVars.DHCORE_ACCESS_TOKEN.value],
+                )
             case AuthType.BASIC.value:
-                kwargs = set_basic_auth(
+                return with_basic_auth(
+                    backend_request,
                     creds[CredentialsVars.DHCORE_USER.value],
                     creds[CredentialsVars.DHCORE_PASSWORD.value],
-                    **kwargs,
                 )
-            case _:
-                pass
-        return kwargs
+        return replace(backend_request)
 
     @property
     def auth_type(self) -> str:

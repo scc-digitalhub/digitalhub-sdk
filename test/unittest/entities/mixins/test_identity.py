@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: © 2025 DSLab - Fondazione Bruno Kessler
+#
+# SPDX-License-Identifier: Apache-2.0
+
 from digitalhub.entities._mixin.generic.entity import GenericMixin
 from digitalhub.entities._mixin.unversioned.mixin import UnversionedMixin
 from digitalhub.entities._mixin.versioned.mixin import VersionedMixin

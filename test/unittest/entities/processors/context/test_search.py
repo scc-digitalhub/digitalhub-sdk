@@ -1,18 +1,21 @@
+# SPDX-FileCopyrightText: © 2025 DSLab - Fondazione Bruno Kessler
+#
+# SPDX-License-Identifier: Apache-2.0
+
 from types import SimpleNamespace
 from unittest.mock import Mock
 
 import digitalhub.entities._processors.context.search as search_module
 from digitalhub.entities._processors.context.search import ContextEntitySearchProcessor
-from digitalhub.stores.client.common.enums import ApiCategories, BackendOperations
+from digitalhub.stores.client.common.enums import ApiType, BEOps
+from digitalhub.stores.client.compiler.apis.utils import ctx_ra
+from digitalhub.stores.client.compiler.operation import ClientOp
 from digitalhub.utils.exceptions import BackendError
 
 
 def test_search_entity_builds_query_and_separates_dead_records(monkeypatch) -> None:
     client = Mock()
-    api = object()
-    client.build_parameters.return_value = {"query": "pipeline", "state": "READY"}
-    client.build_api.return_value = api
-    client.read_object.return_value = {
+    client.execute.return_value = {
         "content": [
             {"key": "store://context-project/function/function/function:live-id"},
             {"key": "store://context-project/function/function/function:dead-id", "kind": "function"},
@@ -34,24 +37,23 @@ def test_search_entity_builds_query_and_separates_dead_records(monkeypatch) -> N
         ["live-entity"],
         [{"key": "store://context-project/function/function/function:dead-id", "kind": "function"}],
     )
-    client.build_parameters.assert_called_once_with(
-        ApiCategories.CONTEXT.value,
-        BackendOperations.SEARCH.value,
-        query="pipeline",
-        entity_types=None,
-        name=None,
-        kind=None,
-        created=None,
-        updated=None,
-        description=None,
-        labels=None,
-        state="READY",
+    client.execute.assert_called_once_with(
+        ClientOp(
+            category=ApiType.CONTEXT,
+            operation=BEOps.SEARCH,
+            route_args=ctx_ra("context-project"),
+            params={
+                "query": "pipeline",
+                "entity_types": None,
+                "name": None,
+                "kind": None,
+                "created": None,
+                "updated": None,
+                "description": None,
+                "labels": None,
+                "state": "READY",
+            },
+        )
     )
-    client.build_api.assert_called_once_with(
-        ApiCategories.CONTEXT.value,
-        BackendOperations.SEARCH.value,
-        project="context-project",
-    )
-    client.read_object.assert_called_once_with(api, query="pipeline", state="READY")
     read_entity.assert_any_call("store://context-project/function/function/function:live-id", entity_type="function")
     read_entity.assert_any_call("store://context-project/function/function/function:dead-id", entity_type="function")

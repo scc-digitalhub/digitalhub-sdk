@@ -1,23 +1,27 @@
+# SPDX-FileCopyrightText: © 2025 DSLab - Fondazione Bruno Kessler
+#
+# SPDX-License-Identifier: Apache-2.0
+
 from types import SimpleNamespace
 from unittest.mock import Mock
 
 import digitalhub.entities._processors.context.run as run_module
 from digitalhub.entities._processors.context.run import ContextEntityRunProcessor
 from digitalhub.entities.log._base.entity import Log
-from digitalhub.stores.client.common.enums import ApiCategories, BackendOperations
+from digitalhub.stores.client.common.enums import ApiType, BEOps
+from digitalhub.stores.client.compiler.apis.utils import ctx_entity_id_ra
+from digitalhub.stores.client.compiler.operation import ClientOp
 from digitalhub.utils.generic_utils import encode_string
 
 
 def _context() -> tuple[SimpleNamespace, Mock, object]:
     client = Mock()
-    api = object()
-    client.build_api.return_value = api
     context = SimpleNamespace(name="context-project", client=client)
-    return context, client, api
+    return context, client, object()
 
 
 def test_read_run_logs_builds_logs_and_decodes_content(monkeypatch) -> None:
-    context, client, api = _context()
+    context, client, _ = _context()
     logs = [
         {
             "project": "project",
@@ -33,7 +37,7 @@ def test_read_run_logs_builds_logs_and_decodes_content(monkeypatch) -> None:
             "spec": {"run": "run-id"},
         },
     ]
-    client.read_object.return_value = logs
+    client.execute.return_value = logs
     monkeypatch.setattr(run_module, "get_context", Mock(return_value=context))
 
     result = ContextEntityRunProcessor().read_run_logs(
@@ -46,45 +50,47 @@ def test_read_run_logs_builds_logs_and_decodes_content(monkeypatch) -> None:
     assert all(isinstance(log, Log) for log in result)
     assert [log.kind for log in result] == ["log", "log"]
     assert [log.text for log in result] == ["run finished", None]
-    client.build_api.assert_called_once_with(
-        ApiCategories.CONTEXT.value,
-        BackendOperations.LOGS.value,
-        project="context-project",
-        entity_type="run",
-        entity_id="run-id",
+    client.execute.assert_called_once_with(
+        ClientOp(
+            category=ApiType.CONTEXT,
+            operation=BEOps.LOGS_READ,
+            route_args=ctx_entity_id_ra("project", "run", "run-id"),
+            params={"state": "READY"},
+        )
     )
-    client.read_object.assert_called_once_with(api, state="READY")
 
 
 def test_stop_entity_creates_backend_operation(monkeypatch) -> None:
-    context, client, api = _context()
+    context, client, _ = _context()
     monkeypatch.setattr(run_module, "get_context", Mock(return_value=context))
 
     result = ContextEntityRunProcessor().stop_entity("project", "run", "run-id", reason="cancelled")
 
     assert result is None
-    client.build_api.assert_called_once_with(
-        ApiCategories.CONTEXT.value,
-        BackendOperations.STOP.value,
-        project="context-project",
-        entity_type="run",
-        entity_id="run-id",
+    client.execute.assert_called_once_with(
+        ClientOp(
+            category=ApiType.CONTEXT,
+            operation=BEOps.STOP,
+            route_args=ctx_entity_id_ra("project", "run", "run-id"),
+            payload={},
+            params={"reason": "cancelled"},
+        )
     )
-    client.create_object.assert_called_once_with(api, obj={}, reason="cancelled")
 
 
 def test_resume_entity_creates_backend_operation(monkeypatch) -> None:
-    context, client, api = _context()
+    context, client, _ = _context()
     monkeypatch.setattr(run_module, "get_context", Mock(return_value=context))
 
     result = ContextEntityRunProcessor().resume_entity("project", "run", "run-id", reason="retry")
 
     assert result is None
-    client.build_api.assert_called_once_with(
-        ApiCategories.CONTEXT.value,
-        BackendOperations.RESUME.value,
-        project="context-project",
-        entity_type="run",
-        entity_id="run-id",
+    client.execute.assert_called_once_with(
+        ClientOp(
+            category=ApiType.CONTEXT,
+            operation=BEOps.RESUME,
+            route_args=ctx_entity_id_ra("project", "run", "run-id"),
+            payload={},
+            params={"reason": "retry"},
+        )
     )
-    client.create_object.assert_called_once_with(api, obj={}, reason="retry")

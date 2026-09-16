@@ -21,7 +21,7 @@ from digitalhub.entities._processors.processors import (
 )
 from digitalhub.entities.project._base.crud_manager import CRUDManager
 from digitalhub.factory.entity import entity_factory
-from digitalhub.stores.client.base.factory import get_client
+from digitalhub.stores.client.factory import get_client
 from digitalhub.utils.exceptions import BackendError, EntityAlreadyExistsError, EntityError
 from digitalhub.utils.io_utils import write_yaml
 from digitalhub.utils.uri_utils import has_local_scheme

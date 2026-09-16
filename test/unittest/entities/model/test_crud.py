@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: © 2025 DSLab - Fondazione Bruno Kessler
+#
+# SPDX-License-Identifier: Apache-2.0
+
 from types import SimpleNamespace
 from unittest.mock import Mock
 
@@ -39,9 +43,7 @@ MODEL_SPEC_FIELDS = {
 
 def assert_base_model_call_without_none_spec(mock: Mock, expected: dict) -> None:
     actual = {
-        key: value
-        for key, value in mock.call_args.kwargs.items()
-        if key not in MODEL_SPEC_FIELDS or value is not None
+        key: value for key, value in mock.call_args.kwargs.items() if key not in MODEL_SPEC_FIELDS or value is not None
     }
     assert actual == expected
 

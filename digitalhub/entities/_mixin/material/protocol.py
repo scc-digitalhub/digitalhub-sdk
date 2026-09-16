@@ -15,7 +15,7 @@ if typing.TYPE_CHECKING:
     from digitalhub.utils.types import SourcesOrListOfSources
 
 
-class MaterialEntityProtocol(VersionedEntityProtocol, Protocol):
+class MaterialProtocol(VersionedEntityProtocol, Protocol):
     spec: MaterialSpec
     status: MaterialStatus
     extensions: list[dict]

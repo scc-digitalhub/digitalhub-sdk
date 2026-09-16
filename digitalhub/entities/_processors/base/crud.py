@@ -9,84 +9,30 @@ from warnings import warn
 
 from digitalhub.context.api import delete_context
 from digitalhub.factory.entity import entity_factory
-from digitalhub.stores.client.base.factory import get_client
-from digitalhub.stores.client.common.enums import ApiCategories, BackendOperations
+from digitalhub.stores.client.factory import get_client
+from digitalhub.stores.client.common.enums import ApiType, BEOps
+from digitalhub.stores.client.compiler.apis.utils import base_entity_ra, base_ra
+from digitalhub.stores.client.compiler.operation import ClientOp
 from digitalhub.utils.exceptions import EntityAlreadyExistsError, EntityError, EntityNotExistsError
 from digitalhub.utils.io_utils import read_yaml
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.project._base.entity import Project
-    from digitalhub.stores.client.base.client import Client
+    from digitalhub.stores.client.client import Client
 
 
 class BaseEntityCRUDProcessor:
-    """
-    Processor for core CRUD operations on base entities.
-
-    Handles creation, reading, updating, deletion, and listing of
-    base-level entities (primarily projects) within the backend.
-    """
-
-    def _create_base_entity(
-        self,
-        client: Client,
-        entity_type: str,
-        entity_dict: dict,
-        **kwargs,
-    ) -> dict:
-        """
-        Create a base entity in the backend.
-
-        Builds the appropriate API endpoint and sends a create request
-        to the backend for base-level entities.
-
-        Parameters
-        ----------
-        client : Client
-            The client instance to use for the API call.
-        entity_type : str
-            The type of entity to create (e.g., 'project').
-        entity_dict : dict
-            The entity data dictionary to create.
-        **kwargs : dict
-            Additional parameters to pass to the API call.
-
-        Returns
-        -------
-        dict
-            The created entity data returned from the backend.
-        """
-        api = client.build_api(
-            ApiCategories.BASE.value,
-            BackendOperations.CREATE.value,
-            entity_type=entity_type,
+    def _create_base_entity(self, client: Client, entity_type: str, entity_dict: dict) -> dict:
+        return client.execute(
+            ClientOp(
+                category=ApiType.BASE,
+                operation=BEOps.CREATE,
+                route_args=base_ra(entity_type),
+                payload=entity_dict,
+            )
         )
-        return client.create_object(api, entity_dict, **kwargs)
 
-    def create_project_entity(
-        self,
-        _entity: Project | None = None,
-        **kwargs,
-    ) -> Project:
-        """
-        Create a project entity in the backend.
-
-        Creates a new project either from an existing entity object or
-        by building one from the provided parameters.
-
-        Parameters
-        ----------
-        _entity : Project
-            An existing project entity object to create. If None,
-            a new entity will be built from kwargs.
-        **kwargs : dict
-            Parameters for entity creation.
-
-        Returns
-        -------
-        Project
-            The created project entity with backend data populated.
-        """
+    def create_project_entity(self, _entity: Project | None = None, **kwargs) -> Project:
         if _entity is not None:
             client = _entity._client
             obj = _entity
@@ -101,139 +47,39 @@ class BaseEntityCRUDProcessor:
         client: Client,
         entity_type: str,
         entity_name: str,
-        **kwargs,
     ) -> dict:
-        """
-        Read a base entity from the backend.
-
-        Builds the appropriate API endpoint and sends a read request
-        to retrieve entity data from the backend.
-
-        Parameters
-        ----------
-        client : Client
-            The client instance to use for the API call.
-        entity_type : str
-            The type of entity to read (e.g., 'project').
-        entity_name : str
-            The name identifier of the entity to read.
-        **kwargs : dict
-            Additional parameters to pass to the API call.
-
-        Returns
-        -------
-        dict
-            The entity data retrieved from the backend.
-        """
-        api = client.build_api(
-            ApiCategories.BASE.value,
-            BackendOperations.READ.value,
-            entity_type=entity_type,
-            entity_name=entity_name,
+        return client.execute(
+            ClientOp(
+                category=ApiType.BASE,
+                operation=BEOps.READ,
+                route_args=base_entity_ra(entity_type, entity_name),
+            )
         )
-        return client.read_object(api, **kwargs)
 
-    def read_project_entity(
-        self,
-        entity_type: str,
-        entity_name: str,
-        **kwargs,
-    ) -> Project:
-        """
-        Read a project entity from the backend.
-
-        Retrieves project data from the backend and constructs a
-        Project entity object with the retrieved data.
-
-        Parameters
-        ----------
-        entity_type : str
-            The type of entity to read (typically 'project').
-        entity_name : str
-            The name identifier of the project to read.
-        **kwargs : dict
-            Additional parameters including 'local' flag and
-            API call parameters.
-
-        Returns
-        -------
-        Project
-            The project entity object populated with backend data.
-        """
+    def read_project_entity(self, entity_type: str, entity_name: str) -> Project:
         client = get_client()
-        obj = self._read_base_entity(client, entity_type, entity_name, **kwargs)
+        obj = self._read_base_entity(client, entity_type, entity_name)
         return entity_factory.build_entity_from_dict(obj)
 
-    def _list_base_entities(
-        self,
-        client: Client,
-        entity_type: str,
-        **kwargs,
-    ) -> list[dict]:
-        """
-        List base entities from the backend.
-
-        Builds the appropriate API endpoint and sends a list request
-        to retrieve multiple entities from the backend.
-
-        Parameters
-        ----------
-        client : Client
-            The client instance to use for the API call.
-        entity_type : str
-            The type of entities to list (e.g., 'project').
-        **kwargs : dict
-            Additional parameters to pass to the API call for filtering
-            or pagination.
-
-        Returns
-        -------
-        list[dict]
-            List of entity data dictionaries from the backend.
-        """
-        api = client.build_api(
-            ApiCategories.BASE.value,
-            BackendOperations.LIST.value,
-            entity_type=entity_type,
+    def _list_base_entities(self, client: Client, entity_type: str) -> list[dict]:
+        return client.execute_list(
+            ClientOp(
+                category=ApiType.BASE,
+                operation=BEOps.LIST,
+                route_args=base_ra(entity_type),
+            )
         )
-        return client.list_objects(api, **kwargs)
 
-    def list_project_entities(
-        self,
-        entity_type: str,
-        **kwargs,
-    ) -> list[Project]:
-        """
-        List project entities from the backend.
-
-        Retrieves a list of projects from the backend and converts
-        them to Project entity objects.
-
-        Parameters
-        ----------
-        entity_type : str
-            The type of entities to list (typically 'project').
-        **kwargs : dict
-            Additional parameters.
-
-        Returns
-        -------
-        list[Project]
-            List of project entity objects.
-        """
+    def list_project_entities(self, entity_type: str) -> list[Project]:
         client = get_client()
-        objs = self._list_base_entities(client, entity_type, **kwargs)
+        objs = self._list_base_entities(client, entity_type)
         entities = []
         for obj in objs:
             ent = entity_factory.build_entity_from_dict(obj)
             entities.append(ent)
         return entities
 
-    def import_project_entity(
-        self,
-        file: str,
-        **kwargs,
-    ) -> Project:
+    def import_project_entity(self, file: str, **kwargs) -> Project:
         obj: dict = read_yaml(file)
         obj["status"] = {}
         ent: Project = entity_factory.build_entity_from_dict(obj)
@@ -273,71 +119,24 @@ class BaseEntityCRUDProcessor:
         entity_type: str,
         entity_name: str,
         entity_dict: dict,
-        **kwargs,
     ) -> dict:
-        """
-        Update a base entity in the backend.
-
-        Builds the appropriate API endpoint and sends an update request
-        to modify an existing entity in the backend.
-
-        Parameters
-        ----------
-        client : Client
-            The client instance to use for the API call.
-        entity_type : str
-            The type of entity to update (e.g., 'project').
-        entity_name : str
-            The name identifier of the entity to update.
-        entity_dict : dict
-            The updated entity data dictionary.
-        **kwargs : dict
-            Additional parameters to pass to the API call.
-
-        Returns
-        -------
-        dict
-            The updated entity data returned from the backend.
-        """
-        api = client.build_api(
-            ApiCategories.BASE.value,
-            BackendOperations.UPDATE.value,
-            entity_type=entity_type,
-            entity_name=entity_name,
+        return client.execute(
+            ClientOp(
+                category=ApiType.BASE,
+                operation=BEOps.UPDATE,
+                route_args=base_entity_ra(entity_type, entity_name),
+                payload=entity_dict,
+            )
         )
-        return client.update_object(api, entity_dict, **kwargs)
 
     def update_project_entity(
         self,
         entity_type: str,
         entity_name: str,
         entity_dict: dict,
-        **kwargs,
     ) -> Project:
-        """
-        Update a project entity in the backend.
-
-        Updates an existing project with new data and returns the
-        updated Project entity object.
-
-        Parameters
-        ----------
-        entity_type : str
-            The type of entity to update (typically 'project').
-        entity_name : str
-            The name identifier of the project to update.
-        entity_dict : dict
-            The updated project data dictionary.
-        **kwargs : dict
-            Additional parameters.
-
-        Returns
-        -------
-        Project
-            The updated project entity object.
-        """
         client = get_client()
-        obj = self._update_base_entity(client, entity_type, entity_name, entity_dict, **kwargs)
+        obj = self._update_base_entity(client, entity_type, entity_name, entity_dict)
         return entity_factory.build_entity_from_dict(obj)
 
     def _delete_base_entity(
@@ -345,80 +144,26 @@ class BaseEntityCRUDProcessor:
         client: Client,
         entity_type: str,
         entity_name: str,
-        **kwargs,
+        cascade: bool,
     ) -> dict:
-        """
-        Delete a base entity from the backend.
-
-        Builds the appropriate API endpoint and parameters, then sends
-        a delete request to remove the entity from the backend.
-
-        Parameters
-        ----------
-        client : Client
-            The client instance to use for the API call.
-        entity_type : str
-            The type of entity to delete (e.g., 'project').
-        entity_name : str
-            The name identifier of the entity to delete.
-        **kwargs : dict
-            Additional parameters to pass to the API call, such as
-            cascade deletion options.
-
-        Returns
-        -------
-        dict
-            Response data from the backend delete operation.
-        """
-        kwargs = client.build_parameters(
-            ApiCategories.BASE.value,
-            BackendOperations.DELETE.value,
-            **kwargs,
+        return client.execute(
+            ClientOp(
+                category=ApiType.BASE,
+                operation=BEOps.DELETE,
+                route_args=base_entity_ra(entity_type, entity_name),
+                params={"cascade": cascade},
+            )
         )
-        api = client.build_api(
-            ApiCategories.BASE.value,
-            BackendOperations.DELETE.value,
-            entity_type=entity_type,
-            entity_name=entity_name,
-        )
-        return client.delete_object(api, **kwargs)
 
     def delete_project_entity(
         self,
         entity_type: str,
         entity_name: str,
-        **kwargs,
+        cascade: bool = True,
+        clean_context: bool = True,
     ) -> dict:
-        """
-        Delete a project entity from the backend.
-
-        Deletes a project from the backend and optionally cleans up
-        the associated context.
-
-        Parameters
-        ----------
-        crud_processor : BaseEntityCRUDProcessor
-            The CRUD processor instance for entity operations.
-        entity_type : str
-            The type of entity to delete (typically 'project').
-        entity_name : str
-            The name identifier of the project to delete.
-        **kwargs : dict
-            Additional parameters including 'clean_context'.
-
-        Returns
-        -------
-        dict
-            Response data from the backend delete operation.
-        """
-        clean_context = kwargs.pop("clean_context", True)
         client = get_client()
-        response = self._delete_base_entity(
-            client,
-            entity_type,
-            entity_name,
-            **kwargs,
-        )
+        response = self._delete_base_entity(client, entity_type, entity_name, cascade)
         if clean_context:
             delete_context(entity_name)
         return response

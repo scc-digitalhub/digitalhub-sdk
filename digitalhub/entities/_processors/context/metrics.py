@@ -7,7 +7,9 @@ from __future__ import annotations
 from typing import Any
 
 from digitalhub.entities._processors.utils import get_context
-from digitalhub.stores.client.common.enums import ApiCategories, BackendOperations
+from digitalhub.stores.client.common.enums import ApiType, BEOps
+from digitalhub.stores.client.compiler.apis.utils import ctx_metric_ra
+from digitalhub.stores.client.compiler.operation import ClientOp
 
 
 class ContextEntityMetricsProcessor:
@@ -17,18 +19,16 @@ class ContextEntityMetricsProcessor:
         entity_type: str,
         entity_id: str,
         metric_name: str | None = None,
-        **kwargs,
+        user: str | None = None,
     ) -> dict:
-        context = get_context(project)
-        api = context.client.build_api(
-            ApiCategories.CONTEXT.value,
-            BackendOperations.METRICS.value,
-            project=context.name,
-            entity_type=entity_type,
-            entity_id=entity_id,
-            metric_name=metric_name,
+        return get_context(project).client.execute(
+            ClientOp(
+                category=ApiType.CONTEXT,
+                operation=BEOps.METRICS_READ,
+                route_args=ctx_metric_ra(project, entity_type, entity_id, metric_name),
+                params={"user": user} if user is not None else {},
+            )
         )
-        return context.client.read_object(api, **kwargs)
 
     def update_metric(
         self,
@@ -37,15 +37,14 @@ class ContextEntityMetricsProcessor:
         entity_id: str,
         metric_name: str,
         metric_value: Any,
-        **kwargs,
+        user: str | None = None,
     ) -> None:
-        context = get_context(project)
-        api = context.client.build_api(
-            ApiCategories.CONTEXT.value,
-            BackendOperations.METRICS.value,
-            project=context.name,
-            entity_type=entity_type,
-            entity_id=entity_id,
-            metric_name=metric_name,
+        get_context(project).client.execute(
+            ClientOp(
+                category=ApiType.CONTEXT,
+                operation=BEOps.METRICS_UPDATE,
+                route_args=ctx_metric_ra(project, entity_type, entity_id, metric_name),
+                payload=metric_value,
+                params={"user": user} if user is not None else {},
+            )
         )
-        context.client.update_object(api, metric_value, **kwargs)

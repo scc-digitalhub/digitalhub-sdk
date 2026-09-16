@@ -9,6 +9,8 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from digitalhub.stores.client.common.enums import ConfigurationVars
+
 
 def _get_config_file_path() -> Path:
     """
@@ -19,7 +21,7 @@ def _get_config_file_path() -> Path:
     Path
         Path to the configuration file.
     """
-    dh_config_env = os.getenv("DH_CONFIG")
+    dh_config_env = os.getenv(ConfigurationVars.DH_CONFIG.value)
     if dh_config_env is not None:
         try:
             return Path(dh_config_env)
@@ -90,6 +92,8 @@ class ClientConfig:
     pat_scope: str = "credentials"
 
     def __post_init__(self) -> None:
+        if self.max_refresh_attempts < 1:
+            raise ValueError("max_refresh_attempts must be at least 1")
         self.config_env_path = str(self.config_ini_path.parent / ".env")
 
     # Prefixes vars
@@ -143,7 +147,7 @@ def set_client_config(config: ClientConfig) -> None:
     global _default_config
     _default_config = config
 
-    from digitalhub.stores.client.base.factory import client_factory
+    from digitalhub.stores.client.factory import client_factory
 
     client_factory.reset()
 

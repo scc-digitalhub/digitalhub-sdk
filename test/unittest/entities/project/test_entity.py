@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: © 2025 DSLab - Fondazione Bruno Kessler
+#
+# SPDX-License-Identifier: Apache-2.0
+
 import importlib
 from types import SimpleNamespace
 from unittest.mock import Mock
@@ -1218,9 +1222,7 @@ def test_export_writes_references_for_non_embedded_entities(monkeypatch, tmp_pat
     project.name = "project"
     project.ENTITY_TYPE = "project"
     project.spec = SimpleNamespace(source=str(tmp_path))
-    project._refresh_to_dict = Mock(
-        return_value={"spec": {"artifacts": [{"key": "artifact-key", "metadata": {}}]}}
-    )
+    project._refresh_to_dict = Mock(return_value={"spec": {"artifacts": [{"key": "artifact-key", "metadata": {}}]}})
     artifact = SimpleNamespace(export=Mock(return_value="artifact.yaml"))
     read_entity = Mock(return_value=artifact)
     monkeypatch.setattr(

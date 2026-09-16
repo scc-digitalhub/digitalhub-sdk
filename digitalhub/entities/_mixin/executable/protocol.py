@@ -13,7 +13,7 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities.task._base.entity import Task
 
 
-class ExecutableEntityProtocol(VersionedEntityProtocol, Protocol):
+class ExecutableProtocol(VersionedEntityProtocol, Protocol):
     _tasks: dict[str, Task]
 
     def import_tasks(self, tasks: list[dict]) -> None: ...

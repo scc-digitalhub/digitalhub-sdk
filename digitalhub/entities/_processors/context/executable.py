@@ -13,7 +13,7 @@ from digitalhub.utils.exceptions import EntityAlreadyExistsError, EntityError, E
 from digitalhub.utils.io_utils import read_yaml
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities._mixin.executable.protocol import ExecutableEntityProtocol
+    from digitalhub.entities._mixin.executable.protocol import ExecutableProtocol
     from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
 
 
@@ -29,7 +29,7 @@ class ContextEntityExecutableProcessor:
         key: str | None = None,
         reset_id: bool = False,
         context: str | None = None,
-    ) -> ExecutableEntityProtocol:
+    ) -> ExecutableProtocol:
         if (file is None) == (key is None):
             raise ValueError("Provide key or file, not both or none.")
 
@@ -56,7 +56,7 @@ class ContextEntityExecutableProcessor:
 
         ctx = get_context(context)
         _, entity_type, _, _, _ = parse_identifier(exec_dict["key"])
-        obj: ExecutableEntityProtocol = entity_factory.build_entity_from_dict(exec_dict, entity_type=entity_type)
+        obj: ExecutableProtocol = entity_factory.build_entity_from_dict(exec_dict, entity_type=entity_type)
 
         if reset_id:
             new_id = build_uuid()
@@ -65,7 +65,7 @@ class ContextEntityExecutableProcessor:
 
         try:
             bck_obj = self.crud_processor._create_context_entity(ctx, obj.ENTITY_TYPE, obj.to_dict())
-            new_obj: ExecutableEntityProtocol = entity_factory.build_entity_from_dict(bck_obj, entity_type=entity_type)
+            new_obj: ExecutableProtocol = entity_factory.build_entity_from_dict(bck_obj, entity_type=entity_type)
         except EntityAlreadyExistsError:
             raise EntityError(f"Entity {obj.name} already exists. If you want to update it, use load instead.")
 
@@ -75,7 +75,7 @@ class ContextEntityExecutableProcessor:
     def load_executable_entity(
         self,
         file: str,
-    ) -> ExecutableEntityProtocol:
+    ) -> ExecutableProtocol:
         dict_obj: dict | list[dict] = read_yaml(file)
         if isinstance(dict_obj, list):
             exec_dict = dict_obj[0]
@@ -86,7 +86,7 @@ class ContextEntityExecutableProcessor:
 
         context = get_context(exec_dict["project"])
         _, entity_type, _, _, _ = parse_identifier(exec_dict["key"])
-        obj: ExecutableEntityProtocol = entity_factory.build_entity_from_dict(exec_dict, entity_type=entity_type)
+        obj: ExecutableProtocol = entity_factory.build_entity_from_dict(exec_dict, entity_type=entity_type)
 
         try:
             self.crud_processor._update_context_entity(context, obj.ENTITY_TYPE, obj.id, obj.to_dict())

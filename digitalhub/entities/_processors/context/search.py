@@ -7,7 +7,9 @@ from __future__ import annotations
 import typing
 
 from digitalhub.entities._processors.utils import get_context, parse_identifier
-from digitalhub.stores.client.common.enums import ApiCategories, BackendOperations
+from digitalhub.stores.client.common.enums import ApiType, BEOps
+from digitalhub.stores.client.compiler.apis.utils import ctx_ra
+from digitalhub.stores.client.compiler.operation import ClientOp
 from digitalhub.utils.exceptions import BackendError
 from digitalhub.utils.logger.logger import get_logger
 
@@ -34,25 +36,25 @@ class ContextEntitySearchProcessor:
         **kwargs,
     ) -> tuple[list[ContextEntity], list[dict]]:
         context = get_context(project)
-        kwargs = context.client.build_parameters(
-            ApiCategories.CONTEXT.value,
-            BackendOperations.SEARCH.value,
-            query=query,
-            entity_types=entity_types,
-            name=name,
-            kind=kind,
-            created=created,
-            updated=updated,
-            description=description,
-            labels=labels,
+        params = {
             **kwargs,
+            "query": query,
+            "entity_types": entity_types,
+            "name": name,
+            "kind": kind,
+            "created": created,
+            "updated": updated,
+            "description": description,
+            "labels": labels,
+        }
+        entities_dict = context.client.execute(
+            ClientOp(
+                category=ApiType.CONTEXT,
+                operation=BEOps.SEARCH,
+                route_args=ctx_ra(context.name),
+                params=params,
+            )
         )
-        api = context.client.build_api(
-            ApiCategories.CONTEXT.value,
-            BackendOperations.SEARCH.value,
-            project=context.name,
-        )
-        entities_dict = context.client.read_object(api, **kwargs)
         living_entities = []
         dead_entities = []
         for entity in entities_dict["content"]:

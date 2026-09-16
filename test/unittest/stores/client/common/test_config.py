@@ -1,12 +1,22 @@
+# SPDX-FileCopyrightText: © 2025 DSLab - Fondazione Bruno Kessler
+#
+# SPDX-License-Identifier: Apache-2.0
+
 from types import SimpleNamespace
 
 import pytest
 
-import digitalhub.stores.client.base.factory as factory_module
+import digitalhub.stores.client.factory as factory_module
 from digitalhub.stores.client.auth import file_module
-from digitalhub.stores.client.builders.api import ClientApiBuilder
-from digitalhub.stores.client.common.config import ClientConfig, get_client_config, set_client_config
-from digitalhub.stores.client.common.enums import ApiCategories, BackendOperations
+from digitalhub.stores.client.common.config import (
+    ClientConfig,
+    _get_config_file_path,
+    get_client_config,
+    set_client_config,
+)
+from digitalhub.stores.client.common.enums import ApiType, BEOps, ConfigurationVars
+from digitalhub.stores.client.common.utils import sanitize_endpoint
+from digitalhub.stores.client.compiler.apis.api import ClientApiBuilder
 from digitalhub.stores.client.http.response import ResponseProcessor
 
 
@@ -38,13 +48,13 @@ def test_set_client_config_updates_imported_dependencies(monkeypatch, tmp_path) 
     file_module.write_dotenv({"access_token": "token"})
     api_builder = ClientApiBuilder()
     base_api = api_builder.build_api(
-        ApiCategories.BASE.value,
-        BackendOperations.LIST.value,
+        ApiType.BASE,
+        BEOps.LIST,
         entity_type="project",
     )
     context_api = api_builder.build_api(
-        ApiCategories.CONTEXT.value,
-        BackendOperations.LIST.value,
+        ApiType.CONTEXT,
+        BEOps.LIST,
         project="project",
         entity_type="function",
     )
@@ -64,3 +74,19 @@ def test_set_client_config_invalidates_default_client(monkeypatch) -> None:
     set_client_config(ClientConfig(http_timeout=120))
 
     assert factory_module.get_client() is not original_client
+
+
+def test_client_config_rejects_non_positive_refresh_attempts() -> None:
+    with pytest.raises(ValueError, match="max_refresh_attempts must be at least 1"):
+        ClientConfig(max_refresh_attempts=0)
+
+
+def test_config_file_path_uses_configuration_var(monkeypatch, tmp_path) -> None:
+    config_path = tmp_path / "custom.ini"
+    monkeypatch.setenv(ConfigurationVars.DH_CONFIG.value, str(config_path))
+
+    assert _get_config_file_path() == config_path
+
+
+def test_sanitize_endpoint_strips_whitespace_before_validation() -> None:
+    assert sanitize_endpoint(" https://example.test/ ") == "https://example.test"

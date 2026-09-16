@@ -6,25 +6,28 @@ from __future__ import annotations
 
 import typing
 
+from digitalhub.stores.client.common.enums import OpsType
+
 if typing.TYPE_CHECKING:
     from logging import Logger
 
     from requests import Response
 
 
-def log_request_response(logger: Logger, response: Response) -> None:
+def log_request_response(
+    logger: Logger,
+    response: Response,
+    *,
+    operation: str = OpsType.HTTP_REQUEST.value,
+    attempt: int = 1,
+    retry_reason: str | None = None,
+) -> None:
     """
     Log HTTP request and response details at DEBUG level.
-
-    Parameters
-    ----------
-    logger : Logger
-        Logger instance to use for logging.
-    response : Response
-        HTTP response object containing request and response details.
     """
     template = (
-        "Request: HTTP {method} {url} - "
+        "Request: Operation: {operation} - Attempt: {attempt} - Retry reason: {retry_reason} - "
+        "HTTP {method} {url} - "
         "Status: {status_code} - "
         "Headers: {request_headers} - "
         "Request body: {request_body} - "
@@ -32,6 +35,9 @@ def log_request_response(logger: Logger, response: Response) -> None:
     )
     logger.debug(
         template.format(
+            operation=operation,
+            attempt=attempt,
+            retry_reason=retry_reason or "none",
             method=response.request.method,
             url=response.url,
             status_code=response.status_code,

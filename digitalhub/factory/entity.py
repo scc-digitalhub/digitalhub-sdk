@@ -16,8 +16,8 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities._base.entity.spec import Spec, SpecValidator
     from digitalhub.entities._base.entity.status import Status
     from digitalhub.entities._base.metadata.entity import Metadata
-    from digitalhub.entities._mixin.executable.protocol import ExecutableEntityProtocol
-    from digitalhub.entities._mixin.material.protocol import MaterialEntityProtocol
+    from digitalhub.entities._mixin.executable.protocol import ExecutableProtocol
+    from digitalhub.entities._mixin.material.protocol import MaterialProtocol
     from digitalhub.entities._mixin.metrics.protocol import MetricsEntityProtocol
     from digitalhub.entities._mixin.unversioned.protocol import UnversionedEntityProtocol
     from digitalhub.entities._mixin.versioned.protocol import VersionedEntityProtocol
@@ -54,12 +54,12 @@ class EntityFactory:
     @overload
     def build_entity_from_params(
         self, entity_type: Literal["artifact", "dataitem", "model"], **kwargs
-    ) -> MaterialEntityProtocol: ...
+    ) -> MaterialProtocol: ...
 
     @overload
     def build_entity_from_params(
         self, entity_type: Literal["function", "workflow"], **kwargs
-    ) -> ExecutableEntityProtocol: ...
+    ) -> ExecutableProtocol: ...
 
     @overload
     def build_entity_from_params(self, entity_type: Literal["run"], **kwargs) -> MetricsEntityProtocol: ...
@@ -96,12 +96,10 @@ class EntityFactory:
     @overload
     def build_entity_from_dict(
         self, obj: dict, entity_type: Literal["artifact", "dataitem", "model"]
-    ) -> MaterialEntityProtocol: ...
+    ) -> MaterialProtocol: ...
 
     @overload
-    def build_entity_from_dict(
-        self, obj: dict, entity_type: Literal["function", "workflow"]
-    ) -> ExecutableEntityProtocol: ...
+    def build_entity_from_dict(self, obj: dict, entity_type: Literal["function", "workflow"]) -> ExecutableProtocol: ...
 
     @overload
     def build_entity_from_dict(self, obj: dict, entity_type: Literal["run"]) -> MetricsEntityProtocol: ...

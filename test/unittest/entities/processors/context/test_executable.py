@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: © 2025 DSLab - Fondazione Bruno Kessler
+#
+# SPDX-License-Identifier: Apache-2.0
+
 from types import SimpleNamespace
 from unittest.mock import Mock
 
@@ -42,7 +46,12 @@ def test_import_executable_reads_file_resets_id_and_imports_tasks(monkeypatch) -
     monkeypatch.setattr(
         executable_module,
         "read_yaml",
-        Mock(return_value=[{"project": "project", "key": "store://project/function/function/function:entity-id"}, {"kind": "task"}]),
+        Mock(
+            return_value=[
+                {"project": "project", "key": "store://project/function/function/function:entity-id"},
+                {"kind": "task"},
+            ]
+        ),
     )
     monkeypatch.setattr(executable_module, "get_context", Mock(return_value=_context()))
     monkeypatch.setattr(executable_module.entity_factory, "build_entity_from_dict", build_entity)
@@ -83,7 +92,12 @@ def test_load_executable_updates_existing_entity_and_imports_tasks(monkeypatch) 
     monkeypatch.setattr(
         executable_module,
         "read_yaml",
-        Mock(return_value=[{"project": "project", "key": "store://project/function/function/function:entity-id"}, {"kind": "task"}]),
+        Mock(
+            return_value=[
+                {"project": "project", "key": "store://project/function/function/function:entity-id"},
+                {"kind": "task"},
+            ]
+        ),
     )
     monkeypatch.setattr(executable_module, "get_context", Mock(return_value=_context()))
     monkeypatch.setattr(executable_module.entity_factory, "build_entity_from_dict", Mock(return_value=executable))

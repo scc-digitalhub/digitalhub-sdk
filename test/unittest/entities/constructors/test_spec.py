@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: © 2025 DSLab - Fondazione Bruno Kessler
+#
+# SPDX-License-Identifier: Apache-2.0
+
 from digitalhub.entities._base.entity.spec import SpecValidator
 from digitalhub.entities._constructors.spec import build_spec
 from digitalhub.entities._mixin.generic.spec import GenericSpec

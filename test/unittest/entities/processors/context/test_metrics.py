@@ -1,22 +1,26 @@
+# SPDX-FileCopyrightText: © 2025 DSLab - Fondazione Bruno Kessler
+#
+# SPDX-License-Identifier: Apache-2.0
+
 from types import SimpleNamespace
 from unittest.mock import Mock
 
 import digitalhub.entities._processors.context.metrics as metrics_module
 from digitalhub.entities._processors.context.metrics import ContextEntityMetricsProcessor
-from digitalhub.stores.client.common.enums import ApiCategories, BackendOperations
+from digitalhub.stores.client.common.enums import ApiType, BEOps
+from digitalhub.stores.client.compiler.apis.utils import ctx_metric_ra
+from digitalhub.stores.client.compiler.operation import ClientOp
 
 
 def _context() -> tuple[SimpleNamespace, Mock, object]:
     client = Mock()
-    api = object()
-    client.build_api.return_value = api
     context = SimpleNamespace(name="context-project", client=client)
-    return context, client, api
+    return context, client, object()
 
 
-def test_read_metrics_builds_api_and_reads_object(monkeypatch) -> None:
-    context, client, api = _context()
-    client.read_object.return_value = {"accuracy": 0.9}
+def test_read_metrics_uses_backend_operation_request(monkeypatch) -> None:
+    context, client, _ = _context()
+    client.execute.return_value = {"accuracy": 0.9}
     monkeypatch.setattr(metrics_module, "get_context", Mock(return_value=context))
 
     result = ContextEntityMetricsProcessor().read_metrics(
@@ -28,19 +32,18 @@ def test_read_metrics_builds_api_and_reads_object(monkeypatch) -> None:
     )
 
     assert result == {"accuracy": 0.9}
-    client.build_api.assert_called_once_with(
-        ApiCategories.CONTEXT.value,
-        BackendOperations.METRICS.value,
-        project="context-project",
-        entity_type="run",
-        entity_id="run-id",
-        metric_name="accuracy",
+    client.execute.assert_called_once_with(
+        ClientOp(
+            category=ApiType.CONTEXT,
+            operation=BEOps.METRICS_READ,
+            route_args=ctx_metric_ra("project", "run", "run-id", "accuracy"),
+            params={"user": "user"},
+        )
     )
-    client.read_object.assert_called_once_with(api, user="user")
 
 
-def test_update_metric_builds_api_and_updates_object(monkeypatch) -> None:
-    context, client, api = _context()
+def test_update_metric_uses_backend_operation_request(monkeypatch) -> None:
+    context, client, _ = _context()
     monkeypatch.setattr(metrics_module, "get_context", Mock(return_value=context))
 
     result = ContextEntityMetricsProcessor().update_metric(
@@ -53,12 +56,12 @@ def test_update_metric_builds_api_and_updates_object(monkeypatch) -> None:
     )
 
     assert result is None
-    client.build_api.assert_called_once_with(
-        ApiCategories.CONTEXT.value,
-        BackendOperations.METRICS.value,
-        project="context-project",
-        entity_type="run",
-        entity_id="run-id",
-        metric_name="accuracy",
+    client.execute.assert_called_once_with(
+        ClientOp(
+            category=ApiType.CONTEXT,
+            operation=BEOps.METRICS_UPDATE,
+            route_args=ctx_metric_ra("project", "run", "run-id", "accuracy"),
+            payload=[0.8, 0.9],
+            params={"user": "user"},
+        )
     )
-    client.update_object.assert_called_once_with(api, [0.8, 0.9], user="user")

@@ -4,91 +4,64 @@
 
 from __future__ import annotations
 
-from digitalhub.stores.client.base.factory import get_client
-from digitalhub.stores.client.common.enums import ApiCategories, BackendOperations
+from digitalhub.stores.client.factory import get_client
+from digitalhub.stores.client.common.enums import ApiType, BEOps
+from digitalhub.stores.client.compiler.apis.utils import base_entity_ra
+from digitalhub.stores.client.compiler.operation import ClientOp
 
 
 class BaseEntitySpecialOpsProcessor:
-    """
-    Processor for specialized base entity operations.
-
-    Handles backend operations like sharing, key building, and other
-    specialized functionality for base-level entities.
-    """
-
-    def build_project_key(
-        self,
-        entity_id: str,
-    ) -> str:
-        """
-        Build an entity key for a project entity.
-
-        Creates a standardized key string for project identification
-        and storage, handling both local and remote client contexts.
-
-        Parameters
-        ----------
-        entity_id : str
-            The unique identifier of the project entity.
-
-        Returns
-        -------
-        str
-            The constructed project entity key string.
-        """
+    def build_project_key(self, entity_id: str) -> str:
         return f"store://{entity_id}"
 
     def share_project_entity(
         self,
         entity_type: str,
         entity_name: str,
-        **kwargs,
+        user: str,
+        unshare: bool = False,
+        role: str | None = None,
     ) -> None:
-        """
-        Share or unshare a project entity with a user.
-
-        Manages project access permissions by sharing the project with
-        a specified user or removing user access. Handles both sharing
-        and unsharing operations based on the 'unshare' parameter.
-
-        Parameters
-        ----------
-        entity_type : str
-            The type of entity to share (typically 'project').
-        entity_name : str
-            The name identifier of the project to share.
-        **kwargs : dict
-            Additional parameters including:
-            - 'user': username to share with/unshare from
-            - 'unshare': boolean flag for unsharing (default False)
-            - 'local': boolean flag for local backend
-        """
         client = get_client()
-        api = client.build_api(
-            ApiCategories.BASE.value,
-            BackendOperations.SHARE.value,
-            entity_type=entity_type,
-            entity_name=entity_name,
-        )
+        route_args = base_entity_ra(entity_type, entity_name)
+        entity_id = None
 
-        user = kwargs.pop("user", None)
-        if unshare := kwargs.pop("unshare", False):
-            users = client.read_object(api, **kwargs)
+        if unshare:
+            users = client.execute(
+                ClientOp(
+                    category=ApiType.BASE,
+                    operation=BEOps.SHARE_READ,
+                    route_args=route_args,
+                )
+            )
             for u in users:
                 if u["user"] == user:
-                    kwargs["id"] = u["id"]
+                    entity_id = u["id"]
                     break
             else:
                 raise ValueError(f"User '{user}' does not have access to project.")
 
-        kwargs = client.build_parameters(
-            ApiCategories.BASE.value,
-            BackendOperations.SHARE.value,
-            unshare=unshare,
-            user=user,
-            **kwargs,
-        )
+        params = {"unshare": unshare, "user": user}
+        if entity_id is not None:
+            params["id"] = entity_id
+        if role is not None:
+            params["role"] = role
         if unshare:
-            client.delete_object(api, **kwargs)
+            client.execute(
+                ClientOp(
+                    category=ApiType.BASE,
+                    operation=BEOps.UNSHARE,
+                    route_args=route_args,
+                    params=params,
+                )
+            )
             return
-        client.create_object(api, obj={}, **kwargs)
+        client.execute(
+            ClientOp(
+                category=ApiType.BASE,
+                operation=BEOps.SHARE,
+                route_args=route_args,
+                params=params,
+                payload={},
+            )
+        )

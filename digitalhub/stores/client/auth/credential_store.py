@@ -7,7 +7,6 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from digitalhub.stores.client.auth.enums import ConfigurationVars, CredentialsVars
 from digitalhub.stores.client.auth.file_module import (
     load_dotenv_file,
     load_file,
@@ -15,6 +14,7 @@ from digitalhub.stores.client.auth.file_module import (
     write_dotenv,
     write_file,
 )
+from digitalhub.stores.client.common.enums import ConfigurationVars, CredentialsVars
 from digitalhub.utils.exceptions import ClientError
 from digitalhub.utils.generic_utils import list_enum
 from digitalhub.utils.logger.logger import get_logger

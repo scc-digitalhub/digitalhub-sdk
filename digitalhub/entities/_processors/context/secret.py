@@ -5,7 +5,9 @@
 from __future__ import annotations
 
 from digitalhub.entities._processors.utils import get_context
-from digitalhub.stores.client.common.enums import ApiCategories, BackendOperations
+from digitalhub.stores.client.common.enums import ApiType, BEOps
+from digitalhub.stores.client.compiler.apis.utils import ctx_entity_ra
+from digitalhub.stores.client.compiler.operation import ClientOp
 
 
 class ContextEntitySecretProcessor:
@@ -13,29 +15,28 @@ class ContextEntitySecretProcessor:
         self,
         project: str,
         entity_type: str,
-        **kwargs,
+        params: dict | None = None,
     ) -> dict:
-        context = get_context(project)
-        api = context.client.build_api(
-            ApiCategories.CONTEXT.value,
-            BackendOperations.DATA.value,
-            project=context.name,
-            entity_type=entity_type,
+        return get_context(project).client.execute(
+            ClientOp(
+                category=ApiType.CONTEXT,
+                operation=BEOps.DATA_READ,
+                route_args=ctx_entity_ra(project, entity_type),
+                params={"params": params or {}},
+            )
         )
-        return context.client.read_object(api, **kwargs)
 
     def update_secret_data(
         self,
         project: str,
         entity_type: str,
         data: dict,
-        **kwargs,
     ) -> None:
-        context = get_context(project)
-        api = context.client.build_api(
-            ApiCategories.CONTEXT.value,
-            BackendOperations.DATA.value,
-            project=context.name,
-            entity_type=entity_type,
+        get_context(project).client.execute(
+            ClientOp(
+                category=ApiType.CONTEXT,
+                operation=BEOps.DATA_UPDATE,
+                route_args=ctx_entity_ra(project, entity_type),
+                payload=data,
+            )
         )
-        context.client.update_object(api, data, **kwargs)

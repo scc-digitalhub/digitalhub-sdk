@@ -5,17 +5,21 @@
 from __future__ import annotations
 
 import typing
-from typing import Any
+from dataclasses import replace
 
-from requests.exceptions import HTTPError
-
-from digitalhub.stores.client.auth.enums import ConfigurationVars, CredentialSource, CredentialsVars
 from digitalhub.stores.client.common.config import get_client_config
-from digitalhub.stores.client.common.enums import AuthType
-from digitalhub.stores.client.common.logger import log_request_response
-from digitalhub.stores.client.common.utils import sanitize_endpoint, set_urlencoded_content_type
-from digitalhub.stores.client.http.transport import request
-from digitalhub.utils.exceptions import ClientError
+from digitalhub.stores.client.common.enums import (
+    AuthType,
+    ConfigurationVars,
+    CredentialSource,
+    CredentialsVars,
+    OpsType,
+)
+from digitalhub.stores.client.common.utils import sanitize_endpoint, with_urlencoded_content_type
+from digitalhub.stores.client.http.errors import raise_for_response_error
+from digitalhub.stores.client.http.request import BERequest
+from digitalhub.stores.client.http.response import parse_response_json
+from digitalhub.utils.exceptions import BackendError, ClientError
 from digitalhub.utils.logger.logger import get_logger
 
 if typing.TYPE_CHECKING:
@@ -23,6 +27,7 @@ if typing.TYPE_CHECKING:
 
     from digitalhub.stores.client.auth.auth_session import AuthSession
     from digitalhub.stores.client.auth.config_manager import ConfigManager
+    from digitalhub.stores.client.http.transport import HttpTransport
 
 logger = get_logger(__name__)
 
@@ -36,9 +41,11 @@ class TokenRefreshService:
         self,
         config_manager: ConfigManager,
         auth_session: AuthSession,
+        transport: HttpTransport,
     ) -> None:
         self._config_manager = config_manager
         self._auth_session = auth_session
+        self._transport = transport
 
     def refresh_credentials(self) -> None:
         """
@@ -65,56 +72,46 @@ class TokenRefreshService:
         response = self._evaluate_auth_flow(url, creds)
 
         # Raise an error if the response indicates failure
-        response.raise_for_status()
+        raise_for_response_error(response)
 
-        refreshed_credentials = response.json()
+        refreshed_credentials = parse_response_json(response)
         logger.debug("Refresh request succeeded; persisting fields: %s", sorted(refreshed_credentials))
 
         # Export new credentials to file
-        self._export_new_creds(refreshed_credentials)
+        self._config_manager.save_refreshed_credentials(refreshed_credentials)
 
         logger.debug("Credential refresh completed successfully.")
 
     def evaluate_refresh(self, check_token_validity: bool = False) -> bool:
         """
         Check if token refresh should be attempted with retry logic.
-
-        Attempts to refresh credentials, and if it fails, retries with
-        credentials from alternate sources (file vs environment).
-
-        Parameters
-        ----------
-        check_token_validity : bool, optional
-            Whether to check the validity of the token before attempting refresh.
-
-        Returns
-        -------
-        bool
-            True if credentials are ready for a request retry, False otherwise.
         """
+        # If token validity check is requested and the token is still valid, skip refresh.
+        if check_token_validity and self._test_token_validity():
+            logger.debug("Current token is valid, no refresh needed.")
+            return False
+
         if check_token_validity:
-            if self._test_token_validity():
-                logger.debug(
-                    "Current token is valid, no refresh needed. Check for other issues causing authentication failure."
-                )
-                return False
             logger.debug("Current token is invalid or expired, attempting refresh.")
+
         max_attempts = get_client_config().max_refresh_attempts
-        attempt = 1
-        while attempt <= max_attempts:
+        if max_attempts < 1:
+            raise ClientError("max_refresh_attempts must be at least 1")
+
+        for attempt in range(1, max_attempts + 1):
             logger.debug("Starting credential refresh attempt %d.", attempt)
             try:
                 self.refresh_credentials()
                 logger.debug("Credential refresh attempt %d succeeded.", attempt)
                 return True
-            except (ClientError, HTTPError) as error:
+            except (BackendError, ClientError) as error:
                 logger.debug(
                     "Credential refresh attempt %d failed with %s; evaluating fallback.",
                     attempt,
                     type(error).__name__,
                     exc_info=True,
                 )
-                if attempt >= max_attempts:
+                if attempt == max_attempts:
                     logger.debug(
                         "Credential refresh stopped after reaching the maximum of %d attempts.",
                         max_attempts,
@@ -128,20 +125,21 @@ class TokenRefreshService:
                     raise
 
                 switched_to_env = not was_using_env and self._config_manager.credential_source is CredentialSource.ENV
-                if switched_to_env and self._auth_session.auth_type != AuthType.EXCHANGE.value:
-                    if self._auth_session.auth_type not in [AuthType.OAUTH2.value, AuthType.ACCESS_TOKEN.value]:
-                        logger.debug(
-                            "Environment credentials are not refreshable; stopping credential refresh fallback."
-                        )
-                        return False
-                    if self._test_token_validity():
-                        logger.debug("Environment access token is valid; skipping environment credential refresh.")
-                        return True
-                    if self._auth_session.auth_type == AuthType.ACCESS_TOKEN.value:
-                        logger.debug("Environment access token is invalid and has no refresh token.")
-                        return False
+                if not switched_to_env:
+                    continue
 
-                attempt += 1
+                auth_type = self._auth_session.auth_type
+                if auth_type == AuthType.EXCHANGE.value:
+                    continue
+                if auth_type not in (AuthType.OAUTH2.value, AuthType.ACCESS_TOKEN.value):
+                    logger.debug("Environment credentials are not refreshable; stopping credential refresh fallback.")
+                    return False
+                if self._test_token_validity():
+                    logger.debug("Environment access token is valid; skipping environment credential refresh.")
+                    return True
+                if auth_type == AuthType.ACCESS_TOKEN.value:
+                    logger.debug("Environment access token is invalid and has no refresh token.")
+                    return False
 
     def _test_token_validity(self) -> bool:
         """
@@ -155,50 +153,47 @@ class TokenRefreshService:
             raise ClientError("API endpoint not set.")
         url = sanitize_endpoint(url) + get_client_config().api_auth_check
 
-        kwargs = self._auth_session.get_auth_parameters()
-        response = request("GET", url, **kwargs)
-        log_request_response(logger, response)
+        backend_request = self._auth_session.authenticate(
+            BERequest.get(
+                api=url,
+                operation=OpsType.AUTH_VALIDATE,
+            ),
+        )
+        response = self._transport.execute(replace(backend_request, authenticate=False))
 
         return response.status_code == 200
 
     def _evaluate_auth_flow(self, url: str, creds: dict) -> Response:
         """
         Execute appropriate OAuth2 flow based on authentication type.
-
-        Parameters
-        ----------
-        url : str
-            Token endpoint URL.
-        creds : dict
-            Available credential values.
-
-        Returns
-        -------
-        Response
-            HTTP response from token endpoint.
         """
         if (client_id := creds.get(ConfigurationVars.DHCORE_CLIENT_ID.value)) is None:
             raise ClientError("Client id not set.")
 
         # Handling of token refresh
         if self._auth_session.auth_type == AuthType.OAUTH2.value:
-            return self._call_refresh_endpoint(
-                url,
-                client_id=client_id,
-                refresh_token=creds.get(CredentialsVars.DHCORE_REFRESH_TOKEN.value),
-                grant_type=get_client_config().oauth2_grant_type,
-                scope=get_client_config().oauth2_scope,
-            )
+            data = {
+                "client_id": client_id,
+                "refresh_token": creds.get(CredentialsVars.DHCORE_REFRESH_TOKEN.value),
+                "grant_type": get_client_config().oauth2_grant_type,
+                "scope": get_client_config().oauth2_scope,
+            }
+        else:
+            data = {
+                "client_id": client_id,
+                "subject_token": creds.get(CredentialsVars.DHCORE_PERSONAL_ACCESS_TOKEN.value),
+                "subject_token_type": get_client_config().pat_subject_token_type,
+                "grant_type": get_client_config().pat_grant_type,
+                "scope": get_client_config().pat_scope,
+            }
 
-        # Handling of token exchange
-        return self._call_refresh_endpoint(
-            url,
-            client_id=client_id,
-            subject_token=creds.get(CredentialsVars.DHCORE_PERSONAL_ACCESS_TOKEN.value),
-            subject_token_type=get_client_config().pat_subject_token_type,
-            grant_type=get_client_config().pat_grant_type,
-            scope=get_client_config().pat_scope,
+        request = BERequest.post(
+            api=url,
+            operation=OpsType.AUTH_REFRESH,
+            data=data,
+            authenticate=False,
         )
+        return self._transport.execute(with_urlencoded_content_type(request))
 
     def _get_refresh_endpoint(self) -> str:
         """
@@ -222,67 +217,17 @@ class TokenRefreshService:
         url = sanitize_endpoint(endpoint_issuer + get_client_config().well_known_openid_conf)
 
         # Call issuer to get refresh endpoint
-        response = request("GET", url)
-        log_request_response(logger, response)
+        response = self._transport.execute(
+            BERequest.get(
+                api=url,
+                operation=OpsType.AUTH_DISCOVERY,
+                authenticate=False,
+            ),
+        )
 
-        response.raise_for_status()
-        return response.json().get("token_endpoint")
-
-    def _call_refresh_endpoint(
-        self,
-        url: str,
-        **kwargs,
-    ) -> Response:
-        """
-        Make OAuth2 token refresh request.
-
-        Sends POST request with form-encoded payload using required OAuth2
-        content type and 60-second timeout.
-
-        Parameters
-        ----------
-        url : str
-            Token endpoint URL.
-        **kwargs : dict
-            Token request parameters (grant_type, client_id, etc.).
-
-        Returns
-        -------
-        Response
-            Raw HTTP response for caller handling.
-        """
-        req_kwargs = {"data": kwargs, **set_urlencoded_content_type()}
-        response = request("POST", url, **req_kwargs)
-        log_request_response(logger, response)
-        return response
-
-    def _export_new_creds(self, response: dict[str, Any]) -> None:
-        """
-        Save refreshed credentials while preserving the active credential source.
-
-        Persists new tokens (access_token, refresh_token, etc.) to configuration
-        file with proper key formatting.
-
-        Parameters
-        ----------
-        response : dict
-            OAuth2 token response with new credentials.
-        """
-        keys_to_prefix = [
-            CredentialsVars.DHCORE_REFRESH_TOKEN.value,
-            CredentialsVars.DHCORE_ACCESS_TOKEN.value,
-            ConfigurationVars.DHCORE_CLIENT_ID.value,
-            ConfigurationVars.DHCORE_ISSUER.value,
-            ConfigurationVars.OAUTH2_TOKEN_ENDPOINT.value,
-        ]
-        for key in keys_to_prefix:
-            # Add the appropriate prefix to keys in the response to match configuration format
-            if key == ConfigurationVars.OAUTH2_TOKEN_ENDPOINT.value:
-                prefix = get_client_config().oauth2
-            else:
-                prefix = get_client_config().dhcore
-            key = key.lower()
-            if key.removeprefix(prefix) in response:
-                response[key] = response.pop(key.removeprefix(prefix))
-
-        self._config_manager.save_credentials(response)
+        raise_for_response_error(response)
+        discovery = parse_response_json(response)
+        token_endpoint = discovery.get("token_endpoint") if isinstance(discovery, dict) else None
+        if not isinstance(token_endpoint, str) or not token_endpoint.strip():
+            raise ClientError("Token endpoint not set.")
+        return token_endpoint

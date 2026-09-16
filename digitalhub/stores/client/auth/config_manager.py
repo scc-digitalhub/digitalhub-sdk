@@ -9,12 +9,13 @@ from typing import Any, ClassVar
 
 from digitalhub.stores.client.auth.credential_session import CredentialSession
 from digitalhub.stores.client.auth.credential_store import CredentialStore
-from digitalhub.stores.client.auth.enums import ConfigurationVars, CredentialSource, CredentialsVars, SetCreds
 from digitalhub.stores.client.auth.file_module import (
     load_file,
     load_profile,
     set_current_profile,
 )
+from digitalhub.stores.client.common.config import get_client_config
+from digitalhub.stores.client.common.enums import ConfigurationVars, CredentialSource, CredentialsVars, SetCreds
 from digitalhub.stores.client.common.utils import sanitize_endpoint
 from digitalhub.utils.exceptions import ClientError
 from digitalhub.utils.generic_utils import list_enum
@@ -134,6 +135,28 @@ class ConfigManager:
             self.reload_credentials()
             logger.debug("Persisted refreshed credentials and reloaded the active file profile.")
         self.load_to_env()
+
+    def save_refreshed_credentials(self, credentials: dict[str, Any]) -> None:
+        """Normalize credentials returned by the auth server and persist them."""
+        normalized_credentials = dict(credentials)
+        for key in [
+            CredentialsVars.DHCORE_REFRESH_TOKEN.value,
+            CredentialsVars.DHCORE_ACCESS_TOKEN.value,
+            ConfigurationVars.DHCORE_CLIENT_ID.value,
+            ConfigurationVars.DHCORE_ISSUER.value,
+            ConfigurationVars.OAUTH2_TOKEN_ENDPOINT.value,
+        ]:
+            prefix = (
+                get_client_config().oauth2
+                if key == ConfigurationVars.OAUTH2_TOKEN_ENDPOINT.value
+                else get_client_config().dhcore
+            )
+            storage_key = key.lower()
+            response_key = storage_key.removeprefix(prefix)
+            if response_key in normalized_credentials:
+                normalized_credentials[storage_key] = normalized_credentials.pop(response_key)
+
+        self.save_credentials(normalized_credentials)
 
     def get_credentials_and_config(self) -> dict:
         """Get current authentication credentials and configuration."""

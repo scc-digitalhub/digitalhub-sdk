@@ -1,9 +1,13 @@
+# SPDX-FileCopyrightText: © 2025 DSLab - Fondazione Bruno Kessler
+#
+# SPDX-License-Identifier: Apache-2.0
+
 from unittest.mock import Mock
 
 import digitalhub.stores.client.auth.credential_store as credential_store_module
-from digitalhub.stores.client.auth.credential_session import CredentialSession
 from digitalhub.stores.client.auth.config_manager import ConfigManager
-from digitalhub.stores.client.auth.enums import ConfigurationVars, CredentialSource, CredentialsVars
+from digitalhub.stores.client.auth.credential_session import CredentialSession
+from digitalhub.stores.client.common.enums import ConfigurationVars, CredentialsVars
 from digitalhub.utils.exceptions import ClientError
 
 
@@ -44,9 +48,7 @@ def test_eval_retry_stops_reading_file_after_environment_fallback(monkeypatch) -
     manager = ConfigManager.__new__(ConfigManager)
     manager._current_profile = "default"
     manager._credential_store = credential_store_module.CredentialStore("default")
-    manager._credential_session = CredentialSession(
-        {CredentialsVars.DHCORE_ACCESS_TOKEN.value: "file-access"}
-    )
+    manager._credential_session = CredentialSession({CredentialsVars.DHCORE_ACCESS_TOKEN.value: "file-access"})
     file_credentials = {CredentialsVars.DHCORE_ACCESS_TOKEN.value: "file-access"}
     manager.load_credentials = Mock(return_value=file_credentials)
     env_values = {CredentialsVars.DHCORE_ACCESS_TOKEN.value: "env-access"}
@@ -98,9 +100,39 @@ def test_save_credentials_after_environment_fallback_keeps_memory_state() -> Non
     manager.reload_credentials.assert_not_called()
 
 
+def test_save_refreshed_credentials_normalizes_backend_keys_without_mutating_input() -> None:
+    manager = ConfigManager.__new__(ConfigManager)
+    manager.save_credentials = Mock()
+    refreshed_credentials = {
+        "access_token": "new-access",
+        "refresh_token": "new-refresh",
+        "token_endpoint": "https://issuer.example/token",
+        "aws_access_key_id": "new-s3-access",
+    }
+
+    manager.save_refreshed_credentials(refreshed_credentials)
+
+    manager.save_credentials.assert_called_once_with(
+        {
+            "dhcore_access_token": "new-access",
+            "dhcore_refresh_token": "new-refresh",
+            "oauth2_token_endpoint": "https://issuer.example/token",
+            "aws_access_key_id": "new-s3-access",
+        }
+    )
+    assert refreshed_credentials == {
+        "access_token": "new-access",
+        "refresh_token": "new-refresh",
+        "token_endpoint": "https://issuer.example/token",
+        "aws_access_key_id": "new-s3-access",
+    }
+
+
 def test_initialization_does_not_write_configuration(monkeypatch) -> None:
     monkeypatch.setattr(ConfigManager, "_read_current_profile", Mock(return_value="default"))
-    monkeypatch.setattr(ConfigManager, "load_configuration", Mock(return_value={"DHCORE_ENDPOINT": "https://example.test"}))
+    monkeypatch.setattr(
+        ConfigManager, "load_configuration", Mock(return_value={"DHCORE_ENDPOINT": "https://example.test"})
+    )
     monkeypatch.setattr(ConfigManager, "load_credentials", Mock(return_value={}))
     export_to_ini = Mock()
     export_to_env = Mock()

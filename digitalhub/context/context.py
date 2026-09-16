@@ -11,7 +11,9 @@ from pathlib import Path
 from digitalhub.entities._commons.enums import EntityTypes, Relationship
 from digitalhub.factory.entity import entity_factory
 from digitalhub.runtimes.enums import RuntimeEnvVar
-from digitalhub.stores.client.common.enums import ApiCategories, BackendOperations
+from digitalhub.stores.client.common.enums import ApiType, BEOps
+from digitalhub.stores.client.compiler.apis.utils import ctx_entity_id_ra
+from digitalhub.stores.client.compiler.operation import ClientOp
 from digitalhub.utils.exceptions import BackendError
 from digitalhub.utils.logger.logger import get_logger
 
@@ -19,7 +21,7 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities._base.context.entity import ContextEntity
     from digitalhub.entities.project._base.entity import Project
     from digitalhub.entities.run._base.entity import Run
-    from digitalhub.stores.client.base.client import Client
+    from digitalhub.stores.client.client import Client
 
 logger = get_logger(__name__)
 
@@ -78,11 +80,6 @@ class Context:
     def set_run(self, run: Run) -> None:
         """
         Set the current run.
-
-        Parameters
-        ----------
-        run : Run
-            The run to set.
         """
         self.is_running = True
         self.run = run
@@ -99,16 +96,6 @@ class Context:
         """
         Add a logged item to the context. Sets the PRODUCEDBY
         relationship from the current run.
-
-        Parameters
-        ----------
-        obj : ContextEntity
-            The logged item to add.
-
-        Returns
-        -------
-        ContextEntity
-            The registered entity with the relationship set.
         """
         id_ = self.run.key + ":" + self.run.id
         obj.add_relationship(Relationship.PRODUCEDBY.value, id_)
@@ -118,23 +105,12 @@ class Context:
     def _get_run(self, run_id: str) -> Run:
         """
         Get the current Run instance.
-
-        Parameters
-        ----------
-        run_id : str
-            The run id.
-
-        Returns
-        -------
-        Run
-            The current Run instance.
         """
-        api = self.client.build_api(
-            category=ApiCategories.CONTEXT.value,
-            operation=BackendOperations.READ.value,
-            project=self.name,
-            entity_type=EntityTypes.RUN.value,
-            entity_id=run_id,
+        run_dict = self.client.execute(
+            ClientOp(
+                category=ApiType.CONTEXT,
+                operation=BEOps.READ,
+                route_args=ctx_entity_id_ra(self.name, EntityTypes.RUN.value, run_id),
+            )
         )
-        run_dict = self.client.read_object(api=api)
         return entity_factory.build_entity_from_dict(obj=run_dict, entity_type=EntityTypes.RUN.value)

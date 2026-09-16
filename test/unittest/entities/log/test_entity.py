@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: © 2025 DSLab - Fondazione Bruno Kessler
+#
+# SPDX-License-Identifier: Apache-2.0
+
 from digitalhub.entities._base.metadata.entity import Metadata
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes, State
 from digitalhub.entities.log._base.builder import LogLogBuilder

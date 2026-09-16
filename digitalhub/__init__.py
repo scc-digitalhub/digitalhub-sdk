@@ -120,6 +120,5 @@ from digitalhub.stores.client.common.api import (
     get_k8s_resource_profiles,
     refresh_token,
     set_current_profile,
-    validate_credentials,
 )
 from digitalhub.utils.store_utils import get_s3_client, get_sql_engine, get_store_by_entity

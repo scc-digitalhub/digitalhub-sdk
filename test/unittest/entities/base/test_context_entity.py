@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: © 2025 DSLab - Fondazione Bruno Kessler
+#
+# SPDX-License-Identifier: Apache-2.0
+
 from unittest.mock import Mock
 
 import digitalhub.entities._base.context.entity as context_entity_module

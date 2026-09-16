@@ -9,7 +9,7 @@ import typing
 from digitalhub.entities._base.entity.builder import EntityBuilder
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities._mixin.material.protocol import MaterialEntityProtocol
+    from digitalhub.entities._mixin.material.protocol import MaterialProtocol
 
 
 class MaterialBuilder(EntityBuilder):
@@ -17,7 +17,7 @@ class MaterialBuilder(EntityBuilder):
     Helper builder for material entities that share file-backed construction.
     """
 
-    def from_dict(self, obj: dict) -> MaterialEntityProtocol:
+    def from_dict(self, obj: dict) -> MaterialProtocol:
         """
         Create a new object from dictionary.
 
@@ -28,7 +28,7 @@ class MaterialBuilder(EntityBuilder):
 
         Returns
         -------
-        MaterialEntityProtocol
+        MaterialProtocol
             Object instance.
         """
         parsed_dict = self._parse_dict(obj)

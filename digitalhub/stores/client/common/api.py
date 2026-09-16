@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from digitalhub.stores.client.base.factory import get_client
+from digitalhub.stores.client.factory import get_client
 
 
 def refresh_token() -> None:
@@ -27,11 +27,6 @@ def get_credentials_and_config() -> dict:
         Current client credentials and configuration details.
     """
     return get_client().get_credentials_and_config()
-
-
-def validate_credentials() -> None:
-    """Validate current credentials through the DHCore auth endpoint."""
-    get_client().validate_credentials()
 
 
 def set_current_profile(profile: str) -> None:

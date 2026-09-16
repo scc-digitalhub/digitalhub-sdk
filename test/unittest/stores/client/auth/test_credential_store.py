@@ -1,8 +1,12 @@
+# SPDX-FileCopyrightText: © 2025 DSLab - Fondazione Bruno Kessler
+#
+# SPDX-License-Identifier: Apache-2.0
+
 from unittest.mock import Mock
 
 import digitalhub.stores.client.auth.credential_store as credential_store_module
 from digitalhub.stores.client.auth.credential_store import CredentialStore
-from digitalhub.stores.client.auth.enums import ConfigurationVars, CredentialsVars
+from digitalhub.stores.client.common.enums import ConfigurationVars, CredentialsVars
 
 
 def test_loads_configuration_and_credentials_with_file_precedence(monkeypatch) -> None:

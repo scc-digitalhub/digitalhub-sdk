@@ -9,7 +9,9 @@ import typing
 from digitalhub.entities._commons.enums import EntityKinds
 from digitalhub.entities._processors.utils import get_context
 from digitalhub.factory.entity import entity_factory
-from digitalhub.stores.client.common.enums import ApiCategories, BackendOperations
+from digitalhub.stores.client.common.enums import ApiType, BEOps
+from digitalhub.stores.client.compiler.apis.utils import ctx_entity_id_ra
+from digitalhub.stores.client.compiler.operation import ClientOp
 from digitalhub.utils.logger.logger import get_logger
 
 if typing.TYPE_CHECKING:
@@ -24,17 +26,16 @@ class ContextEntityRunProcessor:
         project: str,
         entity_type: str,
         entity_id: str,
-        **kwargs,
+        state: str | None = None,
     ) -> list[Log]:
-        context = get_context(project)
-        api = context.client.build_api(
-            ApiCategories.CONTEXT.value,
-            BackendOperations.LOGS.value,
-            project=context.name,
-            entity_type=entity_type,
-            entity_id=entity_id,
+        objects: list[dict] = get_context(project).client.execute(
+            ClientOp(
+                category=ApiType.CONTEXT,
+                operation=BEOps.LOGS_READ,
+                route_args=ctx_entity_id_ra(project, entity_type, entity_id),
+                params={"state": state} if state is not None else {},
+            )
         )
-        objects: list[dict] = context.client.read_object(api, **kwargs)
         logs = []
         for o in objects:
             content = o.pop("content", None)
@@ -49,31 +50,31 @@ class ContextEntityRunProcessor:
         project: str,
         entity_type: str,
         entity_id: str,
-        **kwargs,
+        reason: str | None = None,
     ) -> None:
-        context = get_context(project)
-        api = context.client.build_api(
-            ApiCategories.CONTEXT.value,
-            BackendOperations.STOP.value,
-            project=context.name,
-            entity_type=entity_type,
-            entity_id=entity_id,
+        get_context(project).client.execute(
+            ClientOp(
+                category=ApiType.CONTEXT,
+                operation=BEOps.STOP,
+                route_args=ctx_entity_id_ra(project, entity_type, entity_id),
+                payload={},
+                params={"reason": reason} if reason is not None else {},
+            )
         )
-        context.client.create_object(api, obj={}, **kwargs)
 
     def resume_entity(
         self,
         project: str,
         entity_type: str,
         entity_id: str,
-        **kwargs,
+        reason: str | None = None,
     ) -> None:
-        context = get_context(project)
-        api = context.client.build_api(
-            ApiCategories.CONTEXT.value,
-            BackendOperations.RESUME.value,
-            project=context.name,
-            entity_type=entity_type,
-            entity_id=entity_id,
+        get_context(project).client.execute(
+            ClientOp(
+                category=ApiType.CONTEXT,
+                operation=BEOps.RESUME,
+                route_args=ctx_entity_id_ra(project, entity_type, entity_id),
+                payload={},
+                params={"reason": reason} if reason is not None else {},
+            )
         )
-        context.client.create_object(api, obj={}, **kwargs)

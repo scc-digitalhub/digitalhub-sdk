@@ -12,8 +12,8 @@ from tempfile import NamedTemporaryFile
 
 from dotenv import load_dotenv, set_key
 
-from digitalhub.stores.client.auth.enums import SetCreds
 from digitalhub.stores.client.common.config import get_client_config
+from digitalhub.stores.client.common.enums import SetCreds
 from digitalhub.utils.exceptions import ClientError
 
 

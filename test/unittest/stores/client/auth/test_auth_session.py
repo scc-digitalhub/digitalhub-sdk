@@ -1,7 +1,11 @@
+# SPDX-FileCopyrightText: © 2025 DSLab - Fondazione Bruno Kessler
+#
+# SPDX-License-Identifier: Apache-2.0
+
 from digitalhub.stores.client.auth.auth_session import AuthSession
 from digitalhub.stores.client.auth.credential_session import CredentialSession
-from digitalhub.stores.client.auth.enums import CredentialsVars
-from digitalhub.stores.client.common.enums import AuthType
+from digitalhub.stores.client.common.enums import AuthType, CredentialsVars
+from digitalhub.stores.client.http.request import BERequest
 
 
 def _credentials(**values: str | None) -> dict[str, str | None]:
@@ -43,7 +47,9 @@ def test_auth_session_uses_bearer_auth_for_personal_access_tokens() -> None:
 
     assert auth_session.auth_type == AuthType.EXCHANGE.value
     assert auth_session.is_refreshable() is True
-    assert auth_session.get_auth_parameters() == {"headers": {"Authorization": "Bearer access-token"}}
+    authenticated_request = auth_session.authenticate(BERequest(method="GET", api="/resource"))
+
+    assert authenticated_request.headers == {"Authorization": "Bearer access-token"}
 
 
 def test_auth_session_uses_basic_auth_for_user_credentials() -> None:
@@ -58,13 +64,18 @@ def test_auth_session_uses_basic_auth_for_user_credentials() -> None:
 
     assert auth_session.auth_type == AuthType.BASIC.value
     assert auth_session.is_refreshable() is False
-    assert auth_session.get_auth_parameters() == {"auth": ("user", "password")}
+    authenticated_request = auth_session.authenticate(BERequest(method="GET", api="/resource"))
+
+    assert authenticated_request.options == {"auth": ("user", "password")}
 
 
 def test_auth_session_keeps_request_parameters_for_no_auth() -> None:
     auth_session = AuthSession(CredentialSession(_credentials()))
-    kwargs = {"params": {"page": 1}}
+    backend_request = BERequest(method="GET", api="/resource", params={"page": 1})
 
     assert auth_session.auth_type == AuthType.NO_AUTH.value
     assert auth_session.is_refreshable() is False
-    assert auth_session.get_auth_parameters(kwargs) is kwargs
+    authenticated_request = auth_session.authenticate(backend_request)
+
+    assert authenticated_request is not backend_request
+    assert authenticated_request.params == {"page": 1}

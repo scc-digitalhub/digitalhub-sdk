@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from digitalhub.stores.client.auth.enums import CredentialSource
+from digitalhub.stores.client.common.enums import CredentialSource
 
 
 class CredentialSession:
@@ -34,7 +34,6 @@ class CredentialSession:
         """Select the next credential source after a failed authentication attempt."""
         if self._source is CredentialSource.ENV:
             return False
-
         if self._credentials != file_credentials:
             self.use_file(file_credentials)
         else:
