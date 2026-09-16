@@ -9,7 +9,9 @@ import digitalhub.entities.model.generic.crud as generic_crud
 import digitalhub.entities.model.huggingface.crud as huggingface_crud
 import digitalhub.entities.model.mlflow.crud as mlflow_crud
 import digitalhub.entities.model.model.crud as model_crud
+import digitalhub.entities.model.onnx.crud as onnx_crud
 import digitalhub.entities.model.sklearn.crud as sklearn_crud
+import digitalhub.entities.model.tflite.crud as tflite_crud
 import digitalhub.entities.model.tvm_ir.crud as tvm_ir_crud
 import digitalhub.entities.model.tvm_so.crud as tvm_so_crud
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
@@ -34,6 +36,7 @@ MODEL_SPEC_FIELDS = {
     "target",
     "opt_level",
     "manifest",
+    "opset",
 }
 
 
@@ -136,6 +139,8 @@ def test_register_base_model_passes_source_as_path(monkeypatch) -> None:
         (sklearn_crud, "register_sklearn", EntityKinds.MODEL_SKLEARN.value),
         (tvm_ir_crud, "register_tvm_ir", EntityKinds.MODEL_TVM_IR.value),
         (tvm_so_crud, "register_tvm_so", EntityKinds.MODEL_TVM_SO.value),
+        (onnx_crud, "register_onnx", EntityKinds.MODEL_ONNX.value),
+        (tflite_crud, "register_tflite", EntityKinds.MODEL_TFLITE.value),
     ],
 )
 def test_register_model_specialized_delegates_to_base(crud_module, register_name, entity_kind, monkeypatch) -> None:
@@ -280,6 +285,8 @@ def test_log_generic_model_delegates_to_base(monkeypatch) -> None:
         (sklearn_crud, "log_sklearn", EntityKinds.MODEL_SKLEARN.value),
         (tvm_ir_crud, "log_tvm_ir", EntityKinds.MODEL_TVM_IR.value),
         (tvm_so_crud, "log_tvm_so", EntityKinds.MODEL_TVM_SO.value),
+        (onnx_crud, "log_onnx", EntityKinds.MODEL_ONNX.value),
+        (tflite_crud, "log_tflite", EntityKinds.MODEL_TFLITE.value),
     ],
 )
 def test_log_model_specialized_delegates_to_base(crud_module, log_name, kind, monkeypatch) -> None:

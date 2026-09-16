@@ -1429,6 +1429,88 @@ class Project(Entity):
         )
 
     @_auto_refresh
+    def log_onnx(
+        self,
+        source: str,
+        name: str | None = None,
+        drop_existing: bool = False,
+        path: str | None = None,
+        version: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
+        framework: str | None = None,
+        algorithm: str | None = None,
+        parameters: dict | None = None,
+        inputs: list[dict] | None = None,
+        outputs: list[dict] | None = None,
+        opset: int | None = None,
+        **kwargs,
+    ) -> Model:
+        """
+        Create and upload a ONNX model.
+
+        See also
+        -------
+        digitalhub.log_onnx
+        """
+        return self.crud.model.log_onnx(
+            name=name,
+            source=source,
+            drop_existing=drop_existing,
+            path=path,
+            version=version,
+            description=description,
+            labels=labels,
+            framework=framework,
+            algorithm=algorithm,
+            parameters=parameters,
+            inputs=inputs,
+            outputs=outputs,
+            opset=opset,
+            **kwargs,
+        )
+
+    @_auto_refresh
+    def log_tflite(
+        self,
+        source: str,
+        name: str | None = None,
+        drop_existing: bool = False,
+        path: str | None = None,
+        version: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
+        framework: str | None = None,
+        algorithm: str | None = None,
+        parameters: dict | None = None,
+        inputs: list[dict] | None = None,
+        outputs: list[dict] | None = None,
+        **kwargs,
+    ) -> Model:
+        """
+        Create and upload a TFLite model.
+
+        See also
+        -------
+        digitalhub.log_tflite
+        """
+        return self.crud.model.log_tflite(
+            name=name,
+            source=source,
+            drop_existing=drop_existing,
+            path=path,
+            version=version,
+            description=description,
+            labels=labels,
+            framework=framework,
+            algorithm=algorithm,
+            parameters=parameters,
+            inputs=inputs,
+            outputs=outputs,
+            **kwargs,
+        )
+
+    @_auto_refresh
     def register_model(
         self,
         source: SourcesOrListOfSources,
@@ -1683,6 +1765,80 @@ class Project(Entity):
             target=target,
             opt_level=opt_level,
             manifest=manifest,
+            **kwargs,
+        )
+
+    @_auto_refresh
+    def register_onnx(
+        self,
+        source: SourcesOrListOfSources,
+        name: str | None = None,
+        uuid: str | None = None,
+        version: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
+        embedded: bool = False,
+        extensions: list[dict] | None = None,
+        framework: str | None = None,
+        algorithm: str | None = None,
+        parameters: dict | None = None,
+        inputs: list[dict] | None = None,
+        outputs: list[dict] | None = None,
+        opset: int | None = None,
+        **kwargs,
+    ) -> Model:
+        """Register an ONNX model that already exists in a supported store."""
+        return self.crud.model.register_onnx(
+            source=source,
+            name=name,
+            uuid=uuid,
+            version=version,
+            description=description,
+            labels=labels,
+            embedded=embedded,
+            extensions=extensions,
+            framework=framework,
+            algorithm=algorithm,
+            parameters=parameters,
+            inputs=inputs,
+            outputs=outputs,
+            opset=opset,
+            **kwargs,
+        )
+
+    @_auto_refresh
+    def register_tflite(
+        self,
+        source: SourcesOrListOfSources,
+        name: str | None = None,
+        uuid: str | None = None,
+        version: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
+        embedded: bool = False,
+        extensions: list[dict] | None = None,
+        framework: str | None = None,
+        algorithm: str | None = None,
+        parameters: dict | None = None,
+        inputs: list[dict] | None = None,
+        outputs: list[dict] | None = None,
+        **kwargs,
+    ) -> Model:
+        """Register a TFLite model that already exists in a supported store."""
+        return self.crud.model.register_tflite(
+            source=source,
+            name=name,
+            uuid=uuid,
+            version=version,
+            description=description,
+            labels=labels,
+            embedded=embedded,
+            extensions=extensions,
+            framework=framework,
+            algorithm=algorithm,
+            parameters=parameters,
+            inputs=inputs,
+            outputs=outputs,
             **kwargs,
         )
 

@@ -82,7 +82,9 @@ class EntityKinds(Enum):
     MODEL_HUGGINGFACE = "huggingface"
     MODEL_MLFLOW = "mlflow"
     MODEL_MODEL = "model"
+    MODEL_ONNX = "onnx"
     MODEL_SKLEARN = "sklearn"
+    MODEL_TFLITE = "tflite"
     MODEL_TVM_IR = "tvm-ir"
     MODEL_TVM_SO = "tvm-so"
     PROJECT_PROJECT = "project"
@@ -116,6 +118,8 @@ class OpType(str, Enum):
     LOG_HUGGINGFACE = "log_huggingface"
     LOG_TVM_IR = "log_tvm_ir"
     LOG_TVM_SO = "log_tvm_so"
+    LOG_ONNX = "log_onnx"
+    LOG_TFLITE = "log_tflite"
 
     # Register operations
     REGISTER_GENERIC = "register_generic"
@@ -129,3 +133,5 @@ class OpType(str, Enum):
     REGISTER_HUGGINGFACE = "register_huggingface"
     REGISTER_TVM_IR = "register_tvm_ir"
     REGISTER_TVM_SO = "register_tvm_so"
+    REGISTER_ONNX = "register_onnx"
+    REGISTER_TFLITE = "register_tflite"

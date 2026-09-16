@@ -66,7 +66,9 @@ from digitalhub.entities.model.generic.crud import log_generic_model, register_g
 from digitalhub.entities.model.huggingface.crud import log_huggingface, register_huggingface
 from digitalhub.entities.model.mlflow.crud import log_mlflow, register_mlflow
 from digitalhub.entities.model.model.crud import log_model, register_model
+from digitalhub.entities.model.onnx.crud import log_onnx, register_onnx
 from digitalhub.entities.model.sklearn.crud import log_sklearn, register_sklearn
+from digitalhub.entities.model.tflite.crud import log_tflite, register_tflite
 from digitalhub.entities.model.tvm_ir.crud import log_tvm_ir, register_tvm_ir
 from digitalhub.entities.model.tvm_so.crud import log_tvm_so, register_tvm_so
 from digitalhub.entities.project.crud import (
@@ -164,6 +166,8 @@ OPS_REGISTRY: dict[EntityTypes, dict[OpType, EntityOperation]] = {
         OpType.LOG_HUGGINGFACE: log_huggingface,
         OpType.LOG_TVM_IR: log_tvm_ir,
         OpType.LOG_TVM_SO: log_tvm_so,
+        OpType.LOG_ONNX: log_onnx,
+        OpType.LOG_TFLITE: log_tflite,
         OpType.REGISTER_GENERIC: register_generic_model,
         OpType.REGISTER_MODEL: register_model,
         OpType.REGISTER_MLFLOW: register_mlflow,
@@ -171,6 +175,8 @@ OPS_REGISTRY: dict[EntityTypes, dict[OpType, EntityOperation]] = {
         OpType.REGISTER_HUGGINGFACE: register_huggingface,
         OpType.REGISTER_TVM_IR: register_tvm_ir,
         OpType.REGISTER_TVM_SO: register_tvm_so,
+        OpType.REGISTER_ONNX: register_onnx,
+        OpType.REGISTER_TFLITE: register_tflite,
         OpType.IMPORT: import_model,
         OpType.LOAD: load_model,
         OpType.GET: get_model,
