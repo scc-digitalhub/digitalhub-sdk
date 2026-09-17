@@ -18,7 +18,9 @@ from digitalhub.entities.model.generic.builder import ModelGenericBuilder
 from digitalhub.entities.model.huggingface.builder import ModelHuggingfaceBuilder
 from digitalhub.entities.model.mlflow.builder import ModelMlflowBuilder
 from digitalhub.entities.model.model.builder import ModelModelBuilder
+from digitalhub.entities.model.onnx.builder import ModelOnnxBuilder
 from digitalhub.entities.model.sklearn.builder import ModelSklearnBuilder
+from digitalhub.entities.model.tflite.builder import ModelTfliteBuilder
 from digitalhub.entities.model.tvm_ir.builder import ModelTvmIrBuilder
 from digitalhub.entities.model.tvm_so.builder import ModelTvmSoBuilder
 from digitalhub.entities.project._base.builder import ProjectProjectBuilder
@@ -41,7 +43,9 @@ entity_builders: tuple = (
     (ModelHuggingfaceBuilder.ENTITY_KIND, ModelHuggingfaceBuilder),
     (ModelMlflowBuilder.ENTITY_KIND, ModelMlflowBuilder),
     (ModelModelBuilder.ENTITY_KIND, ModelModelBuilder),
+    (ModelOnnxBuilder.ENTITY_KIND, ModelOnnxBuilder),
     (ModelSklearnBuilder.ENTITY_KIND, ModelSklearnBuilder),
+    (ModelTfliteBuilder.ENTITY_KIND, ModelTfliteBuilder),
     (ModelTvmIrBuilder.ENTITY_KIND, ModelTvmIrBuilder),
     (ModelTvmSoBuilder.ENTITY_KIND, ModelTvmSoBuilder),
     (ProjectProjectBuilder.ENTITY_KIND, ProjectProjectBuilder),

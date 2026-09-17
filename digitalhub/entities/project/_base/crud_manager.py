@@ -23,7 +23,9 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities.model.huggingface.entity import ModelHuggingface
     from digitalhub.entities.model.mlflow.entity import ModelMlflow
     from digitalhub.entities.model.model.entity import ModelModel
+    from digitalhub.entities.model.onnx.entity import ModelOnnx
     from digitalhub.entities.model.sklearn.entity import ModelSklearn
+    from digitalhub.entities.model.tflite.entity import ModelTflite
     from digitalhub.entities.model.tvm_ir.entity import ModelTvmIr
     from digitalhub.entities.model.tvm_so.entity import ModelTvmSo
     from digitalhub.entities.run._base.entity import Run
@@ -204,6 +206,14 @@ class EntityCRUDModel(EntityCRUD["Model"]):
         """Create and upload a TVM SO model entity."""
         return typing.cast("ModelTvmSo", self._call_op(OpType.LOG_TVM_SO, **kwargs))
 
+    def log_onnx(self, **kwargs) -> ModelOnnx:
+        """Create and upload an ONNX model entity."""
+        return typing.cast("ModelOnnx", self._call_op(OpType.LOG_ONNX, **kwargs))
+
+    def log_tflite(self, **kwargs) -> ModelTflite:
+        """Create and upload a TFLite model entity."""
+        return typing.cast("ModelTflite", self._call_op(OpType.LOG_TFLITE, **kwargs))
+
     def register_model(self, **kwargs) -> ModelModel:
         """Register a model entity."""
         return typing.cast("ModelModel", self._call_op(OpType.REGISTER_MODEL, **kwargs))
@@ -227,6 +237,14 @@ class EntityCRUDModel(EntityCRUD["Model"]):
     def register_tvm_so(self, **kwargs) -> ModelTvmSo:
         """Register a TVM SO model entity."""
         return typing.cast("ModelTvmSo", self._call_op(OpType.REGISTER_TVM_SO, **kwargs))
+
+    def register_onnx(self, **kwargs) -> ModelOnnx:
+        """Register an ONNX model entity."""
+        return typing.cast("ModelOnnx", self._call_op(OpType.REGISTER_ONNX, **kwargs))
+
+    def register_tflite(self, **kwargs) -> ModelTflite:
+        """Register a TFLite model entity."""
+        return typing.cast("ModelTflite", self._call_op(OpType.REGISTER_TFLITE, **kwargs))
 
 
 class CRUDManager:
