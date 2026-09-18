@@ -23,3 +23,13 @@ def test_write_dotenv_preserves_unrelated_values(tmp_path) -> None:
         "UNRELATED": "keep",
         "DHCORE_ACCESS_TOKEN": "new",
     }
+
+
+def test_write_file_preserves_percent_in_credential(tmp_path, monkeypatch) -> None:
+    ini_file = tmp_path / ".dhcore.ini"
+    credential = "olD&NXyS3%5f@%gKK5qHx^Wy5"
+    monkeypatch.setattr(file_module, "_get_ini_file", lambda: ini_file)
+
+    file_module.write_file({"refresh_token": credential}, "default")
+
+    assert file_module.load_file()["default"]["refresh_token"] == credential
