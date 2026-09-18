@@ -90,7 +90,7 @@ def load_file() -> ConfigParser:
         Parsed configuration file object.
     """
     try:
-        file = ConfigParser()
+        file = ConfigParser(interpolation=None)
         file.read(_get_ini_file())
         return file
     except OSError as e:
