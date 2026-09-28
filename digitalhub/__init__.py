@@ -70,15 +70,8 @@ from digitalhub.entities import (
     log_generic_artifact,
     log_generic_dataitem,
     log_generic_model,
-    log_huggingface,
-    log_mlflow,
     log_model,
-    log_onnx,
-    log_sklearn,
     log_table,
-    log_tflite,
-    log_tvm_ir,
-    log_tvm_so,
     new_artifact,
     new_containerimage,
     new_dataitem,
@@ -96,15 +89,8 @@ from digitalhub.entities import (
     register_generic_artifact,
     register_generic_dataitem,
     register_generic_model,
-    register_huggingface,
-    register_mlflow,
     register_model,
-    register_onnx,
-    register_sklearn,
     register_table,
-    register_tflite,
-    register_tvm_ir,
-    register_tvm_so,
     search_entity,
     update_artifact,
     update_containerimage,
@@ -118,6 +104,7 @@ from digitalhub.entities import (
     update_trigger,
     update_workflow,
 )
+from digitalhub.factory.registry import registry as _registry
 from digitalhub.stores.client.common.api import (
     get_credentials_and_config,
     get_current_profile,
@@ -126,3 +113,13 @@ from digitalhub.stores.client.common.api import (
     set_current_profile,
 )
 from digitalhub.utils.store_utils import get_s3_client, get_sql_engine, get_store_by_entity
+
+
+def __getattr__(name: str):
+    """Resolve plugin-provided shortcuts on first access."""
+    return _registry.get_shortcut(name)
+
+
+def __dir__() -> list[str]:
+    """Include plugin-provided shortcuts in module completion."""
+    return sorted(set(globals()) | set(_registry.get_shortcut_names()))

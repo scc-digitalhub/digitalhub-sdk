@@ -3,9 +3,6 @@
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
-from collections.abc import Callable
-
-from digitalhub.entities._commons.enums import EntityTypes, OpType
 from digitalhub.entities.artifact._base.crud import new_artifact
 from digitalhub.entities.artifact.artifact.crud import log_artifact, register_artifact
 from digitalhub.entities.artifact.crud import (
@@ -63,14 +60,7 @@ from digitalhub.entities.model.crud import (
     update_model,
 )
 from digitalhub.entities.model.generic.crud import log_generic_model, register_generic_model
-from digitalhub.entities.model.huggingface.crud import log_huggingface, register_huggingface
-from digitalhub.entities.model.mlflow.crud import log_mlflow, register_mlflow
 from digitalhub.entities.model.model.crud import log_model, register_model
-from digitalhub.entities.model.onnx.crud import log_onnx, register_onnx
-from digitalhub.entities.model.sklearn.crud import log_sklearn, register_sklearn
-from digitalhub.entities.model.tflite.crud import log_tflite, register_tflite
-from digitalhub.entities.model.tvm_ir.crud import log_tvm_ir, register_tvm_ir
-from digitalhub.entities.model.tvm_so.crud import log_tvm_so, register_tvm_so
 from digitalhub.entities.project.crud import (
     delete_project,
     get_or_create_project,
@@ -120,135 +110,154 @@ from digitalhub.entities.workflow.crud import (
     new_workflow,
     update_workflow,
 )
+from digitalhub.factory.plugins import CrudPlugin
 
-EntityOperation = Callable[..., object]
 
-# Operation registry: maps entity type to operation functions
-OPS_REGISTRY: dict[EntityTypes, dict[OpType, EntityOperation]] = {
-    EntityTypes.ARTIFACT: {
-        OpType.NEW: new_artifact,
-        OpType.LOG_GENERIC: log_generic_artifact,
-        OpType.LOG_ARTIFACT: log_artifact,
-        OpType.REGISTER_GENERIC: register_generic_artifact,
-        OpType.REGISTER_ARTIFACT: register_artifact,
-        OpType.IMPORT: import_artifact,
-        OpType.LOAD: load_artifact,
-        OpType.GET: get_artifact,
-        OpType.GET_VERSIONS: get_artifact_versions,
-        OpType.LIST: list_artifacts,
-        OpType.UPDATE: update_artifact,
-        OpType.DELETE: delete_artifact,
-    },
-    EntityTypes.DATAITEM: {
-        OpType.NEW: new_dataitem,
-        OpType.LOG_GENERIC: log_generic_dataitem,
-        OpType.LOG_DATAITEM: log_dataitem,
-        OpType.LOG_TABLE: log_table,
-        OpType.LOG_CROISSANT: log_croissant,
-        OpType.REGISTER_GENERIC: register_generic_dataitem,
-        OpType.REGISTER_DATAITEM: register_dataitem,
-        OpType.REGISTER_TABLE: register_table,
-        OpType.REGISTER_CROISSANT: register_croissant,
-        OpType.IMPORT: import_dataitem,
-        OpType.LOAD: load_dataitem,
-        OpType.GET: get_dataitem,
-        OpType.GET_VERSIONS: get_dataitem_versions,
-        OpType.LIST: list_dataitems,
-        OpType.UPDATE: update_dataitem,
-        OpType.DELETE: delete_dataitem,
-    },
-    EntityTypes.MODEL: {
-        OpType.NEW: new_model,
-        OpType.LOG_GENERIC: log_generic_model,
-        OpType.LOG_MODEL: log_model,
-        OpType.LOG_MLFLOW: log_mlflow,
-        OpType.LOG_SKLEARN: log_sklearn,
-        OpType.LOG_HUGGINGFACE: log_huggingface,
-        OpType.LOG_TVM_IR: log_tvm_ir,
-        OpType.LOG_TVM_SO: log_tvm_so,
-        OpType.LOG_ONNX: log_onnx,
-        OpType.LOG_TFLITE: log_tflite,
-        OpType.REGISTER_GENERIC: register_generic_model,
-        OpType.REGISTER_MODEL: register_model,
-        OpType.REGISTER_MLFLOW: register_mlflow,
-        OpType.REGISTER_SKLEARN: register_sklearn,
-        OpType.REGISTER_HUGGINGFACE: register_huggingface,
-        OpType.REGISTER_TVM_IR: register_tvm_ir,
-        OpType.REGISTER_TVM_SO: register_tvm_so,
-        OpType.REGISTER_ONNX: register_onnx,
-        OpType.REGISTER_TFLITE: register_tflite,
-        OpType.IMPORT: import_model,
-        OpType.LOAD: load_model,
-        OpType.GET: get_model,
-        OpType.GET_VERSIONS: get_model_versions,
-        OpType.LIST: list_models,
-        OpType.UPDATE: update_model,
-        OpType.DELETE: delete_model,
-    },
-    EntityTypes.FUNCTION: {
-        OpType.NEW: new_function,
-        OpType.IMPORT: import_function,
-        OpType.LOAD: load_function,
-        OpType.GET: get_function,
-        OpType.GET_VERSIONS: get_function_versions,
-        OpType.LIST: list_functions,
-        OpType.UPDATE: update_function,
-        OpType.DELETE: delete_function,
-    },
-    EntityTypes.WORKFLOW: {
-        OpType.NEW: new_workflow,
-        OpType.IMPORT: import_workflow,
-        OpType.LOAD: load_workflow,
-        OpType.GET: get_workflow,
-        OpType.GET_VERSIONS: get_workflow_versions,
-        OpType.LIST: list_workflows,
-        OpType.UPDATE: update_workflow,
-        OpType.DELETE: delete_workflow,
-    },
-    EntityTypes.TASK: {
-        OpType.NEW: new_task,
-        OpType.IMPORT: import_task,
-        OpType.LOAD: load_task,
-        OpType.GET: get_task,
-        OpType.LIST: list_tasks,
-        OpType.UPDATE: update_task,
-        OpType.DELETE: delete_task,
-    },
-    EntityTypes.RUN: {
-        OpType.NEW: new_run,
-        OpType.IMPORT: import_run,
-        OpType.LOAD: load_run,
-        OpType.UPDATE: update_run,
-        OpType.GET: get_run,
-        OpType.LIST: list_runs,
-        OpType.DELETE: delete_run,
-    },
-    EntityTypes.TRIGGER: {
-        OpType.NEW: new_trigger,
-        OpType.IMPORT: import_trigger,
-        OpType.LOAD: load_trigger,
-        OpType.GET: get_trigger,
-        OpType.LIST: list_triggers,
-        OpType.UPDATE: update_trigger,
-        OpType.DELETE: delete_trigger,
-    },
-    EntityTypes.SECRET: {
-        OpType.NEW: new_secret,
-        OpType.IMPORT: import_secret,
-        OpType.LOAD: load_secret,
-        OpType.GET: get_secret,
-        OpType.LIST: list_secrets,
-        OpType.UPDATE: update_secret,
-        OpType.DELETE: delete_secret,
-    },
-    EntityTypes.CONTAINERIMAGE: {
-        OpType.NEW: new_containerimage,
-        OpType.IMPORT: import_containerimage,
-        OpType.LOAD: load_containerimage,
-        OpType.GET: get_containerimage,
-        OpType.GET_VERSIONS: get_containerimage_versions,
-        OpType.LIST: list_containerimages,
-        OpType.UPDATE: update_containerimage,
-        OpType.DELETE: delete_containerimage,
-    },
-}
+def _plugins(
+    functions: tuple[object, ...],
+) -> tuple[CrudPlugin, ...]:
+    return tuple(
+        CrudPlugin(
+            function,
+            project_bound="generic" not in function.__name__,
+            validate_entity_project=function.__name__.startswith("update_"),
+            inject_context=function.__name__.startswith("import_"),
+        )
+        for function in functions
+    )
+
+
+crud_plugins: tuple[CrudPlugin, ...] = (
+    *_plugins(
+        (
+            new_artifact,
+            log_artifact,
+            log_generic_artifact,
+            register_artifact,
+            register_generic_artifact,
+            get_artifact,
+            get_artifact_versions,
+            list_artifacts,
+            import_artifact,
+            load_artifact,
+            update_artifact,
+            delete_artifact,
+        ),
+    ),
+    *_plugins(
+        (
+            new_containerimage,
+            get_containerimage,
+            get_containerimage_versions,
+            list_containerimages,
+            import_containerimage,
+            load_containerimage,
+            update_containerimage,
+            delete_containerimage,
+        ),
+    ),
+    *_plugins(
+        (
+            new_dataitem,
+            log_generic_dataitem,
+            log_dataitem,
+            log_table,
+            log_croissant,
+            register_generic_dataitem,
+            register_dataitem,
+            register_table,
+            register_croissant,
+            get_dataitem,
+            get_dataitem_versions,
+            list_dataitems,
+            import_dataitem,
+            load_dataitem,
+            update_dataitem,
+            delete_dataitem,
+        ),
+    ),
+    *_plugins(
+        (
+            new_function,
+            get_function,
+            get_function_versions,
+            list_functions,
+            import_function,
+            load_function,
+            update_function,
+            delete_function,
+        ),
+    ),
+    *_plugins(
+        (
+            new_model,
+            log_generic_model,
+            log_model,
+            register_generic_model,
+            register_model,
+            get_model,
+            get_model_versions,
+            list_models,
+            import_model,
+            load_model,
+            update_model,
+            delete_model,
+        ),
+    ),
+    *_plugins(
+        (
+            new_run,
+            get_run,
+            list_runs,
+            import_run,
+            load_run,
+            update_run,
+            delete_run,
+        ),
+    ),
+    *_plugins(
+        (
+            new_secret,
+            get_secret,
+            list_secrets,
+            import_secret,
+            load_secret,
+            update_secret,
+            delete_secret,
+        ),
+    ),
+    *_plugins(
+        (
+            new_task,
+            get_task,
+            list_tasks,
+            import_task,
+            load_task,
+            update_task,
+            delete_task,
+        ),
+    ),
+    *_plugins(
+        (
+            new_trigger,
+            get_trigger,
+            list_triggers,
+            import_trigger,
+            load_trigger,
+            update_trigger,
+            delete_trigger,
+        ),
+    ),
+    *_plugins(
+        (
+            new_workflow,
+            get_workflow,
+            get_workflow_versions,
+            list_workflows,
+            import_workflow,
+            load_workflow,
+            update_workflow,
+            delete_workflow,
+        ),
+    ),
+)

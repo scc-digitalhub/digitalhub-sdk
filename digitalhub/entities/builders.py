@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+from digitalhub.entities import crud_plugins as _crud_plugins
 from digitalhub.entities.artifact.artifact.builder import ArtifactArtifactBuilder
 from digitalhub.entities.artifact.generic.builder import ArtifactGenericBuilder
 from digitalhub.entities.containerimage.containerimage.builder import ContainerimageContainerimageBuilder
@@ -15,14 +16,7 @@ from digitalhub.entities.dataitem.table.builder import DataitemTableBuilder
 from digitalhub.entities.function.generic.builder import FunctionGenericBuilder
 from digitalhub.entities.log._base.builder import LogLogBuilder
 from digitalhub.entities.model.generic.builder import ModelGenericBuilder
-from digitalhub.entities.model.huggingface.builder import ModelHuggingfaceBuilder
-from digitalhub.entities.model.mlflow.builder import ModelMlflowBuilder
 from digitalhub.entities.model.model.builder import ModelModelBuilder
-from digitalhub.entities.model.onnx.builder import ModelOnnxBuilder
-from digitalhub.entities.model.sklearn.builder import ModelSklearnBuilder
-from digitalhub.entities.model.tflite.builder import ModelTfliteBuilder
-from digitalhub.entities.model.tvm_ir.builder import ModelTvmIrBuilder
-from digitalhub.entities.model.tvm_so.builder import ModelTvmSoBuilder
 from digitalhub.entities.project._base.builder import ProjectProjectBuilder
 from digitalhub.entities.run.generic.builder import RunGenericBuilder
 from digitalhub.entities.secret._base.builder import SecretSecretBuilder
@@ -33,6 +27,8 @@ from digitalhub.entities.trigger.lifecycle.builder import TriggerLifecycleBuilde
 from digitalhub.entities.trigger.scheduler.builder import TriggerSchedulerBuilder
 from digitalhub.entities.workflow.generic.builder import WorkflowGenericBuilder
 
+crud_plugins = _crud_plugins
+
 entity_builders: tuple = (
     (ArtifactArtifactBuilder.ENTITY_KIND, ArtifactArtifactBuilder),
     (ContainerimageContainerimageBuilder.ENTITY_KIND, ContainerimageContainerimageBuilder),
@@ -40,14 +36,7 @@ entity_builders: tuple = (
     (DataitemDataitemBuilder.ENTITY_KIND, DataitemDataitemBuilder),
     (DataitemTableBuilder.ENTITY_KIND, DataitemTableBuilder),
     (LogLogBuilder.ENTITY_KIND, LogLogBuilder),
-    (ModelHuggingfaceBuilder.ENTITY_KIND, ModelHuggingfaceBuilder),
-    (ModelMlflowBuilder.ENTITY_KIND, ModelMlflowBuilder),
     (ModelModelBuilder.ENTITY_KIND, ModelModelBuilder),
-    (ModelOnnxBuilder.ENTITY_KIND, ModelOnnxBuilder),
-    (ModelSklearnBuilder.ENTITY_KIND, ModelSklearnBuilder),
-    (ModelTfliteBuilder.ENTITY_KIND, ModelTfliteBuilder),
-    (ModelTvmIrBuilder.ENTITY_KIND, ModelTvmIrBuilder),
-    (ModelTvmSoBuilder.ENTITY_KIND, ModelTvmSoBuilder),
     (ProjectProjectBuilder.ENTITY_KIND, ProjectProjectBuilder),
     (SecretSecretBuilder.ENTITY_KIND, SecretSecretBuilder),
     (TriggerLifecycleBuilder.ENTITY_KIND, TriggerLifecycleBuilder),

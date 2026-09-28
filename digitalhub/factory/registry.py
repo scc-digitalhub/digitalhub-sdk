@@ -7,6 +7,7 @@ from __future__ import annotations
 import typing
 
 from digitalhub.factory.enums import FactoryEnum
+from digitalhub.factory.plugins import CrudPlugin, EntityPlugin
 from digitalhub.factory.utils import import_module, list_runtimes
 from digitalhub.utils.exceptions import BuilderError
 
@@ -32,6 +33,7 @@ class BuilderRegistry:
         self._entity_builders: dict[str, EntityBuilder | RuntimeEntityBuilder] = {}
         self._generic_entity_builders: dict[str, EntityBuilder | RuntimeEntityBuilder] = {}
         self._runtime_builders: dict[str, RuntimeBuilder] = {}
+        self._crud_plugins: dict[str, CrudPlugin] = {}
         self._entities_registered = False
         self._runtimes_registered = False
 
@@ -148,6 +150,40 @@ class BuilderRegistry:
                 raise BuilderError(f"Runtime builder for kind '{kind}' not found.")
         return self._runtime_builders[kind]
 
+    def get_shortcut(self, name: str) -> typing.Callable:
+        """Retrieve a registered shortcut."""
+        if not self._entities_registered:
+            self._ensure_entities_registered()
+        if not self._runtimes_registered:
+            self._ensure_runtimes_registered()
+        if name not in self._crud_plugins:
+            raise AttributeError(f"Shortcut '{name}' not found.")
+        return self._crud_plugins[name].function
+
+    def get_shortcut_spec(self, name: str) -> CrudPlugin:
+        """Retrieve the declaration for a registered shortcut."""
+        if not self._entities_registered:
+            self._ensure_entities_registered()
+        if not self._runtimes_registered:
+            self._ensure_runtimes_registered()
+        try:
+            return self._crud_plugins[name]
+        except KeyError as e:
+            raise AttributeError(f"Shortcut '{name}' not found.") from e
+
+    def get_shortcut_names(self) -> tuple[str, ...]:
+        """Return registered shortcut names in deterministic order."""
+        if not self._entities_registered:
+            self._ensure_entities_registered()
+        if not self._runtimes_registered:
+            self._ensure_runtimes_registered()
+        return tuple(sorted(self._crud_plugins))
+
+    def get_project_shortcut_names(self) -> tuple[str, ...]:
+        """Return registered shortcuts that can be bound to a project."""
+        self.get_shortcut_names()
+        return tuple(name for name, spec in sorted(self._crud_plugins.items()) if spec.project_bound)
+
     def _ensure_entities_registered(self) -> None:
         """
         Ensure core entities are registered on-demand.
@@ -168,10 +204,19 @@ class BuilderRegistry:
             module = import_module(FactoryEnum.REG_ENTITIES.value)
             entity_builders = self._entity_builders.copy()
             generic_entity_builders = self._generic_entity_builders.copy()
+            crud_plugins = self._crud_plugins.copy()
+
+            entity_plugins = getattr(module, FactoryEnum.REG_ENTITY_PLUGINS_VAR.value, ())
+            self._register_entity_plugins(entity_plugins, entity_builders, crud_plugins)
+            self._register_crud_plugins(
+                getattr(module, FactoryEnum.REG_CRUD_PLUGINS_VAR.value, ()),
+                crud_plugins,
+            )
 
             # Register core entities
-            for k, b in getattr(module, FactoryEnum.REG_ENTITIES_VAR.value, []):
-                self._add_builder(entity_builders, k, b, f"Builder {k} already exists.")
+            if not entity_plugins:
+                for k, b in getattr(module, FactoryEnum.REG_ENTITIES_VAR.value, []):
+                    self._add_builder(entity_builders, k, b, f"Builder {k} already exists.")
 
             # Register generic fallback entities
             for k, b in getattr(module, FactoryEnum.REG_GENERIC_ENTITIES_VAR.value, []):
@@ -182,7 +227,9 @@ class BuilderRegistry:
                     f"Generic builder for {k} already exists.",
                 )
 
-            self._entity_builders, self._generic_entity_builders = entity_builders, generic_entity_builders
+            self._entity_builders = entity_builders
+            self._generic_entity_builders = generic_entity_builders
+            self._crud_plugins = crud_plugins
 
         except Exception as e:
             raise RuntimeError("Error registering core entities.") from e
@@ -196,6 +243,8 @@ class BuilderRegistry:
         try:
             self._register_runtimes_entities()
             self._runtimes_registered = True
+        except BuilderError:
+            raise
         except Exception as e:
             raise BuilderError(f"Failed to register runtime entities: {e}") from e
 
@@ -206,21 +255,60 @@ class BuilderRegistry:
         try:
             entity_builders = self._entity_builders.copy()
             runtime_builders = self._runtime_builders.copy()
+            crud_plugins = self._crud_plugins.copy()
 
-            for package in list_runtimes():
+            for package in sorted(list_runtimes()):
                 module = import_module(package)
 
                 # Register workflows, functions, tasks and runs entities builders
-                for k, b in getattr(module, FactoryEnum.REG_ENTITIES_VAR.value, []):
-                    self._add_builder(entity_builders, k, b, f"Builder {k} already exists.")
+                entity_plugins = getattr(module, FactoryEnum.REG_ENTITY_PLUGINS_VAR.value, None)
+                if entity_plugins is not None:
+                    self._register_entity_plugins(entity_plugins, entity_builders, crud_plugins)
+                else:
+                    for k, b in getattr(module, FactoryEnum.REG_ENTITIES_VAR.value, []):
+                        self._add_builder(entity_builders, k, b, f"Builder {k} already exists.")
 
                 # Register runtime builders
                 for k, b in getattr(module, FactoryEnum.REG_RUNTIME_VAR.value, []):
                     self._add_builder(runtime_builders, k, b, f"Builder {k} already exists.")
 
-            self._entity_builders, self._runtime_builders = entity_builders, runtime_builders
+            self._entity_builders = entity_builders
+            self._runtime_builders = runtime_builders
+            self._crud_plugins = crud_plugins
+        except BuilderError:
+            raise
         except Exception as e:
             raise RuntimeError("Error registering runtime entities.") from e
+
+    def _register_entity_plugins(
+        self,
+        entity_plugins: typing.Iterable[EntityPlugin],
+        entity_builders: dict[str, EntityBuilder | RuntimeEntityBuilder],
+        crud_plugins: dict[str, CrudPlugin],
+    ) -> None:
+        for plugin in entity_plugins:
+            self._add_builder(
+                entity_builders,
+                plugin.kind,
+                plugin.builder,
+                f"Builder {plugin.kind} already exists.",
+            )
+            for crud_plugin in plugin.shortcuts:
+                self._add_crud_plugins(crud_plugins, crud_plugin)
+
+    def _register_crud_plugins(
+        self,
+        crud_plugins: typing.Iterable[CrudPlugin],
+        crud_plugins_dict: dict[str, CrudPlugin],
+    ) -> None:
+        for crud_plugin in crud_plugins:
+            self._add_crud_plugins(crud_plugins_dict, crud_plugin)
+
+    @staticmethod
+    def _add_crud_plugins(crud_plugins_dict: dict[str, CrudPlugin], crud_plugin: CrudPlugin) -> None:
+        if crud_plugin.name in crud_plugins_dict:
+            raise BuilderError(f"Shortcut {crud_plugin.name} already exists.")
+        crud_plugins_dict[crud_plugin.name] = crud_plugin
 
 
 # Global singleton instance
