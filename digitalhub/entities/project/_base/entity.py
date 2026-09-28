@@ -18,7 +18,6 @@ from digitalhub.entities._processors.processors import (
     executable_processor,
     search_processor,
 )
-from digitalhub.entities.project._base.protocol import ProjectListShortcuts
 from digitalhub.factory.crud import bind_project_shortcut
 from digitalhub.factory.entity import entity_factory
 from digitalhub.factory.registry import registry
@@ -34,10 +33,15 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities.dataitem._base.entity import Dataitem
     from digitalhub.entities.function._base.entity import Function
     from digitalhub.entities.model._base.entity import Model
+    from digitalhub.entities.project._base.protocol import ProjectListShortcuts
     from digitalhub.entities.project._base.spec import ProjectSpec
     from digitalhub.entities.project._base.status import ProjectStatus
     from digitalhub.entities.run._base.entity import Run
     from digitalhub.entities.workflow._base.entity import Workflow
+else:
+
+    class ProjectListShortcuts:
+        pass
 
 
 class Project(Entity, ProjectListShortcuts):
