@@ -82,6 +82,7 @@ convention = "numpy"
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib", "--strict-config", "--strict-markers", "-ra"]
 testpaths = ["test"]
+pythonpath = ["test/_digitalhub_test_helpers"]
 markers = [
     "unit: isolated tests without external services or generated fixtures",
     "instance: entity instance compatibility tests requiring external schemas",
