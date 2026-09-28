@@ -67,7 +67,12 @@ class EntityValidator:
         except ValidationError as error:
             raise AssertionError(f"Validation failed for kind '{kind}': {error.message}") from error
 
-    def check_schema_completeness(self, built: dict[str, Any], kind: str) -> list[str]:
+    def check_schema_completeness(
+        self,
+        built: dict[str, Any],
+        kind: str,
+        ignore: set[str] | None = None,
+    ) -> list[str]:
         """Check if rebuilt object includes all schema properties."""
         schema = self.schema_registry.get_schema(kind)
         missing_fields = []
@@ -75,7 +80,7 @@ class EntityValidator:
         if "properties" in schema:
             schema_fields = set(schema["properties"].keys())
             built_fields = set(built.keys())
-            missing_fields = sorted(schema_fields - built_fields)
+            missing_fields = sorted(schema_fields - built_fields - (ignore or set()))
 
         return missing_fields
 
@@ -89,13 +94,14 @@ def discover_entities(entities_path: Path) -> dict[str, Path]:
     return entities
 
 
-def create_test_validate(root: Path) -> type:
+def create_test_validate(root: Path, ignore: list[str] | None = None) -> type:
     """Create validation tests for the fixture directories below ``root``."""
     entities_path = root / "entities"
     schemas_path = root / "schemas"
     schema_registry = SchemaRegistry(schemas_path)
     validator = EntityValidator(schema_registry)
     entity_paths = discover_entities(entities_path)
+    ignored_fields = set(ignore or [])
 
     class TestValidate:
         """Test entity JSON files build correctly and validate against schemas."""
@@ -113,7 +119,7 @@ def create_test_validate(root: Path) -> type:
             path = entity_paths[entity_file]
             built, kind = validator.build_from_file(path)
 
-            missing = validator.check_schema_completeness(built, kind)
+            missing = validator.check_schema_completeness(built, kind, ignored_fields)
             if missing:
                 schema = validator.schema_registry.get_schema(kind)
                 required = schema.get("required", [])
