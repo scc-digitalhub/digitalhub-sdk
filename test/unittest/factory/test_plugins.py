@@ -104,6 +104,17 @@ def test_project_shortcut_injects_project_and_preserves_signature() -> None:
     assert calls == [("demo", "hello", "python:3.12"), "refresh"]
 
 
+def test_project_shortcut_forwards_variadic_keyword_arguments() -> None:
+    def shortcut(project: str, name: str, **kwargs: object) -> tuple[str, str, dict[str, object]]:
+        return project, name, kwargs
+
+    project = SimpleNamespace(name="demo", refresh=lambda: None)
+    bound = bind_project_shortcut(shortcut, project, refresh_project=False)
+
+    assert bound("hello", handler="main") == ("demo", "hello", {"handler": "main"})
+    assert bound("hello") == ("demo", "hello", {})
+
+
 def test_project_shortcut_rejects_project_parameter() -> None:
     def shortcut(project: str, name: str) -> tuple[str, str]:
         return project, name
