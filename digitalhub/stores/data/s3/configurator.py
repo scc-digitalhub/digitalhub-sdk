@@ -98,7 +98,12 @@ class S3StoreConfigurator:
             return self._web_identity_credentials
 
         token_file = config.get(CredentialsVars.S3_WEB_IDENTITY_TOKEN_FILE.value)
-        token = Path(token_file).read_text(encoding="utf-8").strip() if token_file else None
+        token_path = Path(token_file) if token_file else None
+        if token_path is not None and token_path.is_file():
+            token = token_path.read_text(encoding="utf-8").strip()
+        else:
+            token = config.get(CredentialsVars.S3_WEB_IDENTITY_TOKEN.value)
+            token = token.strip() if token else None
         if not token:
             raise ValueError("A web identity token file is required for S3 role authentication.")
 
@@ -136,6 +141,7 @@ class S3StoreConfigurator:
         secret_key = CredentialsVars.S3_SECRET_ACCESS_KEY.value
         role_arn = CredentialsVars.S3_ROLE_ARN.value
         token_file = CredentialsVars.S3_WEB_IDENTITY_TOKEN_FILE.value
+        token = CredentialsVars.S3_WEB_IDENTITY_TOKEN.value
         sts_endpoint = ConfigurationVars.S3_ENDPOINT_URL_STS.value
 
         if not current_keys.get(endpoint):
@@ -143,11 +149,13 @@ class S3StoreConfigurator:
 
         has_static_credentials = bool(current_keys.get(access_key) and current_keys.get(secret_key))
         has_web_identity_credentials = bool(
-            current_keys.get(role_arn) and current_keys.get(token_file) and current_keys.get(sts_endpoint)
+            current_keys.get(role_arn)
+            and (current_keys.get(token_file) or current_keys.get(token))
+            and current_keys.get(sts_endpoint)
         )
         if not (has_static_credentials or has_web_identity_credentials):
             missing_keys.append(
-                f"either ({access_key} and {secret_key}) or ({role_arn}, {token_file}, and {sts_endpoint})"
+                f"either ({access_key} and {secret_key}) or ({role_arn}, {token_file} or {token}, and {sts_endpoint})"
             )
         if missing_keys:
             raise ValueError(f"Missing required variables for S3 store: {', '.join(missing_keys)}")

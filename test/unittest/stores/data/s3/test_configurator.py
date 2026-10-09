@@ -43,6 +43,7 @@ def test_assumes_role_with_web_identity_and_caches_credentials(monkeypatch, tmp_
         ConfigurationVars.S3_REGION.value: "eu-west-1",
         CredentialsVars.S3_ROLE_ARN.value: "arn:aws:iam::123456789012:role/test-role",
         CredentialsVars.S3_WEB_IDENTITY_TOKEN_FILE.value: str(token_file),
+        CredentialsVars.S3_WEB_IDENTITY_TOKEN.value: "inline-token",
     }
     monkeypatch.setattr(
         configurator_module,
@@ -79,6 +80,42 @@ def test_assumes_role_with_web_identity_and_caches_credentials(monkeypatch, tmp_
         RoleArn="arn:aws:iam::123456789012:role/test-role",
         RoleSessionName="digitalhub-s3-store",
         WebIdentityToken="identity-token",
+    )
+
+
+def test_uses_configured_token_when_token_file_is_unavailable(monkeypatch, tmp_path) -> None:
+    credentials = {
+        ConfigurationVars.S3_ENDPOINT_URL.value: "https://s3.example.test",
+        ConfigurationVars.S3_ENDPOINT_URL_STS.value: "https://sts.example.test",
+        CredentialsVars.S3_ROLE_ARN.value: "arn:aws:iam::123456789012:role/test-role",
+        CredentialsVars.S3_WEB_IDENTITY_TOKEN_FILE.value: str(tmp_path / "missing-token"),
+        CredentialsVars.S3_WEB_IDENTITY_TOKEN.value: "inline-token",
+    }
+    monkeypatch.setattr(
+        configurator_module,
+        "get_client",
+        lambda: Mock(get_credentials_and_config=lambda: credentials),
+    )
+    sts_client = Mock()
+    sts_client.assume_role_with_web_identity.return_value = {
+        "Credentials": {
+            "AccessKeyId": "temporary-access",
+            "SecretAccessKey": "temporary-secret",
+            "SessionToken": "temporary-session",
+            "Expiration": datetime.now(timezone.utc) + timedelta(hours=1),
+        }
+    }
+    sts_factory = Mock(return_value=sts_client)
+    monkeypatch.setattr(configurator_module, "boto3", Mock(client=sts_factory), raising=False)
+
+    configurator = S3StoreConfigurator()
+    result = configurator.get_credentials(lowercase_keys=False)
+
+    assert result[CredentialsVars.S3_ACCESS_KEY_ID.value] == "temporary-access"
+    sts_client.assume_role_with_web_identity.assert_called_once_with(
+        RoleArn="arn:aws:iam::123456789012:role/test-role",
+        RoleSessionName="digitalhub-s3-store",
+        WebIdentityToken="inline-token",
     )
 
 
@@ -141,7 +178,6 @@ def test_refreshes_web_identity_credentials_before_expiration(monkeypatch, tmp_p
             ConfigurationVars.S3_ENDPOINT_URL.value: "https://s3.example.test",
             ConfigurationVars.S3_ENDPOINT_URL_STS.value: "https://sts.example.test",
             CredentialsVars.S3_ROLE_ARN.value: "arn:aws:iam::123456789012:role/test-role",
-            CredentialsVars.S3_WEB_IDENTITY_TOKEN.value: "inline-token",
         },
         {
             ConfigurationVars.S3_ENDPOINT_URL.value: "https://s3.example.test",
