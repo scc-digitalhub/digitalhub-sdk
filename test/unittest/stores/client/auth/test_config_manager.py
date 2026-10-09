@@ -40,6 +40,7 @@ def test_configuration_and_credentials_use_file_precedence(monkeypatch) -> None:
     credentials = manager.load_credentials()
 
     assert configuration[ConfigurationVars.DHCORE_ENDPOINT.value] == "https://file.example.test"
+    assert configuration[ConfigurationVars.DOTENV_WRITE.value] == "false"
     assert credentials[CredentialsVars.DHCORE_ACCESS_TOKEN.value] == "file-access"
     assert credentials[CredentialsVars.DHCORE_USER.value] == "env-user"
 
@@ -73,6 +74,7 @@ def test_eval_retry_stops_reading_file_after_environment_fallback(monkeypatch) -
 
 def test_save_credentials_after_environment_fallback_keeps_memory_state() -> None:
     manager = ConfigManager.__new__(ConfigManager)
+    manager._configuration = {}
     manager._credential_store = credential_store_module.CredentialStore("default")
     manager._in_memory = False
     manager._credential_session = CredentialSession(
@@ -148,6 +150,7 @@ def test_initialization_does_not_write_configuration(monkeypatch) -> None:
 
 def test_save_credentials_persists_and_reloads() -> None:
     manager = ConfigManager.__new__(ConfigManager)
+    manager._configuration = {ConfigurationVars.DOTENV_WRITE.value: "true"}
     manager._in_memory = False
     manager._credential_session = CredentialSession({})
     manager.export_to_ini = Mock()
@@ -162,6 +165,23 @@ def test_save_credentials_persists_and_reloads() -> None:
     manager.export_to_env.assert_called_once_with(credentials)
     manager.reload_credentials.assert_called_once_with()
     manager.load_to_env.assert_called_once_with()
+
+
+def test_save_credentials_does_not_write_dotenv_by_default() -> None:
+    manager = ConfigManager.__new__(ConfigManager)
+    manager._configuration = {}
+    manager._in_memory = False
+    manager._credential_session = CredentialSession({})
+    manager.export_to_ini = Mock()
+    manager.export_to_env = Mock()
+    manager.reload_credentials = Mock()
+    manager.load_to_env = Mock()
+
+    manager.save_credentials({"dhcore_access_token": "new"})
+
+    manager.export_to_ini.assert_called_once_with({"dhcore_access_token": "new"})
+    manager.export_to_env.assert_not_called()
+    manager.reload_credentials.assert_called_once_with()
 
 
 def test_save_credentials_updates_in_memory_without_persistence() -> None:

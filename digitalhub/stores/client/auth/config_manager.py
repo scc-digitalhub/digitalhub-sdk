@@ -65,7 +65,10 @@ class ConfigManager:
 
     def load_configuration(self) -> dict[str, Any]:
         """Load configuration with file > env precedence."""
-        return self._credential_store.load_configuration()
+        configuration = self._credential_store.load_configuration()
+        if configuration.get(ConfigurationVars.DOTENV_WRITE.value) is None:
+            configuration[ConfigurationVars.DOTENV_WRITE.value] = "false"
+        return configuration
 
     def reload_configuration(self) -> None:
         """Reload configuration from environment and file."""
@@ -127,7 +130,9 @@ class ConfigManager:
             logger.warning("Credential persistence failed; refreshed credentials will remain in memory only.")
             return
 
-        self.export_to_env(variables)
+        write_dotenv = str(self._configuration.get(ConfigurationVars.DOTENV_WRITE.value, "false")).strip().lower()
+        if write_dotenv == "true":
+            self.export_to_env(variables)
         if self.credential_source is CredentialSource.ENV:
             self._credential_session.update({key.upper(): value for key, value in variables.items()})
             logger.debug("Persisted refreshed credentials and kept environment credentials active in memory.")

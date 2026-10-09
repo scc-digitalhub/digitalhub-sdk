@@ -73,6 +73,9 @@ class ConfigurationVars(Enum):
     # OAUTH2
     OAUTH2_TOKEN_ENDPOINT = "OAUTH2_TOKEN_ENDPOINT"
 
+    # DOTENV
+    DOTENV_WRITE = "DOTENV_WRITE"
+
 
 class CredentialsVars(Enum):
     """
