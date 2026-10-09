@@ -12,6 +12,9 @@ from botocore.config import Config
 
 from digitalhub.stores.client.common.enums import ConfigurationVars, CredentialsVars
 from digitalhub.stores.client.factory import get_client
+from digitalhub.utils.logger.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class S3StoreConfigurator:
@@ -81,7 +84,10 @@ class S3StoreConfigurator:
         creds = dict(get_client().get_credentials_and_config())
         access_key = creds.get(CredentialsVars.S3_ACCESS_KEY_ID.value)
         secret_key = creds.get(CredentialsVars.S3_SECRET_ACCESS_KEY.value)
-        if not (access_key and secret_key):
+        if access_key and secret_key:
+            logger.debug("Using configured static S3 credentials.")
+        else:
+            logger.debug("Static S3 credentials unavailable; using web identity credentials.")
             creds.update(self._get_web_identity_credentials(creds))
         if lowercase_keys:
             return {key.lower(): creds.get(key) for key in keys}
@@ -95,18 +101,25 @@ class S3StoreConfigurator:
             and self._web_identity_expiration is not None
             and self._web_identity_expiration > now + timedelta(minutes=5)
         ):
+            logger.debug(
+                "Reusing cached S3 web identity credentials; expiration is %s.",
+                self._web_identity_expiration.isoformat(),
+            )
             return self._web_identity_credentials
 
         token_file = config.get(CredentialsVars.S3_WEB_IDENTITY_TOKEN_FILE.value)
         token_path = Path(token_file) if token_file else None
         if token_path is not None and token_path.is_file():
+            logger.debug("Using S3 web identity token from the configured token file.")
             token = token_path.read_text(encoding="utf-8").strip()
         else:
+            logger.debug("Using configured S3 web identity token from credentials.")
             token = config.get(CredentialsVars.S3_WEB_IDENTITY_TOKEN.value)
             token = token.strip() if token else None
         if not token:
-            raise ValueError("A web identity token file is required for S3 role authentication.")
+            raise ValueError("A web identity token is required for S3 role authentication.")
 
+        logger.debug("Requesting temporary S3 credentials through STS.")
         sts_client = boto3.client(
             "sts",
             endpoint_url=config.get(ConfigurationVars.S3_ENDPOINT_URL_STS.value),
@@ -128,6 +141,7 @@ class S3StoreConfigurator:
             CredentialsVars.S3_SESSION_TOKEN.value: temporary_credentials["SessionToken"],
         }
         self._web_identity_expiration = expiration
+        logger.debug("Received temporary S3 credentials; expiration is %s.", expiration.isoformat())
         return self._web_identity_credentials
 
     def _validate(self) -> None:
@@ -143,19 +157,28 @@ class S3StoreConfigurator:
         token_file = CredentialsVars.S3_WEB_IDENTITY_TOKEN_FILE.value
         token = CredentialsVars.S3_WEB_IDENTITY_TOKEN.value
         sts_endpoint = ConfigurationVars.S3_ENDPOINT_URL_STS.value
+        logger.debug("S3 credential validation inputs: %s", current_keys)
 
         if not current_keys.get(endpoint):
             missing_keys.append(endpoint)
 
-        has_static_credentials = bool(current_keys.get(access_key) and current_keys.get(secret_key))
-        has_web_identity_credentials = bool(
-            current_keys.get(role_arn)
-            and (current_keys.get(token_file) or current_keys.get(token))
-            and current_keys.get(sts_endpoint)
-        )
+        static_missing = [key for key in (access_key, secret_key) if not current_keys.get(key)]
+        web_identity_missing = []
+        if not current_keys.get(role_arn):
+            web_identity_missing.append(role_arn)
+        if not (current_keys.get(token_file) or current_keys.get(token)):
+            web_identity_missing.append(f"{token_file} or {token}")
+        if not current_keys.get(sts_endpoint):
+            web_identity_missing.append(sts_endpoint)
+
+        has_static_credentials = not static_missing
+        has_web_identity_credentials = not web_identity_missing
         if not (has_static_credentials or has_web_identity_credentials):
-            missing_keys.append(
-                f"either ({access_key} and {secret_key}) or ({role_arn}, {token_file} or {token}, and {sts_endpoint})"
+            missing_keys.extend(
+                [
+                    f"static credential bundle missing: {', '.join(static_missing)}",
+                    f"web identity bundle missing: {', '.join(web_identity_missing)}",
+                ]
             )
         if missing_keys:
             raise ValueError(f"Missing required variables for S3 store: {', '.join(missing_keys)}")

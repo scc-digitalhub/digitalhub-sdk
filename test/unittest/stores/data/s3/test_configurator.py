@@ -200,3 +200,26 @@ def test_rejects_incomplete_credential_sets(monkeypatch, credentials) -> None:
 
     with pytest.raises(ValueError, match="Missing required variables for S3 store"):
         S3StoreConfigurator()
+
+
+def test_validation_error_lists_missing_keys_for_both_credential_bundles(monkeypatch) -> None:
+    credentials = {ConfigurationVars.S3_ENDPOINT_URL.value: "https://s3.example.test"}
+    monkeypatch.setattr(
+        configurator_module,
+        "get_client",
+        lambda: Mock(get_credentials_and_config=lambda: credentials),
+    )
+
+    with pytest.raises(ValueError) as error:
+        S3StoreConfigurator()
+
+    message = str(error.value)
+    assert (
+        f"static credential bundle missing: {CredentialsVars.S3_ACCESS_KEY_ID.value}, "
+        f"{CredentialsVars.S3_SECRET_ACCESS_KEY.value}"
+    ) in message
+    assert (
+        f"web identity bundle missing: {CredentialsVars.S3_ROLE_ARN.value}, "
+        f"{CredentialsVars.S3_WEB_IDENTITY_TOKEN_FILE.value} or "
+        f"{CredentialsVars.S3_WEB_IDENTITY_TOKEN.value}, {ConfigurationVars.S3_ENDPOINT_URL_STS.value}"
+    ) in message
