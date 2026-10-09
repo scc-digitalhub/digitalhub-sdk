@@ -14,13 +14,13 @@ class MammalName(str, Enum):
     """Representative  wild mammal genera used to build random names."""
 
     BISON = "bison"
+    CANIS = "canis"
     CAPREOLUS = "capreolus"
     CASTOR = "castor"
     CERVUS = "cervus"
     DAMA = "dama"
     ERINACEUS = "erinaceus"
     LEPUS = "lepus"
-    LUPUS = "lupus"
     LYNX = "lynx"
     MARMOTA = "marmota"
     MARTES = "martes"
@@ -106,7 +106,7 @@ class LichenName(str, Enum):
     CANDELARIELLA = "candelariella"
     CETRARIA = "cetraria"
     CETRELIA = "cetrelia"
-    CHRYSOTRIX = "chrysotrix"
+    CHRYSOTHRIX = "chrysothrix"
     CLADONIA = "cladonia"
     EVERNIA = "evernia"
     FLAVOPARMELIA = "flavoparmelia"
@@ -126,7 +126,7 @@ class LichenName(str, Enum):
     PHLYCTIS = "phlyctis"
     PHYSCIA = "physcia"
     PROTOPARMELIOPSIS = "protoparmeliopsis"
-    PSEUDOVERNIA = "pseudovernia"
+    PSEUDEVERNIA = "pseudevernia"
     PUNCTELIA = "punctelia"
     RAMALINA = "ramalina"
     RUSAVSKIA = "rusavskia"
@@ -202,7 +202,7 @@ class HerbName(str, Enum):
     SANGUISORBA = "sanguisorba"
     STACHYS = "stachys"
     THYMUS = "thymus"
-    VINCETOXUM = "vincetoxum"
+    VINCETOXICUM = "vincetoxicum"
 
 
 class GemAdjective(str, Enum):
