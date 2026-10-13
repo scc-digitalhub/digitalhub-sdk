@@ -11,7 +11,6 @@ from digitalhub.stores.client.common.config import get_client_config
 from digitalhub.stores.client.common.enums import (
     AuthType,
     ConfigurationVars,
-    CredentialSource,
     CredentialsVars,
     OpsType,
 )
@@ -57,7 +56,7 @@ class TokenRefreshService:
         if not self._auth_session.is_refreshable():
             raise ClientError(f"Auth type {self._auth_session.auth_type} does not support refresh.")
 
-        logger.debug("Starting credential refresh with auth type '%s'.", self._auth_session.auth_type)
+        logger.debug(f"Starting creds refresh with auth type '{self._auth_session.auth_type}'.")
 
         # Get credentials and configuration
         creds = self._config_manager.get_credentials_and_config()
@@ -66,7 +65,7 @@ class TokenRefreshService:
         if (url := creds.get(ConfigurationVars.OAUTH2_TOKEN_ENDPOINT.value)) is None:
             url = self._get_refresh_endpoint()
         url = sanitize_endpoint(url)
-        logger.debug("Refresh endpoint resolved; sending credential refresh request.")
+        logger.debug("Refresh endpoint resolved; sending creds refresh request.")
 
         # Execute the appropriate auth flow
         response = self._evaluate_auth_flow(url, creds)
@@ -75,78 +74,85 @@ class TokenRefreshService:
         raise_for_response_error(response)
 
         refreshed_credentials = parse_response_json(response)
-        logger.debug("Refresh request succeeded; persisting fields: %s", sorted(refreshed_credentials))
+        logger.debug(f"Refresh request succeeded; persisting fields: {sorted(refreshed_credentials)}")
 
         # Export new credentials to file
         self._config_manager.save_refreshed_credentials(refreshed_credentials)
 
-        logger.debug("Credential refresh completed successfully.")
+        logger.debug("Creds refresh completed successfully.")
 
     def evaluate_refresh(self, check_token_validity: bool = False) -> bool:
         """
-        Check if token refresh should be attempted with retry logic.
-        """
-        # If token validity check is requested and the token is still valid, skip refresh.
-        if check_token_validity and self._test_token_validity():
-            logger.debug("Current token is valid, no refresh needed.")
-            return False
+        Refresh the active credentials and report whether a refresh or fallback succeeded.
 
+        When ``check_token_validity`` is true, validate the current access token
+        first. If it is valid, return false without attempting a refresh.
+        Otherwise, attempt to refresh credentials up to the configured maximum,
+        switching credential sources when the retry policy allows it.
+
+        Returns
+        -------
+        bool
+            True if credentials were refreshed or a valid environment access
+            token was confirmed. False if no refresh was needed because the
+            current token was valid, or if environment fallback credentials
+            cannot be refreshed or used.
+        """
         if check_token_validity:
+            if self._test_token_validity():
+                logger.debug("Current token is valid, no refresh needed.")
+                return False
             logger.debug("Current token is invalid or expired, attempting refresh.")
 
         max_attempts = get_client_config().max_refresh_attempts
-        if max_attempts < 1:
-            raise ClientError("max_refresh_attempts must be at least 1")
 
         for attempt in range(1, max_attempts + 1):
-            logger.debug("Starting credential refresh attempt %d.", attempt)
+            logger.debug(f"Starting creds refresh attempt {attempt}.")
             try:
                 self.refresh_credentials()
-                logger.debug("Credential refresh attempt %d succeeded.", attempt)
-                return True
             except (BackendError, ClientError) as error:
                 logger.debug(
-                    "Credential refresh attempt %d failed with %s; evaluating fallback.",
-                    attempt,
-                    type(error).__name__,
+                    f"Creds refresh attempt {attempt} failed with {type(error).__name__}; evaluating fallback.",
                     exc_info=True,
                 )
                 if attempt == max_attempts:
-                    logger.debug(
-                        "Credential refresh stopped after reaching the maximum of %d attempts.",
-                        max_attempts,
-                    )
+                    logger.debug(f"Creds refresh stopped after max attempts ({max_attempts}).")
                     raise
-                was_using_env = self._config_manager.credential_source is CredentialSource.ENV
+
+                # Check if we should retry based on the configuration manager's evaluation
+                was_using_env = self._config_manager.is_using_env()
                 should_retry = self._config_manager.eval_retry()
-                logger.debug("Credential refresh fallback decision after attempt %d: %s.", attempt, should_retry)
+                logger.debug(f"Creds refresh fallback decision after attempt {attempt}: {should_retry}.")
                 if not should_retry:
-                    logger.debug("Credential refresh stopped after attempt %d.", attempt)
+                    logger.debug(f"Creds refresh stopped after attempt {attempt}.")
                     raise
 
-                switched_to_env = not was_using_env and self._config_manager.credential_source is CredentialSource.ENV
-                if not switched_to_env:
-                    continue
-
-                auth_type = self._auth_session.auth_type
-                if auth_type == AuthType.EXCHANGE.value:
-                    continue
-                if auth_type not in (AuthType.OAUTH2.value, AuthType.ACCESS_TOKEN.value):
-                    logger.debug("Environment credentials are not refreshable; stopping credential refresh fallback.")
-                    return False
-                if self._test_token_validity():
-                    logger.debug("Environment access token is valid; skipping environment credential refresh.")
-                    return True
-                if auth_type == AuthType.ACCESS_TOKEN.value:
-                    logger.debug("Environment access token is invalid and has no refresh token.")
-                    return False
+                # Determine if we have switched to using environment credentials
+                switched_to_env = not was_using_env and self._config_manager.is_using_env()
+                if switched_to_env:
+                    match self._auth_session.auth_type:
+                        case AuthType.EXCHANGE.value:
+                            continue
+                        case AuthType.OAUTH2.value:
+                            if self._test_token_validity():
+                                logger.debug("Env access token is valid; skipping refresh.")
+                                return True
+                        case AuthType.ACCESS_TOKEN.value:
+                            if self._test_token_validity():
+                                logger.debug("Env access token is valid; skipping refresh.")
+                                return True
+                            logger.debug("Env access token is invalid and there is no refresh token.")
+                            return False
+                        case _:
+                            logger.debug("Env creds are not refreshable; stopping refresh fallback.")
+                            return False
+            else:
+                logger.debug(f"Creds refresh attempt {attempt} succeeded.")
+                return True
 
     def _test_token_validity(self) -> bool:
         """
         Test the validity of the current access token.
-
-        Makes a test API call to check if the current access token is valid.
-        Returns True if the token is valid, False if it is invalid or expired.
         """
         url = self._config_manager.configuration.get(ConfigurationVars.DHCORE_ENDPOINT.value)
         if url is None:
@@ -171,21 +177,24 @@ class TokenRefreshService:
             raise ClientError("Client id not set.")
 
         # Handling of token refresh
-        if self._auth_session.auth_type == AuthType.OAUTH2.value:
-            data = {
-                "client_id": client_id,
-                "refresh_token": creds.get(CredentialsVars.DHCORE_REFRESH_TOKEN.value),
-                "grant_type": get_client_config().oauth2_grant_type,
-                "scope": get_client_config().oauth2_scope,
-            }
-        else:
-            data = {
-                "client_id": client_id,
-                "subject_token": creds.get(CredentialsVars.DHCORE_PERSONAL_ACCESS_TOKEN.value),
-                "subject_token_type": get_client_config().pat_subject_token_type,
-                "grant_type": get_client_config().pat_grant_type,
-                "scope": get_client_config().pat_scope,
-            }
+        match self._auth_session.auth_type:
+            case AuthType.OAUTH2.value:
+                data = {
+                    "client_id": client_id,
+                    "refresh_token": creds.get(CredentialsVars.DHCORE_REFRESH_TOKEN.value),
+                    "grant_type": get_client_config().oauth2_grant_type,
+                    "scope": get_client_config().oauth2_scope,
+                }
+            case AuthType.EXCHANGE.value:
+                data = {
+                    "client_id": client_id,
+                    "subject_token": creds.get(CredentialsVars.DHCORE_PERSONAL_ACCESS_TOKEN.value),
+                    "subject_token_type": get_client_config().pat_subject_token_type,
+                    "grant_type": get_client_config().pat_grant_type,
+                    "scope": get_client_config().pat_scope,
+                }
+            case _:
+                raise ClientError(f"Unsupported authentication type: {self._auth_session.auth_type}")
 
         request = BackendReq.post(
             api=url,
@@ -200,12 +209,12 @@ class TokenRefreshService:
         Discover OAuth2 token endpoint from issuer well-known configuration.
 
         Queries /.well-known/openid-configuration to extract token_endpoint for
-        credential refresh operations.
+        creds refresh operations.
 
         Returns
         -------
         str
-            Token endpoint URL for credential refresh.
+            Token endpoint URL for creds refresh.
         """
         endpoint_issuer = self._config_manager.configuration.get(ConfigurationVars.DHCORE_ISSUER.value)
 

@@ -4,11 +4,30 @@
 
 from unittest.mock import Mock
 
+import pytest
+
+import digitalhub.stores.client.auth.config_manager as config_manager_module
 import digitalhub.stores.client.auth.credential_store as credential_store_module
 from digitalhub.stores.client.auth.config_manager import ConfigManager
 from digitalhub.stores.client.auth.credential_session import CredentialSession
-from digitalhub.stores.client.common.enums import ConfigurationVars, CredentialsVars
+from digitalhub.stores.client.common.enums import (
+    ConfigurationVars,
+    CredentialSource,
+    CredentialsVars,
+)
 from digitalhub.utils.exceptions import ClientError
+
+
+def _manager_for_profile_switch() -> ConfigManager:
+    manager = ConfigManager.__new__(ConfigManager)
+    manager._current_profile = "current"
+    manager._credential_store = Mock()
+    manager._configuration = {ConfigurationVars.DHCORE_ENDPOINT.value: "https://current.example.test"}
+    manager._credential_session = CredentialSession(
+        {CredentialsVars.DHCORE_ACCESS_TOKEN.value: "current-token"}
+    )
+    manager._in_memory = False
+    return manager
 
 
 def test_configuration_and_credentials_use_file_precedence(monkeypatch) -> None:
@@ -70,6 +89,63 @@ def test_eval_retry_stops_reading_file_after_environment_fallback(monkeypatch) -
     manager.load_credentials.side_effect = AssertionError("file must not be checked again")
 
     assert manager.eval_retry() is False
+
+
+def test_is_using_env_reflects_active_source() -> None:
+    manager = ConfigManager.__new__(ConfigManager)
+    manager._credential_session = CredentialSession({})
+
+    assert manager.is_using_env() is False
+
+    manager._credential_session.use_environment({})
+
+    assert manager.is_using_env() is True
+
+
+def test_set_current_profile_validates_before_switching(monkeypatch) -> None:
+    manager = _manager_for_profile_switch()
+    candidate_store = Mock()
+    candidate_store.load_configuration.return_value = {}
+    candidate_store.load_credentials.return_value = {}
+    save_current_profile = Mock()
+    monkeypatch.setattr(config_manager_module, "CredentialStore", Mock(return_value=candidate_store))
+    monkeypatch.setattr(config_manager_module, "set_current_profile", save_current_profile)
+
+    with pytest.raises(ClientError, match="DHCORE_ENDPOINT"):
+        manager.set_current_profile("invalid")
+
+    save_current_profile.assert_not_called()
+    assert manager.current_profile == "current"
+    assert manager.configuration == {
+        ConfigurationVars.DHCORE_ENDPOINT.value: "https://current.example.test"
+    }
+    assert manager.credentials == {CredentialsVars.DHCORE_ACCESS_TOKEN.value: "current-token"}
+    assert manager.credential_source is CredentialSource.FILE
+
+
+def test_set_current_profile_applies_validated_configuration_and_credentials(monkeypatch) -> None:
+    manager = _manager_for_profile_switch()
+    candidate_store = Mock()
+    candidate_store.load_configuration.return_value = {
+        ConfigurationVars.DHCORE_ENDPOINT.value: "https://new.example.test"
+    }
+    candidate_store.load_credentials.return_value = {
+        CredentialsVars.DHCORE_ACCESS_TOKEN.value: "new-token"
+    }
+    save_current_profile = Mock()
+    monkeypatch.setattr(config_manager_module, "CredentialStore", Mock(return_value=candidate_store))
+    monkeypatch.setattr(config_manager_module, "set_current_profile", save_current_profile)
+
+    manager.set_current_profile("new")
+
+    save_current_profile.assert_called_once_with("new")
+    assert manager.current_profile == "new"
+    assert manager.configuration == {
+        ConfigurationVars.DHCORE_ENDPOINT.value: "https://new.example.test",
+        ConfigurationVars.DOTENV_WRITE.value: "false",
+    }
+    assert manager.credentials == {CredentialsVars.DHCORE_ACCESS_TOKEN.value: "new-token"}
+    assert manager.credential_source is CredentialSource.FILE
 
 
 def test_save_credentials_after_environment_fallback_keeps_memory_state() -> None:

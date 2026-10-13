@@ -167,3 +167,4 @@ TODO
 .DS_STORE
 .lavish
 CONTEXT.md
+uv.lock

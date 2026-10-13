@@ -56,6 +56,9 @@ def test_evaluate_refresh_retries_normalized_backend_errors() -> None:
 
 def test_evaluate_refresh_stops_for_non_refreshable_environment_credentials() -> None:
     config_manager = Mock(credential_source=CredentialSource.FILE)
+    config_manager.is_using_env.side_effect = (
+        lambda: config_manager.credential_source is CredentialSource.ENV
+    )
 
     def switch_to_environment() -> bool:
         config_manager.credential_source = CredentialSource.ENV
@@ -72,6 +75,9 @@ def test_evaluate_refresh_stops_for_non_refreshable_environment_credentials() ->
 
 def test_evaluate_refresh_accepts_a_valid_environment_token() -> None:
     config_manager = Mock(credential_source=CredentialSource.FILE)
+    config_manager.is_using_env.side_effect = (
+        lambda: config_manager.credential_source is CredentialSource.ENV
+    )
 
     def switch_to_environment() -> bool:
         config_manager.credential_source = CredentialSource.ENV
@@ -84,6 +90,44 @@ def test_evaluate_refresh_accepts_a_valid_environment_token() -> None:
     service._test_token_validity = Mock(return_value=True)
 
     assert service.evaluate_refresh() is True
+    service.refresh_credentials.assert_called_once_with()
+    service._test_token_validity.assert_called_once_with()
+
+
+def test_evaluate_refresh_retries_oauth2_with_invalid_environment_token() -> None:
+    config_manager = Mock(credential_source=CredentialSource.FILE)
+    config_manager.is_using_env.side_effect = lambda: config_manager.credential_source is CredentialSource.ENV
+
+    def switch_to_environment() -> bool:
+        config_manager.credential_source = CredentialSource.ENV
+        return True
+
+    config_manager.eval_retry.side_effect = switch_to_environment
+    auth_session = Mock(auth_type=AuthType.OAUTH2.value)
+    service = TokenRefreshService(config_manager, auth_session, Mock())
+    service.refresh_credentials = Mock(side_effect=[ClientError("file credentials expired"), None])
+    service._test_token_validity = Mock(return_value=False)
+
+    assert service.evaluate_refresh() is True
+    assert service.refresh_credentials.call_count == 2
+    service._test_token_validity.assert_called_once_with()
+
+
+def test_evaluate_refresh_stops_for_invalid_environment_access_token() -> None:
+    config_manager = Mock(credential_source=CredentialSource.FILE)
+    config_manager.is_using_env.side_effect = lambda: config_manager.credential_source is CredentialSource.ENV
+
+    def switch_to_environment() -> bool:
+        config_manager.credential_source = CredentialSource.ENV
+        return True
+
+    config_manager.eval_retry.side_effect = switch_to_environment
+    auth_session = Mock(auth_type=AuthType.ACCESS_TOKEN.value)
+    service = TokenRefreshService(config_manager, auth_session, Mock())
+    service.refresh_credentials = Mock(side_effect=ClientError("file credentials expired"))
+    service._test_token_validity = Mock(return_value=False)
+
+    assert service.evaluate_refresh() is False
     service.refresh_credentials.assert_called_once_with()
     service._test_token_validity.assert_called_once_with()
 
@@ -132,19 +176,6 @@ def test_evaluate_refresh_uses_configured_maximum_attempts(monkeypatch) -> None:
 
     service.refresh_credentials.assert_called_once_with()
     config_manager.eval_retry.assert_not_called()
-
-
-def test_evaluate_refresh_rejects_non_positive_maximum_attempts(monkeypatch) -> None:
-    config_manager = Mock()
-    configured_client = Mock(max_refresh_attempts=0)
-    monkeypatch.setattr(refresh_module, "get_client_config", Mock(return_value=configured_client))
-    service = TokenRefreshService(config_manager, Mock(), Mock())
-    service.refresh_credentials = Mock()
-
-    with pytest.raises(ClientError, match="max_refresh_attempts must be at least 1"):
-        service.evaluate_refresh()
-
-    service.refresh_credentials.assert_not_called()
 
 
 def test_refresh_uses_request_transport(monkeypatch) -> None:

@@ -34,7 +34,7 @@ class ConfigManager:
         self._credential_store = CredentialStore(self._current_profile)
         self._configuration: dict[str, Any] = self.load_configuration()
         self._credential_session = CredentialSession(self.load_credentials())
-        self._validate()
+        self._validate(self._configuration, self.credentials)
         self._in_memory: bool = False
 
     @staticmethod
@@ -57,15 +57,23 @@ class ConfigManager:
         if self._in_memory:
             raise ClientError("Cannot set profile when configuration is in-memory only.")
 
+        credential_store = CredentialStore(profile)
+        configuration = self._apply_configuration_defaults(credential_store.load_configuration())
+        credentials = credential_store.load_credentials()
+        self._validate(configuration, credentials)
+
         set_current_profile(profile)
         self._current_profile = profile
-        self._credential_store = CredentialStore(profile)
-        self.reload_configuration()
-        self.reload_credentials()
+        self._credential_store = credential_store
+        self._configuration = configuration
+        self._credential_session.use_file(credentials)
 
     def load_configuration(self) -> dict[str, Any]:
         """Load configuration with file > env precedence."""
-        configuration = self._credential_store.load_configuration()
+        return self._apply_configuration_defaults(self._credential_store.load_configuration())
+
+    @staticmethod
+    def _apply_configuration_defaults(configuration: dict[str, Any]) -> dict[str, Any]:
         if configuration.get(ConfigurationVars.DOTENV_WRITE.value) is None:
             configuration[ConfigurationVars.DOTENV_WRITE.value] = "false"
         return configuration
@@ -89,7 +97,7 @@ class ConfigManager:
 
     def eval_retry(self) -> bool:
         """Evaluate credentials reload based on retry logic."""
-        if self.credential_source is CredentialSource.ENV:
+        if self.is_using_env():
             logger.debug("Credential source is already environment variables; stopping the refresh cycle.")
             return False
 
@@ -133,7 +141,7 @@ class ConfigManager:
         write_dotenv = str(self._configuration.get(ConfigurationVars.DOTENV_WRITE.value, "false")).strip().lower()
         if write_dotenv == "true":
             self.export_to_env(variables)
-        if self.credential_source is CredentialSource.ENV:
+        if self.is_using_env():
             self._credential_session.update({key.upper(): value for key, value in variables.items()})
             logger.debug("Persisted refreshed credentials and kept environment credentials active in memory.")
         else:
@@ -167,10 +175,11 @@ class ConfigManager:
         """Get current authentication credentials and configuration."""
         return {**self._configuration, **self.credentials}
 
-    def _validate(self) -> None:
+    @staticmethod
+    def _validate(configuration: dict[str, Any], credentials: dict[str, Any]) -> None:
         """Validate if all required keys are present in the configuration."""
         required_keys = [ConfigurationVars.DHCORE_ENDPOINT.value]
-        current_keys = {**self._configuration, **self.credentials}
+        current_keys = {**configuration, **credentials}
         for key in required_keys:
             if current_keys.get(key) is None:
                 raise ClientError(f"Required configuration key '{key}' is missing.")
@@ -186,6 +195,10 @@ class ConfigManager:
     @property
     def credential_source(self) -> CredentialSource:
         return self._credential_session.source
+
+    def is_using_env(self) -> bool:
+        """Return whether environment variables are the active credential source."""
+        return self.credential_source is CredentialSource.ENV
 
     @property
     def credential_session(self) -> CredentialSession:
