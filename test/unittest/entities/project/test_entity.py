@@ -138,7 +138,7 @@ def test_save_updates_project(monkeypatch) -> None:
     )
     project._update_attributes = Mock()
 
-    result = project.save(update=True)
+    result = project.update()
 
     assert result is project
     update_project.assert_called_once_with(

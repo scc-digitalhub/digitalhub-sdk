@@ -184,5 +184,5 @@ def post_process(
     """
     reader = get_reader_by_object(data)
     obj.status.preview = reader.get_preview(data)
-    obj.save(update=True)
+    obj.update()
     return obj

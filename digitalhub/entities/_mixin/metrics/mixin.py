@@ -86,7 +86,7 @@ class MetricsMixin:
 
         if not self._has_metrics():
             self.status.metrics = {}
-            self.save(update=True)
+            self.update()
             metrics = {}
         else:
             metrics = self._read_metrics()

@@ -38,27 +38,9 @@ class ContextEntity(Entity):
     #  Save / Refresh / Export
     ##############################
 
-    def save(self, update: bool = False) -> ContextEntity:
+    def save(self) -> ContextEntity:
         """
-        Save or update the entity into the backend.
-
-        Parameters
-        ----------
-        update : bool
-            Flag to indicate update.
-
-        Returns
-        -------
-        ContextEntity
-            Entity saved.
-        """
-        if update:
-            return self._update()
-        return self._save()
-
-    def _save(self) -> ContextEntity:
-        """
-        Save entity into backend.
+        Save the entity into the backend.
 
         Returns
         -------
@@ -69,9 +51,9 @@ class ContextEntity(Entity):
         self._update_attributes(new_obj)
         return self
 
-    def _update(self) -> ContextEntity:
+    def update(self) -> ContextEntity:
         """
-        Update entity in backend.
+        Update the entity in the backend.
 
         Returns
         -------

@@ -113,7 +113,7 @@ class Project(Entity, ProjectListShortcuts):
     #  Save / Refresh / Export
     ##############################
 
-    def save(self, update: bool = False) -> Project:
+    def save(self) -> Project:
         """
         Save entity into backend.
 
@@ -127,14 +127,24 @@ class Project(Entity, ProjectListShortcuts):
         Project
             Entity saved.
         """
-        if update:
-            new_obj = base_crud_processor.update_project_entity(
-                entity_type=self.ENTITY_TYPE,
-                entity_name=self.name,
-                entity_dict=self.to_dict(),
-            )
-        else:
-            new_obj = base_crud_processor.create_project_entity(_entity=self)
+        new_obj = base_crud_processor.create_project_entity(_entity=self)
+        self._update_attributes(new_obj)
+        return self
+
+    def update(self) -> Project:
+        """
+        Update entity into backend.
+
+        Returns
+        -------
+        Project
+            Entity updated.
+        """
+        new_obj = base_crud_processor.update_project_entity(
+            entity_type=self.ENTITY_TYPE,
+            entity_name=self.name,
+            entity_dict=self.to_dict(),
+        )
         self._update_attributes(new_obj)
         return self
 

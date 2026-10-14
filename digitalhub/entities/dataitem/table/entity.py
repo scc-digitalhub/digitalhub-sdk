@@ -10,7 +10,6 @@ from typing import Any
 from digitalhub.entities._commons.utils import refresh_decorator
 from digitalhub.entities.dataitem._base.entity import Dataitem
 from digitalhub.stores.data.api import get_store
-from digitalhub.utils.uri_utils import has_sql_scheme
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.dataitem.table.spec import DataitemSpecTable
@@ -27,31 +26,6 @@ class DataitemTable(Dataitem):
 
         self.spec: DataitemSpecTable
         self.status: DataitemStatusTable
-
-        self._query: str | None = None
-
-    def query(self, query: str) -> DataitemTable:
-        """
-        Set query to execute.
-
-        Parameters
-        ----------
-        query : str
-            Query to execute.
-
-        Returns
-        -------
-        DataitemTable
-            Self object.
-        """
-        # to remove in future
-        if not has_sql_scheme(self.spec.path):
-            raise ValueError(
-                f"Dataitem path is not a SQL scheme: {self.spec.path}",
-                " Query can be made only on a SQL scheme.",
-            )
-        self._query = query
-        return self
 
     @refresh_decorator
     def as_df(

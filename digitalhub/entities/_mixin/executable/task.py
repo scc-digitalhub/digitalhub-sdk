@@ -206,7 +206,7 @@ class ExecutableTaskMixin(ExecutableBaseMixin):
         kwargs["uuid"] = existing_task.id
 
         task: Task = entity_factory.build_entity_from_params(**kwargs)
-        task.save(update=True)
+        task.update()
         task_store[action] = task
         return task
 
@@ -264,7 +264,7 @@ class ExecutableTaskMixin(ExecutableBaseMixin):
         kwargs["uuid"] = existing_task.id
 
         task: Task = entity_factory.build_entity_from_params(**kwargs)
-        task.save(update=True)
+        task.update()
         task_store[action] = task
         return task
 

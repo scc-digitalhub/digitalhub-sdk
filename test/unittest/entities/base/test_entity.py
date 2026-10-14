@@ -22,7 +22,7 @@ from digitalhub.entities.run.generic.entity import RunGeneric
 class StubEntity(Entity):
     ENTITY_TYPE = "stub"
 
-    def save(self, update: bool = False) -> Entity:
+    def save(self) -> Entity:
         return self
 
     def refresh(self) -> Entity:

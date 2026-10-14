@@ -49,9 +49,15 @@ class Entity(Base):
         self.key: str
 
     @abstractmethod
-    def save(self, update: bool = False) -> Entity:
+    def save(self) -> Entity:
         """
         Abstract save method.
+        """
+
+    @abstractmethod
+    def update(self) -> Entity:
+        """
+        Abstract update method.
         """
 
     @abstractmethod
@@ -60,25 +66,25 @@ class Entity(Base):
         Abstract refresh method.
         """
 
-    def _update_attributes(self, obj: Entity) -> None:
-        """
-        Update attributes.
-
-        Parameters
-        ----------
-        obj : Entity
-            The entity object to update attributes from.
-        """
-        self.metadata = obj.metadata
-        self.spec = obj.spec
-        self.status = obj.status
-        self.user = obj.user
-
     @abstractmethod
     def export(self) -> str:
         """
         Abstract export method.
         """
+
+    def _update_attributes(self, obj: Entity) -> None:
+            """
+            Update attributes.
+
+            Parameters
+            ----------
+            obj : Entity
+                The entity object to update attributes from.
+            """
+            self.metadata = obj.metadata
+            self.spec = obj.spec
+            self.status = obj.status
+            self.user = obj.user
 
     def set_name(self, value: str) -> None:
         """

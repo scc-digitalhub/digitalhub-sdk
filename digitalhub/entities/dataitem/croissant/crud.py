@@ -110,7 +110,7 @@ def log_croissant(
     dataitem.metadata.description = metadata[1]
     if metadata[2] is not None:
         dataitem.metadata.labels = metadata[2]
-    dataitem.save(update=True)
+    dataitem.update()
 
     return dataitem
 

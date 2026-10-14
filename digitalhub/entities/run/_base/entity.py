@@ -72,7 +72,7 @@ class Run(ContextEntity, UnversionedMixin, MetricsMixin):
         new_spec = self._get_runtime().build(executable, task, self.to_dict())
         self.spec = entity_factory.build_spec(self.kind, **new_spec)
         self.status.state = State.BUILT.value
-        self.save(update=True)
+        self.update()
 
     def run(self) -> Run:
         """
@@ -97,7 +97,7 @@ class Run(ContextEntity, UnversionedMixin, MetricsMixin):
                 if self.local_execution():
                     self.status.state = State.ERROR.value
                 self.status.message = str(e)
-                self.save(update=True)
+                self.update()
                 raise
 
         # Unset run in context after setup or execution
@@ -109,7 +109,7 @@ class Run(ContextEntity, UnversionedMixin, MetricsMixin):
             status.pop("state", None)
         new_status = {**self.status.to_dict(), **status}
         self.set_status(new_status)
-        self.save(update=True)
+        self.update()
         return self
 
     def wait(self, log_info: bool = True) -> Run:
@@ -202,9 +202,9 @@ class Run(ContextEntity, UnversionedMixin, MetricsMixin):
         try:
             if self.local_execution():
                 self.status.state = State.READY.value
-                self.save(update=True)
+                self.update()
                 self.status.state = State.RUNNING.value
-                self.save(update=True)
+                self.update()
         except BaseException:
             context.unset_run()
             raise

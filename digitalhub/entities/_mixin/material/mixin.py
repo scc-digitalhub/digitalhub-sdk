@@ -105,7 +105,7 @@ class MaterialMixin:
             error.
         """
         self.status.state = State.UPLOADING.value
-        self.save(update=True)
+        self.update()
 
         store = get_store(self.spec.path)
         error: Exception | None = None
@@ -134,11 +134,11 @@ class MaterialMixin:
 
         if uploaded:
             self.status.state = State.READY.value
-            self.save(update=True)
+            self.update()
             return
 
         self.status.state = State.ERROR.value
-        self.save(update=True)
+        self.update()
         raise exception(msg) from error
 
     @property
@@ -174,7 +174,7 @@ class MaterialMixin:
             return
 
         self.status.files = []
-        self.save(update=True)
+        self.update()
         material_processor.update_files_info(
             self.project,
             self.ENTITY_TYPE,
