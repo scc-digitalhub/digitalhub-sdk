@@ -142,17 +142,20 @@ class Run(ContextEntity, UnversionedMixin, MetricsMixin):
                     logger.info(f"Run {self.id} finished in {current:.2f} seconds.")
                 return self
 
-    def logs(self) -> list[Log]:
+    def logs(self, as_entity: bool = False) -> list[Log] | list[str]:
         """
         Get run logs. If no logs are present, an empty list is returned.
         In case of local execution, logs are printed to console.
 
         Returns
         -------
-        list[Log]
-            List of run logs.
+        list[Log] | list[str]
+            List of run logs. If `as_entity` is True, returns a list of `Log` objects, otherwise returns a list of log texts.
         """
-        return run_processor.read_run_logs(self.project, self.ENTITY_TYPE, self.id)
+        logs = run_processor.read_run_logs(self.project, self.ENTITY_TYPE, self.id)
+        if as_entity:
+            return logs
+        return [i.text for i in logs]
 
     def stop(self) -> None:
         """
