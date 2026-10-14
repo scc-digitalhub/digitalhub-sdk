@@ -29,7 +29,7 @@ def test_start_execution_validates_state_before_registering_run() -> None:
     run = object.__new__(Run)
     run.status = SimpleNamespace(state=State.CREATED.value)
     run.local_execution = Mock(return_value=True)
-    run.save = Mock()
+    run.update = Mock()
     context = Mock()
     run._context = Mock(return_value=context)
 
@@ -39,15 +39,15 @@ def test_start_execution_validates_state_before_registering_run() -> None:
     context.set_run.assert_not_called()
 
 
-def test_start_execution_rolls_back_registration_when_state_save_fails() -> None:
+def test_start_execution_rolls_back_registration_when_state_update_fails() -> None:
     run = object.__new__(Run)
     run.status = SimpleNamespace(state=State.BUILT.value)
     run.local_execution = Mock(return_value=True)
-    run.save = Mock(side_effect=RuntimeError("save failed"))
+    run.update = Mock(side_effect=RuntimeError("update failed"))
     context = Mock()
     run._context = Mock(return_value=context)
 
-    with pytest.raises(RuntimeError, match="save failed"):
+    with pytest.raises(RuntimeError, match="update failed"):
         run.start_execution()
 
     context.set_run.assert_called_once_with(run)
@@ -71,7 +71,7 @@ def test_run_state_precedence(local_execution: bool, expected_state: str) -> Non
     run.local_execution = Mock(return_value=local_execution)
     run.to_dict = Mock(return_value={})
     run.set_status = Mock()
-    run.save = Mock(return_value=run)
+    run.update = Mock(return_value=run)
     runtime = Mock()
     runtime.run.return_value = {"state": "RUNTIME"}
     run._get_runtime = Mock(return_value=runtime)

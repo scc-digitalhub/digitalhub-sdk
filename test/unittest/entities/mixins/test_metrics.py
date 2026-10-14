@@ -66,7 +66,7 @@ def test_log_metric_initializes_status_and_updates_backend(monkeypatch) -> None:
     entity.ENTITY_TYPE = "artifact"
     entity.id = "entity-id"
     entity.status = SimpleNamespace(metrics=None)
-    entity.save = Mock()
+    entity.update = Mock()
     entity._init_metrics_state()
     backend_metrics = {}
 
@@ -83,7 +83,7 @@ def test_log_metric_initializes_status_and_updates_backend(monkeypatch) -> None:
 
     assert entity.status.metrics == {}
     assert entity.metrics == {"accuracy": [0.9]}
-    entity.save.assert_called_once_with(update=True)
+    entity.update.assert_called_once_with()
 
 
 def test_log_metric_appends_to_existing_backend_metric(monkeypatch) -> None:

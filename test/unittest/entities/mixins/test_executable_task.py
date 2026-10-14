@@ -38,7 +38,7 @@ def test_update_task_loads_existing_task_when_cache_is_cold(monkeypatch) -> None
         function="python://project/function:function-id",
         uuid="task-id",
     )
-    replacement.save.assert_called_once_with(update=True)
+    replacement.update.assert_called_once_with()
 
 
 def test_delete_task_loads_existing_task_when_cache_is_cold(monkeypatch) -> None:
@@ -73,4 +73,4 @@ def test_set_task_preserves_existing_task_id_when_cache_is_cold(monkeypatch) -> 
         kind="python+run",
         uuid="task-id",
     )
-    replacement.save.assert_called_once_with(update=True)
+    replacement.update.assert_called_once_with()

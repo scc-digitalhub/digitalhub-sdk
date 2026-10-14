@@ -20,7 +20,7 @@ class MaterialEntityForTest(MaterialMixin):
         self.project = "my-project"
         self.id = "entity-id"
         self.status = SimpleNamespace(files=None)
-        self.save = Mock()
+        self.update = Mock()
         self.refresh = Mock()
 
 
@@ -86,8 +86,8 @@ def test_upload_sets_ready_state_and_logs_file_info(monkeypatch) -> None:
     assert entity.status.state == "READY"
     assert entity.status.message is None
     assert entity.status.files == [{"path": "file.txt"}]
-    assert entity.save.call_count == 2
-    entity.save.assert_any_call(update=True)
+    assert entity.update.call_count == 2
+    entity.update.assert_any_call()
     store.upload.assert_called_once_with(
         "/source",
         "store://material",
@@ -131,7 +131,7 @@ def test_upload_converts_missing_source_to_entity_error(monkeypatch) -> None:
 
     assert entity.status.state == "ERROR"
     assert "Please verify" in entity.status.message
-    assert entity.save.call_count == 2
+    assert entity.update.call_count == 2
 
 
 def test_upload_converts_store_errors_to_entity_error(monkeypatch) -> None:
@@ -146,7 +146,7 @@ def test_upload_converts_store_errors_to_entity_error(monkeypatch) -> None:
 
     assert entity.status.state == "ERROR"
     assert entity.status.message == "Upload failed: invalid source"
-    assert entity.save.call_count == 2
+    assert entity.update.call_count == 2
 
 
 def test_files_reads_backend_info_and_falls_back_to_status(monkeypatch) -> None:

@@ -314,7 +314,7 @@ def test_log_dataitem_specialized_delegates_to_implementation(crud_module, log_n
         implementation = Mock(return_value="dataitem")
         dataitem = SimpleNamespace(
             metadata=SimpleNamespace(name=None, description=None, labels=None),
-            save=Mock(),
+            update=Mock(),
         )
         implementation.return_value = dataitem
         monkeypatch.setattr(crud_module, "log_base_dataitem", implementation)
@@ -327,7 +327,7 @@ def test_log_dataitem_specialized_delegates_to_implementation(crud_module, log_n
         assert result is dataitem
         implementation.assert_called_once()
         assert implementation.call_args.kwargs["kind"] == kind
-        dataitem.save.assert_called_once_with(update=True)
+        dataitem.update.assert_called_once_with()
         return
 
     log_entity = Mock(return_value="dataitem")
