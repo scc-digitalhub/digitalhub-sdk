@@ -117,11 +117,6 @@ class Project(Entity, ProjectListShortcuts):
         """
         Save entity into backend.
 
-        Parameters
-        ----------
-        update : bool
-            If True, the object will be updated.
-
         Returns
         -------
         Project

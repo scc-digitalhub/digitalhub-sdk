@@ -126,6 +126,24 @@ def get_trigger(
     -------
     Trigger
         Retrieved trigger entity.
+
+    Examples
+    --------
+    Get the latest trigger by name and project:
+
+    ```python
+    import digitalhub as dh
+
+    trigger = dh.get_trigger("daily-run", project="my-project")
+    ```
+
+    Get a specific trigger version by key:
+
+    ```python
+    trigger = dh.get_trigger(
+        "store://my-project/trigger/scheduler/daily-run:123e4567-e89b-42d3-a456-426614174000",
+    )
+    ```
     """
     return crud_processor.read_context_entity(
         identifier=identifier,
@@ -177,6 +195,16 @@ def list_triggers(
     -------
     list[Trigger]
         Trigger entities matching the filters.
+
+    Examples
+    --------
+    List triggers in a project:
+
+    ```python
+    import digitalhub as dh
+
+    triggers = dh.list_triggers(project="my-project")
+    ```
     """
     return crud_processor.list_context_entities(
         project=project,
@@ -221,6 +249,16 @@ def import_trigger(
     -------
     Trigger
         Imported trigger entity.
+
+    Examples
+    --------
+    Import a trigger from a YAML file:
+
+    ```python
+    import digitalhub as dh
+
+    trigger = dh.import_trigger("my-trigger.yaml")
+    ```
     """
     return crud_processor.import_context_entity(file, key, reset_id, context)
 
@@ -256,6 +294,18 @@ def update_trigger(entity: Trigger) -> Trigger:
     -------
     Trigger
         Updated trigger entity.
+
+    Examples
+    --------
+    Update a trigger description:
+
+    ```python
+    import digitalhub as dh
+
+    trigger = dh.get_trigger("daily-run", project="my-project")
+    trigger.set_description("Updated trigger")
+    trigger = dh.update_trigger(trigger)
+    ```
     """
     return crud_processor.update_context_entity(
         project=entity.project,
@@ -287,6 +337,28 @@ def delete_trigger(
     -------
     dict
         Response data from the backend.
+
+    Examples
+    --------
+    Delete one trigger version by key:
+
+    ```python
+    import digitalhub as dh
+
+    dh.delete_trigger(
+        "store://my-project/trigger/scheduler/daily-run:123e4567-e89b-42d3-a456-426614174000",
+    )
+    ```
+
+    Delete one trigger version by name and project:
+
+    ```python
+    dh.delete_trigger(
+        "daily-run",
+        project="my-project",
+        entity_id="123e4567-e89b-42d3-a456-426614174000",
+    )
+    ```
     """
     return crud_processor.delete_context_entity(
         identifier=identifier,

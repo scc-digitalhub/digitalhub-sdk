@@ -52,6 +52,16 @@ def new_project(
     -------
     Project
         Created project entity.
+
+    Examples
+    --------
+    Create a project:
+
+    ```python
+    import digitalhub as dh
+
+    project = dh.new_project(name="my-project")
+    ```
     """
     if source is None:
         source = "./"
@@ -85,6 +95,16 @@ def get_project(
     -------
     Project
         Retrieved project entity.
+
+    Examples
+    --------
+    Retrieve a project by name:
+
+    ```python
+    import digitalhub as dh
+
+    project = dh.get_project("my-project")
+    ```
     """
     obj = base_crud_processor.read_project_entity(
         entity_type=ENTITY_TYPE,
@@ -115,6 +135,16 @@ def import_project(
     -------
     Project
         Imported project entity.
+
+    Examples
+    --------
+    Import a project from a YAML descriptor:
+
+    ```python
+    import digitalhub as dh
+
+    project = dh.import_project("my-project.yaml")
+    ```
     """
     obj = base_crud_processor.import_project_entity(
         file=file,
@@ -141,6 +171,16 @@ def load_project(
     -------
     Project
         Loaded project entity.
+
+    Examples
+    --------
+    Load a project descriptor from a YAML file:
+
+    ```python
+    import digitalhub as dh
+
+    project = dh.load_project("my-project.yaml")
+    ```
     """
     obj = base_crud_processor.load_project_entity(file=file)
     return setup_project(obj, setup_kwargs)
@@ -191,6 +231,16 @@ def get_or_create_project(
     -------
     Project
         Retrieved or created project entity.
+
+    Examples
+    --------
+    Retrieve a project or create it if it does not exist:
+
+    ```python
+    import digitalhub as dh
+
+    project = dh.get_or_create_project("my-project")
+    ```
     """
     try:
         return get_project(
@@ -222,6 +272,18 @@ def update_project(entity: Project) -> Project:
     -------
     Project
         Updated project entity.
+
+    Examples
+    --------
+    Update a project after changing its mutable metadata:
+
+    ```python
+    import digitalhub as dh
+
+    project = dh.get_project("my-project")
+    project.set_description("Updated project")
+    project = dh.update_project(project)
+    ```
     """
     return base_crud_processor.update_project_entity(
         entity_type=entity.ENTITY_TYPE,
@@ -251,6 +313,16 @@ def delete_project(
     -------
     dict
         Response data from the backend.
+
+    Examples
+    --------
+    Delete a project:
+
+    ```python
+    import digitalhub as dh
+
+    dh.delete_project("my-project")
+    ```
     """
     return base_crud_processor.delete_project_entity(
         entity_type=ENTITY_TYPE,

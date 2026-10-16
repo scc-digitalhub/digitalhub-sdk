@@ -63,6 +63,22 @@ def log_model(
     -------
     ModelModel
         Created model entity with uploaded files.
+
+    Examples
+    --------
+    Upload a local model directory:
+
+    ```python
+    import digitalhub as dh
+
+    model = dh.log_model(
+        project="my-project",
+        name="image-classifier",
+        source="./models/image-classifier",
+        framework="pytorch",
+        algorithm="resnet18",
+    )
+    ```
     """
     kind_warning(
         requested_kind=kwargs.pop("kind", None),
@@ -137,6 +153,22 @@ def register_model(
     -------
     ModelModel
         Registered model entity.
+
+    Examples
+    --------
+    Register a model that already exists in remote storage:
+
+    ```python
+    import digitalhub as dh
+
+    model = dh.register_model(
+        project="my-project",
+        name="registered-image-classifier",
+        source="s3://my-bucket/models/image-classifier",
+        framework="pytorch",
+        algorithm="resnet18",
+    )
+    ```
     """
     return register_base_model(
         project=project,

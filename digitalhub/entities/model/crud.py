@@ -36,6 +36,17 @@ def get_model(
     -------
     Model
         Retrieved model entity.
+
+    Examples
+    --------
+    Retrieve the latest version by name and project, or by entity key:
+
+    ```python
+    import digitalhub as dh
+
+    model = dh.get_model("image-classifier", "my-project")
+    model = dh.get_model("store://my-project/model/model/image-classifier:123e4567-e89b-42d3-a456-426614174000")
+    ```
     """
     return crud_processor.read_context_entity(
         identifier=identifier,
@@ -63,6 +74,17 @@ def get_model_versions(
     -------
     list[Model]
         All versions of the model entity.
+
+    Examples
+    --------
+    Retrieve all versions by name and project, or by entity key:
+
+    ```python
+    import digitalhub as dh
+
+    models = dh.get_model_versions("image-classifier", "my-project")
+    models = dh.get_model_versions("store://my-project/model/model/image-classifier:123e4567-e89b-42d3-a456-426614174000")
+    ```
     """
     return crud_processor.read_context_entity_versions(
         identifier=identifier,
@@ -110,6 +132,16 @@ def list_models(
     -------
     list[Model]
         Model entities matching the filters.
+
+    Examples
+    --------
+    List models in a project:
+
+    ```python
+    import digitalhub as dh
+
+    models = dh.list_models(project="my-project")
+    ```
     """
     return crud_processor.list_context_entities(
         project=project,
@@ -153,6 +185,17 @@ def import_model(
     -------
     Model
         Imported model entity.
+
+    Examples
+    --------
+    Import a model from a YAML file or entity key:
+
+    ```python
+    import digitalhub as dh
+
+    model = dh.import_model(file="my-model.yaml")
+    model = dh.import_model(key="store://my-project/model/model/image-classifier:123e4567-e89b-42d3-a456-426614174000")
+    ```
     """
     return crud_processor.import_context_entity(file, key, reset_id, context)
 
@@ -171,6 +214,16 @@ def load_model(file: str) -> Model:
     Model
         Loaded model entity. An existing entity is updated when it can be
         identified; otherwise, a new entity is created.
+
+    Examples
+    --------
+    Load a model descriptor from a YAML file:
+
+    ```python
+    import digitalhub as dh
+
+    model = dh.load_model("my-model.yaml")
+    ```
     """
     return crud_processor.load_context_entity(file)
 
@@ -188,6 +241,18 @@ def update_model(entity: Model) -> Model:
     -------
     Model
         Updated model entity.
+
+    Examples
+    --------
+    Update a model after changing its mutable metadata:
+
+    ```python
+    import digitalhub as dh
+
+    model = dh.get_model("image-classifier", "my-project")
+    model.set_description("Updated model")
+    model = dh.update_model(model)
+    ```
     """
     return crud_processor.update_context_entity(
         project=entity.project,
@@ -228,6 +293,17 @@ def delete_model(
     -------
     dict
         Response data from the backend.
+
+    Examples
+    --------
+    Delete a version by key, or delete all versions by name and project:
+
+    ```python
+    import digitalhub as dh
+
+    dh.delete_model("store://my-project/model/model/image-classifier:123e4567-e89b-42d3-a456-426614174000")
+    dh.delete_model("image-classifier", "my-project", delete_all_versions=True)
+    ```
     """
     return crud_processor.delete_context_entity(
         identifier=identifier,

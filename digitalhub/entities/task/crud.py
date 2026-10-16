@@ -52,6 +52,20 @@ def new_task(
     -------
     Task
         Created task entity.
+
+    Examples
+    --------
+    Create a task for a function:
+
+    ```python
+    import digitalhub as dh
+
+    task = dh.new_task(
+        project="my-project",
+        kind="python+job",
+        function="python://my-project/my-function:latest",
+    )
+    ```
     """
     return crud_processor.create_context_entity(
         project=project,
@@ -82,6 +96,22 @@ def get_task(identifier: str, project: str | None = None) -> Task:
     -------
     Task
         Retrieved task entity.
+
+    Examples
+    --------
+    Get a task by ID and project:
+
+    ```python
+    import digitalhub as dh
+
+    task = dh.get_task("my-task-id", project="my-project")
+    ```
+
+    Get a task by key:
+
+    ```python
+    task = dh.get_task("store://my-project/task/python+job/my-task-id")
+    ```
     """
     return crud_processor.read_unversioned_entity(
         identifier=identifier,
@@ -132,6 +162,16 @@ def list_tasks(
     -------
     list[Task]
         Task entities matching the filters.
+
+    Examples
+    --------
+    List tasks in a project:
+
+    ```python
+    import digitalhub as dh
+
+    tasks = dh.list_tasks(project="my-project")
+    ```
     """
     return crud_processor.list_context_entities(
         project=project,
@@ -177,6 +217,16 @@ def import_task(
     -------
     Task
         Imported task entity.
+
+    Examples
+    --------
+    Import a task from a YAML file:
+
+    ```python
+    import digitalhub as dh
+
+    task = dh.import_task("my-task.yaml")
+    ```
     """
     return crud_processor.import_context_entity(file, key, reset_id, context)
 
@@ -195,6 +245,16 @@ def load_task(file: str) -> Task:
     Task
         Loaded task entity. An existing entity is updated when it can be
         identified; otherwise, a new entity is created.
+
+    Examples
+    --------
+    Load a task from a YAML file:
+
+    ```python
+    import digitalhub as dh
+
+    task = dh.load_task("my-task.yaml")
+    ```
     """
     return crud_processor.load_context_entity(file)
 
@@ -212,6 +272,18 @@ def update_task(entity: Task) -> Task:
     -------
     Task
         Updated task entity.
+
+    Examples
+    --------
+    Update a task description:
+
+    ```python
+    import digitalhub as dh
+
+    task = dh.get_task("my-task-id", project="my-project")
+    task.set_description("Updated task")
+    task = dh.update_task(task)
+    ```
     """
     return crud_processor.update_context_entity(
         project=entity.project,
@@ -247,6 +319,22 @@ def delete_task(
     -------
     dict
         Response data from the backend.
+
+    Examples
+    --------
+    Delete a task by ID and project:
+
+    ```python
+    import digitalhub as dh
+
+    dh.delete_task("my-task-id", project="my-project")
+    ```
+
+    Delete a task by key:
+
+    ```python
+    dh.delete_task("store://my-project/task/python+job/my-task-id")
+    ```
     """
     return crud_processor.delete_context_entity(
         identifier=identifier,

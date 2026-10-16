@@ -54,6 +54,20 @@ def new_secret(
     -------
     Secret
         Created secret entity.
+
+    Examples
+    --------
+    Create a secret:
+
+    ```python
+    import digitalhub as dh
+
+    secret = dh.new_secret(
+        project="my-project",
+        name="my-secret",
+        secret_value="my-secret-value",
+    )
+    ```
     """
     if secret_value is None:
         raise ValueError("secret_value must be provided.")
@@ -94,6 +108,17 @@ def get_secret(
     -------
     Secret
         Retrieved secret entity.
+
+    Examples
+    --------
+    Retrieve the latest version by name and project, or by entity key:
+
+    ```python
+    import digitalhub as dh
+
+    secret = dh.get_secret("my-secret", "my-project")
+    secret = dh.get_secret("store://my-project/secret/secret/my-secret:123e4567-e89b-42d3-a456-426614174000")
+    ```
     """
     if not is_valid_key(identifier):
         if project is None:
@@ -124,6 +149,16 @@ def list_secrets(project: str) -> list[Secret]:
     -------
     list[Secret]
         Latest versions of secret entities in the project.
+
+    Examples
+    --------
+    List secrets in a project:
+
+    ```python
+    import digitalhub as dh
+
+    secrets = dh.list_secrets(project="my-project")
+    ```
     """
     return crud_processor.list_context_entities(
         project=project,
@@ -159,6 +194,17 @@ def import_secret(
     -------
     Secret
         Imported secret entity.
+
+    Examples
+    --------
+    Import a secret from a YAML file or entity key:
+
+    ```python
+    import digitalhub as dh
+
+    secret = dh.import_secret(file="my-secret.yaml")
+    secret = dh.import_secret(key="store://my-project/secret/secret/my-secret:123e4567-e89b-42d3-a456-426614174000")
+    ```
     """
     return crud_processor.import_context_entity(file, key, reset_id, context)
 
@@ -194,6 +240,18 @@ def update_secret(entity: Secret) -> Secret:
     -------
     Secret
         Updated secret entity.
+
+    Examples
+    --------
+    Update a secret after changing its mutable metadata:
+
+    ```python
+    import digitalhub as dh
+
+    secret = dh.get_secret("my-secret", "my-project")
+    secret.set_description("Updated secret")
+    secret = dh.update_secret(secret)
+    ```
     """
     return crud_processor.update_context_entity(
         project=entity.project,
@@ -231,6 +289,17 @@ def delete_secret(
     -------
     dict
         Response data from the backend.
+
+    Examples
+    --------
+    Delete a version by key, or delete all versions by name and project:
+
+    ```python
+    import digitalhub as dh
+
+    dh.delete_secret("store://my-project/secret/secret/my-secret:123e4567-e89b-42d3-a456-426614174000")
+    dh.delete_secret("my-secret", "my-project", delete_all_versions=True)
+    ```
     """
     return crud_processor.delete_context_entity(
         identifier=identifier,

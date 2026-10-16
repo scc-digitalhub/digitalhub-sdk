@@ -37,6 +37,17 @@ def get_artifact(
     -------
     Artifact
         Retrieved artifact entity.
+
+    Examples
+    --------
+    Retrieve the latest version by name and project, or by entity key:
+
+    ```python
+    import digitalhub as dh
+
+    artifact = dh.get_artifact("my-artifact", "my-project")
+    artifact = dh.get_artifact("store://my-project/artifact/artifact/my-artifact:123e4567-e89b-42d3-a456-426614174000")
+    ```
     """
     return crud_processor.read_context_entity(
         identifier=identifier,
@@ -64,6 +75,19 @@ def get_artifact_versions(
     -------
     list[Artifact]
         All versions of the artifact entity.
+
+    Examples
+    --------
+    Retrieve all versions by name and project, or by entity key:
+
+    ```python
+    import digitalhub as dh
+
+    artifacts = dh.get_artifact_versions("my-artifact", "my-project")
+    artifacts = dh.get_artifact_versions(
+        "store://my-project/artifact/artifact/my-artifact:123e4567-e89b-42d3-a456-426614174000"
+    )
+    ```
     """
     return crud_processor.read_context_entity_versions(
         identifier=identifier,
@@ -111,6 +135,16 @@ def list_artifacts(
     -------
     list[Artifact]
         Artifact entities matching the filters.
+
+    Examples
+    --------
+    List artifacts in a project:
+
+    ```python
+    import digitalhub as dh
+
+    artifacts = dh.list_artifacts(project="my-project")
+    ```
     """
     return crud_processor.list_context_entities(
         project=project,
@@ -154,6 +188,19 @@ def import_artifact(
     -------
     Artifact
         Imported artifact entity.
+
+    Examples
+    --------
+    Import an artifact from a YAML file or entity key:
+
+    ```python
+    import digitalhub as dh
+
+    artifact = dh.import_artifact(file="my-artifact.yaml")
+    artifact = dh.import_artifact(
+        key="store://my-project/artifact/artifact/my-artifact:123e4567-e89b-42d3-a456-426614174000"
+    )
+    ```
     """
     return crud_processor.import_context_entity(file, key, reset_id, context)
 
@@ -172,6 +219,16 @@ def load_artifact(file: str) -> Artifact:
     Artifact
         Loaded artifact entity. An existing entity is updated when it can be
         identified; otherwise, a new entity is created.
+
+    Examples
+    --------
+    Load an artifact descriptor from a YAML file:
+
+    ```python
+    import digitalhub as dh
+
+    artifact = dh.load_artifact("my-artifact.yaml")
+    ```
     """
     return crud_processor.load_context_entity(file)
 
@@ -189,6 +246,18 @@ def update_artifact(entity: Artifact) -> Artifact:
     -------
     Artifact
         Updated artifact entity.
+
+    Examples
+    --------
+    Update an artifact after changing its mutable metadata:
+
+    ```python
+    import digitalhub as dh
+
+    artifact = dh.get_artifact("my-artifact", "my-project")
+    artifact.set_description("Updated artifact")
+    artifact = dh.update_artifact(artifact)
+    ```
     """
     return crud_processor.update_context_entity(
         project=entity.project,
@@ -229,6 +298,17 @@ def delete_artifact(
     -------
     dict
         Response data from the backend.
+
+    Examples
+    --------
+    Delete a version by key, or delete all versions by name and project:
+
+    ```python
+    import digitalhub as dh
+
+    dh.delete_artifact("store://my-project/artifact/artifact/my-artifact:123e4567-e89b-42d3-a456-426614174000")
+    dh.delete_artifact("my-artifact", "my-project", delete_all_versions=True)
+    ```
     """
     return crud_processor.delete_context_entity(
         identifier=identifier,

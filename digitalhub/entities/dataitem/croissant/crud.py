@@ -64,6 +64,21 @@ def log_croissant(
     -------
     DataitemCroissant
         Created Croissant dataitem entity with uploaded files.
+
+    Examples
+    --------
+    Log a Croissant dataset from its metadata file:
+
+    ```python
+    import digitalhub as dh
+
+    dataitem = dh.log_croissant(
+        project="my-project",
+        name="catalog",
+        source="./data/croissant/metadata.json",
+        description="Product catalog described with Croissant metadata.",
+    )
+    ```
     """
     # Validate the source and transform it to point to the
     # metadata.json file if it's a directory
@@ -157,6 +172,20 @@ def register_croissant(
     -------
     DataitemCroissant
         Registered Croissant dataitem entity.
+
+    Examples
+    --------
+    Register a Croissant dataset that already exists in remote storage:
+
+    ```python
+    import digitalhub as dh
+
+    dataitem = dh.register_croissant(
+        project="my-project",
+        name="registered-catalog",
+        source="s3://my-bucket/data/croissant/metadata.json",
+    )
+    ```
     """
     return register_base_dataitem(
         project=project,

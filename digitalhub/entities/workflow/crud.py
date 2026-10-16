@@ -55,6 +55,22 @@ def new_workflow(
     -------
     Workflow
         Created workflow entity.
+
+    Examples
+    --------
+    Create a Hera workflow:
+
+    ```python
+    import digitalhub as dh
+
+    workflow = dh.new_workflow(
+        project="my-project",
+        name="my-workflow",
+        kind="hera",
+        code_src="pipeline.py",
+        handler="pipeline-handler",
+    )
+    ```
     """
     return crud_processor.create_context_entity(
         project=project,
@@ -91,6 +107,24 @@ def get_workflow(
     -------
     Workflow
         Retrieved workflow entity.
+
+    Examples
+    --------
+    Get the latest workflow by name and project:
+
+    ```python
+    import digitalhub as dh
+
+    workflow = dh.get_workflow("my-workflow", project="my-project")
+    ```
+
+    Get a specific workflow version by key:
+
+    ```python
+    workflow = dh.get_workflow(
+        "store://my-project/workflow/hera/my-workflow:123e4567-e89b-42d3-a456-426614174000",
+    )
+    ```
     """
     return crud_processor.read_context_entity(
         identifier=identifier,
@@ -118,6 +152,24 @@ def get_workflow_versions(
     -------
     list[Workflow]
         All versions of the workflow entity.
+
+    Examples
+    --------
+    Get all workflow versions by name and project:
+
+    ```python
+    import digitalhub as dh
+
+    workflows = dh.get_workflow_versions("my-workflow", project="my-project")
+    ```
+
+    Get all workflow versions by key:
+
+    ```python
+    workflows = dh.get_workflow_versions(
+        "store://my-project/workflow/hera/my-workflow:123e4567-e89b-42d3-a456-426614174000",
+    )
+    ```
     """
     return crud_processor.read_context_entity_versions(
         identifier=identifier,
@@ -165,6 +217,16 @@ def list_workflows(
     -------
     list[Workflow]
         Workflow entities matching the filters.
+
+    Examples
+    --------
+    List workflows in a project:
+
+    ```python
+    import digitalhub as dh
+
+    workflows = dh.list_workflows(project="my-project")
+    ```
     """
     return crud_processor.list_context_entities(
         project=project,
@@ -208,6 +270,16 @@ def import_workflow(
     -------
     Workflow
         Imported workflow entity.
+
+    Examples
+    --------
+    Import a workflow from a YAML file:
+
+    ```python
+    import digitalhub as dh
+
+    workflow = dh.import_workflow("my-workflow.yaml")
+    ```
     """
     return executable_processor.import_executable_entity(file, key, reset_id, context)
 
@@ -243,6 +315,18 @@ def update_workflow(entity: Workflow) -> Workflow:
     -------
     Workflow
         Updated workflow entity.
+
+    Examples
+    --------
+    Update a workflow description:
+
+    ```python
+    import digitalhub as dh
+
+    workflow = dh.get_workflow("my-workflow", project="my-project")
+    workflow.set_description("Updated workflow")
+    workflow = dh.update_workflow(workflow)
+    ```
     """
     return crud_processor.update_context_entity(
         project=entity.project,
@@ -283,6 +367,38 @@ def delete_workflow(
     -------
     dict
         Response data from the backend.
+
+    Examples
+    --------
+    Delete one workflow version by key:
+
+    ```python
+    import digitalhub as dh
+
+    dh.delete_workflow(
+        "store://my-project/workflow/hera/my-workflow:123e4567-e89b-42d3-a456-426614174000",
+    )
+    ```
+
+    Delete one workflow version by name and project:
+
+    ```python
+    dh.delete_workflow(
+        "my-workflow",
+        project="my-project",
+        entity_id="123e4567-e89b-42d3-a456-426614174000",
+    )
+    ```
+
+    Delete all workflow versions by name and project:
+
+    ```python
+    dh.delete_workflow(
+        "my-workflow",
+        project="my-project",
+        delete_all_versions=True,
+    )
+    ```
     """
     return crud_processor.delete_context_entity(
         identifier=identifier,

@@ -54,6 +54,22 @@ def new_function(
     -------
     Function
         Created function entity.
+
+    Examples
+    --------
+    Create a Python function:
+
+    ```python
+    import digitalhub as dh
+
+    function = dh.new_function(
+        project="my-project",
+        name="my-function",
+        kind="python",
+        code_src="function.py",
+        handler="function-handler",
+    )
+    ```
     """
     return crud_processor.create_context_entity(
         project=project,
@@ -90,6 +106,24 @@ def get_function(
     -------
     Function
         Retrieved function entity.
+
+    Examples
+    --------
+    Get the latest function by name and project:
+
+    ```python
+    import digitalhub as dh
+
+    function = dh.get_function("my-function", project="my-project")
+    ```
+
+    Get a specific function version by key:
+
+    ```python
+    function = dh.get_function(
+        "store://my-project/function/python/my-function:123e4567-e89b-42d3-a456-426614174000",
+    )
+    ```
     """
     return crud_processor.read_context_entity(
         identifier=identifier,
@@ -117,6 +151,24 @@ def get_function_versions(
     -------
     list[Function]
         All versions of the function entity.
+
+    Examples
+    --------
+    Get all function versions by name and project:
+
+    ```python
+    import digitalhub as dh
+
+    functions = dh.get_function_versions("my-function", project="my-project")
+    ```
+
+    Get all function versions by key:
+
+    ```python
+    functions = dh.get_function_versions(
+        "store://my-project/function/python/my-function:123e4567-e89b-42d3-a456-426614174000",
+    )
+    ```
     """
     return crud_processor.read_context_entity_versions(
         identifier=identifier,
@@ -164,6 +216,16 @@ def list_functions(
     -------
     list[Function]
         Function entities matching the filters.
+
+    Examples
+    --------
+    List functions in a project:
+
+    ```python
+    import digitalhub as dh
+
+    functions = dh.list_functions(project="my-project")
+    ```
     """
     return crud_processor.list_context_entities(
         project=project,
@@ -207,6 +269,16 @@ def import_function(
     -------
     Function
         Imported function entity.
+
+    Examples
+    --------
+    Import a function from a YAML file:
+
+    ```python
+    import digitalhub as dh
+
+    function = dh.import_function("my-function.yaml")
+    ```
     """
     return executable_processor.import_executable_entity(file, key, reset_id, context)
 
@@ -242,6 +314,18 @@ def update_function(entity: Function) -> Function:
     -------
     Function
         Updated function entity.
+
+    Examples
+    --------
+    Update a function description:
+
+    ```python
+    import digitalhub as dh
+
+    function = dh.get_function("my-function", project="my-project")
+    function.set_description("Updated function")
+    function = dh.update_function(function)
+    ```
     """
     return crud_processor.update_context_entity(
         project=entity.project,
@@ -282,6 +366,38 @@ def delete_function(
     -------
     dict
         Response data from the backend.
+
+    Examples
+    --------
+    Delete one function version by key:
+
+    ```python
+    import digitalhub as dh
+
+    dh.delete_function(
+        "store://my-project/function/python/my-function:123e4567-e89b-42d3-a456-426614174000",
+    )
+    ```
+
+    Delete one function version by name and project:
+
+    ```python
+    dh.delete_function(
+        "my-function",
+        project="my-project",
+        entity_id="123e4567-e89b-42d3-a456-426614174000",
+    )
+    ```
+
+    Delete all function versions by name and project:
+
+    ```python
+    dh.delete_function(
+        "my-function",
+        project="my-project",
+        delete_all_versions=True,
+    )
+    ```
     """
     return crud_processor.delete_context_entity(
         identifier=identifier,

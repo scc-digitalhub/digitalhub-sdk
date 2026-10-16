@@ -54,6 +54,21 @@ def log_dataitem(
     -------
     DataitemDataitem
         Created dataitem entity with uploaded files.
+
+    Examples
+    --------
+    Upload a local dataitem:
+
+    ```python
+    import digitalhub as dh
+
+    dataitem = dh.log_dataitem(
+        project="my-project",
+        name="raw-events",
+        source="./data/events.jsonl",
+        labels=["raw", "events"],
+    )
+    ```
     """
     kind_warning(
         requested_kind=kwargs.pop("kind", None),
@@ -116,6 +131,20 @@ def register_dataitem(
     -------
     DataitemDataitem
         Registered dataitem entity.
+
+    Examples
+    --------
+    Register a dataitem that already exists in remote storage:
+
+    ```python
+    import digitalhub as dh
+
+    dataitem = dh.register_dataitem(
+        project="my-project",
+        name="registered-events",
+        source="s3://my-bucket/data/events.jsonl",
+    )
+    ```
     """
     return register_base_dataitem(
         project=project,

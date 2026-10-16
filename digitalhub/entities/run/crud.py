@@ -49,6 +49,20 @@ def new_run(
     -------
     Run
         Created run entity.
+
+    Examples
+    --------
+    Create a run directly:
+
+    ```python
+    import digitalhub as dh
+
+    run = dh.new_run(
+        project="my-project",
+        kind="python+run",
+        task="task-string",
+    )
+    ```
     """
     return crud_processor.create_context_entity(
         project=project,
@@ -81,6 +95,22 @@ def get_run(
     -------
     Run
         Retrieved run entity.
+
+    Examples
+    --------
+    Get a run by ID and project:
+
+    ```python
+    import digitalhub as dh
+
+    run = dh.get_run("my-run-id", project="my-project")
+    ```
+
+    Get a run by key:
+
+    ```python
+    run = dh.get_run("store://my-project/run/python+run/my-run-id")
+    ```
     """
     return crud_processor.read_unversioned_entity(
         identifier=identifier,
@@ -137,6 +167,16 @@ def list_runs(
     -------
     list[Run]
         Run entities matching the filters.
+
+    Examples
+    --------
+    List runs in a project:
+
+    ```python
+    import digitalhub as dh
+
+    runs = dh.list_runs(project="my-project")
+    ```
     """
     return crud_processor.list_context_entities(
         project=project,
@@ -184,6 +224,16 @@ def import_run(
     -------
     Run
         Imported run entity.
+
+    Examples
+    --------
+    Import a run from a YAML file:
+
+    ```python
+    import digitalhub as dh
+
+    run = dh.import_run("my-run.yaml")
+    ```
     """
     return crud_processor.import_context_entity(file, key, reset_id, context)
 
@@ -219,6 +269,18 @@ def update_run(entity: Run) -> Run:
     -------
     Run
         Updated run entity.
+
+    Examples
+    --------
+    Update a run description:
+
+    ```python
+    import digitalhub as dh
+
+    run = dh.get_run("my-run-id", project="my-project")
+    run.set_description("Updated run")
+    run = dh.update_run(run)
+    ```
     """
     return crud_processor.update_context_entity(
         project=entity.project,
@@ -251,6 +313,22 @@ def delete_run(
     -------
     dict
         Response data from the backend.
+
+    Examples
+    --------
+    Delete a run by ID and project:
+
+    ```python
+    import digitalhub as dh
+
+    dh.delete_run("my-run-id", project="my-project")
+    ```
+
+    Delete a run by key:
+
+    ```python
+    dh.delete_run("store://my-project/run/python+run/my-run-id")
+    ```
     """
     return crud_processor.delete_context_entity(
         identifier=identifier,

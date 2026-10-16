@@ -102,6 +102,33 @@ def log_table(
     -------
     Dataitem
         Created table dataitem entity with uploaded files.
+
+    Examples
+    --------
+    Create a table from a local file or dataframe:
+
+    ```python
+    import digitalhub as dh
+    import pandas as pd
+
+    table_from_source = dh.log_table(
+        project="my-project",
+        name="sales-from-file",
+        source="./data/sales.csv",
+        file_format="csv",
+    )
+
+    table_from_data = dh.log_table(
+        project="my-project",
+        name="sales-from-dataframe",
+        data=pd.DataFrame(
+            {
+                "customer_id": [101, 102],
+                "amount": [12.50, 8.75],
+            }
+        ),
+    )
+    ```
     """
 
     kwargs = {
@@ -237,6 +264,26 @@ def register_table(
     -------
     Dataitem
         Registered table dataitem entity.
+
+    Examples
+    --------
+    Register a table that already exists in remote storage:
+
+    ```python
+    import digitalhub as dh
+
+    dataitem = dh.register_table(
+        project="my-project",
+        name="registered-sales",
+        source="s3://my-bucket/data/sales.parquet",
+        schema={
+            "fields": [
+                {"name": "customer_id", "type": "integer"},
+                {"name": "amount", "type": "float"},
+            ]
+        },
+    )
+    ```
     """
     return register_base_dataitem(
         project=project,

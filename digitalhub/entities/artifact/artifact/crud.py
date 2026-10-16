@@ -60,6 +60,21 @@ def register_artifact(
     -------
     ArtifactArtifact
         Registered artifact entity.
+
+    Examples
+    --------
+    Register an artifact that already exists in remote storage:
+
+    ```python
+    import digitalhub as dh
+
+    artifact = dh.register_artifact(
+        project="my-project",
+        name="registered-training-report",
+        source="s3://my-bucket/reports/training-report.json",
+        src_path="outputs/training-report.json",
+    )
+    ```
     """
     return register_base_artifact(
         project=project,
@@ -119,6 +134,22 @@ def log_artifact(
     -------
     ArtifactArtifact
         Created artifact entity with uploaded files.
+
+    Examples
+    --------
+    Upload a local artifact file:
+
+    ```python
+    import digitalhub as dh
+
+    artifact = dh.log_artifact(
+        project="my-project",
+        name="training-report",
+        source="./outputs/training-report.json",
+        src_path="outputs/training-report.json",
+        labels=["training", "report"],
+    )
+    ```
     """
     kind_warning(
         requested_kind=kwargs.pop("kind", None),

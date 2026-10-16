@@ -58,6 +58,21 @@ def new_containerimage(
     -------
     Containerimage
         Created container image entity.
+
+    Examples
+    --------
+    Create an entity for an existing image reference:
+
+    ```python
+    import digitalhub as dh
+
+    image = dh.new_containerimage(
+        project="my-project",
+        name="my-image",
+        kind="container-image",
+        image="registry.example.com/my-image:latest",
+    )
+    ```
     """
     return crud_processor.create_context_entity(
         project=project,
@@ -95,6 +110,24 @@ def get_containerimage(
     -------
     Containerimage
         Retrieved container image entity.
+
+    Examples
+    --------
+    Get the latest version by name and project:
+
+    ```python
+    import digitalhub as dh
+
+    image = dh.get_containerimage("my-image", project="my-project")
+    ```
+
+    Get a specific version by key:
+
+    ```python
+    image = dh.get_containerimage(
+        "store://my-project/containerimage/container-image/my-image:123e4567-e89b-42d3-a456-426614174000",
+    )
+    ```
     """
     return crud_processor.read_context_entity(
         identifier=identifier,
@@ -122,6 +155,24 @@ def get_containerimage_versions(
     -------
     list[Containerimage]
         All versions of the container image entity.
+
+    Examples
+    --------
+    Get all versions by name and project:
+
+    ```python
+    import digitalhub as dh
+
+    images = dh.get_containerimage_versions("my-image", project="my-project")
+    ```
+
+    Get all versions of the image referenced by its key:
+
+    ```python
+    images = dh.get_containerimage_versions(
+        "store://my-project/containerimage/container-image/my-image:123e4567-e89b-42d3-a456-426614174000",
+    )
+    ```
     """
     return crud_processor.read_context_entity_versions(
         identifier=identifier,
@@ -169,6 +220,16 @@ def list_containerimages(
     -------
     list[Containerimage]
         Container image entities matching the filters.
+
+    Examples
+    --------
+    List container images in a project:
+
+    ```python
+    import digitalhub as dh
+
+    images = dh.list_containerimages(project="my-project")
+    ```
     """
     return crud_processor.list_context_entities(
         project=project,
@@ -212,6 +273,16 @@ def import_containerimage(
     -------
     Containerimage
         Imported container image entity.
+
+    Examples
+    --------
+    Import an entity from a YAML file:
+
+    ```python
+    import digitalhub as dh
+
+    image = dh.import_containerimage("my-image.yaml")
+    ```
     """
     return crud_processor.import_context_entity(file, key, reset_id, context)
 
@@ -230,6 +301,16 @@ def load_containerimage(file: str) -> Containerimage:
     Containerimage
         Loaded container image entity. An existing entity is updated when it
         can be identified; otherwise, a new entity is created.
+
+    Examples
+    --------
+    Load an entity from a YAML file:
+
+    ```python
+    import digitalhub as dh
+
+    image = dh.load_containerimage("my-image.yaml")
+    ```
     """
     return crud_processor.load_context_entity(file)
 
@@ -247,6 +328,18 @@ def update_containerimage(entity: Containerimage) -> Containerimage:
     -------
     Containerimage
         Updated container image entity.
+
+    Examples
+    --------
+    Update the description of an existing entity:
+
+    ```python
+    import digitalhub as dh
+
+    image = dh.get_containerimage("my-image", project="my-project")
+    image.set_description("Updated image")
+    image = dh.update_containerimage(image)
+    ```
     """
     return crud_processor.update_context_entity(
         project=entity.project,
@@ -287,6 +380,38 @@ def delete_containerimage(
     -------
     dict
         Response data from the backend.
+
+    Examples
+    --------
+    Delete one version by key:
+
+    ```python
+    import digitalhub as dh
+
+    dh.delete_containerimage(
+        "store://my-project/containerimage/container-image/my-image:123e4567-e89b-42d3-a456-426614174000",
+    )
+    ```
+
+    Delete one version by name and project:
+
+    ```python
+    dh.delete_containerimage(
+        "my-image",
+        project="my-project",
+        entity_id="123e4567-e89b-42d3-a456-426614174000",
+    )
+    ```
+
+    Delete all versions by name:
+
+    ```python
+    dh.delete_containerimage(
+        "my-image",
+        project="my-project",
+        delete_all_versions=True,
+    )
+    ```
     """
     return crud_processor.delete_context_entity(
         identifier=identifier,

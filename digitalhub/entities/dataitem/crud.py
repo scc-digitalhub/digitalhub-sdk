@@ -36,6 +36,17 @@ def get_dataitem(
     -------
     Dataitem
         Retrieved dataitem entity.
+
+    Examples
+    --------
+    Retrieve the latest version by name and project, or by entity key:
+
+    ```python
+    import digitalhub as dh
+
+    dataitem = dh.get_dataitem("raw-events", "my-project")
+    dataitem = dh.get_dataitem("store://my-project/dataitem/dataitem/raw-events:123e4567-e89b-42d3-a456-426614174000")
+    ```
     """
     return crud_processor.read_context_entity(
         identifier=identifier,
@@ -63,6 +74,19 @@ def get_dataitem_versions(
     -------
     list[Dataitem]
         All versions of the dataitem entity.
+
+    Examples
+    --------
+    Retrieve all versions by name and project, or by entity key:
+
+    ```python
+    import digitalhub as dh
+
+    dataitems = dh.get_dataitem_versions("raw-events", "my-project")
+    dataitems = dh.get_dataitem_versions(
+        "store://my-project/dataitem/dataitem/raw-events:123e4567-e89b-42d3-a456-426614174000"
+    )
+    ```
     """
     return crud_processor.read_context_entity_versions(
         identifier=identifier,
@@ -110,6 +134,16 @@ def list_dataitems(
     -------
     list[Dataitem]
         Dataitem entities matching the filters.
+
+    Examples
+    --------
+    List dataitems in a project:
+
+    ```python
+    import digitalhub as dh
+
+    dataitems = dh.list_dataitems(project="my-project")
+    ```
     """
     return crud_processor.list_context_entities(
         project=project,
@@ -153,6 +187,19 @@ def import_dataitem(
     -------
     Dataitem
         Imported dataitem entity.
+
+    Examples
+    --------
+    Import a dataitem from a YAML file or entity key:
+
+    ```python
+    import digitalhub as dh
+
+    dataitem = dh.import_dataitem(file="my-dataitem.yaml")
+    dataitem = dh.import_dataitem(
+        key="store://my-project/dataitem/dataitem/raw-events:123e4567-e89b-42d3-a456-426614174000"
+    )
+    ```
     """
     return crud_processor.import_context_entity(file, key, reset_id, context)
 
@@ -171,6 +218,16 @@ def load_dataitem(file: str) -> Dataitem:
     Dataitem
         Loaded dataitem entity. An existing entity is updated when it can be
         identified; otherwise, a new entity is created.
+
+    Examples
+    --------
+    Load a dataitem descriptor from a YAML file:
+
+    ```python
+    import digitalhub as dh
+
+    dataitem = dh.load_dataitem("my-dataitem.yaml")
+    ```
     """
     return crud_processor.load_context_entity(file)
 
@@ -188,6 +245,18 @@ def update_dataitem(entity: Dataitem) -> Dataitem:
     -------
     Dataitem
         Updated dataitem entity.
+
+    Examples
+    --------
+    Update a dataitem after changing its mutable metadata:
+
+    ```python
+    import digitalhub as dh
+
+    dataitem = dh.get_dataitem("raw-events", "my-project")
+    dataitem.set_description("Updated dataitem")
+    dataitem = dh.update_dataitem(dataitem)
+    ```
     """
     return crud_processor.update_context_entity(
         project=entity.project,
@@ -231,6 +300,17 @@ def delete_dataitem(
     -------
     dict
         Response data from the backend.
+
+    Examples
+    --------
+    Delete a version by key, or delete all versions by name and project:
+
+    ```python
+    import digitalhub as dh
+
+    dh.delete_dataitem("store://my-project/dataitem/dataitem/raw-events:123e4567-e89b-42d3-a456-426614174000")
+    dh.delete_dataitem("raw-events", "my-project", delete_all_versions=True)
+    ```
     """
     return crud_processor.delete_context_entity(
         identifier=identifier,

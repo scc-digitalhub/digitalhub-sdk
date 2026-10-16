@@ -64,6 +64,21 @@ def new_artifact(
     -------
     Artifact
         Created artifact entity.
+
+    Examples
+    --------
+    Create an artifact entity that points to an existing path:
+
+    ```python
+    import digitalhub as dh
+
+    artifact = dh.new_artifact(
+        project="my-project",
+        name="my-artifact",
+        kind="artifact",
+        path="s3://my-bucket/my-artifact",
+    )
+    ```
     """
     return crud_processor.create_context_entity(
         project=project,
