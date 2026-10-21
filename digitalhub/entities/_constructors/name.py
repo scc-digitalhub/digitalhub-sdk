@@ -11,13 +11,15 @@ from pydantic import BaseModel, Field
 
 from digitalhub.entities._constructors._resources import ADJECTIVE_REGISTRY, NAME_REGISTRY
 
+NAME_REGEX = r"^[a-zA-Z0-9._+-]+$"
+
 
 class NameValidator(BaseModel):
     """
     Validate name format.
     """
 
-    name: str = Field(min_length=1, max_length=256)
+    name: str = Field(min_length=1, max_length=256, pattern=NAME_REGEX)
 
 
 def _random_enum_value(enum_cls: type[Enum]) -> str:
