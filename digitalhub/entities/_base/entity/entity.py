@@ -73,18 +73,18 @@ class Entity(Base):
         """
 
     def _update_attributes(self, obj: Entity) -> None:
-            """
-            Update attributes.
+        """
+        Update attributes.
 
-            Parameters
-            ----------
-            obj : Entity
-                The entity object to update attributes from.
-            """
-            self.metadata = obj.metadata
-            self.spec = obj.spec
-            self.status = obj.status
-            self.user = obj.user
+        Parameters
+        ----------
+        obj : Entity
+            The entity object to update attributes from.
+        """
+        self.metadata = obj.metadata
+        self.spec = obj.spec
+        self.status = obj.status
+        self.user = obj.user
 
     def set_name(self, value: str) -> None:
         """
