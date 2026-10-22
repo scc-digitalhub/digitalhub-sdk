@@ -22,7 +22,6 @@ logger = get_logger(__name__)
 
 
 class ContextEntitySearchProcessor:
-
     def __init__(self, crud_processor: ContextEntityCRUDProcessor):
         self.crud_processor = crud_processor
 

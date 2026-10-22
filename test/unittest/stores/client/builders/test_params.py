@@ -27,10 +27,12 @@ def test_build_list_parameters_preserves_filtered_output() -> None:
     result = ClientParametersBuilder().build_parameters(
         ApiType.CONTEXT,
         ParamsProfile.LIST,
-        OpaqueOptions({"params": {"page": 2}, "q": "demo", "state": "READY"}),
+        OpaqueOptions({"params": {"page": 2}, "q": "demo", "state": "READY", "labels": ["team:a", "env:test"]}),
     )
 
-    assert result == {"params": {"page": 2, "q": "demo", "state": "READY"}}
+    assert result == {
+        "params": {"page": 2, "q": "demo", "state": "READY", "labels": ["team:a", "env:test"]}
+    }
 
 
 def test_build_search_parameters_preserves_filter_output() -> None:

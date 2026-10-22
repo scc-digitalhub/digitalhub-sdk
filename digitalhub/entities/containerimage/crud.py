@@ -186,6 +186,7 @@ def list_containerimages(
     q: str | None = None,
     name: str | None = None,
     kind: str | None = None,
+    labels: list[str] | None = None,
     user: str | None = None,
     state: str | None = None,
     created: str | None = None,
@@ -205,6 +206,8 @@ def list_containerimages(
         Entity name used to filter results.
     kind : str, optional
         Entity kind used to filter results.
+    labels : list[str], optional
+        Labels used to filter results.
     user : str, optional
         User who created the entity.
     state : str, optional
@@ -237,6 +240,7 @@ def list_containerimages(
         q=q,
         name=name,
         kind=kind,
+        labels=labels,
         user=user,
         state=state,
         created=created,

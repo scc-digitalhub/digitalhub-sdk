@@ -112,7 +112,12 @@ def test_list_context_entities_uses_paginated_execution() -> None:
     context.name = "demo"
     context.client.execute_list.return_value = [{"name": "artifact"}]
 
-    result = ContextEntityCRUDProcessor()._list_context_entities(context, "artifact", q="ready")
+    result = ContextEntityCRUDProcessor()._list_context_entities(
+        context,
+        "artifact",
+        q="ready",
+        labels=["production"],
+    )
 
     assert result == [{"name": "artifact"}]
     context.client.execute_list.assert_called_once_with(
@@ -120,7 +125,7 @@ def test_list_context_entities_uses_paginated_execution() -> None:
             category=ApiType.CONTEXT,
             operation=BackendOp.LIST,
             target=ContextCollectionTarget("demo", "artifact"),
-            options=ListOptions(q="ready"),
+            options=ListOptions(q="ready", labels=["production"]),
         )
     )
 

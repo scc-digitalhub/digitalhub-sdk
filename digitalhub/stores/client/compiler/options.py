@@ -37,6 +37,7 @@ class ListOptions:
     q: str | None = None
     name: str | None = None
     kind: str | None = None
+    labels: list[str] | None = None
     user: str | None = None
     state: str | None = None
     created: str | None = None

@@ -86,6 +86,7 @@ class ListParameterStrategy:
         "q",
         "name",
         "kind",
+        "labels",
         "user",
         "state",
         "created",
