@@ -22,9 +22,12 @@ logger = get_logger(__name__)
 
 
 class ContextEntitySearchProcessor:
+
+    def __init__(self, crud_processor: ContextEntityCRUDProcessor):
+        self.crud_processor = crud_processor
+
     def search_entity(
         self,
-        crud_processor: ContextEntityCRUDProcessor,
         project: str,
         query: str | None = None,
         entity_types: list[str] | None = None,
@@ -67,7 +70,7 @@ class ContextEntitySearchProcessor:
         for entity in entities_dict["content"]:
             try:
                 _, entity_type, _, _, _ = parse_identifier(entity["key"])
-                living_entity = crud_processor.read_context_entity(entity["key"], entity_type=entity_type)
+                living_entity = self.crud_processor.read_context_entity(entity["key"], entity_type=entity_type)
                 living_entities.append(living_entity)
             except BackendError:
                 logger.debug(
