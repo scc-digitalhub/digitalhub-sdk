@@ -37,17 +37,3 @@ def test_read_df_disposes_engine_when_reader_fails(monkeypatch) -> None:
 
     engine.dispose.assert_called_once_with()
 
-
-def test_query_disposes_engine_when_reader_fails() -> None:
-    store = object.__new__(SqlStore)
-    engine = Mock()
-    reader = Mock()
-    reader.read_table.side_effect = RuntimeError("query failed")
-    store._get_reader = Mock(return_value=reader)
-    store._get_schema = Mock(return_value="public")
-    store._check_factory = Mock(return_value=engine)
-
-    with pytest.raises(RuntimeError, match="query failed"):
-        store.query("SELECT 1", "sql://database/items")
-
-    engine.dispose.assert_called_once_with()

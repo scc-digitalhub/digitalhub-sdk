@@ -283,28 +283,6 @@ class S3Store(Store):
             return dfs[0]
         return reader.concat_dfs(dfs)
 
-    def query(
-        self,
-        query: str,
-        engine: str | None = None,
-    ) -> Dataframe:  # type: ignore
-        """
-        Query data from database.
-
-        Parameters
-        ----------
-        query : str
-            The query to execute.
-        engine : str
-            Dataframe engine (pandas, polars, etc.).
-
-        Returns
-        -------
-        Dataframe
-            DataFrame.
-        """
-        raise StoreError("S3 store does not support query.")
-
     def write_df(
         self,
         df: Any,

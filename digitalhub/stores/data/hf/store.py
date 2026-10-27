@@ -97,12 +97,6 @@ class HFStore(Store):
         """
         raise StoreError("Hugging Face store does not support read_df.")
 
-    def query(self, query: str, engine: str | None = None) -> Any:
-        """
-        Query is not supported for the Hugging Face store.
-        """
-        raise StoreError("Hugging Face store does not support query.")
-
     def write_df(self, df: Any, dst: str, extension: str | None = None, **kwargs) -> str:
         """
         DataFrame writes are not supported for the Hugging Face store.

@@ -77,16 +77,6 @@ class Store:
         """
 
     @abstractmethod
-    def query(
-        self,
-        query: str,
-        engine: str | None = None,
-    ) -> Any:
-        """
-        Query data from database.
-        """
-
-    @abstractmethod
     def write_df(
         self,
         df: Any,

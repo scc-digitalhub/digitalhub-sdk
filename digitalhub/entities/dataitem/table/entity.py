@@ -55,14 +55,6 @@ class DataitemTable(Dataitem):
         Any
             DataFrame.
         """
-        if self._query is not None:
-            df = get_store(self.spec.path).query(
-                self._query,
-                self.spec.path,
-                engine,
-            )
-            self._query = None
-            return df
         return get_store(self.spec.path).read_df(
             self.spec.path,
             file_format,

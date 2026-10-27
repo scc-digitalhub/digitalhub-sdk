@@ -182,42 +182,6 @@ class SqlStore(Store):
         finally:
             sql_engine.dispose()
 
-    def query(
-        self,
-        query: str,
-        path: str,
-        engine: str | None = None,
-    ) -> Dataframe:  # type: ignore
-        """
-        Execute a custom SQL query and return results as a DataFrame.
-
-        Runs a SQL query against the database specified in the path
-        and returns the results using the specified DataFrame engine.
-
-        Parameters
-        ----------
-        query : str
-            The SQL query string to execute against the database.
-        path : str
-            The SQL URI path specifying the database connection
-            in the format 'sql://database/schema/table'.
-        engine : str
-            DataFrame engine to use for result processing
-            (e.g., 'pandas', 'polars'). If None, uses the default.
-
-        Returns
-        -------
-        Any
-            DataFrame object containing the query results.
-        """
-        reader = self._get_reader(engine)
-        schema = self._get_schema(path)
-        sql_engine = self._check_factory(schema=schema)
-        try:
-            return reader.read_table(query, sql_engine)
-        finally:
-            sql_engine.dispose()
-
     def write_df(
         self,
         df: Any,
