@@ -51,7 +51,7 @@ class Log(Entity):
     #  I/O methods
     ##############################
 
-    def save(self) -> None:
+    def save(self, update: bool = False) -> None:
         """
         Save the log entity.
         """

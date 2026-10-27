@@ -49,7 +49,7 @@ class Entity(Base):
         self.key: str
 
     @abstractmethod
-    def save(self) -> Entity:
+    def save(self, update: bool = False) -> Entity:
         """
         Abstract save method.
         """

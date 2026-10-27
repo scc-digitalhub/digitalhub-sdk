@@ -38,7 +38,7 @@ class ContextEntity(Entity):
     #  Save / Refresh / Export
     ##############################
 
-    def save(self) -> ContextEntity:
+    def save(self, update: bool = False) -> ContextEntity:
         """
         Save the entity into the backend.
 
@@ -47,6 +47,8 @@ class ContextEntity(Entity):
         ContextEntity
             Entity saved.
         """
+        if update:
+            return self.update()
         new_obj = crud_processor.create_context_entity(_entity=self)
         self._update_attributes(new_obj)
         return self
