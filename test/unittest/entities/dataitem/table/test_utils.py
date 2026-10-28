@@ -5,6 +5,7 @@
 from unittest.mock import Mock
 
 import digitalhub.entities.dataitem.table.utils as table_utils
+import digitalhub.stores.readers.data.api as reader_api
 
 
 def test_read_data_sample_dispatches_source_list_by_first_path(monkeypatch) -> None:
@@ -14,7 +15,7 @@ def test_read_data_sample_dispatches_source_list_by_first_path(monkeypatch) -> N
     store = Mock()
     store.read_df.return_value = "dataframe"
     get_store = Mock(return_value=store)
-    monkeypatch.setattr(table_utils, "get_reader_by_engine", Mock(return_value=reader))
+    monkeypatch.setattr(reader_api, "get_reader_by_engine", Mock(return_value=reader))
     monkeypatch.setattr(table_utils, "get_store", get_store)
 
     result = table_utils.read_data_sample(source, file_format="csv", engine="polars")
