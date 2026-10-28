@@ -4,10 +4,7 @@
 
 from __future__ import annotations
 
-from typing import Union
-
-from digitalhub.stores.readers.data.types import _dataframe_types
+from typing import Any
 
 SourcesOrListOfSources = str | list[str]
-
-Dataframe = Union[_dataframe_types]  # noqa: UP007
+Dataframe = Any

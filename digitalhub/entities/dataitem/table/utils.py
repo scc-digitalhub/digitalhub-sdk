@@ -10,7 +10,6 @@ from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._commons.utils import build_log_path_from_filename, build_log_path_from_source
 from digitalhub.entities._constructors.uuid import build_uuid
 from digitalhub.stores.data.api import get_store
-from digitalhub.stores.readers.data.api import get_reader_by_engine, get_reader_by_object
 from digitalhub.utils.file_utils import eval_local_source
 from digitalhub.utils.uri_utils import SqlSchemes, has_sql_scheme
 
@@ -43,6 +42,8 @@ def read_data_sample(
     Dataframe
         Loaded data object.
     """
+    from digitalhub.stores.readers.data.api import get_reader_by_engine
+
     eval_local_source(source)
     if read_df_params is None or not isinstance(read_df_params, dict):
         read_df_params = {}
@@ -106,6 +107,8 @@ def process_data_kwargs(
         uuid = build_uuid()
         kwargs["uuid"] = uuid
         kwargs["path"] = fn(project, EntityTypes.DATAITEM.value, name, uuid, arg)
+
+    from digitalhub.stores.readers.data.api import get_reader_by_object
 
     kwargs["schema"] = get_reader_by_object(data).get_schema(data)
     return kwargs
@@ -182,6 +185,8 @@ def post_process(
         The enhanced dataitem object with updated status information
         and saved changes.
     """
+    from digitalhub.stores.readers.data.api import get_reader_by_object
+
     reader = get_reader_by_object(data)
     obj.status.preview = reader.get_preview(data)
     obj.update()

@@ -5,11 +5,8 @@
 from __future__ import annotations
 
 import typing
+from collections.abc import Callable
 
-from digitalhub.stores.data.local.store import LocalStore
-from digitalhub.stores.data.remote.store import RemoteStore
-from digitalhub.stores.data.s3.store import S3Store
-from digitalhub.stores.data.sql.store import SqlStore
 from digitalhub.utils.exceptions import StoreError
 from digitalhub.utils.uri_utils import SchemeCategory, map_uri_scheme
 
@@ -21,6 +18,30 @@ def _build_hf_store() -> Store:
     from digitalhub.stores.data.hf.store import HFStore
 
     return HFStore()
+
+
+def _build_local_store() -> Store:
+    from digitalhub.stores.data.local.store import LocalStore
+
+    return LocalStore()
+
+
+def _build_remote_store() -> Store:
+    from digitalhub.stores.data.remote.store import RemoteStore
+
+    return RemoteStore()
+
+
+def _build_s3_store() -> Store:
+    from digitalhub.stores.data.s3.store import S3Store
+
+    return S3Store()
+
+
+def _build_sql_store() -> Store:
+    from digitalhub.stores.data.sql.store import SqlStore
+
+    return SqlStore()
 
 
 class StoreBuilder:
@@ -41,16 +62,16 @@ class StoreBuilder:
     """
 
     def __init__(self) -> None:
-        self._builders: dict[str, Store] = {}
+        self._builders: dict[str, Callable[[], Store]] = {}
         self._instances: dict[str, dict[str, Store]] = {}
 
     def register(
         self,
         store_type: str,
-        store: Store,
+        store: Callable[[], Store],
     ) -> None:
         """
-        Register a store type with its class and optional configurator.
+        Register a store type with its factory.
 
         Adds a new store type to the builder registry, associating it
         with a store class and optional configurator for later instantiation.
@@ -60,7 +81,7 @@ class StoreBuilder:
         store_type : str
             The unique identifier for the store type (e.g., 's3', 'sql').
         store : Store
-            The store class to register for this type.
+            The factory used to create stores for this type.
         """
         if store_type not in self._builders:
             self._builders[store_type] = store
@@ -97,8 +118,8 @@ class StoreBuilder:
 
 
 store_builder = StoreBuilder()
-store_builder.register(SchemeCategory.S3.value, S3Store)
+store_builder.register(SchemeCategory.S3.value, _build_s3_store)
 store_builder.register(SchemeCategory.HF.value, _build_hf_store)
-store_builder.register(SchemeCategory.SQL.value, SqlStore)
-store_builder.register(SchemeCategory.LOCAL.value, LocalStore)
-store_builder.register(SchemeCategory.REMOTE.value, RemoteStore)
+store_builder.register(SchemeCategory.SQL.value, _build_sql_store)
+store_builder.register(SchemeCategory.LOCAL.value, _build_local_store)
+store_builder.register(SchemeCategory.REMOTE.value, _build_remote_store)

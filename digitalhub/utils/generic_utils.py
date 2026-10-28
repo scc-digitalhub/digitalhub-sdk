@@ -17,8 +17,6 @@ from typing import Any
 from warnings import warn
 from zipfile import ZipFile
 
-import numpy as np
-import requests
 from slugify import slugify
 
 from digitalhub.utils.io_utils import read_text
@@ -98,6 +96,8 @@ def requests_chunk_download(source: str, filename: Path) -> None:
     filename : Path
         Path where to save the downloaded file.
     """
+    import requests
+
     with requests.get(source, stream=True) as r:
         r.raise_for_status()
         with filename.open("wb") as f:
@@ -165,14 +165,17 @@ class CustomJsonEncoder(json.JSONEncoder):
         """
         if isinstance(obj, (int, str, float, list, dict)):
             return obj
-        elif isinstance(obj, (np.integer, np.int64)):
+        if isinstance(obj, (datetime, date, time)):
+            return obj.isoformat()
+
+        import numpy as np
+
+        if isinstance(obj, (np.integer, np.int64)):
             return int(obj)
         elif isinstance(obj, (np.floating, np.float64)):
             return float(obj)
         elif isinstance(obj, np.ndarray):
             return obj.tolist()
-        elif isinstance(obj, (datetime, date, time)):
-            return obj.isoformat()
         return str(obj)
 
 
