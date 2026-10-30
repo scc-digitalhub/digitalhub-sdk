@@ -60,6 +60,7 @@ dev = [
     "jsonschema",
     "pytest-cov",
     "pytest",
+    "regex",
 ]
 
 [project.urls]

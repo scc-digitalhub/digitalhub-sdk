@@ -10,8 +10,42 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+import regex as unicode_regex
 from digitalhub.factory.entity import entity_factory
-from jsonschema import ValidationError, validate
+from jsonschema import Draft202012Validator, FormatChecker, ValidationError
+from jsonschema.validators import extend
+
+
+def _validate_unicode_pattern(validator, pattern, instance, schema):
+    if not validator.is_type(instance, "string"):
+        return
+
+    try:
+        matched = unicode_regex.search(pattern, instance)
+    except unicode_regex.error as error:
+        yield ValidationError(f"Invalid regular expression {pattern!r}: {error}")
+        return
+
+    if matched is None:
+        yield ValidationError(f"{instance!r} does not match {pattern!r}")
+
+
+_CORE_FORMAT_CHECKER = FormatChecker()
+
+
+@_CORE_FORMAT_CHECKER.checks("regex")
+def _is_valid_unicode_regex(pattern):
+    try:
+        unicode_regex.compile(pattern)
+    except unicode_regex.error:
+        return False
+    return True
+
+
+_CoreSchemaValidator = extend(
+    Draft202012Validator,
+    validators={"pattern": _validate_unicode_pattern},
+)
 
 
 class SchemaRegistry:
@@ -63,7 +97,9 @@ class EntityValidator:
         """Validate built object against its schema."""
         schema = self.schema_registry.get_schema(kind)
         try:
-            validate(instance=built, schema=schema)
+            _CoreSchemaValidator.check_schema(schema, format_checker=_CORE_FORMAT_CHECKER)
+            validator = _CoreSchemaValidator(schema, format_checker=_CORE_FORMAT_CHECKER)
+            validator.validate(built)
         except ValidationError as error:
             raise AssertionError(f"Validation failed for kind '{kind}': {error.message}") from error
 
