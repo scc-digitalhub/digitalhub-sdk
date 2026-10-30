@@ -1,0 +1,18 @@
+{
+    "id": "container-image1",
+    "key": "store://demo-etl/containerimage/container-image/container-image1",
+    "kind": "container-image",
+    "metadata": {
+        "name": "container-image1",
+        "project": "demo-etl"
+    },
+    "name": "container-image1",
+    "project": "demo-etl",
+    "spec": {
+        "image": "registry.example.org/demo/app:1.0"
+    },
+    "status": {
+        "state": "CREATED"
+    },
+    "user": "digitalhubdev"
+}

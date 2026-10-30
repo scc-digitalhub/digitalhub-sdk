@@ -1,0 +1,24 @@
+{
+    "id": "scheduler-trigger1",
+    "key": "store://demo-etl/trigger/scheduler/scheduler-trigger1",
+    "kind": "scheduler",
+    "metadata": {
+        "name": "scheduler-trigger1",
+        "project": "demo-etl"
+    },
+    "name": "scheduler-trigger1",
+    "project": "demo-etl",
+    "spec": {
+        "function": "process",
+        "schedule": "0 0 0 * * ?",
+        "task": "build",
+        "template": {
+            "message": "scheduled"
+        },
+        "workflow": "pipeline"
+    },
+    "status": {
+        "state": "CREATED"
+    },
+    "user": "digitalhubdev"
+}

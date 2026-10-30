@@ -1,0 +1,31 @@
+{
+    "id": "lifecycle-trigger1",
+    "key": "store://demo-etl/trigger/lifecycle/lifecycle-trigger1",
+    "kind": "lifecycle",
+    "metadata": {
+        "name": "lifecycle-trigger1",
+        "project": "demo-etl"
+    },
+    "name": "lifecycle-trigger1",
+    "project": "demo-etl",
+    "spec": {
+        "function": "process",
+        "key": "store://demo-etl/artifact/file",
+        "states": [
+            "CREATED",
+            "DELETED",
+            "ERROR",
+            "READY",
+            "UPLOADING"
+        ],
+        "task": "build",
+        "template": {
+            "message": "processed"
+        },
+        "workflow": "pipeline"
+    },
+    "status": {
+        "state": "CREATED"
+    },
+    "user": "digitalhubdev"
+}
