@@ -33,6 +33,17 @@ class MaterialFile:
         self.hash = hash
         self.last_modified = last_modified
 
+    def __repr__(self) -> str:
+        fields = {
+            "path": self.path,
+            "name": self.name,
+            "content_type": self.content_type,
+            "size": self.size,
+            "hash": self.hash,
+            "last_modified": self.last_modified,
+        }
+        return str({key: value for key, value in fields.items() if value is not None})
+
     def as_file(self) -> str:
         """Download this file into a temporary directory.
 

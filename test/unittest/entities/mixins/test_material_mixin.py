@@ -253,3 +253,18 @@ def test_material_file_as_file_downloads_to_store_temp_directory(monkeypatch) ->
         "s3://bucket/material/nested/file.txt",
         dst=Path("/tmp/material-file"),
     )
+
+
+def test_material_file_repr_shows_non_none_metadata_as_dict() -> None:
+    file = material_files.MaterialFile(
+        path="trick.txt",
+        name="trick.txt",
+        content_type="text/plain",
+        size=643,
+        hash=None,
+        last_modified=None,
+        material_path="s3://bucket/material/",
+        context_root=Path("/context/artifact"),
+    )
+
+    assert repr(file) == "{'path': 'trick.txt', 'name': 'trick.txt', 'content_type': 'text/plain', 'size': 643}"
