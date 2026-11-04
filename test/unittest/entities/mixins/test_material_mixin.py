@@ -8,6 +8,7 @@ from unittest.mock import Mock
 
 import pytest
 
+import digitalhub.entities._mixin.material.files as material_files
 import digitalhub.entities._mixin.material.mixin as material_mixin
 from digitalhub.entities._mixin.material.mixin import MaterialMixin
 from digitalhub.utils.exceptions import BackendError, EntityError, EntityErrorFileNotFound
@@ -20,6 +21,7 @@ class MaterialEntityForTest(MaterialMixin):
         self.project = "my-project"
         self.id = "entity-id"
         self.status = SimpleNamespace(files=None)
+        self._context = Mock(return_value=SimpleNamespace(root=Path("/context")))
         self.update = Mock()
         self.refresh = Mock()
 
@@ -151,11 +153,15 @@ def test_upload_converts_store_errors_to_entity_error(monkeypatch) -> None:
 
 def test_files_reads_backend_info_and_falls_back_to_status(monkeypatch) -> None:
     entity = MaterialEntityForTest()
+    entity.spec = SimpleNamespace(path="store://material")
     entity.status.files = [{"path": "status.txt"}]
     read_files_info = Mock(return_value=[{"path": "backend.txt"}])
     monkeypatch.setattr(material_mixin.material_processor, "read_files_info", read_files_info)
 
-    assert entity.files == [{"path": "backend.txt"}]
+    backend_files = entity.files
+    assert backend_files[0].path == "backend.txt"
+    assert backend_files[0].name is None
+    assert entity.status.files == [{"path": "status.txt"}]
     read_files_info.assert_called_once_with(
         project="my-project",
         entity_type="artifact",
@@ -165,4 +171,66 @@ def test_files_reads_backend_info_and_falls_back_to_status(monkeypatch) -> None:
     read_files_info.reset_mock()
     read_files_info.side_effect = BackendError("backend unavailable")
 
-    assert entity.files == [{"path": "status.txt"}]
+    status_files = entity.files
+    assert status_files[0].path == "status.txt"
+    assert entity.status.files == [{"path": "status.txt"}]
+
+
+@pytest.mark.parametrize(
+    ("destination", "expected_destination"),
+    [(None, Path("/context/artifact")), ("/tmp/download", Path("/tmp/download"))],
+)
+def test_material_file_download_uses_material_path_and_destination(
+    destination: str | None,
+    expected_destination: Path,
+    monkeypatch,
+) -> None:
+    entity = MaterialEntityForTest()
+    entity.spec = SimpleNamespace(path="s3://bucket/material")
+    entity.status.files = [{"path": "status.txt"}]
+    entity._context = Mock(return_value=SimpleNamespace(root=Path("/context")))
+    monkeypatch.setattr(
+        material_mixin.material_processor,
+        "read_files_info",
+        Mock(return_value=[{"path": "nested/file.txt"}]),
+    )
+    store = Mock()
+    store.download.return_value = "/downloaded/file.txt"
+    get_store = Mock(return_value=store)
+    monkeypatch.setattr(material_files, "get_store", get_store)
+
+    result = entity.files[0].download(destination=destination, overwrite=True)
+
+    assert result == "/downloaded/file.txt"
+    get_store.assert_called_once_with("s3://bucket/material")
+    store.download.assert_called_once_with(
+        "s3://bucket/material/nested/file.txt",
+        expected_destination,
+        overwrite=True,
+    )
+
+
+def test_material_file_as_file_downloads_to_store_temp_directory(monkeypatch) -> None:
+    entity = MaterialEntityForTest()
+    entity.spec = SimpleNamespace(path="s3://bucket/material/")
+    entity.status.files = [{"path": "status.txt"}]
+    monkeypatch.setattr(
+        material_mixin.material_processor,
+        "read_files_info",
+        Mock(return_value=[{"path": "nested/file.txt"}]),
+    )
+    store = Mock()
+    store._build_temp.return_value = Path("/tmp/material-file")
+    store.download.return_value = "/tmp/material-file/file.txt"
+    get_store = Mock(return_value=store)
+    monkeypatch.setattr(material_files, "get_store", get_store)
+
+    result = entity.files[0].as_file()
+
+    assert result == "/tmp/material-file/file.txt"
+    get_store.assert_called_once_with("s3://bucket/material/")
+    store._build_temp.assert_called_once_with()
+    store.download.assert_called_once_with(
+        "s3://bucket/material/nested/file.txt",
+        dst=Path("/tmp/material-file"),
+    )

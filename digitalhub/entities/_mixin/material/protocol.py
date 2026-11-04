@@ -10,6 +10,7 @@ from typing import Protocol
 from digitalhub.entities._mixin.versioned.protocol import VersionedEntityProtocol
 
 if typing.TYPE_CHECKING:
+    from digitalhub.entities._mixin.material.files import MaterialFile
     from digitalhub.entities._mixin.material.spec import MaterialSpec
     from digitalhub.entities._mixin.material.status import MaterialStatus
     from digitalhub.utils.types import SourcesOrListOfSources
@@ -27,4 +28,4 @@ class MaterialProtocol(VersionedEntityProtocol, Protocol):
     def upload(self, source: SourcesOrListOfSources, keep_dir_structure: bool = False) -> None: ...
 
     @property
-    def files(self) -> list[dict]: ...
+    def files(self) -> list[MaterialFile]: ...

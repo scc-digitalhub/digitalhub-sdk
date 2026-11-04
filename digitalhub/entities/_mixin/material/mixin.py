@@ -10,6 +10,7 @@ from typing import ClassVar
 
 from digitalhub.entities._commons.enums import State
 from digitalhub.entities._commons.utils import refresh_decorator
+from digitalhub.entities._mixin.material.files import MaterialFile
 from digitalhub.entities._processors.processors import material_processor
 from digitalhub.stores.data.api import get_store
 from digitalhub.utils.exceptions import BackendError, EntityError, EntityErrorFileNotFound, StoreError
@@ -142,21 +143,40 @@ class MaterialMixin:
         raise exception(msg) from error
 
     @property
-    def files(self) -> list[dict]:
-        """Return metadata for files associated with the entity.
+    def files(self) -> list[MaterialFile]:
+        """Return file objects associated with the entity.
 
         Returns
         -------
-        list[dict]
-            File metadata from the files API or the entity status.
+        list[MaterialFile]
+            Objects built from the files API or the entity status.
         """
-        if self._has_files_info():
-            files_info = self._get_files_info()
-            if files_info:
-                return files_info
-            if self.status.files:
-                return self.status.files
-        return []
+        if not self._has_files_info():
+            return []
+
+        files_info = self._get_files_info()
+        if not files_info:
+            files_info = self.status.files or []
+        if not files_info:
+            return []
+
+        context_root = self._context().root / self.ENTITY_TYPE
+        material_files = []
+        for file_info in files_info:
+            file_info = file_info or {}
+            material_files.append(
+                MaterialFile(
+                    path=file_info.get("path"),
+                    name=file_info.get("name"),
+                    content_type=file_info.get("content_type"),
+                    size=file_info.get("size"),
+                    hash=file_info.get("hash"),
+                    last_modified=file_info.get("last_modified"),
+                    material_path=self.spec.path,
+                    context_root=context_root,
+                )
+            )
+        return material_files
 
     def _has_files_info(self) -> bool:
         return self.status.files is not None
