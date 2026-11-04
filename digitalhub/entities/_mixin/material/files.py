@@ -4,9 +4,7 @@
 
 from __future__ import annotations
 
-import posixpath
 from pathlib import Path
-from urllib.parse import urlsplit, urlunsplit
 
 from digitalhub.stores.data.api import get_store
 from digitalhub.utils.exceptions import EntityError
@@ -45,7 +43,7 @@ class MaterialFile:
         """
         store = get_store(self._material_path)
         dst = store._build_temp()
-        return store.download(self._get_storage_path(), dst=dst)
+        return store.download(self._get_download_path(), dst=dst)
 
     def download(
         self,
@@ -74,17 +72,11 @@ class MaterialFile:
         else:
             dst = Path(destination)
 
-        return store.download(self._get_storage_path(), dst, overwrite=overwrite)
+        return store.download(self._get_download_path(), dst, overwrite=overwrite)
 
-    def _get_storage_path(self) -> str:
+    def _get_download_path(self) -> str:
+        if not self._material_path.endswith("/"):
+            return self._material_path
         if not self.path:
-            raise EntityError("Cannot download a material file without a storage path.")
-
-        if urlsplit(self.path).scheme:
-            return self.path
-
-        root = urlsplit(self._material_path)
-        path = posixpath.join(root.path.rstrip("/"), self.path.lstrip("/"))
-        if not path.startswith("/"):
-            path = f"/{path}"
-        return urlunsplit(root._replace(path=path))
+            raise EntityError("Cannot download a file from a material partition without a file path.")
+        return f"{self._material_path}{self.path.lstrip('/')}"

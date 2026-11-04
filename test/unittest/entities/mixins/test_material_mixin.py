@@ -177,22 +177,41 @@ def test_files_reads_backend_info_and_falls_back_to_status(monkeypatch) -> None:
 
 
 @pytest.mark.parametrize(
+    ("material_path", "file_path", "expected_source"),
+    [
+        ("s3://bucket/material", "nested/file.txt", "s3://bucket/material"),
+        (
+            "s3://bucket/material/",
+            "nested/file.txt",
+            "s3://bucket/material/nested/file.txt",
+        ),
+        (
+            "s3://bucket/artifact/untitled/id/Untitled.ipynb",
+            "Untitled.ipynb",
+            "s3://bucket/artifact/untitled/id/Untitled.ipynb",
+        ),
+    ],
+)
+@pytest.mark.parametrize(
     ("destination", "expected_destination"),
     [(None, Path("/context/artifact")), ("/tmp/download", Path("/tmp/download"))],
 )
 def test_material_file_download_uses_material_path_and_destination(
+    material_path: str,
+    file_path: str,
+    expected_source: str,
     destination: str | None,
     expected_destination: Path,
     monkeypatch,
 ) -> None:
     entity = MaterialEntityForTest()
-    entity.spec = SimpleNamespace(path="s3://bucket/material")
+    entity.spec = SimpleNamespace(path=material_path)
     entity.status.files = [{"path": "status.txt"}]
     entity._context = Mock(return_value=SimpleNamespace(root=Path("/context")))
     monkeypatch.setattr(
         material_mixin.material_processor,
         "read_files_info",
-        Mock(return_value=[{"path": "nested/file.txt"}]),
+        Mock(return_value=[{"path": file_path}]),
     )
     store = Mock()
     store.download.return_value = "/downloaded/file.txt"
@@ -202,9 +221,9 @@ def test_material_file_download_uses_material_path_and_destination(
     result = entity.files[0].download(destination=destination, overwrite=True)
 
     assert result == "/downloaded/file.txt"
-    get_store.assert_called_once_with("s3://bucket/material")
+    get_store.assert_called_once_with(material_path)
     store.download.assert_called_once_with(
-        "s3://bucket/material/nested/file.txt",
+        expected_source,
         expected_destination,
         overwrite=True,
     )
