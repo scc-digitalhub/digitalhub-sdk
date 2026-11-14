@@ -14,7 +14,7 @@ from digitalhub.runtimes.enums import RuntimeEnvVar
 from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
 from digitalhub.stores.client.compiler.targets import ContextEntityTarget
-from digitalhub.utils.exceptions import BackendError
+from digitalhub.utils.exceptions import BackendError, ContextError
 from digitalhub.utils.logger.logger import get_logger
 
 if typing.TYPE_CHECKING:
@@ -97,6 +97,9 @@ class Context:
         Add a logged item to the context. Sets the PRODUCEDBY
         relationship from the current run.
         """
+        if self.run is None:
+            raise ContextError("Cannot register entity without an active run.")
+
         id_ = self.run.key + ":" + self.run.id
         obj.add_relationship(Relationship.PRODUCEDBY.value, id_)
         self.logged[obj.name] = obj.key

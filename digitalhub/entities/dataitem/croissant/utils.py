@@ -169,13 +169,14 @@ def validate_croissant_source(src: str) -> str:
                 "Please provide a valid Croissant metadata JSON file or a directory containing it."
             )
 
-    # If it is a file, verify that it is a json, otherwise raise an error
-    if path_src.is_file():
+    elif path_src.is_file():
         if path_src.suffix != ".json":
             raise ValueError(
                 "The provided file is not a valid Croissant metadata JSON file. The file must have a '.json' extension."
             )
         filepath = path_src
+    else:
+        raise ValueError(f"The provided path '{src}' is not a regular file or directory.")
 
     filepath = str(filepath.resolve())
 

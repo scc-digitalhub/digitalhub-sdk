@@ -44,6 +44,9 @@ def validate_metric_value(value: Any) -> MetricType:
     MetricType
         The validated metric value.
     """
+    if isinstance(value, bool) or isinstance(value, list) and any(isinstance(item, bool) for item in value):
+        raise ValueError("Invalid metric value. Must be a list of floats or ints or a float or an int.")
+
     try:
         return Metric(value=value).value
     except ValidationError as e:
@@ -192,6 +195,8 @@ def handle_metric_list(
     """
     if key not in metrics or overwrite:
         metrics[key] = value
-    else:
+    elif isinstance(metrics[key], list):
         metrics[key].extend(value)
+    else:
+        metrics[key] = [metrics[key], *value]
     return metrics

@@ -30,6 +30,36 @@ def test_parse_identifier_parses_unversioned_key() -> None:
     )
 
 
+def test_parse_identifier_parses_versioned_key_without_id() -> None:
+    assert processor_utils.parse_identifier("store://project/function/python/pipeline") == (
+        "project",
+        "function",
+        "python",
+        "pipeline",
+        None,
+    )
+
+
+def test_parse_identifier_preserves_colons_in_id() -> None:
+    assert processor_utils.parse_identifier("store://project/function/python/pipeline:id:revision") == (
+        "project",
+        "function",
+        "python",
+        "pipeline",
+        "id:revision",
+    )
+
+
+def test_parse_identifier_parses_log_key_as_unversioned() -> None:
+    assert processor_utils.parse_identifier("store://project/log/log/log-id") == (
+        "project",
+        "log",
+        "log",
+        None,
+        "log-id",
+    )
+
+
 def test_parse_identifier_uses_explicit_components_for_simple_identifier() -> None:
     assert processor_utils.parse_identifier(
         "pipeline",

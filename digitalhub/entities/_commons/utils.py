@@ -70,7 +70,7 @@ def sanitize_unversioned_key(key: str) -> str:
     return "store://" + "/".join(splt[:-1] + [ent_id])
 
 
-def parse_entity_key(key: str) -> tuple[str, str, str, str | None, str]:
+def parse_entity_key(key: str) -> tuple[str, str, str, str | None, str | None]:
     """
     Parse an entity key into its constituent components.
 
@@ -86,18 +86,15 @@ def parse_entity_key(key: str) -> tuple[str, str, str, str | None, str]:
 
     Returns
     -------
-    tuple[str, str, str, str | None, str]
+    tuple[str, str, str, str | None, str | None]
         A tuple containing (project, entity_type, kind, name, uuid).
-        The name component is None for tasks and runs.
+        The name component is None for unversioned entities, and the UUID
+        component is None when the key does not include an ID.
     """
     if not is_valid_key(key):
         raise ValueError("Invalid entity key format.")
 
-    # Remove "store://" from the key
-    key = key.replace("store://", "")
-
-    # Split the key into parts
-    parts = key.split("/")
+    parts = key.removeprefix("store://").split("/")
 
     # The project is the first part
     project = parts[0]
@@ -108,14 +105,15 @@ def parse_entity_key(key: str) -> tuple[str, str, str, str | None, str]:
     # The kind is the third part
     kind = parts[2]
 
-    # Tasks and runs have no name and uuid
-    if entity_type in (EntityTypes.TASK.value, EntityTypes.RUN.value):
+    # Unversioned entities use the final path component as their UUID.
+    if entity_type in (EntityTypes.TASK.value, EntityTypes.RUN.value, EntityTypes.LOG.value):
         name = None
         uuid = parts[3]
-
-    # The name and uuid are separated by a colon in the last part
     else:
-        name, uuid = parts[3].split(":")
+        if ":" in parts[3]:
+            name, uuid = parts[3].split(":", 1)
+        else:
+            name, uuid = parts[3], None
 
     return project, entity_type, kind, name, uuid
 

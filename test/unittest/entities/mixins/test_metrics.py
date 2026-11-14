@@ -33,7 +33,7 @@ def test_validate_metric_value_accepts_numeric_values(value, expected) -> None:
     assert metrics_utils.validate_metric_value(value) == expected
 
 
-@pytest.mark.parametrize("value", [None, "invalid", {"value": 1}, [1, "invalid"]])
+@pytest.mark.parametrize("value", [None, "invalid", {"value": 1}, [1, "invalid"], True, False, [1, True]])
 def test_validate_metric_value_rejects_non_numeric_values(value) -> None:
     with pytest.raises(ValueError, match="Invalid metric value"):
         metrics_utils.validate_metric_value(value)
@@ -47,6 +47,7 @@ def test_validate_metric_value_rejects_non_numeric_values(value) -> None:
         ({"accuracy": 0.8}, 0.9, False, False, {"accuracy": [0.8, 0.9]}),
         ({"accuracy": [0.8]}, 0.9, False, False, {"accuracy": [0.8, 0.9]}),
         ({"accuracy": [0.8]}, [0.9], False, False, {"accuracy": [0.8, 0.9]}),
+        ({"accuracy": 0.8}, [0.9, 1.0], False, False, {"accuracy": [0.8, 0.9, 1.0]}),
         ({"accuracy": 0.8}, 0.9, True, True, {"accuracy": 0.9}),
     ],
 )
