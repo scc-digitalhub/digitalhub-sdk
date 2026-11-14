@@ -32,20 +32,6 @@ class LocalStore(Store):
     ) -> str:
         """
         Download artifacts from storage.
-
-        Parameters
-        ----------
-        src : str
-            Path of the material entity.
-        dst : str
-            The destination of the material entity on local filesystem.
-        overwrite : bool
-            Specify if overwrite existing file(s).
-
-        Returns
-        -------
-        str
-            Destination path of the downloaded files.
         """
         raise StoreError("Local store does not support download.")
 
@@ -67,16 +53,6 @@ class LocalStore(Store):
     ) -> list[dict]:
         """
         Method to get file metadata.
-
-        Parameters
-        ----------
-        paths : list
-            List of source paths.
-
-        Returns
-        -------
-        list[dict]
-            Returns files metadata.
         """
         return [get_file_info_from_local(path, src_path) for path, src_path in paths]
 
@@ -93,41 +69,25 @@ class LocalStore(Store):
     ) -> Dataframe:  # type: ignore
         """
         Read DataFrame from path.
-
-        Parameters
-        ----------
-        path : SourcesOrListOfSources
-            Path(s) to read DataFrame from.
-        file_format : str
-            Extension of the file.
-        engine : str
-            Dataframe engine (pandas, polars, etc.).
-        **kwargs : dict
-            Keyword arguments.
-
-        Returns
-        -------
-        Dataframe
-            DataFrame.
         """
         reader = self._get_reader(engine)
 
         dfs = []
         if isinstance(path, list):
             for p in path:
-                file_format = self._get_extension(file_format, p)
-                dfs.append(reader.read_df(p, file_format, **kwargs))
+                extension = self._get_extension(file_format, p)
+                dfs.append(reader.read_df(p, extension, **kwargs))
         elif Path(path).is_dir():
-            import glob
-
-            paths = glob.glob(f"{path}/*")
+            paths = [p for p in Path(path).iterdir() if p.is_file() and not p.name.startswith(".")]
             for p in paths:
-                file_format = self._get_extension(file_format, p)
-                dfs.append(reader.read_df(p, file_format, **kwargs))
+                extension = self._get_extension(file_format, str(p))
+                dfs.append(reader.read_df(str(p), extension, **kwargs))
         else:
-            file_format = self._get_extension(file_format, path)
-            dfs.append(reader.read_df(path, file_format, **kwargs))
+            extension = self._get_extension(file_format, path)
+            dfs.append(reader.read_df(path, extension, **kwargs))
 
+        if not dfs:
+            raise StoreError(f"No readable data files found in '{path}'.")
         if len(dfs) == 1:
             return dfs[0]
 
@@ -138,20 +98,6 @@ class LocalStore(Store):
         Method to write a dataframe to a file. Kwargs are passed to df.to_parquet().
         If destination is not provided, the dataframe is written to the default
         store path with generated name.
-
-        Parameters
-        ----------
-        df : Any
-            The dataframe to write.
-        dst : str
-            The destination of the dataframe.
-        **kwargs : dict
-            Keyword arguments.
-
-        Returns
-        -------
-        str
-            Path of written dataframe.
         """
         self._check_local_dst(dst)
         reader = get_reader_by_object(df)

@@ -1,4 +1,4 @@
-from unittest.mock import Mock
+from unittest.mock import Mock, call
 
 import pytest
 from boto3.exceptions import S3UploadFailedError
@@ -122,3 +122,49 @@ def test_check_factory_wraps_bucket_access_errors() -> None:
 
     assert isinstance(raised.value.__cause__, ConfigError)
     assert raised.value.__cause__.__cause__ is error
+
+
+def test_read_df_partition_infers_each_extension_and_skips_nonfiles() -> None:
+    store = object.__new__(S3Store)
+    reader = Mock()
+    reader.read_df.side_effect = ["csv-frame", "json-frame"]
+    reader.concat_dfs.return_value = "combined"
+    store._get_reader = Mock(return_value=reader)
+    client = Mock()
+    store._check_factory = Mock(return_value=(client, "bucket"))
+    store._list_objects = Mock(
+        return_value=[
+            "partition/table.csv",
+            "partition/nested/table.json",
+            "partition/.hidden.csv",
+            "partition/nested/",
+        ]
+    )
+    store._download_fileobject = Mock(side_effect=["csv-object", "json-object"])
+
+    assert store.read_df("s3://bucket/partition/", engine="pandas") == "combined"
+
+    assert [call.kwargs["extension"] for call in reader.read_df.call_args_list] == ["csv", "json"]
+    store._download_fileobject.assert_has_calls(
+        [
+            call("partition/table.csv", client, "bucket"),
+            call("partition/nested/table.json", client, "bucket"),
+        ]
+    )
+
+
+def test_read_df_empty_s3_partition_raises_store_error() -> None:
+    store = object.__new__(S3Store)
+    store._get_reader = Mock(return_value=Mock())
+    store._check_factory = Mock(return_value=(Mock(), "bucket"))
+    store._list_objects = Mock(return_value=[])
+
+    with pytest.raises(StoreError, match="No readable data files found"):
+        store.read_df("s3://bucket/empty/", engine="pandas")
+
+
+def test_read_df_empty_s3_file_list_raises_store_error() -> None:
+    store = object.__new__(S3Store)
+
+    with pytest.raises(StoreError, match="No readable data files found"):
+        store.read_df([], engine="pandas")

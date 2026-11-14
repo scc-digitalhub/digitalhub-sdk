@@ -64,21 +64,6 @@ class S3Store(Store):
     ) -> str:
         """
         Download artifacts from storage.
-
-        Parameters
-        ----------
-        src : str
-            Path of the material entity.
-        dst : Path | None
-            The destination on the local filesystem. If None, a temporary
-            directory is used.
-        overwrite : bool
-            Specify if overwrite existing file(s).
-
-        Returns
-        -------
-        str
-            Destination path of the downloaded files.
         """
         if dst is None:
             dst = self._build_temp()
@@ -133,18 +118,6 @@ class S3Store(Store):
     ) -> list[tuple[str, str]]:
         """
         Upload an artifact to storage.
-
-        Parameters
-        ----------
-        src : SourcesOrListOfSources
-            Source(s).
-        dst : str
-            The destination of the material entity on storage.
-
-        Returns
-        -------
-        list[tuple[str, str]]
-            Returns the list of destination and source paths of the uploaded artifacts.
         """
         # Destination handling
         key = self._get_key(dst)
@@ -189,18 +162,6 @@ class S3Store(Store):
     ) -> str:
         """
         Upload an BytesIO to S3 based storage.
-
-        Parameters
-        ----------
-        src : BytesIO
-            The source object to be persisted.
-        dst : str
-            The destination path of the artifact.
-
-        Returns
-        -------
-        str
-            S3 key of the uploaded artifact.
         """
         client, bucket = self._check_factory(dst)
         key = self._get_key(dst)
@@ -214,16 +175,6 @@ class S3Store(Store):
     ) -> list[dict]:
         """
         Method to get file metadata.
-
-        Parameters
-        ----------
-        paths : list
-            List of source paths.
-
-        Returns
-        -------
-        list[dict]
-            Returns files metadata.
         """
         client, bucket = self._check_factory(root)
 
@@ -257,33 +208,24 @@ class S3Store(Store):
     ) -> Dataframe:  # type: ignore
         """
         Read DataFrame from path.
-
-        Parameters
-        ----------
-        path : SourcesOrListOfSources
-            Path(s) to read DataFrame from.
-        file_format : str
-            Extension of the file.
-        engine : str
-            Dataframe engine (pandas, polars, etc.).
-        **kwargs : dict
-            Keyword arguments.
-
-        Returns
-        -------
-        Dataframe
-            DataFrame.
         """
         reader = self._get_reader(engine)
 
         # Verify if partition or single file
-        if self.is_partition(path):
+        if isinstance(path, str) and self.is_partition(path):
             client, bucket = self._check_factory(path)
             objects = self._list_objects(client, bucket, path)
-            keys = [self._get_key(o) for o in objects]
+            keys = []
+            for obj in objects:
+                key = self._get_key(obj)
+                if key.endswith("/") or Path(key).name.startswith("."):
+                    continue
+                keys.append(key)
 
         else:
             if isinstance(path, list):
+                if not path:
+                    raise StoreError(f"No readable data files found in '{path}'.")
                 client, bucket = self._check_factory(path[0])
                 keys = [self._get_key(p) for p in path]
             else:
@@ -292,10 +234,12 @@ class S3Store(Store):
 
         dfs = []
         for key in keys:
-            file_format = self._get_extension(file_format, key)
+            extension = self._get_extension(file_format, key)
             obj = self._download_fileobject(key, client, bucket)
-            dfs.append(reader.read_df(obj, extension=file_format, **kwargs))
+            dfs.append(reader.read_df(obj, extension=extension, **kwargs))
 
+        if not dfs:
+            raise StoreError(f"No readable data files found in '{path}'.")
         if len(dfs) == 1:
             return dfs[0]
         return reader.concat_dfs(dfs)
@@ -309,22 +253,6 @@ class S3Store(Store):
     ) -> str:
         """
         Write a dataframe to S3 based storage. Kwargs are passed to df.to_parquet().
-
-        Parameters
-        ----------
-        df : Any
-            The dataframe.
-        dst : str
-            The destination path on S3 based storage.
-        extension : str
-            The extension of the file.
-        **kwargs : dict
-            Keyword arguments.
-
-        Returns
-        -------
-        str
-            The S3 path where the dataframe was saved.
         """
         reader = get_reader_by_object(df)
         with BytesIO() as fileobj:
@@ -339,13 +267,6 @@ class S3Store(Store):
     def get_s3_source(self, src: str, filename: Path) -> None:
         """
         Download a file from S3 and save it to a local file.
-
-        Parameters
-        ----------
-        src : str
-            S3 path of the object to be downloaded (e.g., 's3://bucket
-        filename : Path
-            Local path where the downloaded object will be saved.
         """
         client, bucket = self._check_factory(src)
         key = self._get_key(src)
@@ -354,34 +275,12 @@ class S3Store(Store):
     def get_s3_client(self) -> S3Client:
         """
         Get an S3 client object.
-
-        Parameters
-        ----------
-        file : bool
-            Whether to use file-based credentials. Default is True.
-
-        Returns
-        -------
-        S3Client
-            Returns a client object that interacts with the S3 storage service.
         """
         return self._get_client(self._configurator.get_client_config())
 
     def get_credentials(self, lowercase_keys: bool = True) -> dict:
         """
         Get all configured S3 credentials as a dictionary.
-
-        Parameters
-        ----------
-        lowercase_keys : bool
-            Whether to return credential keys in lowercase format.
-
-        Returns
-        -------
-        dict
-            Dictionary containing all credential key-value pairs from self.keys.
-            Keys correspond to S3 connection parameters such as endpoint URL,
-            access key ID, secret access key, session token, region, and signature version.
         """
         return self._configurator.get_credentials(lowercase_keys=lowercase_keys)
 
@@ -398,22 +297,6 @@ class S3Store(Store):
     ) -> list[str]:
         """
         Download files from S3 partition.
-
-        Parameters
-        ----------
-        key : str
-            The key to be downloaded.
-        dst_pth : str
-            The destination of the files on local filesystem.
-        client : S3Client
-            The S3 client object.
-        bucket : str
-            The name of the S3 bucket.
-
-        Returns
-        -------
-        list[str]
-            The list of paths of the downloaded files.
         """
         with _handle_boto_errors("download file"):
             client.download_file(bucket, key, dst_pth)
@@ -426,20 +309,6 @@ class S3Store(Store):
     ) -> BytesIO:
         """
         Download fileobject from S3 partition.
-
-        Parameters
-        ----------
-        key : str
-            The key of the file.
-        client : S3Client
-            The S3 client object.
-        bucket : str
-            The name of the S3 bucket.
-
-        Returns
-        -------
-        BytesIO
-            The fileobject of the downloaded file.
         """
         with _handle_boto_errors("download file object"):
             obj = client.get_object(Bucket=bucket, Key=key)
@@ -454,22 +323,6 @@ class S3Store(Store):
     ) -> list[tuple[str, str]]:
         """
         Upload directory to storage.
-
-        Parameters
-        ----------
-        src : str
-            List of sources.
-        dst : str
-            The destination of the material entity on storage.
-        client : S3Client
-            The S3 client object.
-        bucket : str
-            The name of the S3 bucket.
-
-        Returns
-        -------
-        list[tuple[str, str]]
-            Returns the list of destination and source paths of the uploaded artifacts.
         """
         # Get list of files
         src_pth = Path(src)
@@ -495,24 +348,6 @@ class S3Store(Store):
     ) -> list[tuple[str, str]]:
         """
         Upload list of files to storage.
-
-        Parameters
-        ----------
-        src : list
-            List of sources.
-        dst : str
-            The destination of the material entity on storage.
-        client : S3Client
-            The S3 client object.
-        bucket : str
-            The name of the S3 bucket.
-        keep_dir_structure : bool
-            Whether to keep the directory structure of the source files.
-
-        Returns
-        -------
-        list[tuple[str, str]]
-            Returns the list of destination and source paths of the uploaded artifacts.
         """
         files = src
         if keep_dir_structure and files:
@@ -544,22 +379,6 @@ class S3Store(Store):
     ) -> str:
         """
         Upload a single file to storage.
-
-        Parameters
-        ----------
-        src : str
-            List of sources.
-        dst : str
-            The destination of the material entity on storage.
-        client : S3Client
-            The S3 client object.
-        bucket : str
-            The name of the S3 bucket.
-
-        Returns
-        -------
-        str
-            Returns the list of destination and source paths of the uploaded artifacts.
         """
         if dst.endswith("/"):
             dst = f"{dst.removeprefix('/')}{Path(src).name}"
@@ -579,17 +398,6 @@ class S3Store(Store):
         """
         Upload a file to S3 based storage. The function checks if the
         bucket is accessible.
-
-        Parameters
-        ----------
-        src : str
-            The source path of the file on local filesystem.
-        key : str
-            The key of the file on S3 based storage.
-        client : S3Client
-            The S3 client object.
-        bucket : str
-            The name of the S3 bucket.
         """
         extra_args = {}
         mime_type = get_file_mime_type(src)
@@ -613,17 +421,6 @@ class S3Store(Store):
     ) -> None:
         """
         Upload a fileobject to S3 based storage. The function checks if the bucket is accessible.
-
-        Parameters
-        ----------
-        fileobj : BytesIO
-            The fileobject to be uploaded.
-        key : str
-            The key of the file on S3 based storage.
-        client : S3Client
-            The S3 client object.
-        bucket : str
-            The name of the S3 bucket.
         """
         with _handle_boto_errors("upload file object"):
             client.upload_fileobj(
@@ -640,43 +437,18 @@ class S3Store(Store):
     def _get_bucket(self, root: str) -> str:
         """
         Get the name of the S3 bucket from the URI.
-
-        Returns
-        -------
-        str
-            The name of the S3 bucket.
         """
         return urlparse(root).netloc
 
     def _get_client(self, cfg: dict) -> S3Client:
         """
         Get an S3 client object.
-
-        Parameters
-        ----------
-        cfg : dict
-            The configuration of the S3 client.
-
-        Returns
-        -------
-        S3Client
-            Returns a client object that interacts with the S3 storage service.
         """
         return boto3.client("s3", **cfg)
 
     def _check_factory(self, s3_path: str) -> tuple[S3Client, str]:
         """
         Checks if the S3 bucket collected from the URI is accessible.
-
-        Parameters
-        ----------
-        s3_path : str
-            Path to the S3 bucket (e.g., 's3://bucket/path').
-
-        Returns
-        -------
-        tuple of S3Client and str
-            Tuple containing the S3 client object and the name of the S3 bucket.
         """
         bucket = self._get_bucket(s3_path)
         cfg = self._configurator.get_client_config()
@@ -694,13 +466,6 @@ class S3Store(Store):
     def _check_access_to_storage(self, client: S3Client, bucket: str) -> None:
         """
         Checks if the S3 bucket is accessible by sending a head_bucket request.
-
-        Parameters
-        ----------
-        client : S3Client
-            S3 client object.
-        bucket : str
-            Name of the S3 bucket.
         """
         try:
             client.head_bucket(Bucket=bucket)
@@ -711,16 +476,6 @@ class S3Store(Store):
     def _get_key(path: str) -> str:
         """
         Build key.
-
-        Parameters
-        ----------
-        path : str
-            The source path to get the key from.
-
-        Returns
-        -------
-        str
-            The key.
         """
         key = urlparse(path).path.replace("\\", "/")
         key = key.removeprefix("/")
@@ -729,20 +484,6 @@ class S3Store(Store):
     def _list_objects(self, client: S3Client, bucket: str, partition: str) -> list[str]:
         """
         List objects in a S3 partition.
-
-        Parameters
-        ----------
-        client : S3Client
-            The S3 client object.
-        bucket : str
-            The name of the S3 bucket.
-        partition : str
-            The partition.
-
-        Returns
-        -------
-        list[str]
-            The list of keys under the partition.
         """
         key = self._get_key(partition)
         with _handle_boto_errors("list objects"):
@@ -756,14 +497,5 @@ class S3Store(Store):
     def is_partition(path: str) -> bool:
         """
         Check if path is a directory or a partition.
-
-        Parameters
-        ----------
-        path : str
-            The path to check.
-
-        Returns
-        -------
-        bool
         """
         return bool(path.endswith("/"))
