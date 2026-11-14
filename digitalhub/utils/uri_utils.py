@@ -105,8 +105,8 @@ def map_uri_scheme(uri: str) -> str:
     str
         Mapped scheme category (e.g., 'local', 'remote', 's3', 'sql', 'git').
     """
-    # Check for Windows paths (e.g. C:\path\to\file or \\network\share)
-    if re.match(r"^[a-zA-Z]:\\", uri) or uri.startswith(r"\\"):
+    # Check for Windows paths (e.g. C:\path\to\file, C:/path/to/file, or \\network\share)
+    if re.match(r"^[a-zA-Z]:[\\/]", uri) or uri.startswith(r"\\"):
         return SchemeCategory.LOCAL.value
 
     scheme = urlparse(uri).scheme
@@ -260,4 +260,5 @@ def get_filename_from_uri(uri: str) -> str:
     str
         Filename extracted from the URI.
     """
-    return unquote(urlparse(uri).path).split("/")[-1]
+    path = unquote(urlparse(uri).path).replace("\\", "/").rstrip("/")
+    return path.split("/")[-1]
