@@ -24,28 +24,6 @@ class LocalStore(Store):
     # I/O methods
     ##############################
 
-    def download(
-        self,
-        root: str,
-        dst: Path,
-        overwrite: bool = False,
-    ) -> str:
-        """
-        Download artifacts from storage.
-        """
-        raise StoreError("Local store does not support download.")
-
-    def upload(
-        self,
-        src: SourcesOrListOfSources,
-        dst: str,
-        keep_dir_structure: bool = False,
-    ) -> list[tuple[str, str]]:
-        """
-        Upload an artifact to storage.
-        """
-        raise StoreError("Local store does not support upload.")
-
     def get_file_info(
         self,
         root: str,

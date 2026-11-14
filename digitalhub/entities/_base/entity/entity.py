@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import typing
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from typing import ClassVar
 
 from digitalhub.entities._base._base.entity import Base
@@ -16,11 +16,11 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities._base.metadata.entity import Metadata
 
 
-class Entity(Base):
+class BaseEntity(Base):
     """
-    Abstract class for entities.
+    Base class for entity identity, metadata, spec, status, and serialization.
 
-    An entity is a collection of metadata, specifications.and status
+    An entity is a collection of metadata, specifications, and status
     representing a variety of objects handled by Digitalhub.
     """
 
@@ -48,37 +48,13 @@ class Entity(Base):
         # Need to be set in subclasses
         self.key: str
 
-    @abstractmethod
-    def save(self, update: bool = False) -> Entity:
-        """
-        Abstract save method.
-        """
-
-    @abstractmethod
-    def update(self) -> Entity:
-        """
-        Abstract update method.
-        """
-
-    @abstractmethod
-    def refresh(self) -> Entity:
-        """
-        Abstract refresh method.
-        """
-
-    @abstractmethod
-    def export(self) -> str:
-        """
-        Abstract export method.
-        """
-
-    def _update_attributes(self, obj: Entity) -> None:
+    def _update_attributes(self, obj: BaseEntity) -> None:
         """
         Update attributes.
 
         Parameters
         ----------
-        obj : Entity
+        obj : BaseEntity
             The entity object to update attributes from.
         """
         self.metadata = obj.metadata
@@ -209,3 +185,23 @@ class Entity(Base):
             A string representing the entity instance.
         """
         return str(self.to_dict())
+
+
+class PersistedEntity(BaseEntity, ABC):
+    """Abstract base for entities that support backend persistence."""
+
+    @abstractmethod
+    def save(self, update: bool = False) -> PersistedEntity:
+        """Save the entity."""
+
+    @abstractmethod
+    def update(self) -> PersistedEntity:
+        """Update the entity."""
+
+    @abstractmethod
+    def refresh(self) -> PersistedEntity:
+        """Refresh the entity."""
+
+    @abstractmethod
+    def export(self) -> str:
+        """Export the entity."""

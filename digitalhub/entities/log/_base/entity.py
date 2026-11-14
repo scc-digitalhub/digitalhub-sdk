@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.entities._base.entity.entity import Entity
+from digitalhub.entities._base.entity.entity import BaseEntity
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.utils.generic_utils import decode_base64_string
 
@@ -15,7 +15,7 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities.log._base.status import LogStatus
 
 
-class Log(Entity):
+class Log(BaseEntity):
     """
     A class representing a log.
     """
@@ -46,28 +46,6 @@ class Log(Entity):
 
         self._content: str | None = None
         self._text: str | None = None
-
-    ##############################
-    #  I/O methods
-    ##############################
-
-    def save(self, update: bool = False) -> None:
-        """
-        Save the log entity.
-        """
-        raise NotImplementedError("No save implementation for Log entity.")
-
-    def export(self) -> dict:
-        """
-        Export the log entity as a dictionary.
-        """
-        raise NotImplementedError("No export implementation for Log entity.")
-
-    def refresh(self) -> None:
-        """
-        Refresh the log entity.
-        """
-        raise NotImplementedError("No refresh implementation for Log entity.")
 
     ##############################
     #  Log methods

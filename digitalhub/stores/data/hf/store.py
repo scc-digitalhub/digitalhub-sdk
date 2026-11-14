@@ -5,13 +5,11 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
 from urllib.parse import parse_qs, unquote, urlparse
 
 from digitalhub.stores.data._base.store import Store
 from digitalhub.stores.data.hf.dragonfly import backend_factory, dragonfly
 from digitalhub.utils.exceptions import StoreError
-from digitalhub.utils.types import SourcesOrListOfSources
 from digitalhub.utils.uri_utils import has_hf_scheme
 
 
@@ -68,40 +66,11 @@ class HFStore(Store):
         )
         return str(dst)
 
-    def upload(
-        self,
-        src: SourcesOrListOfSources,
-        dst: str,
-        keep_dir_structure: bool = False,
-    ) -> list[tuple[str, str]]:
-        """
-        Upload is not supported for the Hugging Face store.
-        """
-        raise StoreError("Hugging Face store does not support upload.")
-
     def get_file_info(self, root: str, paths: list[tuple[str, str]]) -> list[dict]:
         """
         File metadata is not tracked by the Hugging Face store.
         """
         return []
-
-    def read_df(
-        self,
-        path: SourcesOrListOfSources,
-        file_format: str | None = None,
-        engine: str | None = None,
-        **kwargs,
-    ) -> Any:
-        """
-        DataFrame reads are not supported for the Hugging Face store.
-        """
-        raise StoreError("Hugging Face store does not support read_df.")
-
-    def write_df(self, df: Any, dst: str, extension: str | None = None, **kwargs) -> str:
-        """
-        DataFrame writes are not supported for the Hugging Face store.
-        """
-        raise StoreError("Hugging Face store does not support write_df.")
 
     @staticmethod
     def _parse_source(src: str) -> tuple[str, str | None]:

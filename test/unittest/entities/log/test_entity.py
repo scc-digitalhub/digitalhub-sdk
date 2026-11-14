@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+from digitalhub.entities._base.entity.entity import BaseEntity, PersistedEntity
 from digitalhub.entities._base.metadata.entity import Metadata
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes, State
 from digitalhub.entities.log._base.builder import LogLogBuilder
@@ -28,6 +29,14 @@ def test_log_starts_without_content() -> None:
 
     assert log._content is None
     assert log.text is None
+
+
+def test_log_uses_read_only_entity_base() -> None:
+    log = build_log()
+
+    assert isinstance(log, BaseEntity)
+    assert not isinstance(log, PersistedEntity)
+    assert all(not hasattr(log, method) for method in ("save", "update", "refresh", "export"))
 
 
 def test_set_content_decodes_base64_and_exposes_text() -> None:

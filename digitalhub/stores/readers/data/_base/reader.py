@@ -4,11 +4,11 @@
 
 from __future__ import annotations
 
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from typing import IO, Any
 
 
-class DataframeReader:
+class DataframeReader(ABC):
     """
     Dataframe reader abstract class.
     """

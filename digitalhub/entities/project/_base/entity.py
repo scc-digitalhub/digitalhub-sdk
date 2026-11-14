@@ -8,7 +8,7 @@ import typing
 from pathlib import Path
 
 from digitalhub.context.api import build_context
-from digitalhub.entities._base.entity.entity import Entity
+from digitalhub.entities._base.entity.entity import PersistedEntity
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._constructors.uuid import build_uuid
 from digitalhub.entities._processors.processors import (
@@ -44,13 +44,13 @@ else:
         pass
 
 
-class Project(Entity, ProjectListShortcuts):
+class Project(PersistedEntity, ProjectListShortcuts):
     """
     A class representing a project.
     """
 
     ENTITY_TYPE = EntityTypes.PROJECT.value
-    _obj_attr = (*Entity._obj_attr, "id", "name", "extensions")
+    _obj_attr = (*PersistedEntity._obj_attr, "id", "name", "extensions")
     _CONTEXT_ENTITY_SECTIONS = (
         f"{EntityTypes.ARTIFACT.value}s",
         f"{EntityTypes.DATAITEM.value}s",

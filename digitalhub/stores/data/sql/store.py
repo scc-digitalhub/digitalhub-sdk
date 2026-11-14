@@ -144,17 +144,6 @@ class SqlStore(Store):
 
         return self._download_table(parsed["schema"], parsed["table"], str(dst), database=parsed["database"])
 
-    def upload(
-        self,
-        src: SourcesOrListOfSources,
-        dst: str,
-        keep_dir_structure: bool = False,
-    ) -> list[tuple[str, str]]:
-        """
-        Upload artifacts to SQL storage.
-        """
-        raise StoreError("SQL store does not support upload.")
-
     def get_file_info(
         self,
         root: str,

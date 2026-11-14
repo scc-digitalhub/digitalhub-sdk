@@ -5,13 +5,11 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
 
 import requests
 
 from digitalhub.stores.client.common.config import get_client_config
 from digitalhub.stores.data._base.store import Store
-from digitalhub.utils.exceptions import StoreError
 from digitalhub.utils.types import Dataframe, SourcesOrListOfSources
 
 
@@ -48,17 +46,6 @@ class RemoteStore(Store):
 
         return self._download_file(root, dst, overwrite)
 
-    def upload(
-        self,
-        src: SourcesOrListOfSources,
-        dst: str,
-        keep_dir_structure: bool = False,
-    ) -> list[tuple[str, str]]:
-        """
-        Upload an artifact to storage.
-        """
-        raise StoreError("Remote HTTP store does not support upload.")
-
     def get_file_info(
         self,
         root: str,
@@ -86,13 +73,6 @@ class RemoteStore(Store):
         reader = self._get_reader(engine)
         extension = self._head_extension(path, file_format)
         return reader.read_df(path, extension, **kwargs)
-
-    def write_df(self, df: Any, dst: str, extension: str | None = None, **kwargs) -> str:
-        """
-        Method to write a dataframe to a file. Note that this method is not implemented
-        since the remote store is not meant to write dataframes.
-        """
-        raise NotImplementedError("Remote store does not support write_df.")
 
     ##############################
     # Helper methods

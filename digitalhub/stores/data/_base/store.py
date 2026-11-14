@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import typing
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from pathlib import Path
 from tempfile import mkdtemp
 from typing import Any
@@ -19,7 +19,7 @@ if typing.TYPE_CHECKING:
     from digitalhub.stores.readers.data._base.reader import DataframeReader
 
 
-class Store:
+class Store(ABC):
     """
     Store abstract class.
     """
@@ -28,7 +28,6 @@ class Store:
     # I/O methods
     ##############################
 
-    @abstractmethod
     def download(
         self,
         src: str,
@@ -36,10 +35,10 @@ class Store:
         overwrite: bool = False,
     ) -> str:
         """
-        Method to download material entity from storage.
+        Download material entity from storage.
         """
+        raise StoreError(f"{type(self).__name__} does not support download")
 
-    @abstractmethod
     def upload(
         self,
         src: SourcesOrListOfSources,
@@ -47,8 +46,9 @@ class Store:
         keep_dir_structure: bool = False,
     ) -> list[tuple[str, str]]:
         """
-        Method to upload material entity to storage.
+        Upload material entity to storage.
         """
+        raise StoreError(f"{type(self).__name__} does not support upload")
 
     @abstractmethod
     def get_file_info(
@@ -64,7 +64,6 @@ class Store:
     # Datastore methods
     ##############################
 
-    @abstractmethod
     def read_df(
         self,
         path: SourcesOrListOfSources,
@@ -75,8 +74,8 @@ class Store:
         """
         Read DataFrame from path.
         """
+        raise StoreError(f"{type(self).__name__} does not support read_df")
 
-    @abstractmethod
     def write_df(
         self,
         df: Any,
@@ -87,6 +86,7 @@ class Store:
         """
         Write DataFrame as parquet or csv.
         """
+        raise StoreError(f"{type(self).__name__} does not support write_df")
 
     ##############################
     # Helpers methods

@@ -7,7 +7,7 @@ from __future__ import annotations
 import typing
 
 from digitalhub.context.api import get_context
-from digitalhub.entities._base.entity.entity import Entity
+from digitalhub.entities._base.entity.entity import PersistedEntity
 from digitalhub.entities._processors.processors import crud_processor
 
 if typing.TYPE_CHECKING:
@@ -17,8 +17,8 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities._base.metadata.entity import Metadata
 
 
-class ContextEntity(Entity):
-    _obj_attr = (*Entity._obj_attr, "project", "id", "name")
+class ContextEntity(PersistedEntity):
+    _obj_attr = (*PersistedEntity._obj_attr, "project", "id", "name")
 
     def __init__(
         self,

@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import Any
 
@@ -15,7 +15,7 @@ from digitalhub.utils.logger.logger import get_logger
 logger = get_logger(__name__)
 
 
-class Runtime:
+class Runtime(ABC):
     """
     Base Runtime class for executing tasks in the DigitalHub platform.
 

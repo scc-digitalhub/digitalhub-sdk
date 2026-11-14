@@ -5,7 +5,7 @@
 import pytest
 
 from digitalhub.entities._base.context.entity import ContextEntity
-from digitalhub.entities._base.entity.entity import Entity
+from digitalhub.entities._base.entity.entity import BaseEntity, PersistedEntity
 from digitalhub.entities._base.metadata.entity import Metadata
 from digitalhub.entities._mixin.generic.spec import GenericSpec
 from digitalhub.entities._mixin.generic.status import GenericStatus
@@ -19,13 +19,16 @@ from digitalhub.entities.run._base.entity import Run
 from digitalhub.entities.run.generic.entity import RunGeneric
 
 
-class StubEntity(Entity):
+class StubEntity(PersistedEntity):
     ENTITY_TYPE = "stub"
 
-    def save(self, update: bool = False) -> Entity:
+    def save(self, update: bool = False) -> PersistedEntity:
         return self
 
-    def refresh(self) -> Entity:
+    def update(self) -> PersistedEntity:
+        return self
+
+    def refresh(self) -> PersistedEntity:
         return self
 
     def export(self) -> str:
@@ -49,7 +52,7 @@ def test_serialization_attributes_are_immutable_class_contracts() -> None:
     context_attributes = (*entity_attributes, "project", "id", "name")
     material_attributes = (*context_attributes, "extensions")
 
-    assert Entity._obj_attr == entity_attributes
+    assert PersistedEntity._obj_attr == entity_attributes
     assert ContextEntity._obj_attr == context_attributes
     assert Project._obj_attr == (*entity_attributes, "id", "name", "extensions")
 
@@ -58,6 +61,12 @@ def test_serialization_attributes_are_immutable_class_contracts() -> None:
 
     for entity_class in (Run, RunGeneric):
         assert entity_class._obj_attr == material_attributes
+
+
+def test_base_entity_and_persisted_entity_have_separate_contracts() -> None:
+    assert issubclass(ContextEntity, PersistedEntity)
+    assert issubclass(Project, PersistedEntity)
+    assert issubclass(Artifact, BaseEntity)
 
 
 def test_entity_mutators_update_metadata_without_duplicates() -> None:
