@@ -8,11 +8,13 @@ import re
 import typing
 from collections.abc import Callable
 from dataclasses import dataclass
+from functools import wraps
 from pathlib import Path
+from typing import Concatenate, ParamSpec, Protocol, TypeVar
 from urllib.parse import unquote, urlparse
 
 from digitalhub.entities._commons.enums import EntityTypes
-from digitalhub.utils.exceptions import BackendError
+from digitalhub.utils.exceptions import EntityNotExistsError
 from digitalhub.utils.file_utils import eval_zip_sources
 from digitalhub.utils.generic_utils import slugify_string
 from digitalhub.utils.logger.logger import get_logger
@@ -22,6 +24,15 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities._mixin.versioned.protocol import VersionedEntityProtocol
 
 logger = get_logger(__name__)
+
+
+class _Refreshable(Protocol):
+    def refresh(self) -> object: ...
+
+
+_RefreshableT = TypeVar("_RefreshableT", bound=_Refreshable)
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
 
 
 @dataclass
@@ -367,7 +378,9 @@ def build_zip_path(entity: VersionedEntityProtocol, filename: str) -> str:
     return f"zip+{get_default_store(entity.project)}/{entity.project}/{entity.ENTITY_TYPE}/{entity.name}/{entity.id}/{filename}"
 
 
-def refresh_decorator(fn: Callable) -> Callable:
+def refresh_decorator(
+    fn: Callable[Concatenate[_RefreshableT, _P], _R],
+) -> Callable[Concatenate[_RefreshableT, _P], _R]:
     """
     Refresh decorator.
 
@@ -382,11 +395,12 @@ def refresh_decorator(fn: Callable) -> Callable:
         Decorated function.
     """
 
-    def wrapper(self, *args, **kwargs):
+    @wraps(fn)
+    def wrapper(self: _RefreshableT, *args: _P.args, **kwargs: _P.kwargs) -> _R:
         # Prevent rising error if entity is not yet created in backend
         try:
             self.refresh()
-        except BackendError:
+        except EntityNotExistsError:
             logger.debug(
                 f"Refresh skipped for {getattr(self, 'id', 'unknown')} (entity may not exist in backend yet).",
                 exc_info=True,
