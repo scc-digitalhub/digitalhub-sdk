@@ -4,7 +4,9 @@
 
 from __future__ import annotations
 
-import typing
+from collections.abc import Sequence
+from datetime import date, datetime, time
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -24,13 +26,44 @@ from digitalhub.utils.logger.logger import get_logger
 from digitalhub.utils.types import Dataframe, SourcesOrListOfSources
 from digitalhub.utils.uri_utils import SqlSchemes
 
-if typing.TYPE_CHECKING:
-    from sqlalchemy.engine.row import Row
-
-
 logger = get_logger(__name__)
 
 ENGINE_CONNECTION_TIMEOUT = 30
+_BATCH_SIZE = 10_000
+
+
+def _arrow_type_from_sqlalchemy(column_type: Any) -> pa.DataType | None:
+    """Map common SQL scalar types to stable Arrow types across batches."""
+    try:
+        python_type = column_type.python_type
+    except (AttributeError, NotImplementedError):
+        return None
+
+    if python_type is bool:
+        return pa.bool_()
+    if issubclass(python_type, int):
+        return pa.int64()
+    if issubclass(python_type, float):
+        return pa.float64()
+    if issubclass(python_type, str):
+        return pa.string()
+    if issubclass(python_type, bytes):
+        return pa.binary()
+    if issubclass(python_type, datetime):
+        timezone = "UTC" if getattr(column_type, "timezone", False) else None
+        return pa.timestamp("us", tz=timezone)
+    if issubclass(python_type, date):
+        return pa.date32()
+    if issubclass(python_type, time):
+        return pa.time64("us")
+    if issubclass(python_type, Decimal):
+        precision = getattr(column_type, "precision", None)
+        scale = getattr(column_type, "scale", None) or 0
+        if precision is not None:
+            if precision <= 38:
+                return pa.decimal128(precision, scale)
+            return pa.decimal256(precision, scale)
+    return None
 
 
 class SqlStore(Store):
@@ -351,19 +384,37 @@ class SqlStore(Store):
         engine = self._check_factory(schema=schema, database=database)
 
         try:
-            # Read the table from the database
+            # Read the table from the database in bounded batches.
             sa_table = Table(table, MetaData(), autoload_with=engine)
             stm = select(sa_table)
-            with engine.begin() as conn:
-                result: list[Row] = conn.execute(stm).fetchall()
+            columns = list(sa_table.columns)
+            column_names = [column.name for column in columns]
 
-            # Parse the result
-            data = {col: [row[idx] for row in result] for idx, col in enumerate(sa_table.columns.keys())}
+            def to_arrow_table(rows: Sequence[Any]) -> pa.Table:
+                arrays = []
+                for index, column in enumerate(columns):
+                    values = [row[index] for row in rows]
+                    arrow_type = _arrow_type_from_sqlalchemy(column.type)
+                    arrays.append(pa.array(values, type=arrow_type) if arrow_type is not None else pa.array(values))
+                return pa.Table.from_arrays(arrays, names=column_names)
 
-            # Convert the result to a pyarrow table and
-            # write the pyarrow table to a Parquet file
-            arrow_table = pa.Table.from_pydict(data)
-            pq.write_table(arrow_table, dst)
+            with engine.connect() as conn:
+                result = conn.execution_options(stream_results=True).execute(stm)
+                partitions = iter(result.partitions(_BATCH_SIZE))
+                first_partition = next(partitions, None)
+                if first_partition is None:
+                    pq.write_table(pa.Table.from_pydict({name: [] for name in column_names}), dst)
+                    return dst
+
+                first_table = to_arrow_table(first_partition)
+                schema = first_table.schema
+                with pq.ParquetWriter(dst, schema) as writer:
+                    writer.write_table(first_table)
+                    for rows in partitions:
+                        arrow_table = to_arrow_table(rows)
+                        if arrow_table.schema != schema:
+                            arrow_table = arrow_table.cast(schema, safe=False)
+                        writer.write_table(arrow_table)
             return dst
         finally:
             engine.dispose()

@@ -34,19 +34,25 @@ def test_init_material_extensions_defaults_to_empty_list() -> None:
     assert entity.extensions == []
 
 
-def test_as_file_downloads_to_store_temp_directory(monkeypatch) -> None:
+def test_as_file_downloads_to_store_temp_directory_and_cleans_up(monkeypatch) -> None:
     entity = MaterialEntityForTest()
     entity.spec = SimpleNamespace(path="store://material")
     store = Mock()
-    store._build_temp.return_value = "/tmp/material"
-    store.download.return_value = ["/tmp/material/file.txt"]
+    download_dirs = []
+
+    def download(_src, dst):
+        download_dirs.append(dst)
+        return [str(dst / "file.txt")]
+
+    store.download.side_effect = download
     monkeypatch.setattr(material_mixin, "get_store", Mock(return_value=store))
 
-    result = entity.as_file()
+    with entity.as_file() as result:
+        assert result == [str(download_dirs[0] / "file.txt")]
+        assert download_dirs[0].is_dir()
 
-    assert result == ["/tmp/material/file.txt"]
-    store._build_temp.assert_called_once_with()
-    store.download.assert_called_once_with("store://material", dst="/tmp/material")
+    assert not download_dirs[0].exists()
+    store.download.assert_called_once_with("store://material", dst=download_dirs[0])
 
 
 @pytest.mark.parametrize(
@@ -229,7 +235,7 @@ def test_material_file_download_uses_material_path_and_destination(
     )
 
 
-def test_material_file_as_file_downloads_to_store_temp_directory(monkeypatch) -> None:
+def test_material_file_as_file_downloads_and_cleans_up(monkeypatch) -> None:
     entity = MaterialEntityForTest()
     entity.spec = SimpleNamespace(path="s3://bucket/material/")
     entity.status.files = [{"path": "status.txt"}]
@@ -239,19 +245,25 @@ def test_material_file_as_file_downloads_to_store_temp_directory(monkeypatch) ->
         Mock(return_value=[{"path": "nested/file.txt"}]),
     )
     store = Mock()
-    store._build_temp.return_value = Path("/tmp/material-file")
-    store.download.return_value = "/tmp/material-file/file.txt"
+    download_dirs = []
+
+    def download(_src, dst):
+        download_dirs.append(dst)
+        return str(dst / "file.txt")
+
+    store.download.side_effect = download
     get_store = Mock(return_value=store)
     monkeypatch.setattr(material_files, "get_store", get_store)
 
-    result = entity.files[0].as_file()
+    with entity.files[0].as_file() as result:
+        assert result == str(download_dirs[0] / "file.txt")
+        assert download_dirs[0].is_dir()
 
-    assert result == "/tmp/material-file/file.txt"
+    assert not download_dirs[0].exists()
     get_store.assert_called_once_with("s3://bucket/material/")
-    store._build_temp.assert_called_once_with()
     store.download.assert_called_once_with(
         "s3://bucket/material/nested/file.txt",
-        dst=Path("/tmp/material-file"),
+        dst=download_dirs[0],
     )
 
 

@@ -5,7 +5,10 @@
 from __future__ import annotations
 
 import typing
+from collections.abc import Generator
+from contextlib import contextmanager
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import ClassVar
 
 from digitalhub.entities._commons.enums import State
@@ -40,17 +43,18 @@ class MaterialMixin:
         self.extensions = extensions if extensions is not None else []
 
     @refresh_decorator
-    def as_file(self) -> list[str]:
-        """Download the entity's files to a temporary local directory.
+    @contextmanager
+    def as_file(self) -> Generator[list[str], None, None]:
+        """Temporarily download the entity's files.
 
         Returns
         -------
-        list[str]
-            Paths to the downloaded files.
+        Generator[list[str], None, None]
+            Context manager yielding paths to downloaded files.
         """
         store = get_store(self.spec.path)
-        dst = store._build_temp()
-        return store.download(self.spec.path, dst=dst)
+        with TemporaryDirectory() as temp_dir:
+            yield store.download(self.spec.path, dst=Path(temp_dir))
 
     @refresh_decorator
     def download(

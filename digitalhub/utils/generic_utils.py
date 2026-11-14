@@ -7,11 +7,12 @@ from __future__ import annotations
 import base64
 import importlib.util as imputil
 import json
-import tempfile
-from collections.abc import Callable
+from collections.abc import Callable, Generator
+from contextlib import contextmanager
 from datetime import date, datetime, time
 from enum import Enum, EnumMeta
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from types import MappingProxyType
 from typing import Any
 from warnings import warn
@@ -120,9 +121,10 @@ def extract_archive(path: Path, filename: Path) -> None:
         zip_file.extractall(path)
 
 
-def create_archive(path: Path) -> Path:
+@contextmanager
+def create_archive(path: Path) -> Generator[Path, None, None]:
     """
-    Create a zip archive from a specified directory.
+    Create a temporary zip archive for the duration of a context.
 
     Parameters
     ----------
@@ -131,17 +133,15 @@ def create_archive(path: Path) -> Path:
 
     Returns
     -------
-    Path
-        Path to the created zip archive.
+    Generator[Path, None, None]
+        Context manager yielding the created zip archive path.
     """
-
-    temp_dir = Path(tempfile.mkdtemp())
-    filename = temp_dir / "archive.zip"
-    paths = [file for file in path.rglob("*")]
-    with ZipFile(filename, "w") as zip_file:
-        for file in paths:
-            zip_file.write(file, file.relative_to(path))
-    return filename
+    with TemporaryDirectory() as temp_dir:
+        filename = Path(temp_dir) / "archive.zip"
+        with ZipFile(filename, "w") as zip_file:
+            for file in path.rglob("*"):
+                zip_file.write(file, file.relative_to(path))
+        yield filename
 
 
 class CustomJsonEncoder(json.JSONEncoder):

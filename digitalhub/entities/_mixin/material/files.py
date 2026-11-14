@@ -4,7 +4,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Generator
+from contextlib import contextmanager
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from digitalhub.stores.data.api import get_store
 from digitalhub.utils.exceptions import EntityError
@@ -44,17 +47,18 @@ class MaterialFile:
         }
         return str({key: value for key, value in fields.items() if value is not None})
 
-    def as_file(self) -> str:
-        """Download this file into a temporary directory.
+    @contextmanager
+    def as_file(self) -> Generator[str, None, None]:
+        """Temporarily download this file.
 
         Returns
         -------
-        str
-            Path to the downloaded file.
+        Generator[str, None, None]
+            Context manager yielding the downloaded file path.
         """
         store = get_store(self._material_path)
-        dst = store._build_temp()
-        return store.download(self._get_download_path(), dst=dst)
+        with TemporaryDirectory() as temp_dir:
+            yield store.download(self._get_download_path(), dst=Path(temp_dir))
 
     def download(
         self,

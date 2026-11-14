@@ -52,7 +52,7 @@ class DataitemCroissant(Dataitem):
         jsonld = self._get_metadata_json()
         dtst = get_croissant_dataset(jsonld)
         self._collect_local_data(dtst, jsonld, overwrite=overwrite)
-        mapping = self._map_files_filepaths(dtst)
+        mapping = self._map_files_filepaths(dtst, jsonld)
         return get_croissant_dataset(jsonld, mapping=mapping)
 
     def _get_metadata_json(self) -> str:
@@ -107,7 +107,7 @@ class DataitemCroissant(Dataitem):
                 overwrite=overwrite,
             )
 
-    def _map_files_filepaths(self, dataset: Any) -> dict | None:
+    def _map_files_filepaths(self, dataset: Any, metadata_path: str) -> dict | None:
         """
         Map file paths from Croissant metadata to local paths.
 
@@ -115,6 +115,8 @@ class DataitemCroissant(Dataitem):
         ----------
         dataset : Any
             Croissant Dataset object.
+        metadata_path : str
+            Path to the already downloaded metadata JSON file.
 
         Returns
         -------
@@ -124,4 +126,4 @@ class DataitemCroissant(Dataitem):
         if not has_s3_scheme(self.spec.path):
             return
         download_root = self._context().root / self.ENTITY_TYPE
-        return get_mappings_from_croissant(dataset, self._get_metadata_json(), download_root)
+        return get_mappings_from_croissant(dataset, metadata_path, download_root)

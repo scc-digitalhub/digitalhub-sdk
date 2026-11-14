@@ -70,9 +70,11 @@ def calculate_blob_hash(data_path: str) -> str:
     str
         The SHA-256 hash of the file, prefixed with 'sha256:'.
     """
-    with open(data_path, "rb") as f:
-        data = f.read()
-        return f"sha256:{sha256(data).hexdigest()}"
+    digest = sha256()
+    with open(data_path, "rb") as file:
+        while chunk := file.read(1024 * 1024):
+            digest.update(chunk)
+    return f"sha256:{digest.hexdigest()}"
 
 
 def get_file_size(data_path: str) -> int:

@@ -168,7 +168,6 @@ class RemoteStore(Store):
         str
             The path of the downloaded file.
         """
-        self._check_head(url)
         with requests.get(url, stream=True, timeout=60, allow_redirects=True) as r:
             r.raise_for_status()
             with open(dst, "wb") as f:

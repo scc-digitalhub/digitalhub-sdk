@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import typing
+from collections.abc import ContextManager
 from typing import Protocol
 
 from digitalhub.entities._mixin.versioned.protocol import VersionedEntityProtocol
@@ -21,7 +22,7 @@ class MaterialProtocol(VersionedEntityProtocol, Protocol):
     status: MaterialStatus
     extensions: list[dict]
 
-    def as_file(self) -> list[str]: ...
+    def as_file(self) -> ContextManager[list[str]]: ...
 
     def download(self, destination: str | None = None, overwrite: bool = False) -> str: ...
 

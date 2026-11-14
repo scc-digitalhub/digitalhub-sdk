@@ -9,7 +9,8 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from io import BytesIO
 from pathlib import Path
-from typing import Any
+from tempfile import SpooledTemporaryFile
+from typing import Any, BinaryIO
 from urllib.parse import urlparse
 
 import boto3
@@ -235,8 +236,8 @@ class S3Store(Store):
         dfs = []
         for key in keys:
             extension = self._get_extension(file_format, key)
-            obj = self._download_fileobject(key, client, bucket)
-            dfs.append(reader.read_df(obj, extension=extension, **kwargs))
+            with self._download_fileobject(key, client, bucket) as obj:
+                dfs.append(reader.read_df(obj, extension=extension, **kwargs))
 
         if not dfs:
             raise StoreError(f"No readable data files found in '{path}'.")
@@ -302,17 +303,26 @@ class S3Store(Store):
             client.download_file(bucket, key, dst_pth)
 
     @staticmethod
+    @contextmanager
     def _download_fileobject(
         key: str,
         client: S3Client,
         bucket: str,
-    ) -> BytesIO:
+    ) -> Generator[BinaryIO, None, None]:
         """
         Download fileobject from S3 partition.
         """
-        with _handle_boto_errors("download file object"):
-            obj = client.get_object(Bucket=bucket, Key=key)
-            return BytesIO(obj["Body"].read())
+        with SpooledTemporaryFile(max_size=1024 * 1024, mode="w+b") as fileobj:
+            with _handle_boto_errors("download file object"):
+                obj = client.get_object(Bucket=bucket, Key=key)
+                body = obj["Body"]
+                try:
+                    while chunk := body.read(1024 * 1024):
+                        fileobj.write(chunk)
+                finally:
+                    body.close()
+            fileobj.seek(0)
+            yield fileobj
 
     def _upload_dir(
         self,

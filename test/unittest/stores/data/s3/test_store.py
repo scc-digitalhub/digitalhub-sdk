@@ -1,3 +1,4 @@
+from io import BytesIO
 from unittest.mock import Mock, call
 
 import pytest
@@ -140,7 +141,8 @@ def test_read_df_partition_infers_each_extension_and_skips_nonfiles() -> None:
             "partition/nested/",
         ]
     )
-    store._download_fileobject = Mock(side_effect=["csv-object", "json-object"])
+    file_objects = [BytesIO(b"csv"), BytesIO(b"json")]
+    store._download_fileobject = Mock(side_effect=file_objects)
 
     assert store.read_df("s3://bucket/partition/", engine="pandas") == "combined"
 
@@ -151,6 +153,22 @@ def test_read_df_partition_infers_each_extension_and_skips_nonfiles() -> None:
             call("partition/nested/table.json", client, "bucket"),
         ]
     )
+    assert all(file_object.closed for file_object in file_objects)
+
+
+def test_download_fileobject_streams_to_spooled_file() -> None:
+    store = object.__new__(S3Store)
+    client = Mock()
+    body = Mock()
+    first_chunk = b"a" * (1024 * 1024)
+    body.read.side_effect = [first_chunk, b"last", b""]
+    client.get_object.return_value = {"Body": body}
+
+    with store._download_fileobject("key", client, "bucket") as file_object:
+        assert file_object.read() == first_chunk + b"last"
+
+    body.read.assert_has_calls([call(1024 * 1024)] * 3)
+    body.close.assert_called_once_with()
 
 
 def test_read_df_empty_s3_partition_raises_store_error() -> None:

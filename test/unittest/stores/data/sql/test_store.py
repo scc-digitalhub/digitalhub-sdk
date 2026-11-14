@@ -4,7 +4,10 @@
 
 from unittest.mock import MagicMock, Mock
 
+import pyarrow as pa
+import pyarrow.parquet as pq
 import pytest
+from sqlalchemy import create_engine, text
 
 from digitalhub.stores.data._base import store as base_store_module
 from digitalhub.stores.data.sql import store as store_module
@@ -146,3 +149,37 @@ def test_read_df_disposes_engine_when_reader_fails(monkeypatch) -> None:
 
     store._check_factory.assert_called_once_with(schema="public", database="database")
     engine.dispose.assert_called_once_with()
+
+
+def test_download_table_streams_batches_and_handles_null_first_batch(tmp_path) -> None:
+    engine = create_engine("sqlite://")
+    with engine.begin() as connection:
+        connection.exec_driver_sql("CREATE TABLE items (id INTEGER NOT NULL, label TEXT)")
+        connection.execute(
+            text("INSERT INTO items (id, label) VALUES (:id, :label)"),
+            [{"id": index, "label": None if index < 10_000 else "last"} for index in range(10_001)],
+        )
+
+    store = object.__new__(SqlStore)
+    store._check_factory = Mock(return_value=engine)
+    destination = str(tmp_path / "items.parquet")
+
+    assert store._download_table("main", "items", destination) == destination
+
+    table = pq.read_table(destination)
+    assert table.num_rows == 10_001
+    assert table.column("label").type == pa.string()
+    assert table.column("label").to_pylist()[-1] == "last"
+
+
+def test_download_table_writes_empty_parquet_table(tmp_path) -> None:
+    engine = create_engine("sqlite://")
+    with engine.begin() as connection:
+        connection.exec_driver_sql("CREATE TABLE items (id INTEGER NOT NULL)")
+
+    store = object.__new__(SqlStore)
+    store._check_factory = Mock(return_value=engine)
+    destination = str(tmp_path / "items.parquet")
+
+    assert store._download_table("main", "items", destination) == destination
+    assert pq.read_table(destination).num_rows == 0
