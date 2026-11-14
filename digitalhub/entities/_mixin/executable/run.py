@@ -6,15 +6,33 @@ from __future__ import annotations
 
 import typing
 
+from digitalhub.entities._commons.enums import Relationship
 from digitalhub.entities._mixin.executable.base import ExecutableBaseMixin
 from digitalhub.entities.run.crud import list_runs
+from digitalhub.factory.entity import entity_factory
 from digitalhub.utils.exceptions import EntityError
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.run._base.entity import Run
+    from digitalhub.entities.task._base.entity import Task
 
 
 class ExecutableRunMixin(ExecutableBaseMixin):
+    def _create_run(
+        self,
+        task: Task,
+        action: str,
+        extensions: list[dict] | None = None,
+        **kwargs,
+    ) -> Run:
+        run_kind = entity_factory.get_run_kind_from_action(self.kind, action)
+        run = task.run(run_kind, save=False, **kwargs)
+        if extensions is not None:
+            run.extensions.extend(extensions)
+        run.add_relationship(Relationship.RUN_OF.value, self.key)
+        run.save()
+        return run
+
     def get_run(self, identifier: str) -> Run:
         """Get a run belonging to the executable.
 

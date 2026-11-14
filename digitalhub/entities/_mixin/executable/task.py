@@ -63,7 +63,7 @@ class ExecutableTaskMixin(ExecutableBaseMixin):
                     f"Task '{task_obj.kind}' already exists in backend, skipping save.",
                 )
 
-            if task_obj.spec.function == self._get_executable_string():
+            if getattr(task_obj.spec, self.ENTITY_TYPE, None) == self._get_executable_string():
                 action = entity_factory.get_action_from_task_kind(self.kind, task_obj.kind)
                 task_store[action] = task_obj
 

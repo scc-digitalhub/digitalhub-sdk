@@ -8,7 +8,11 @@ from unittest.mock import Mock
 import pytest
 
 import digitalhub.entities._mixin.executable.run as run_module
+from digitalhub.entities._commons.enums import Relationship
 from digitalhub.entities._mixin.executable.run import ExecutableRunMixin
+from digitalhub.entities.function._base.entity import Function
+from digitalhub.entities.workflow._base.entity import Workflow
+from digitalhub.factory.entity import entity_factory
 from digitalhub.utils.exceptions import EntityError
 
 
@@ -76,3 +80,32 @@ def test_list_runs_filters_by_executable(monkeypatch) -> None:
         state="RUNNING",
         function="python://project/function:function-id",
     )
+
+
+@pytest.mark.parametrize(
+    ("executable_class", "task_kwargs"),
+    [(Function, {}), (Workflow, {"local_execution": False})],
+)
+def test_function_and_workflow_runs_append_extensions_consistently(
+    monkeypatch, executable_class, task_kwargs: dict
+) -> None:
+    executable = object.__new__(executable_class)
+    executable.kind = "python"
+    executable.key = "executable-key"
+
+    existing_extensions = [{"name": "task-extension"}]
+    additional_extensions = [{"name": "run-extension"}]
+    run = Mock()
+    run.extensions = existing_extensions.copy()
+    run.local_execution.return_value = False
+    task = Mock()
+    task.run.return_value = run
+    executable._get_or_create_task = Mock(return_value=task)
+    monkeypatch.setattr(entity_factory, "get_run_kind_from_action", Mock(return_value="python+run"))
+
+    assert executable.run("execute", extensions=additional_extensions) is run
+
+    task.run.assert_called_once_with("python+run", save=False, **task_kwargs)
+    assert run.extensions == existing_extensions + additional_extensions
+    run.add_relationship.assert_called_once_with(Relationship.RUN_OF.value, "executable-key")
+    run.save.assert_called_once_with()

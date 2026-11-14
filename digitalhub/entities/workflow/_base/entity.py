@@ -7,10 +7,9 @@ from __future__ import annotations
 import typing
 
 from digitalhub.entities._base.context.entity import ContextEntity
-from digitalhub.entities._commons.enums import EntityTypes, Relationship
+from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._mixin.executable.mixin import ExecutableMixin
 from digitalhub.entities._mixin.versioned.mixin import VersionedMixin
-from digitalhub.factory.entity import entity_factory
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.run._base.entity import Run
@@ -79,17 +78,7 @@ class Workflow(ContextEntity, VersionedMixin, ExecutableMixin):
         # Create or update new task
         task: Task = self._get_or_create_task(action)
 
-        # Run task
-        run_kind = entity_factory.get_run_kind_from_action(self.kind, action)
-        run = task.run(run_kind, save=False, local_execution=False, **kwargs)
-
-        # Add extensions if provided
-        if extensions is not None:
-            run.extensions.extend(extensions)
-
-        # Set as run's parent
-        run.add_relationship(Relationship.RUN_OF.value, self.key)
-        run.save()
+        run = self._create_run(task, action, extensions=extensions, local_execution=False, **kwargs)
 
         if wait:
             return run.wait(log_info=log_info)

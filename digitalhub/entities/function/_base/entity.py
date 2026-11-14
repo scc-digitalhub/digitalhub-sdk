@@ -8,10 +8,9 @@ import typing
 from concurrent.futures import ThreadPoolExecutor
 
 from digitalhub.entities._base.context.entity import ContextEntity
-from digitalhub.entities._commons.enums import EntityTypes, Relationship
+from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._mixin.executable.mixin import ExecutableMixin
 from digitalhub.entities._mixin.versioned.mixin import VersionedMixin
-from digitalhub.factory.entity import entity_factory
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.function._base.spec import FunctionSpec
@@ -80,17 +79,7 @@ class Function(ContextEntity, VersionedMixin, ExecutableMixin):
         # Create or update new task
         task: Task = self._get_or_create_task(action)
 
-        # Run function from task
-        run_kind = entity_factory.get_run_kind_from_action(self.kind, action)
-        run = task.run(run_kind, save=False, **kwargs)
-
-        # Add extensions if provided
-        if extensions is not None:
-            run.extensions = extensions
-
-        # Set as run's parent
-        run.add_relationship(Relationship.RUN_OF.value, self.key)
-        run.save()
+        run = self._create_run(task, action, extensions=extensions, **kwargs)
 
         # If execution is done by DHCore backend, return the object
         if not run.local_execution():

@@ -5,13 +5,15 @@
 from types import SimpleNamespace
 from unittest.mock import Mock
 
+import pytest
+
 import digitalhub.entities._mixin.executable.task as task_module
 from digitalhub.entities._mixin.executable.task import ExecutableTaskMixin
 
 
-def _executable(existing_task: Mock) -> ExecutableTaskMixin:
+def _executable(existing_task: Mock, entity_type: str = "function") -> ExecutableTaskMixin:
     executable = ExecutableTaskMixin()
-    executable.ENTITY_TYPE = "function"
+    executable.ENTITY_TYPE = entity_type
     executable.project = "project"
     executable.kind = "python"
     executable.name = "function"
@@ -74,3 +76,34 @@ def test_set_task_preserves_existing_task_id_when_cache_is_cold(monkeypatch) -> 
         uuid="task-id",
     )
     replacement.update.assert_called_once_with()
+
+
+@pytest.mark.parametrize("entity_type", ["function", "workflow"])
+def test_import_tasks_matches_the_executable_entity_type(monkeypatch, entity_type: str) -> None:
+    executable = _executable(Mock(), entity_type)
+    task = SimpleNamespace(
+        spec=SimpleNamespace(**{entity_type: executable._get_executable_string()}),
+        kind="task-kind",
+        save=Mock(),
+    )
+    build_entity = Mock(return_value=task)
+    get_action = Mock(return_value="execute")
+    monkeypatch.setattr(task_module.entity_factory, "build_entity_from_dict", build_entity)
+    monkeypatch.setattr(task_module.entity_factory, "get_action_from_task_kind", get_action)
+
+    executable.import_tasks([{"kind": "task-kind"}])
+
+    assert executable._task_store()["execute"] is task
+    build_entity.assert_called_once_with({"kind": "task-kind"}, entity_type="task")
+    task.save.assert_called_once_with()
+    get_action.assert_called_once_with(executable.kind, "task-kind")
+
+
+def test_import_tasks_skips_specs_without_the_executable_reference(monkeypatch) -> None:
+    executable = _executable(Mock(), "workflow")
+    task = SimpleNamespace(spec=SimpleNamespace(), kind="task-kind", save=Mock())
+    monkeypatch.setattr(task_module.entity_factory, "build_entity_from_dict", Mock(return_value=task))
+
+    executable.import_tasks([{"kind": "task-kind"}])
+
+    assert executable._task_store() == {}
