@@ -7,10 +7,11 @@ from __future__ import annotations
 import os
 import shutil
 import warnings
+from base64 import b64encode
 from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING
-from urllib.parse import quote, urlparse, urlunparse
+from urllib.parse import urlparse, urlunparse
 
 if TYPE_CHECKING:
     from git import Repo
@@ -48,7 +49,6 @@ def clone_repository(path: Path, url: str) -> None:
     """
     clean_path(path)
     checkout_object = get_checkout_object(url)
-    url = add_credentials_git_remote_url(url)
     repo = clone_from_url(url, path)
     if checkout_object != "":
         repo.git.checkout(checkout_object)
@@ -108,36 +108,36 @@ def get_git_username_password_from_token(token: str) -> tuple[str, str]:
     return token, "x-oauth-basic"
 
 
-def add_credentials_git_remote_url(url: str) -> str:
-    """
-    Add credentials to a git remote URL using environment variables or token.
-
-    Parameters
-    ----------
-    url : str
-        URL of the repository.
-
-    Returns
-    -------
-    str
-        URL with credentials included if available.
-    """
+def _clean_git_remote_url(url: str) -> str:
     url_obj = urlparse(url)
+    netloc = url_obj.netloc.rsplit("@", maxsplit=1)[-1]
+    return urlunparse((url_obj.scheme, netloc, url_obj.path, "", "", ""))
 
-    # Get credentials from environment variables
+
+def _git_auth_environment() -> dict[str, str] | None:
     username = os.getenv(GitCredentialsType.USERNAME.value)
     password = os.getenv(GitCredentialsType.PASSWORD.value)
     token = os.getenv(GitCredentialsType.TOKEN.value)
 
-    # Get credentials from token. Override username and password
     if token is not None:
         username, password = get_git_username_password_from_token(token)
 
-    netloc = url_obj.netloc.rsplit("@", maxsplit=1)[-1]
-    if username is not None and password is not None:
-        credentials = f"{quote(username, safe='')}:{quote(password, safe='')}"
-        netloc = f"{credentials}@{netloc}"
-    return urlunparse((url_obj.scheme, netloc, url_obj.path, "", "", ""))
+    if username is None or password is None:
+        return None
+
+    try:
+        config_count = int(os.getenv("GIT_CONFIG_COUNT", "0"))
+    except ValueError as e:
+        raise ValueError("GIT_CONFIG_COUNT must be an integer.") from e
+    if config_count < 0:
+        raise ValueError("GIT_CONFIG_COUNT cannot be negative.")
+
+    credentials = b64encode(f"{username}:{password}".encode()).decode("ascii")
+    return {
+        "GIT_CONFIG_COUNT": str(config_count + 1),
+        f"GIT_CONFIG_KEY_{config_count}": "http.extraHeader",
+        f"GIT_CONFIG_VALUE_{config_count}": f"Authorization: Basic {credentials}",
+    }
 
 
 def clone_from_url(url: str, path: Path) -> Repo:
@@ -163,4 +163,8 @@ def clone_from_url(url: str, path: Path) -> Repo:
             warnings.warn("git is not installed. Please install git and try again.", RuntimeWarning)
         raise
 
-    return Repo.clone_from(url=url, to_path=path)
+    return Repo.clone_from(
+        url=_clean_git_remote_url(url),
+        to_path=path,
+        env=_git_auth_environment(),
+    )
