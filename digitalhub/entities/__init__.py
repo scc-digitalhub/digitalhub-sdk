@@ -120,6 +120,7 @@ def _plugins(
         CrudPlugin(
             function,
             project_bound="generic" not in function.__name__,
+            refresh_project=not function.__name__.startswith(("get_", "list_")),
             validate_entity_project=function.__name__.startswith("update_"),
             inject_context=function.__name__.startswith("import_"),
         )

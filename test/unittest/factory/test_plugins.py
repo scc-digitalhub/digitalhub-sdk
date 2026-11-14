@@ -270,3 +270,14 @@ def test_core_entity_crud_plugins_are_discovered(monkeypatch) -> None:
         "new_task",
         "new_run",
     }.issubset(registry.get_shortcut_names())
+
+
+def test_core_read_shortcuts_do_not_refresh_project() -> None:
+    entities_module = importlib.import_module("digitalhub.entities")
+    read_plugins = [plugin for plugin in entities_module.crud_plugins if plugin.name.startswith(("get_", "list_"))]
+    write_plugins = [plugin for plugin in entities_module.crud_plugins if plugin not in read_plugins]
+
+    assert read_plugins
+    assert all(not plugin.refresh_project for plugin in read_plugins)
+    assert write_plugins
+    assert all(plugin.refresh_project for plugin in write_plugins)
