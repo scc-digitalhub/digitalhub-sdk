@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import os
 import shutil
+from collections.abc import Callable
 from configparser import ConfigParser
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -25,6 +26,33 @@ def _get_dotenv_file() -> Path:
     return Path(get_client_config().config_env_path)
 
 
+def _atomic_write_text_secure(target_path: Path, write_fn: Callable[[Path], None]) -> None:
+    temporary_path: Path | None = None
+    replaced = False
+    try:
+        with NamedTemporaryFile(mode="w", dir=target_path.parent, delete=False) as temporary_file:
+            temporary_path = Path(temporary_file.name)
+
+        write_fn(temporary_path)
+        try:
+            os.chmod(temporary_path, 0o600)
+        except OSError:
+            if os.name != "nt":
+                raise
+
+        with open(temporary_path, "rb+") as temporary_file:
+            os.fsync(temporary_file.fileno())
+
+        os.replace(temporary_path, target_path)
+        replaced = True
+    finally:
+        if not replaced and temporary_path is not None:
+            try:
+                temporary_path.unlink()
+            except FileNotFoundError:
+                pass
+
+
 def write_dotenv(variables: dict) -> None:
     """
     Write variables to the .env file for the current profile.
@@ -36,25 +64,19 @@ def write_dotenv(variables: dict) -> None:
         Dictionary of variables to write.
     """
     dotenv_file = _get_dotenv_file()
-    temporary_path: str | None = None
     try:
         current_values = {str(key).upper(): str(value) for key, value in variables.items() if value is not None}
-        with NamedTemporaryFile(mode="w", dir=dotenv_file.parent, delete=False) as temporary_file:
-            temporary_path = temporary_file.name
+
+        def write_values(temporary_path: Path) -> None:
             if dotenv_file.exists():
-                with open(dotenv_file) as envfile:
+                with open(dotenv_file) as envfile, open(temporary_path, "w") as temporary_file:
                     shutil.copyfileobj(envfile, temporary_file)
 
-        for key, value in current_values.items():
-            set_key(temporary_path, key, value, quote_mode="auto")
+            for key, value in current_values.items():
+                set_key(str(temporary_path), key, value, quote_mode="auto")
 
-        os.replace(temporary_path, dotenv_file)
+        _atomic_write_text_secure(dotenv_file, write_values)
     except OSError as e:
-        if temporary_path is not None:
-            try:
-                os.unlink(temporary_path)
-            except FileNotFoundError:
-                pass
         raise ClientError(f"Failed to write .env file: {e}")
 
 
@@ -164,11 +186,16 @@ def write_config(creds: dict, environment: str) -> None:
 
         cfg["DEFAULT"]["current_environment"] = environment
         for k, v in creds.items():
-            cfg[environment][k] = str(v)
+            if v is None:
+                cfg.remove_option(environment, k)
+            else:
+                cfg[environment][k] = str(v)
 
-        ini_file.touch(exist_ok=True)
-        with open(ini_file, "w") as inifile:
-            cfg.write(inifile)
+        def write_config_file(temporary_path: Path) -> None:
+            with open(temporary_path, "w") as inifile:
+                cfg.write(inifile)
+
+        _atomic_write_text_secure(ini_file, write_config_file)
 
     except OSError as e:
         raise ClientError(f"Failed to write env file: {e}")
@@ -196,11 +223,16 @@ def write_file(variables: dict, profile: str) -> None:
 
         cfg["DEFAULT"]["current_environment"] = profile
         for k, v in variables.items():
-            cfg[profile][k] = str(v)
+            if v is None:
+                cfg.remove_option(profile, k)
+            else:
+                cfg[profile][k] = str(v)
 
-        ini_file.touch(exist_ok=True)
-        with open(ini_file, "w") as inifile:
-            cfg.write(inifile)
+        def write_profile(temporary_path: Path) -> None:
+            with open(temporary_path, "w") as inifile:
+                cfg.write(inifile)
+
+        _atomic_write_text_secure(ini_file, write_profile)
 
     except OSError as e:
         raise ClientError(f"Failed to write env file: {e}")
@@ -218,8 +250,12 @@ def set_current_profile(environment: str) -> None:
     try:
         cfg = load_file()
         cfg["DEFAULT"]["current_environment"] = environment
-        with open(_get_ini_file(), "w") as inifile:
-            cfg.write(inifile)
+
+        def write_profile(temporary_path: Path) -> None:
+            with open(temporary_path, "w") as inifile:
+                cfg.write(inifile)
+
+        _atomic_write_text_secure(_get_ini_file(), write_profile)
 
     except OSError as e:
         raise ClientError(f"Failed to write env file: {e}")

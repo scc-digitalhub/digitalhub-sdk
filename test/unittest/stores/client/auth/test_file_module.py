@@ -2,10 +2,16 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import os
+import stat
+from pathlib import Path
+
+import pytest
 from dotenv import dotenv_values
 
 from digitalhub.stores.client.auth import file_module
 from digitalhub.stores.client.common.config import ClientConfig, get_client_config, set_client_config
+from digitalhub.utils.exceptions import ClientError
 
 
 def test_write_dotenv_preserves_unrelated_values(tmp_path) -> None:
@@ -23,6 +29,8 @@ def test_write_dotenv_preserves_unrelated_values(tmp_path) -> None:
         "UNRELATED": "keep",
         "DHCORE_ACCESS_TOKEN": "new",
     }
+    if os.name != "nt":
+        assert stat.S_IMODE(dotenv_file.stat().st_mode) == 0o600
 
 
 def test_write_file_preserves_percent_in_credential(tmp_path, monkeypatch) -> None:
@@ -33,3 +41,47 @@ def test_write_file_preserves_percent_in_credential(tmp_path, monkeypatch) -> No
     file_module.write_file({"refresh_token": credential}, "default")
 
     assert file_module.load_file()["default"]["refresh_token"] == credential
+    if os.name != "nt":
+        assert stat.S_IMODE(ini_file.stat().st_mode) == 0o600
+
+
+def test_write_file_removes_none_values_from_profile(tmp_path, monkeypatch) -> None:
+    ini_file = tmp_path / ".dhcore.ini"
+    monkeypatch.setattr(file_module, "_get_ini_file", lambda: ini_file)
+
+    file_module.write_file({"access_token": "old"}, "default")
+    file_module.write_file({"access_token": None, "refresh_token": None}, "default")
+
+    assert "access_token" not in file_module.load_file()["default"]
+    assert "refresh_token" not in file_module.load_file()["default"]
+
+
+def test_write_config_and_set_current_profile_write_securely(tmp_path, monkeypatch) -> None:
+    ini_file = tmp_path / ".dhcore.ini"
+    monkeypatch.setattr(file_module, "_get_ini_file", lambda: ini_file)
+
+    file_module.write_config({"refresh_token": "token"}, "default")
+    file_module.set_current_profile("other")
+
+    config = file_module.load_file()
+    assert config["DEFAULT"]["current_environment"] == "other"
+    assert config["default"]["refresh_token"] == "token"
+    if os.name != "nt":
+        assert stat.S_IMODE(ini_file.stat().st_mode) == 0o600
+
+
+def test_write_file_preserves_existing_file_when_replace_fails(tmp_path, monkeypatch) -> None:
+    ini_file = tmp_path / ".dhcore.ini"
+    ini_file.write_text("[default]\nrefresh_token = old\n")
+    monkeypatch.setattr(file_module, "_get_ini_file", lambda: ini_file)
+
+    def fail_replace(source: Path, target: Path) -> None:
+        raise OSError("replace failed")
+
+    monkeypatch.setattr(file_module.os, "replace", fail_replace)
+
+    with pytest.raises(ClientError, match="Failed to write env file: replace failed"):
+        file_module.write_file({"refresh_token": "new"}, "default")
+
+    assert ini_file.read_text() == "[default]\nrefresh_token = old\n"
+    assert list(tmp_path.iterdir()) == [ini_file]
