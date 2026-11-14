@@ -397,7 +397,7 @@ class SqlStore(Store):
             'sql://database/schema/table'.
         """
         reader = get_reader_by_object(df)
-        engine = self._check_factory(database=database)
+        engine = self._check_factory(schema=schema, database=database)
         try:
             reader.write_table(df, table, engine, schema, **kwargs)
             return f"sql://{engine.url.database}/{schema}/{table}"

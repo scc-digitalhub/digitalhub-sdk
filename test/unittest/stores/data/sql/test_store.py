@@ -100,6 +100,24 @@ def test_write_df_passes_uri_database_to_upload_table() -> None:
     store._upload_table.assert_called_once_with(dataframe, "schema", "items", database="database")
 
 
+def test_upload_table_passes_schema_to_factory(monkeypatch) -> None:
+    store = object.__new__(SqlStore)
+    dataframe = object()
+    reader = Mock()
+    engine = Mock()
+    engine.url.database = "database"
+    monkeypatch.setattr(store_module, "get_reader_by_object", Mock(return_value=reader))
+    store._check_factory = Mock(return_value=engine)
+
+    assert store._upload_table(dataframe, "analytics", "items", database="database") == (
+        "sql://database/analytics/items"
+    )
+
+    store._check_factory.assert_called_once_with(schema="analytics", database="database")
+    reader.write_table.assert_called_once_with(dataframe, "items", engine, "analytics")
+    engine.dispose.assert_called_once_with()
+
+
 def test_create_vector_table_passes_uri_database_to_factory() -> None:
     store = object.__new__(SqlStore)
     engine = MagicMock()

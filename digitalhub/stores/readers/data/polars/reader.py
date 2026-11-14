@@ -124,7 +124,7 @@ class DataframeReaderPolars(DataframeReader):
             The destination table.
         engine : Any
             SQL Engine.
-        schema : str
+        schema : str | None
             The destination schema.
         **kwargs : dict
             Keyword arguments.
@@ -134,7 +134,8 @@ class DataframeReaderPolars(DataframeReader):
         if "index" in kwargs:
             kwargs.pop("index")
 
-        df.write_database(table_name=table, connection=engine, **kwargs)
+        target_table = f"{schema}.{table}" if schema else table
+        df.write_database(table_name=target_table, connection=engine, **kwargs)
 
     ##############################
     # Utils
