@@ -30,8 +30,13 @@ class ClientOpExecutor:
 
     def execute_list(self, operation: ClientOp) -> list[dict[str, Any]]:
         """Compile and execute a paginated semantic list operation."""
+        return list(self.iter_list(operation))
+
+    def iter_list(self, operation: ClientOp) -> Iterator[dict[str, Any]]:
+        """Yield objects from a paginated list operation without buffering all pages."""
         request = with_pagination(self._compiler.compile(operation), partial=True)
-        return [obj for response in self._iter_paginated_responses(request) for obj in response["content"]]
+        for response in self._iter_paginated_responses(request):
+            yield from response["content"]
 
     def execute_first(self, operation: ClientOp) -> dict[str, Any]:
         """Return the first result without loading subsequent results."""

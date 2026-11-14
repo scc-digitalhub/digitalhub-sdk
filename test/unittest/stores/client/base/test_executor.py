@@ -55,6 +55,45 @@ def test_execute_first_raises_for_empty_pages(executor) -> None:
         )
 
 
+def test_iter_list_yields_paginated_results_lazily(executor) -> None:
+    client_executor, compiler, http_handler = executor
+    http_handler.execute_request.side_effect = [
+        {"content": [{"id": "first"}], "totalPages": 2},
+        {"content": [{"id": "second"}], "totalPages": 2},
+    ]
+    operation = ClientOp(
+        category=ApiType.CONTEXT,
+        operation=BackendOp.LIST,
+        target=ContextCollectionTarget("demo", "artifact"),
+    )
+
+    results = client_executor.iter_list(operation)
+
+    compiler.compile.assert_not_called()
+    assert next(results) == {"id": "first"}
+    compiler.compile.assert_called_once_with(operation)
+    http_handler.execute_request.assert_called_once()
+    assert list(results) == [{"id": "second"}]
+    assert http_handler.execute_request.call_count == 2
+
+
+def test_execute_list_collects_all_pages(executor) -> None:
+    client_executor, compiler, http_handler = executor
+    http_handler.execute_request.side_effect = [
+        {"content": [{"id": "first"}], "totalPages": 2},
+        {"content": [{"id": "second"}], "totalPages": 2},
+    ]
+    operation = ClientOp(
+        category=ApiType.CONTEXT,
+        operation=BackendOp.LIST,
+        target=ContextCollectionTarget("demo", "artifact"),
+    )
+
+    assert client_executor.execute_list(operation) == [{"id": "first"}, {"id": "second"}]
+    compiler.compile.assert_called_once_with(operation)
+    assert http_handler.execute_request.call_count == 2
+
+
 def test_get_k8s_resource_profiles_uses_http_handler(executor) -> None:
     client_executor, _, http_handler = executor
     http_handler.execute_request.return_value = {

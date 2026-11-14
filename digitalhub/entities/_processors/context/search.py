@@ -5,8 +5,10 @@
 from __future__ import annotations
 
 import typing
+from typing import Any
 
 from digitalhub.entities._processors.utils import get_context, parse_identifier
+from digitalhub.factory.entity import entity_factory
 from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
 from digitalhub.stores.client.compiler.options import SearchOptions
@@ -56,7 +58,7 @@ class ContextEntitySearchProcessor:
             params["description"] = description
         if labels is not None:
             params["labels"] = labels
-        entities_dict = context.client.execute(
+        entities = context.client.execute_list(
             ClientOp(
                 category=ApiType.CONTEXT,
                 operation=BackendOp.SEARCH,
@@ -66,10 +68,16 @@ class ContextEntitySearchProcessor:
         )
         living_entities = []
         dead_entities = []
-        for entity in entities_dict["content"]:
+        for entity in entities:
             try:
                 _, entity_type, _, _, _ = parse_identifier(entity["key"])
-                living_entity = self.crud_processor.read_context_entity(entity["key"], entity_type=entity_type)
+                if self._has_full_entity_data(entity):
+                    living_entity = entity_factory.build_entity_from_dict(entity, entity_type=entity_type)
+                else:
+                    living_entity = self.crud_processor.read_context_entity(
+                        entity["key"],
+                        entity_type=entity_type,
+                    )
                 living_entities.append(living_entity)
             except BackendError:
                 logger.debug(
@@ -78,3 +86,14 @@ class ContextEntitySearchProcessor:
                 )
                 dead_entities.append(entity)
         return living_entities, dead_entities
+
+    @staticmethod
+    def _has_full_entity_data(entity: dict[str, Any]) -> bool:
+        """Check whether search returned enough data to build an entity without a read."""
+        identity_fields = ("key", "kind", "id", "name", "project")
+        return (
+            all(entity.get(field) for field in identity_fields)
+            and isinstance(entity.get("metadata", {}), dict)
+            and isinstance(entity.get("spec"), dict)
+            and isinstance(entity.get("status", {}), dict)
+        )

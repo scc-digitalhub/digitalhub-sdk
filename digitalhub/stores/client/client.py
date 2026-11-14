@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from typing import Any
 
 from digitalhub.stores.client.auth.client_configurator import ClientConfigurator
@@ -46,6 +47,10 @@ class Client:
     def execute_list(self, request: ClientOp) -> list[dict[str, Any]]:
         """Compile and execute a paginated semantic list request."""
         return self._executor.execute_list(request)
+
+    def iter_list(self, request: ClientOp) -> Iterator[dict[str, Any]]:
+        """Yield a paginated semantic list without buffering all results."""
+        return self._executor.iter_list(request)
 
     def execute_first(self, request: ClientOp) -> dict[str, Any]:
         """Compile and execute a list request, returning its first object."""

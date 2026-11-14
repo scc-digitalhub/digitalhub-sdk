@@ -122,6 +122,21 @@ def test_execute_compiles_backend_operation_request(client_with_handler) -> None
     )
 
 
+def test_iter_list_delegates_to_executor(client_with_handler, monkeypatch) -> None:
+    client, _, _, _, _, _, _, _ = client_with_handler
+    operation = ClientOp(
+        category=ApiType.BASE,
+        operation=BackendOp.LIST,
+        target=BaseCollectionTarget("project"),
+    )
+    executor_iter = iter([{"name": "demo"}])
+    iter_list = Mock(return_value=executor_iter)
+    monkeypatch.setattr(client._executor, "iter_list", iter_list)
+
+    assert list(client.iter_list(operation)) == [{"name": "demo"}]
+    iter_list.assert_called_once_with(operation)
+
+
 def test_execute_compiles_delete_all_versions(client_with_handler) -> None:
     client, _, api_builder, params_builder, _, http_handler, _, _ = client_with_handler
     api_builder.build_api.return_value = "/projects"
