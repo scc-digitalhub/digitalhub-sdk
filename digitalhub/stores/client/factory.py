@@ -16,7 +16,10 @@ class ClientFactory:
         self._client: Client | None = None
 
     def reset(self) -> None:
+        client = self._client
         self._client = None
+        if client is not None:
+            client.close()
 
     def build(self) -> Client:
         """

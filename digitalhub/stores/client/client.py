@@ -31,6 +31,10 @@ class Client:
         self._http_handler = HttpRequestHandler(self._configurator, self._transport)
         self._executor = ClientOpExecutor(self._http_handler)
 
+    def close(self) -> None:
+        """Close client resources."""
+        self._transport.close()
+
     ##############################
     # CRUD methods
     ##############################

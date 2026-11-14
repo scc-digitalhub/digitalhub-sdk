@@ -14,6 +14,7 @@ from requests.exceptions import Timeout as RequestsTimeout
 
 import digitalhub.stores.client.http.transport as transport_module
 from digitalhub.stores.client.common.enums import OpsType
+from digitalhub.stores.client.common.logger import log_request_response
 from digitalhub.stores.client.common.utils import (
     next_page,
     with_basic_auth,
@@ -283,10 +284,10 @@ def test_request_logs_operation_attempt_and_full_request_details(monkeypatch, ca
     )
     response.request = prepared_request
 
-    monkeypatch.setattr(transport_module, "requests_request", Mock(return_value=response))
     monkeypatch.setattr(transport_module.logger, "propagate", True)
     monkeypatch.setattr(logging.getLogger("dhcore"), "propagate", True)
     transport = HttpTransport()
+    monkeypatch.setattr(transport._session, "request", Mock(return_value=response))
 
     with caplog.at_level(logging.DEBUG, logger=transport_module.logger.name):
         result = transport.execute(
@@ -308,6 +309,16 @@ def test_request_logs_operation_attempt_and_full_request_details(monkeypatch, ca
     assert '{"result": "ok"}' in caplog.text
 
 
+def test_log_request_response_skips_response_access_when_debug_is_disabled() -> None:
+    logger = Mock()
+    logger.isEnabledFor.return_value = False
+
+    log_request_response(logger, Response())
+
+    logger.isEnabledFor.assert_called_once_with(logging.DEBUG)
+    logger.debug.assert_not_called()
+
+
 @pytest.mark.parametrize(
     ("transport_error", "expected_error", "message"),
     [
@@ -317,9 +328,8 @@ def test_request_logs_operation_attempt_and_full_request_details(monkeypatch, ca
     ],
 )
 def test_request_normalizes_transport_errors(monkeypatch, transport_error, expected_error, message) -> None:
-    monkeypatch.setattr(transport_module, "requests_request", Mock(side_effect=transport_error))
-
     transport = HttpTransport()
+    monkeypatch.setattr(transport._session, "request", Mock(side_effect=transport_error))
 
     with pytest.raises(expected_error, match=message) as exc_info:
         transport.execute(BackendReq(method="GET", api="https://example.test/resource"))
@@ -336,11 +346,33 @@ def test_transport_passes_backend_request_timeout(monkeypatch) -> None:
     prepared_request = PreparedRequest()
     prepared_request.prepare(method="GET", url=response.url)
     response.request = prepared_request
-    requests_request = Mock(return_value=response)
-    monkeypatch.setattr(transport_module, "requests_request", requests_request)
+    transport = HttpTransport()
+    session_request = Mock(return_value=response)
+    monkeypatch.setattr(transport._session, "request", session_request)
 
-    HttpTransport().execute(
+    transport.execute(
         BackendReq(method="GET", api=response.url, timeout=7),
     )
 
-    assert requests_request.call_args.kwargs["timeout"] == 7
+    assert session_request.call_args.kwargs["timeout"] == 7
+
+
+def test_transport_configures_and_closes_session_pools(monkeypatch) -> None:
+    session = Mock()
+    session_factory = Mock(return_value=session)
+    adapter_factory = Mock(side_effect=[Mock(), Mock()])
+    monkeypatch.setattr(transport_module.requests, "Session", session_factory)
+    monkeypatch.setattr(transport_module, "HTTPAdapter", adapter_factory)
+
+    transport = HttpTransport()
+
+    session_factory.assert_called_once_with()
+    assert [call.kwargs for call in adapter_factory.call_args_list] == [
+        {"pool_connections": 10, "pool_maxsize": 20},
+        {"pool_connections": 10, "pool_maxsize": 20},
+    ]
+    assert [call.args[0] for call in session.mount.call_args_list] == ["http://", "https://"]
+
+    transport.close()
+
+    session.close.assert_called_once_with()

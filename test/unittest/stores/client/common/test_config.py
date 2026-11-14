@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from types import SimpleNamespace
+from unittest.mock import Mock
 
 import pytest
 
@@ -67,12 +68,14 @@ def test_set_client_config_updates_imported_dependencies(monkeypatch, tmp_path) 
 
 
 def test_set_client_config_invalidates_default_client(monkeypatch) -> None:
-    monkeypatch.setattr(factory_module, "Client", lambda: object())
-    factory_module.client_factory._client = None
+    clients = [Mock(), Mock()]
+    monkeypatch.setattr(factory_module, "Client", Mock(side_effect=clients))
+    factory_module.client_factory.reset()
     original_client = factory_module.get_client()
 
     set_client_config(ClientConfig(http_timeout=120))
 
+    original_client.close.assert_called_once_with()
     assert factory_module.get_client() is not original_client
 
 

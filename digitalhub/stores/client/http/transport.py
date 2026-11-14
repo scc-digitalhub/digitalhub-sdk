@@ -6,7 +6,8 @@ from __future__ import annotations
 
 import typing
 
-from requests import request as requests_request
+import requests
+from requests.adapters import HTTPAdapter
 from requests.exceptions import RequestException
 
 from digitalhub.stores.client.common.logger import log_request_response
@@ -23,11 +24,19 @@ logger = get_logger(__name__)
 class HttpTransport:
     """Send absolute backend requests and log their transport responses."""
 
-    @staticmethod
-    def _request(method: str, url: str, **kwargs) -> Response:
+    def __init__(self) -> None:
+        self._session = requests.Session()
+        self._session.mount("http://", HTTPAdapter(pool_connections=10, pool_maxsize=20))
+        self._session.mount("https://", HTTPAdapter(pool_connections=10, pool_maxsize=20))
+
+    def close(self) -> None:
+        """Close the underlying HTTP session and its connection pools."""
+        self._session.close()
+
+    def _request(self, method: str, url: str, **kwargs) -> Response:
         """Execute an HTTP request and normalize transport errors."""
         try:
-            return requests_request(method, url, **kwargs)
+            return self._session.request(method, url, **kwargs)
         except RequestException as error:
             raise_for_transport_error(error)
 

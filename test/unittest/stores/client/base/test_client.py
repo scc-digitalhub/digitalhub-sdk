@@ -56,6 +56,14 @@ def test_client_builds_shared_transport(client_with_handler) -> None:
     handler_factory.assert_called_once_with(configurator, transport)
 
 
+def test_client_close_closes_transport(client_with_handler) -> None:
+    client, _, _, _, transport, _, _, _ = client_with_handler
+
+    client.close()
+
+    transport.close.assert_called_once_with()
+
+
 def test_client_operation_contains_only_semantic_request_data() -> None:
     request = ClientOp(
         category=ApiType.BASE,
