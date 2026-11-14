@@ -98,10 +98,12 @@ class DataitemCroissant(Dataitem):
         local_files = get_files_from_croissant(dataset, metadata_path)
         store = get_store(self.spec.path)
         for file_path in local_files:
-            key = self.spec.path + str(Path(file_path))
+            relative_path = str(file_path).replace("\\", "/").lstrip("/")
+            local_path = Path(relative_path)
+            key = f"{self.spec.path.rstrip('/')}/{relative_path}"
             store.download(
                 key,
-                self._context().root / self.ENTITY_TYPE / Path(file_path),
+                self._context().root / self.ENTITY_TYPE / local_path,
                 overwrite=overwrite,
             )
 

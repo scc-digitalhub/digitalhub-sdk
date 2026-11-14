@@ -4,6 +4,9 @@
 
 from __future__ import annotations
 
+import os
+from collections.abc import Generator
+from contextlib import contextmanager
 from io import BytesIO
 from pathlib import Path
 from typing import Any
@@ -11,8 +14,9 @@ from urllib.parse import urlparse
 
 import boto3
 import botocore.client  # pylint: disable=unused-import
+from boto3.exceptions import Boto3Error
 from boto3.s3.transfer import TransferConfig
-from botocore.exceptions import ClientError, NoCredentialsError
+from botocore.exceptions import BotoCoreError, ClientError
 
 from digitalhub.stores.data._base.store import Store
 from digitalhub.stores.data.s3.configurator import S3StoreConfigurator
@@ -28,6 +32,14 @@ logger = get_logger(__name__)
 S3Client = type["botocore.client.S3"]
 
 MULTIPART_THRESHOLD = 100 * 1024 * 1024
+
+
+@contextmanager
+def _handle_boto_errors(operation: str) -> Generator[None, None, None]:
+    try:
+        yield
+    except (Boto3Error, BotoCoreError, ClientError) as e:
+        raise StoreError(f"S3 {operation} failed: {e!s}") from e
 
 
 class S3Store(Store):
@@ -47,7 +59,7 @@ class S3Store(Store):
     def download(
         self,
         src: str,
-        dst: Path,
+        dst: Path | None,
         overwrite: bool = False,
     ) -> str:
         """
@@ -57,8 +69,9 @@ class S3Store(Store):
         ----------
         src : str
             Path of the material entity.
-        dst : str
-            The destination of the material entity on local filesystem.
+        dst : Path | None
+            The destination on the local filesystem. If None, a temporary
+            directory is used.
         overwrite : bool
             Specify if overwrite existing file(s).
 
@@ -67,6 +80,9 @@ class S3Store(Store):
         str
             Destination path of the downloaded files.
         """
+        if dst is None:
+            dst = self._build_temp()
+
         client, bucket = self._check_factory(src)
 
         # Build destination directory
@@ -219,7 +235,8 @@ class S3Store(Store):
             key = self._get_key(key)
 
             # Get metadata
-            metadata = client.head_object(Bucket=bucket, Key=key)
+            with _handle_boto_errors("get file metadata"):
+                metadata = client.head_object(Bucket=bucket, Key=key)
 
             # Get file info
             info = get_file_info_from_s3(src_path, metadata)
@@ -398,7 +415,8 @@ class S3Store(Store):
         list[str]
             The list of paths of the downloaded files.
         """
-        client.download_file(bucket, key, dst_pth)
+        with _handle_boto_errors("download file"):
+            client.download_file(bucket, key, dst_pth)
 
     @staticmethod
     def _download_fileobject(
@@ -423,8 +441,9 @@ class S3Store(Store):
         BytesIO
             The fileobject of the downloaded file.
         """
-        obj = client.get_object(Bucket=bucket, Key=key)
-        return BytesIO(obj["Body"].read())
+        with _handle_boto_errors("download file object"):
+            obj = client.get_object(Bucket=bucket, Key=key)
+            return BytesIO(obj["Body"].read())
 
     def _upload_dir(
         self,
@@ -456,17 +475,14 @@ class S3Store(Store):
         src_pth = Path(src)
         files = [i for i in src_pth.rglob("*") if i.is_file()]
 
-        # Build keys
-        keys = []
-        for i in files:
-            i = i.relative_to(src_pth)
-            keys.append(f"{dst}{i}")
+        relative_paths = [file.relative_to(src_pth).as_posix() for file in files]
+        keys = [f"{dst}{relative_path}" for relative_path in relative_paths]
 
         # Upload files
         paths = []
-        for f, k in zip(files, keys):
+        for f, k, relative_path in zip(files, keys, relative_paths):
             self._upload_file(f, k, client, bucket)
-            paths.append((k, str(f.relative_to(src_pth))))
+            paths.append((k, relative_path))
         return paths
 
     def _upload_file_list(
@@ -499,20 +515,24 @@ class S3Store(Store):
             Returns the list of destination and source paths of the uploaded artifacts.
         """
         files = src
-        keys = []
-        for i in files:
-            if keep_dir_structure:
-                keys.append(f"{dst}{i}")
-            else:
-                keys.append(f"{dst}{Path(i).name}")
+        if keep_dir_structure and files:
+            file_paths = [Path(file).resolve() for file in files]
+            try:
+                common_path = Path(os.path.commonpath([str(file.parent) for file in file_paths]))
+                relative_paths = [file.relative_to(common_path).as_posix() for file in file_paths]
+            except ValueError:
+                relative_paths = [file.name for file in file_paths]
+        else:
+            relative_paths = [Path(file).name for file in files]
+        keys = [f"{dst}{relative_path}" for relative_path in relative_paths]
         if len(set(keys)) != len(keys):
             raise StoreError("Keys must be unique (Select files with different names, otherwise upload a directory).")
 
         # Upload files
         paths = []
-        for f, k in zip(files, keys):
+        for f, k, relative_path in zip(files, keys, relative_paths):
             self._upload_file(f, k, client, bucket)
-            paths.append((k, Path(f).name))
+            paths.append((k, relative_path))
         return paths
 
     def _upload_single_file(
@@ -575,13 +595,14 @@ class S3Store(Store):
         mime_type = get_file_mime_type(src)
         if mime_type is not None:
             extra_args["ContentType"] = mime_type
-        client.upload_file(
-            Filename=src,
-            Bucket=bucket,
-            Key=key,
-            ExtraArgs=extra_args,
-            Config=TransferConfig(multipart_threshold=MULTIPART_THRESHOLD),
-        )
+        with _handle_boto_errors("upload file"):
+            client.upload_file(
+                Filename=src,
+                Bucket=bucket,
+                Key=key,
+                ExtraArgs=extra_args,
+                Config=TransferConfig(multipart_threshold=MULTIPART_THRESHOLD),
+            )
 
     @staticmethod
     def _upload_fileobject(
@@ -604,12 +625,13 @@ class S3Store(Store):
         bucket : str
             The name of the S3 bucket.
         """
-        client.upload_fileobj(
-            Fileobj=fileobj,
-            Bucket=bucket,
-            Key=key,
-            Config=TransferConfig(multipart_threshold=MULTIPART_THRESHOLD),
-        )
+        with _handle_boto_errors("upload file object"):
+            client.upload_fileobj(
+                Fileobj=fileobj,
+                Bucket=bucket,
+                Key=key,
+                Config=TransferConfig(multipart_threshold=MULTIPART_THRESHOLD),
+            )
 
     ##############################
     # Helper methods
@@ -663,11 +685,11 @@ class S3Store(Store):
             logger.debug("S3 client configured; checking access to bucket '%s'.", bucket)
             self._check_access_to_storage(client, bucket)
             return client, bucket
-        except ConfigError:
+        except ConfigError as e:
             if self._configurator.eval_retry():
                 logger.debug(f"S3 access check failed for bucket '{bucket}', retrying with new credentials.")
                 return self._check_factory(s3_path)
-            raise
+            raise StoreError(f"S3 access check failed: {e!s}") from e
 
     def _check_access_to_storage(self, client: S3Client, bucket: str) -> None:
         """
@@ -682,8 +704,8 @@ class S3Store(Store):
         """
         try:
             client.head_bucket(Bucket=bucket)
-        except (ClientError, NoCredentialsError) as err:
-            raise ConfigError(f"No access to '{bucket}' s3 bucket! Error: {err}")
+        except (ClientError, BotoCoreError) as err:
+            raise ConfigError(f"No access to '{bucket}' s3 bucket! Error: {err!s}") from err
 
     @staticmethod
     def _get_key(path: str) -> str:
@@ -723,10 +745,11 @@ class S3Store(Store):
             The list of keys under the partition.
         """
         key = self._get_key(partition)
-        paginator = client.get_paginator("list_objects_v2")
-        keys = []
-        for page in paginator.paginate(Bucket=bucket, Prefix=key):
-            keys.extend(obj["Key"] for obj in page.get("Contents", []))
+        with _handle_boto_errors("list objects"):
+            paginator = client.get_paginator("list_objects_v2")
+            keys = []
+            for page in paginator.paginate(Bucket=bucket, Prefix=key):
+                keys.extend(obj["Key"] for obj in page.get("Contents", []))
         return keys
 
     @staticmethod
