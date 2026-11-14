@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+from sqlalchemy.engine import URL
+
 from digitalhub.stores.client.common.enums import ConfigurationVars, CredentialsVars
 from digitalhub.stores.client.factory import get_client
 
@@ -32,7 +34,14 @@ class SqlStoreConfigurator:
         host = creds[ConfigurationVars.DB_HOST.value]
         port = creds[ConfigurationVars.DB_PORT.value]
         database = creds[ConfigurationVars.DB_DATABASE.value]
-        return f"postgresql+pg8000://{user}:{password}@{host}:{port}/{database}"
+        return URL.create(
+            drivername="postgresql+pg8000",
+            username=user,
+            password=password,
+            host=host,
+            port=int(port),
+            database=database,
+        ).render_as_string(hide_password=False)
 
     def get_credentials(self, lowercase_keys: bool = True) -> dict:
         """

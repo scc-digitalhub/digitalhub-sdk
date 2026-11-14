@@ -9,13 +9,11 @@ import shutil
 import warnings
 from enum import Enum
 from pathlib import Path
-from urllib.parse import urlparse
+from typing import TYPE_CHECKING
+from urllib.parse import quote, urlparse, urlunparse
 
-try:
+if TYPE_CHECKING:
     from git import Repo
-except ImportError as e:
-    if "Bad git executable." in e.args[0]:
-        warnings.warn("git is not installed. Please install git and try again.", RuntimeWarning)
 
 
 class GitCredentialsType(Enum):
@@ -105,7 +103,7 @@ def get_git_username_password_from_token(token: str) -> tuple[str, str]:
     tuple[str, str]
         Username and password for git authentication.
     """
-    if token.startswith(("github_pat_", "glpat_", "ghp_")):
+    if token.startswith(("github_pat_", "glpat_", "glpat-", "ghp_", "gloas-")):
         return "oauth2", token
     return token, "x-oauth-basic"
 
@@ -135,10 +133,11 @@ def add_credentials_git_remote_url(url: str) -> str:
     if token is not None:
         username, password = get_git_username_password_from_token(token)
 
-    # Add credentials to url if needed
+    netloc = url_obj.netloc.rsplit("@", maxsplit=1)[-1]
     if username is not None and password is not None:
-        return f"https://{username}:{password}@{url_obj.hostname}{url_obj.path}"
-    return f"https://{url_obj.hostname}{url_obj.path}"
+        credentials = f"{quote(username, safe='')}:{quote(password, safe='')}"
+        netloc = f"{credentials}@{netloc}"
+    return urlunparse((url_obj.scheme, netloc, url_obj.path, "", "", ""))
 
 
 def clone_from_url(url: str, path: Path) -> Repo:
@@ -157,4 +156,11 @@ def clone_from_url(url: str, path: Path) -> Repo:
     Repo
         The cloned git repository object.
     """
+    try:
+        from git import Repo
+    except ImportError as e:
+        if "Bad git executable." in str(e):
+            warnings.warn("git is not installed. Please install git and try again.", RuntimeWarning)
+        raise
+
     return Repo.clone_from(url=url, to_path=path)
