@@ -223,3 +223,29 @@ def test_validation_error_lists_missing_keys_for_both_credential_bundles(monkeyp
         f"{CredentialsVars.S3_WEB_IDENTITY_TOKEN_FILE.value} or "
         f"{CredentialsVars.S3_WEB_IDENTITY_TOKEN.value}, {ConfigurationVars.S3_ENDPOINT_URL_STS.value}"
     ) in message
+
+
+def test_validation_logging_includes_only_configured_key_names(monkeypatch) -> None:
+    credentials = {
+        ConfigurationVars.S3_ENDPOINT_URL.value: "https://s3.example.test",
+        CredentialsVars.S3_ACCESS_KEY_ID.value: "static-access",
+        CredentialsVars.S3_SECRET_ACCESS_KEY.value: "static-secret",
+        CredentialsVars.DB_PASSWORD.value: "database-password",
+        CredentialsVars.DHCORE_REFRESH_TOKEN.value: "refresh-token",
+        "UNSET_OPTION": None,
+    }
+    monkeypatch.setattr(
+        configurator_module,
+        "get_client",
+        lambda: Mock(get_credentials_and_config=lambda: credentials),
+    )
+    debug = Mock()
+    monkeypatch.setattr(configurator_module.logger, "debug", debug)
+
+    S3StoreConfigurator()
+
+    expected_names = sorted(key for key, value in credentials.items() if value is not None)
+    debug.assert_called_once_with("S3 credential validation inputs: %s", expected_names)
+    logged = repr(debug.call_args)
+    for sensitive_value in ("static-secret", "database-password", "refresh-token"):
+        assert sensitive_value not in logged

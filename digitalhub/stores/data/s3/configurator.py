@@ -157,7 +157,10 @@ class S3StoreConfigurator:
         token_file = CredentialsVars.S3_WEB_IDENTITY_TOKEN_FILE.value
         token = CredentialsVars.S3_WEB_IDENTITY_TOKEN.value
         sts_endpoint = ConfigurationVars.S3_ENDPOINT_URL_STS.value
-        logger.debug("S3 credential validation inputs: %s", current_keys)
+        logger.debug(
+            "S3 credential validation inputs: %s",
+            sorted(key for key, value in current_keys.items() if value is not None),
+        )
 
         if not current_keys.get(endpoint):
             missing_keys.append(endpoint)

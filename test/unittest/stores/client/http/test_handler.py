@@ -2,9 +2,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import json
 import logging
 from dataclasses import FrozenInstanceError
 from unittest.mock import Mock
+from urllib.parse import unquote
 
 import pytest
 from requests import PreparedRequest, Response
@@ -14,7 +16,7 @@ from requests.exceptions import Timeout as RequestsTimeout
 
 import digitalhub.stores.client.http.transport as transport_module
 from digitalhub.stores.client.common.enums import OpsType
-from digitalhub.stores.client.common.logger import log_request_response
+from digitalhub.stores.client.common.logger import MAX_LOG_BODY_LENGTH, log_request_response
 from digitalhub.stores.client.common.utils import (
     next_page,
     with_basic_auth,
@@ -267,7 +269,7 @@ def test_request_does_not_refresh_credentials_on_forbidden(monkeypatch) -> None:
     assert transport.execute.call_count == 1
 
 
-def test_request_logs_operation_attempt_and_full_request_details(monkeypatch, caplog) -> None:
+def test_request_logs_operation_attempt_and_redacted_details(monkeypatch, caplog) -> None:
     full_url = "https://example.test/api/v1/-/demo/functions/abc-123"
     request_data = "payload"
     response = Response()
@@ -304,9 +306,10 @@ def test_request_logs_operation_attempt_and_full_request_details(monkeypatch, ca
     assert "Attempt: 1" in caplog.text
     assert "Duration:" not in caplog.text
     assert full_url in caplog.text
-    assert "Bearer token" in caplog.text
-    assert request_data in caplog.text
-    assert '{"result": "ok"}' in caplog.text
+    assert "***REDACTED***" in caplog.text
+    assert request_data not in caplog.text
+    assert "<body omitted>" in caplog.text
+    assert '{"result":"ok"}' in caplog.text
 
 
 def test_log_request_response_skips_response_access_when_debug_is_disabled() -> None:
@@ -317,6 +320,111 @@ def test_log_request_response_skips_response_access_when_debug_is_disabled() -> 
 
     logger.isEnabledFor.assert_called_once_with(logging.DEBUG)
     logger.debug.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("operation", "url"),
+    [
+        (OpsType.AUTH_REFRESH, "https://example.test/oauth/token?access_token=url-token"),
+        (OpsType.ENTITY_READ, "https://example.test/api/secrets/secret-id"),
+    ],
+)
+def test_log_request_response_omits_sensitive_operation_bodies(operation, url) -> None:
+    logger = Mock()
+    logger.isEnabledFor.return_value = True
+    response = Response()
+    response.status_code = 200
+    response.url = url
+    response.headers = {"Content-Type": "application/json"}
+    response._content = b'{"access_token":"response-token","value":"secret-value"}'
+    prepared_request = PreparedRequest()
+    prepared_request.prepare(
+        method="POST",
+        url=url,
+        headers={
+            "Authorization": "Bearer header-token",
+            "Content-Type": "application/json",
+        },
+        data=json.dumps({"refresh_token": "request-token", "secret": "request-secret"}),
+    )
+    response.request = prepared_request
+
+    log_request_response(logger, response, operation=operation)
+
+    logged = repr(logger.debug.call_args)
+    for sensitive_value in (
+        "url-token",
+        "header-token",
+        "request-token",
+        "request-secret",
+        "response-token",
+        "secret-value",
+    ):
+        assert sensitive_value not in logged
+    assert "***REDACTED***" in logged
+    assert "<body omitted>" not in logged
+
+
+def test_log_request_response_redacts_json_bodies_and_truncates_long_bodies() -> None:
+    logger = Mock()
+    logger.isEnabledFor.return_value = True
+    request_body = json.dumps(
+        {
+            "username": "demo",
+            "password": "request-password",
+            "description": "x" * (MAX_LOG_BODY_LENGTH * 2),
+        }
+    )
+    response = Response()
+    response.status_code = 200
+    response.url = "https://example.test/api/users"
+    response.headers = {"Content-Type": "application/json"}
+    response._content = b'{"access_token":"response-token","result":"ok"}'
+    prepared_request = PreparedRequest()
+    prepared_request.prepare(
+        method="POST",
+        url=response.url,
+        headers={"Content-Type": "application/json"},
+        data=request_body,
+    )
+    response.request = prepared_request
+
+    log_request_response(logger, response, operation=OpsType.ENTITY_UPDATE)
+
+    logged_args = logger.debug.call_args.args
+    formatted_request_body = logged_args[-2]
+    formatted_response_body = logged_args[-1]
+    assert len(formatted_request_body) == MAX_LOG_BODY_LENGTH
+    assert formatted_request_body.endswith("...<truncated>")
+    assert "request-password" not in formatted_request_body
+    assert "response-token" not in formatted_response_body
+    assert "***REDACTED***" in formatted_request_body
+    assert "***REDACTED***" in formatted_response_body
+
+
+def test_log_request_response_redacts_sensitive_form_values() -> None:
+    logger = Mock()
+    logger.isEnabledFor.return_value = True
+    response = Response()
+    response.status_code = 200
+    response.url = "https://example.test/api/login"
+    response.headers = {"Content-Type": "application/json"}
+    response._content = b'{"result":"ok"}'
+    prepared_request = PreparedRequest()
+    prepared_request.prepare(
+        method="POST",
+        url=response.url,
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+        data={"username": "demo", "password": "form-password"},
+    )
+    response.request = prepared_request
+
+    log_request_response(logger, response, operation=OpsType.AUTH_VALIDATE)
+
+    formatted_request_body = logger.debug.call_args.args[-2]
+    assert "form-password" not in formatted_request_body
+    assert "***REDACTED***" in unquote(formatted_request_body)
+    assert "username=demo" in formatted_request_body
 
 
 @pytest.mark.parametrize(
