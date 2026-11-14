@@ -60,6 +60,13 @@ class Project(Entity, ProjectListShortcuts):
         f"{EntityTypes.FUNCTION.value}s",
         f"{EntityTypes.WORKFLOW.value}s",
     )
+    _ENTITY_SECTION_TO_TYPE: typing.ClassVar[dict[str, str]] = {
+        "artifacts": EntityTypes.ARTIFACT.value,
+        "dataitems": EntityTypes.DATAITEM.value,
+        "models": EntityTypes.MODEL.value,
+        "functions": EntityTypes.FUNCTION.value,
+        "workflows": EntityTypes.WORKFLOW.value,
+    }
 
     def __init__(
         self,
@@ -300,7 +307,8 @@ class Project(Entity, ProjectListShortcuts):
                         entity["metadata"]["version"] = new_id
 
                     try:
-                        entity_factory.build_entity_from_dict(entity, entity_type=entity_type).save()
+                        singular_entity_type = self._ENTITY_SECTION_TO_TYPE[entity_type]
+                        entity_factory.build_entity_from_dict(entity, entity_type=singular_entity_type).save()
                     except EntityAlreadyExistsError:
                         pass
 

@@ -7,7 +7,12 @@ from __future__ import annotations
 import typing
 
 from digitalhub.entities._constructors.uuid import build_uuid
-from digitalhub.entities._processors.utils import get_context, get_context_from_identifier, parse_identifier
+from digitalhub.entities._processors.utils import (
+    get_context,
+    get_context_from_identifier,
+    parse_identifier,
+    update_entity_identity,
+)
 from digitalhub.factory.entity import entity_factory
 from digitalhub.utils.exceptions import EntityAlreadyExistsError, EntityError, EntityNotExistsError
 from digitalhub.utils.io_utils import read_yaml
@@ -58,10 +63,7 @@ class ContextEntityExecutableProcessor:
         _, entity_type, _, _, _ = parse_identifier(exec_dict["key"])
         obj: ExecutableProtocol = entity_factory.build_entity_from_dict(exec_dict, entity_type=entity_type)
 
-        if reset_id:
-            new_id = build_uuid()
-            obj.id = new_id
-            obj.metadata.version = new_id
+        update_entity_identity(obj, context, build_uuid() if reset_id else None)
 
         try:
             bck_obj = self.crud_processor._create_context_entity(ctx, obj.ENTITY_TYPE, obj.to_dict())
@@ -89,9 +91,10 @@ class ContextEntityExecutableProcessor:
         obj: ExecutableProtocol = entity_factory.build_entity_from_dict(exec_dict, entity_type=entity_type)
 
         try:
-            self.crud_processor._update_context_entity(context, obj.ENTITY_TYPE, obj.id, obj.to_dict())
+            backend_obj = self.crud_processor._update_context_entity(context, obj.ENTITY_TYPE, obj.id, obj.to_dict())
         except EntityNotExistsError:
-            self.crud_processor._create_context_entity(context, obj.ENTITY_TYPE, obj.to_dict())
+            backend_obj = self.crud_processor._create_context_entity(context, obj.ENTITY_TYPE, obj.to_dict())
 
-        obj.import_tasks(tsk_dicts)
-        return obj
+        new_obj: ExecutableProtocol = entity_factory.build_entity_from_dict(backend_obj, entity_type=entity_type)
+        new_obj.import_tasks(tsk_dicts)
+        return new_obj

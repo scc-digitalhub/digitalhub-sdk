@@ -12,6 +12,8 @@ from digitalhub.utils.exceptions import EntityError
 
 if typing.TYPE_CHECKING:
     from digitalhub.context.context import Context
+    from digitalhub.entities._base.context.entity import ContextEntity
+    from digitalhub.entities._mixin.executable.protocol import ExecutableProtocol
 
 
 def parse_identifier(
@@ -39,3 +41,27 @@ def get_context_from_identifier(
         project = get_project_from_key(identifier)
 
     return get_context(project)
+
+
+def update_entity_identity(
+    entity: ContextEntity | ExecutableProtocol,
+    project: str,
+    new_id: str | None = None,
+) -> None:
+    entity.project = project
+    entity.metadata.project = project
+    if new_id is not None:
+        entity.id = new_id
+        entity.metadata.version = new_id
+
+    versioned_initializer = getattr(entity, "_init_versioned_identity", None)
+    if callable(versioned_initializer):
+        versioned_initializer(project, entity.name, entity.id, entity.kind)
+        return
+
+    unversioned_initializer = getattr(entity, "_init_unversioned_identity", None)
+    if callable(unversioned_initializer):
+        unversioned_initializer(project, entity.id, entity.kind)
+        return
+
+    raise EntityError(f"Entity '{type(entity).__name__}' has no supported identity initializer.")

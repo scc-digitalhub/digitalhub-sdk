@@ -47,6 +47,32 @@ def test_import_entities_selects_processor_independently_of_entity_type_order(mo
     executable_import.assert_called_once_with(file="local://function.yaml", reset_id=True, context="project")
 
 
+def test_import_embedded_entities_uses_singular_entity_types(monkeypatch) -> None:
+    project = object.__new__(Project)
+    project.name = "project"
+    project._is_embedded = Mock(return_value=True)
+    entities = {
+        "artifacts": [{"metadata": {}}],
+        "dataitems": [{"metadata": {}}],
+        "models": [{"metadata": {}}],
+        "functions": [{"metadata": {}}],
+        "workflows": [{"metadata": {}}],
+    }
+    method_module = importlib.import_module(Project._import_entities.__module__)
+    build_entity = Mock(return_value=Mock())
+    monkeypatch.setattr(method_module.entity_factory, "build_entity_from_dict", build_entity)
+
+    project._import_entities({"spec": entities})
+
+    assert [call.kwargs["entity_type"] for call in build_entity.call_args_list] == [
+        "artifact",
+        "dataitem",
+        "model",
+        "function",
+        "workflow",
+    ]
+
+
 def test_load_entities_selects_processor_independently_of_entity_type_order(monkeypatch) -> None:
     project = _project_with_reordered_entity_types()
     method_module = importlib.import_module(Project._load_entities.__module__)
