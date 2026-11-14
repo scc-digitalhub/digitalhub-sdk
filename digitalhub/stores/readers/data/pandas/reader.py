@@ -9,7 +9,6 @@ from typing import IO, Any
 
 import numpy as np
 import pandas as pd
-from pandas.errors import ParserError
 
 from digitalhub.stores.readers.data._base.reader import DataframeReader
 from digitalhub.stores.readers.data.pandas.utils import (
@@ -60,16 +59,19 @@ class DataframeReaderPandas(DataframeReader):
         if extension == FileExtensions.PARQUET.value:
             limit = kwargs.pop(self.get_limit_arg_name(), None)
 
-        read_function = map_read_function(extension)
         try:
-            df = read_function(path_or_buffer, **kwargs)
-            if limit is not None:
-                return df.head(limit)
-            return df
-        except ParserError as e:
-            raise ReaderError(f"Unable to read from {path_or_buffer}.") from e
+            read_function = map_read_function(extension)
         except ValueError as e:
             raise ReaderError(f"Unsupported extension '{extension}' for reading.") from e
+
+        try:
+            df = read_function(path_or_buffer, **kwargs)
+        except Exception as e:
+            raise ReaderError(f"Unable to read '{extension}' data: {e!s}") from e
+
+        if limit is not None:
+            return df.head(limit)
+        return df
 
     def read_table(self, sql: str, engine: Any, **kwargs) -> pd.DataFrame:
         """
