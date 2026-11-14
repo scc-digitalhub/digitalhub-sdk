@@ -33,6 +33,7 @@ def test_new_trigger_builds_executable_template(
 ) -> None:
     create_entity = Mock(return_value="trigger")
     monkeypatch.setattr(trigger_crud.crud_processor, "create_context_entity", create_entity)
+    original_template = template.copy() if template is not None else None
 
     result = trigger_crud.new_trigger(
         project="my-project",
@@ -67,6 +68,9 @@ def test_new_trigger_builds_executable_template(
         **expected_executable,
         template=expected_template,
     )
+    if template is not None:
+        assert template == original_template
+        assert create_entity.call_args.kwargs["template"] is not template
 
 
 def test_new_trigger_requires_function_or_workflow(monkeypatch) -> None:

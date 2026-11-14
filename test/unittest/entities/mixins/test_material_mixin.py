@@ -10,6 +10,7 @@ import pytest
 
 import digitalhub.entities._mixin.material.files as material_files
 import digitalhub.entities._mixin.material.mixin as material_mixin
+import digitalhub.entities._processors.context.material as context_material
 from digitalhub.entities._mixin.material.mixin import MaterialMixin
 from digitalhub.utils.exceptions import BackendError, EntityError, EntityErrorFileNotFound
 
@@ -24,6 +25,20 @@ class MaterialEntityForTest(MaterialMixin):
         self._context = Mock(return_value=SimpleNamespace(root=Path("/context")))
         self.update = Mock()
         self.refresh = Mock()
+
+
+def _configure_material_upload(monkeypatch, store) -> None:
+    monkeypatch.setattr(context_material, "get_store", Mock(return_value=store))
+
+    def update_material_entity(entity):
+        entity.update()
+        return entity
+
+    monkeypatch.setattr(
+        material_mixin.material_processor,
+        "_update_material_entity",
+        update_material_entity,
+    )
 
 
 def test_init_material_extensions_defaults_to_empty_list() -> None:
@@ -87,7 +102,7 @@ def test_upload_sets_ready_state_and_logs_file_info(monkeypatch) -> None:
     store = Mock()
     store.upload.return_value = ["file.txt"]
     store.get_file_info.return_value = [{"path": "file.txt"}]
-    monkeypatch.setattr(material_mixin, "get_store", Mock(return_value=store))
+    _configure_material_upload(monkeypatch, store)
 
     entity.upload("/source", keep_dir_structure=True)
 
@@ -112,7 +127,7 @@ def test_upload_stores_large_file_metadata_in_backend(monkeypatch) -> None:
     store.upload.return_value = [file_info["path"] for file_info in files_info]
     store.get_file_info.return_value = files_info
     update_files_info = Mock()
-    monkeypatch.setattr(material_mixin, "get_store", Mock(return_value=store))
+    _configure_material_upload(monkeypatch, store)
     monkeypatch.setattr(material_mixin.material_processor, "update_files_info", update_files_info)
 
     entity.upload("/source")
@@ -132,7 +147,7 @@ def test_upload_converts_missing_source_to_entity_error(monkeypatch) -> None:
     entity.spec = SimpleNamespace(path="store://material")
     store = Mock()
     store.upload.side_effect = FileNotFoundError("missing.txt")
-    monkeypatch.setattr(material_mixin, "get_store", Mock(return_value=store))
+    _configure_material_upload(monkeypatch, store)
 
     with pytest.raises(EntityErrorFileNotFound, match="missing.txt"):
         entity.upload("/missing")
@@ -147,7 +162,7 @@ def test_upload_converts_store_errors_to_entity_error(monkeypatch) -> None:
     entity.spec = SimpleNamespace(path="store://material")
     store = Mock()
     store.upload.side_effect = ValueError("invalid source")
-    monkeypatch.setattr(material_mixin, "get_store", Mock(return_value=store))
+    _configure_material_upload(monkeypatch, store)
 
     with pytest.raises(EntityError, match="invalid source"):
         entity.upload("/source")
@@ -155,6 +170,127 @@ def test_upload_converts_store_errors_to_entity_error(monkeypatch) -> None:
     assert entity.status.state == "ERROR"
     assert entity.status.message == "Upload failed: invalid source"
     assert entity.update.call_count == 2
+
+
+def test_upload_converts_unexpected_errors_and_persists_error_state(monkeypatch) -> None:
+    entity = MaterialEntityForTest()
+    entity.spec = SimpleNamespace(path="store://material")
+    store = Mock()
+    store.upload.side_effect = RuntimeError("unexpected storage failure")
+    _configure_material_upload(monkeypatch, store)
+
+    with pytest.raises(EntityError, match="unexpected storage failure") as error:
+        entity.upload("/source")
+
+    assert isinstance(error.value.__cause__, RuntimeError)
+    assert entity.status.state == "ERROR"
+    assert entity.status.message == "Upload failed: unexpected storage failure"
+    assert entity.update.call_count == 2
+
+
+def test_upload_surfaces_error_status_persistence_failure(monkeypatch) -> None:
+    entity = MaterialEntityForTest()
+    entity.spec = SimpleNamespace(path="store://material")
+    store = Mock()
+    store.upload.side_effect = RuntimeError("unexpected storage failure")
+    _configure_material_upload(monkeypatch, store)
+
+    def fail_error_status_update(upload_entity):
+        upload_entity.update()
+        if upload_entity.status.state == "ERROR":
+            raise OSError("status update failed")
+        return upload_entity
+
+    monkeypatch.setattr(
+        material_mixin.material_processor,
+        "_update_material_entity",
+        fail_error_status_update,
+    )
+
+    with pytest.raises(EntityError, match="failed to persist ERROR status: status update failed") as error:
+        entity.upload("/source")
+
+    assert isinstance(error.value.__cause__, OSError)
+    assert entity.status.state == "ERROR"
+    assert "unexpected storage failure" in entity.status.message
+    assert entity.update.call_count == 2
+
+
+def test_upload_delegates_to_material_processor(monkeypatch) -> None:
+    entity = MaterialEntityForTest()
+    upload_material = Mock()
+    monkeypatch.setattr(
+        material_mixin.material_processor,
+        "upload_material",
+        upload_material,
+    )
+
+    entity.upload("/source", keep_dir_structure=True)
+
+    upload_material.assert_called_once_with(
+        entity,
+        "/source",
+        keep_dir_structure=True,
+    )
+
+
+def test_log_material_entity_uses_shared_upload_transaction(monkeypatch) -> None:
+    processor = context_material.ContextEntityMaterialProcessor(Mock())
+    entity = SimpleNamespace(
+        spec=SimpleNamespace(path="store://material"),
+        status=SimpleNamespace(state=None, message=None, files=None),
+        _update_files_info=Mock(),
+    )
+    store = Mock()
+    store.upload.return_value = ["file.txt"]
+    store.get_file_info.return_value = [{"path": "file.txt"}]
+    monkeypatch.setattr(context_material, "get_store", Mock(return_value=store))
+    monkeypatch.setattr(processor, "_create_material_entity", Mock(return_value=entity))
+    uploaded_states = []
+
+    def update_material_entity(upload_entity):
+        uploaded_states.append(upload_entity.status.state)
+        return upload_entity
+
+    monkeypatch.setattr(processor, "_update_material_entity", update_material_entity)
+
+    result = processor.log_material_entity(
+        source="/source",
+        keep_dir_structure=True,
+    )
+
+    assert result is entity
+    processor._create_material_entity.assert_called_once_with()
+    assert uploaded_states == ["UPLOADING", "READY"]
+    store.upload.assert_called_once_with(
+        "/source",
+        "store://material",
+        keep_dir_structure=True,
+    )
+    entity._update_files_info.assert_called_once_with([{"path": "file.txt"}])
+
+
+def test_update_material_entity_mutates_original_entity() -> None:
+    crud_processor = Mock()
+    processor = context_material.ContextEntityMaterialProcessor(crud_processor)
+    entity = Mock()
+    entity.project = "my-project"
+    entity.ENTITY_TYPE = "artifact"
+    entity.id = "entity-id"
+    entity.to_dict.return_value = {"id": "entity-id"}
+    updated_entity = Mock()
+    crud_processor.update_context_entity.return_value = updated_entity
+
+    result = processor._update_material_entity(entity)
+
+    assert result is entity
+    crud_processor.update_context_entity.assert_called_once_with(
+        "my-project",
+        "artifact",
+        "entity-id",
+        {"id": "entity-id"},
+    )
+    entity._update_attributes.assert_called_once_with(updated_entity)
 
 
 def test_files_reads_backend_info_and_falls_back_to_status(monkeypatch) -> None:

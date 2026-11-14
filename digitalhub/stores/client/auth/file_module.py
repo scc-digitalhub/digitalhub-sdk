@@ -8,6 +8,7 @@ import os
 import shutil
 from collections.abc import Callable
 from configparser import ConfigParser
+from configparser import Error as ConfigParserError
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
@@ -116,7 +117,9 @@ def load_file() -> ConfigParser:
         file.read(_get_ini_file())
         return file
     except OSError as e:
-        raise ClientError(f"Failed to read env file: {e}")
+        raise ClientError(f"Failed to read .dhcore.ini file: {e}") from e
+    except ConfigParserError as e:
+        raise ClientError(f"Failed to parse .dhcore.ini file: {e}") from e
 
 
 def load_profile(file: ConfigParser) -> str:
@@ -162,43 +165,6 @@ def load_key(file: ConfigParser, profile: str, key: str) -> str | None:
         return file[profile][key]
     except KeyError:
         return
-
-
-def write_config(creds: dict, environment: str) -> None:
-    """
-    Write credentials to the .dhcore.ini file for the specified environment.
-    Overwrites any existing values for that environment.
-
-    Parameters
-    ----------
-    creds : dict
-        Dictionary of credentials to write.
-    environment : str
-        Name of the credentials profile/environment.
-    """
-    try:
-        ini_file = _get_ini_file()
-        cfg = load_file()
-
-        sections = cfg.sections()
-        if environment not in sections:
-            cfg.add_section(environment)
-
-        cfg["DEFAULT"]["current_environment"] = environment
-        for k, v in creds.items():
-            if v is None:
-                cfg.remove_option(environment, k)
-            else:
-                cfg[environment][k] = str(v)
-
-        def write_config_file(temporary_path: Path) -> None:
-            with open(temporary_path, "w") as inifile:
-                cfg.write(inifile)
-
-        _atomic_write_text_secure(ini_file, write_config_file)
-
-    except OSError as e:
-        raise ClientError(f"Failed to write env file: {e}")
 
 
 def write_file(variables: dict, profile: str) -> None:

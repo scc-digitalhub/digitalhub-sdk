@@ -56,11 +56,11 @@ def test_write_file_removes_none_values_from_profile(tmp_path, monkeypatch) -> N
     assert "refresh_token" not in file_module.load_file()["default"]
 
 
-def test_write_config_and_set_current_profile_write_securely(tmp_path, monkeypatch) -> None:
+def test_write_file_and_set_current_profile_write_securely(tmp_path, monkeypatch) -> None:
     ini_file = tmp_path / ".dhcore.ini"
     monkeypatch.setattr(file_module, "_get_ini_file", lambda: ini_file)
 
-    file_module.write_config({"refresh_token": "token"}, "default")
+    file_module.write_file({"refresh_token": "token"}, "default")
     file_module.set_current_profile("other")
 
     config = file_module.load_file()
@@ -68,6 +68,15 @@ def test_write_config_and_set_current_profile_write_securely(tmp_path, monkeypat
     assert config["default"]["refresh_token"] == "token"
     if os.name != "nt":
         assert stat.S_IMODE(ini_file.stat().st_mode) == 0o600
+
+
+def test_load_file_wraps_invalid_config_as_client_error(tmp_path, monkeypatch) -> None:
+    ini_file = tmp_path / ".dhcore.ini"
+    ini_file.write_text("invalid config line\n")
+    monkeypatch.setattr(file_module, "_get_ini_file", lambda: ini_file)
+
+    with pytest.raises(ClientError, match="Failed to parse .dhcore.ini file"):
+        file_module.load_file()
 
 
 def test_write_file_preserves_existing_file_when_replace_fails(tmp_path, monkeypatch) -> None:

@@ -13,8 +13,9 @@ from digitalhub.factory.entity import entity_factory
 from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
 from digitalhub.stores.client.compiler.targets import ContextEntityTarget
+from digitalhub.stores.data.api import get_store
 from digitalhub.utils.enums import FileExtensions
-from digitalhub.utils.exceptions import BuilderError, EntityError, EntityErrorFileNotFound, StoreError
+from digitalhub.utils.exceptions import BuilderError, EntityError, EntityErrorFileNotFound
 
 if typing.TYPE_CHECKING:
     from digitalhub.context.context import Context
@@ -30,10 +31,14 @@ class ContextEntityMaterialProcessor:
 
     def log_material_entity(self, **kwargs) -> MaterialProtocol:
         source: SourcesOrListOfSources = kwargs.pop("source")
-        keep_dir_structure = kwargs.get("keep_dir_structure", False)
+        keep_dir_structure = kwargs.pop("keep_dir_structure", False)
         return self._log_entity_with_upload(
             **kwargs,
-            upload_fn=lambda obj: obj.upload(source, keep_dir_structure=keep_dir_structure),
+            upload_fn=lambda obj: self._upload_material_files(
+                obj,
+                source,
+                keep_dir_structure,
+            ),
         )
 
     def log_dataitem_table(self, **kwargs) -> DataitemTable:
@@ -45,6 +50,21 @@ class ContextEntityMaterialProcessor:
 
     def log_dataitem_sql(self, **kwargs) -> DataitemTable:
         return self._create_material_entity(**kwargs)
+
+    def upload_material(
+        self,
+        obj: MaterialProtocol,
+        source: SourcesOrListOfSources,
+        keep_dir_structure: bool = False,
+    ) -> MaterialProtocol:
+        return self._upload_material_entity(
+            obj,
+            lambda entity: self._upload_material_files(
+                entity,
+                source,
+                keep_dir_structure,
+            ),
+        )
 
     def read_files_info(
         self,
@@ -82,7 +102,7 @@ class ContextEntityMaterialProcessor:
 
     def _log_entity_with_upload(
         self,
-        upload_fn: typing.Callable[[MaterialProtocol], None],
+        upload_fn: typing.Callable[[MaterialProtocol], object],
         **kwargs,
     ) -> MaterialProtocol:
         new_obj: MaterialProtocol = self._create_material_entity(**kwargs)
@@ -148,49 +168,58 @@ class ContextEntityMaterialProcessor:
     def _upload_material_entity(
         self,
         obj: MaterialProtocol,
-        upload_fn: Callable,
+        upload_fn: Callable[[MaterialProtocol], object],
     ) -> MaterialProtocol:
-        # Update status to UPLOADING before upload
-        obj.status.state = State.UPLOADING.value
-        obj = self._update_material_entity(obj)
-
-        # Handle file upload
-        error: Exception | None = None
         try:
+            obj.status.state = State.UPLOADING.value
+            obj = self._update_material_entity(obj)
             upload_fn(obj)
-            uploaded = True
-            msg = None
-        except FileNotFoundError as e:
-            uploaded = False
-            msg = f"Upload failed: {e}. Please verify that the specified source files are correct and exist."
-            exception = EntityErrorFileNotFound
-            error = e
-        except (StoreError, OSError, ValueError, NotImplementedError) as e:
-            uploaded = False
-            msg = f"Upload failed: {e}"
-            exception = EntityError
-            error = e
-
-        obj.status.message = msg
-
-        # Update status after upload
-        if uploaded:
+            obj.status.message = None
             obj.status.state = State.READY.value
-            obj = self._update_material_entity(obj)
-        else:
-            obj.status.state = State.ERROR.value
-            obj = self._update_material_entity(obj)
-            raise exception(msg) from error
+            return self._update_material_entity(obj)
+        except Exception as error:
+            if isinstance(error, (FileNotFoundError, EntityErrorFileNotFound)):
+                msg = f"Upload failed: {error}. Please verify that the specified source files are correct and exist."
+                error_type = EntityErrorFileNotFound
+            else:
+                msg = f"Upload failed: {error}"
+                error_type = EntityError
 
-        return obj
+            obj.status.message = msg
+            obj.status.state = State.ERROR.value
+            try:
+                self._update_material_entity(obj)
+            except Exception as status_error:
+                msg = f"{msg}; failed to persist ERROR status: {status_error}"
+                obj.status.message = msg
+                raise error_type(msg) from status_error
+
+            raise error_type(msg) from error
+
+    def _upload_material_files(
+        self,
+        obj: MaterialProtocol,
+        source: SourcesOrListOfSources,
+        keep_dir_structure: bool,
+    ) -> None:
+        store = get_store(obj.spec.path)
+        paths = store.upload(
+            source,
+            obj.spec.path,
+            keep_dir_structure=keep_dir_structure,
+        )
+        files_info = store.get_file_info(obj.spec.path, paths)
+        obj._update_files_info(files_info)
 
     def _update_material_entity(
         self,
         new_obj: MaterialProtocol,
     ) -> MaterialProtocol:
-        return self.crud_processor.update_context_entity(
+        updated_obj = self.crud_processor.update_context_entity(
             new_obj.project,
             new_obj.ENTITY_TYPE,
             new_obj.id,
             new_obj.to_dict(),
         )
+        new_obj._update_attributes(updated_obj)
+        return new_obj

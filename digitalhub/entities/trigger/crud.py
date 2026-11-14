@@ -77,19 +77,18 @@ def new_trigger(
         executable = workflow
 
     # Prepare kwargs
-    if kwargs is None:
-        kwargs = {}
     kwargs["task"] = task
     kwargs[executable_type] = executable
 
     # Template handling
-    if template is None:
-        template = {}
-    if not isinstance(template, dict):
+    if template is not None and not isinstance(template, dict):
         raise TypeError("Template must be a dictionary")
-    template["task"] = task
-    template[executable_type] = executable
-    template["local_execution"] = False
+    template = {
+        **(template or {}),
+        "task": task,
+        executable_type: executable,
+        "local_execution": False,
+    }
     kwargs["template"] = template
 
     return crud_processor.create_context_entity(
