@@ -8,13 +8,13 @@ from collections.abc import Sequence
 from datetime import date, datetime, time
 from decimal import Decimal
 from pathlib import Path
+from threading import RLock
 from typing import Any
 
 import pyarrow as pa
 import pyarrow.parquet as pq
 from sqlalchemy import MetaData, Table, create_engine, inspect, select
 from sqlalchemy.engine import Engine
-from sqlalchemy.exc import SQLAlchemyError
 
 from digitalhub.stores.data._base.store import Store
 from digitalhub.stores.data.sql.configurator import SqlStoreConfigurator
@@ -29,6 +29,7 @@ from digitalhub.utils.uri_utils import SqlSchemes
 logger = get_logger(__name__)
 
 ENGINE_CONNECTION_TIMEOUT = 30
+MAX_SQL_CONNECTION_RETRIES = 3
 _BATCH_SIZE = 10_000
 
 
@@ -84,6 +85,8 @@ class SqlStore(Store):
     def __init__(self) -> None:
         super().__init__()
         self._configurator: SqlStoreConfigurator = SqlStoreConfigurator()
+        self._engines: dict[tuple[str, str | None], Engine] = {}
+        self._engine_lock = RLock()
 
     ##############################
     # I/O methods
@@ -180,28 +183,6 @@ class SqlStore(Store):
     ) -> Dataframe:  # type: ignore
         """
         Read a DataFrame from a SQL table.
-
-        Connects to the SQL database and reads data from the specified
-        table into a DataFrame using the specified engine (pandas, polars, etc.).
-
-        Parameters
-        ----------
-        path : SourcesOrListOfSources
-            The SQL URI path to read from in the format
-            'sql://database/schema/table' or 'postgresql://database/schema/table'.
-            Only single paths are supported.
-        file_format : str
-            File format specification (not used for SQL operations).
-        engine : str
-            DataFrame engine to use (e.g., 'pandas', 'polars').
-            If None, uses the default engine.
-        **kwargs : dict
-            Additional keyword arguments passed to the reader.
-
-        Returns
-        -------
-        Dataframe
-            DataFrame object.
         """
         if isinstance(path, list):
             raise StoreError("SQL store can only read a single DataFrame at a time.")
@@ -212,12 +193,9 @@ class SqlStore(Store):
         table = parsed["table"]
         sql_engine = self._check_factory(schema=schema, database=parsed["database"])
 
-        try:
-            sa_table = Table(table, MetaData(), autoload_with=sql_engine)
-            stm = select(sa_table)
-            return reader.read_table(stm, sql_engine, **kwargs)
-        finally:
-            sql_engine.dispose()
+        sa_table = Table(table, MetaData(), autoload_with=sql_engine)
+        stm = select(sa_table)
+        return reader.read_table(stm, sql_engine, **kwargs)
 
     def write_df(
         self,
@@ -228,29 +206,6 @@ class SqlStore(Store):
     ) -> str:
         """
         Write a DataFrame to a SQL database table.
-
-        Takes a DataFrame and writes it to the specified SQL table.
-        The destination should be in SQL URI format. Additional
-        parameters are passed to the underlying to_sql() method.
-
-        Parameters
-        ----------
-        df : Any
-            The DataFrame object to write to the database.
-        dst : str
-            The destination SQL URI in the format
-            'sql://database/schema/table', 'sql://database/table',
-            'postgresql://database/schema/table', or 'postgresql://database/table'.
-        extension : str
-            File extension parameter (not used for SQL operations).
-        **kwargs : dict
-            Additional keyword arguments passed to the DataFrame's
-            to_sql() method for controlling write behavior.
-
-        Returns
-        -------
-        str
-            The SQL URI path where the DataFrame was written.
         """
         parsed = self._parse_path(dst)
         return self._upload_table(
@@ -268,55 +223,23 @@ class SqlStore(Store):
     def create_vector_table(self, path: str, sql: str) -> tuple[str, str]:
         """
         Create a SQL table with vector extension.
-
-        Parameters
-        ----------
-        path : str
-            The SQL URI path specifying the database and table to create
-            in the format 'sql://database/schema/table', 'sql://database/table',
-            'postgresql://database/schema/table', or 'postgresql://database/table'.
-        sql : str
-            The SQL query string to create the table with vector extension.
-
-        Returns
-        -------
-        tuple[str, str]
-            A tuple containing the schema and table name of the created table.
         """
         parsed = self._parse_path(path)
         schema = parsed["schema"]
         table = parsed["table"]
         engine = self._check_factory(schema=schema, database=parsed["database"])
-        try:
-            with engine.begin() as connection:
-                connection.exec_driver_sql(sql)
-            return schema, table
-        finally:
-            engine.dispose()
+        with engine.begin() as connection:
+            connection.exec_driver_sql(sql)
+        return schema, table
 
     def get_schema_from_table(self, table: str, schema: str | None = None) -> dict:
         """
         Get the schema of a SQL table.
-
-        Parameters
-        ----------
-        table : str
-            The name of the SQL table to retrieve the schema from.
-        schema : str
-            The database schema where the table is located. If None, uses default.
-
-        Returns
-        -------
-        dict
-            A dictionary representing the schema of the SQL table, with column names as keys and data types as values.
         """
         engine = self._check_factory(schema=schema)
-        try:
-            inspector = inspect(engine)
-            columns = inspector.get_columns(table, schema=schema)
-            return get_schema_from_columns(columns)
-        finally:
-            engine.dispose()
+        inspector = inspect(engine)
+        columns = inspector.get_columns(table, schema=schema)
+        return get_schema_from_columns(columns)
 
     ##############################
     # Wrapper methods
@@ -324,32 +247,13 @@ class SqlStore(Store):
 
     def get_engine(self, schema: str | None = None) -> Engine:
         """
-        Get a SQLAlchemy engine connected to the database.
-
-        Returns
-        -------
-        Engine
-            A SQLAlchemy engine instance connected to the database.
+        Get or create a cached SQLAlchemy engine for the database configuration.
         """
         return self._check_factory(schema=schema)
 
     def get_credentials(self, lowercase_keys: bool = True) -> dict:
         """
         Get database credentials as a dictionary.
-
-        Retrieves the database credentials from the configurator and
-        returns them as a dictionary. Keys can be returned in lowercase
-        format if specified.
-
-        Parameters
-        ----------
-        lowercase_keys : bool
-            Whether to return credential keys in lowercase format.
-
-        Returns
-        -------
-        dict
-            Dictionary containing database credential key-value pairs.
         """
         return self._configurator.get_credentials(lowercase_keys=lowercase_keys)
 
@@ -360,100 +264,50 @@ class SqlStore(Store):
     def _download_table(self, schema: str, table: str, dst: str, database: str | None = None) -> str:
         """
         Download a specific table from SQL database to Parquet file.
-
-        Internal method that handles the actual table download process.
-        Connects to the database, retrieves all data from the specified
-        table, and writes it to a Parquet file using PyArrow.
-
-        Parameters
-        ----------
-        schema : str
-            The database schema name containing the table.
-        table : str
-            The name of the table to download.
-        dst : str
-            The local file path where the Parquet file will be saved.
-        database : str | None
-            The expected database from the SQL URI.
-
-        Returns
-        -------
-        str
-            The destination file path of the created Parquet file.
         """
         engine = self._check_factory(schema=schema, database=database)
 
-        try:
-            # Read the table from the database in bounded batches.
-            sa_table = Table(table, MetaData(), autoload_with=engine)
-            stm = select(sa_table)
-            columns = list(sa_table.columns)
-            column_names = [column.name for column in columns]
+        # Read the table from the database in bounded batches.
+        sa_table = Table(table, MetaData(), autoload_with=engine)
+        stm = select(sa_table)
+        columns = list(sa_table.columns)
+        column_names = [column.name for column in columns]
 
-            def to_arrow_table(rows: Sequence[Any]) -> pa.Table:
-                arrays = []
-                for index, column in enumerate(columns):
-                    values = [row[index] for row in rows]
-                    arrow_type = _arrow_type_from_sqlalchemy(column.type)
-                    arrays.append(pa.array(values, type=arrow_type) if arrow_type is not None else pa.array(values))
-                return pa.Table.from_arrays(arrays, names=column_names)
+        def to_arrow_table(rows: Sequence[Any]) -> pa.Table:
+            arrays = []
+            for index, column in enumerate(columns):
+                values = [row[index] for row in rows]
+                arrow_type = _arrow_type_from_sqlalchemy(column.type)
+                arrays.append(pa.array(values, type=arrow_type) if arrow_type is not None else pa.array(values))
+            return pa.Table.from_arrays(arrays, names=column_names)
 
-            with engine.connect() as conn:
-                result = conn.execution_options(stream_results=True).execute(stm)
-                partitions = iter(result.partitions(_BATCH_SIZE))
-                first_partition = next(partitions, None)
-                if first_partition is None:
-                    pq.write_table(pa.Table.from_pydict({name: [] for name in column_names}), dst)
-                    return dst
+        with engine.connect() as conn:
+            result = conn.execution_options(stream_results=True).execute(stm)
+            partitions = iter(result.partitions(_BATCH_SIZE))
+            first_partition = next(partitions, None)
+            if first_partition is None:
+                pq.write_table(pa.Table.from_pydict({name: [] for name in column_names}), dst)
+                return dst
 
-                first_table = to_arrow_table(first_partition)
-                schema = first_table.schema
-                with pq.ParquetWriter(dst, schema) as writer:
-                    writer.write_table(first_table)
-                    for rows in partitions:
-                        arrow_table = to_arrow_table(rows)
-                        if arrow_table.schema != schema:
-                            arrow_table = arrow_table.cast(schema, safe=False)
-                        writer.write_table(arrow_table)
-            return dst
-        finally:
-            engine.dispose()
+            first_table = to_arrow_table(first_partition)
+            schema = first_table.schema
+            with pq.ParquetWriter(dst, schema) as writer:
+                writer.write_table(first_table)
+                for rows in partitions:
+                    arrow_table = to_arrow_table(rows)
+                    if arrow_table.schema != schema:
+                        arrow_table = arrow_table.cast(schema, safe=False)
+                    writer.write_table(arrow_table)
+        return dst
 
     def _upload_table(self, df: Any, schema: str, table: str, database: str | None = None, **kwargs) -> str:
         """
         Upload a DataFrame to a SQL table.
-
-        Internal method that handles writing a DataFrame to a SQL database
-        table. Uses the appropriate reader based on the DataFrame type
-        and manages the database connection.
-
-        Parameters
-        ----------
-        df : Any
-            The DataFrame object to upload to the database.
-        schema : str
-            The target database schema name.
-        table : str
-            The target table name within the schema.
-        database : str | None
-            The expected database from the SQL URI.
-        **kwargs : dict
-            Additional keyword arguments passed to the write operation,
-            such as if_exists, index, method, etc.
-
-        Returns
-        -------
-        str
-            The SQL URI where the DataFrame was saved in the format
-            'sql://database/schema/table'.
         """
         reader = get_reader_by_object(df)
         engine = self._check_factory(schema=schema, database=database)
-        try:
-            reader.write_table(df, table, engine, schema, **kwargs)
-            return f"sql://{engine.url.database}/{schema}/{table}"
-        finally:
-            engine.dispose()
+        reader.write_table(df, table, engine, schema, **kwargs)
+        return f"sql://{engine.url.database}/{schema}/{table}"
 
     ##############################
     # Helper methods
@@ -461,83 +315,54 @@ class SqlStore(Store):
 
     def _get_engine(self, connection_string: str, schema: str | None = None) -> Engine:
         """
-        Create a SQLAlchemy engine from the connection string.
-
-        Establishes a database engine using the configured connection
-        string with appropriate connection parameters and schema settings.
-
-        Parameters
-        ----------
-        connection_string : str
-            The database connection string.
-        schema : str
-            The database schema to set in the search path.
-            If provided, sets the PostgreSQL search_path option.
-
-        Returns
-        -------
-        Engine
-            A configured SQLAlchemy engine instance.
+        Get or create a cached SQLAlchemy engine from the connection string.
         """
         connect_args = {"timeout": ENGINE_CONNECTION_TIMEOUT}
         if schema is not None:
             connect_args["startup_params"] = {"search_path": schema}
-        return create_engine(connection_string, connect_args=connect_args)
+        key = (connection_string, schema)
+        with self._engine_lock:
+            engine = self._engines.get(key)
+            if engine is None:
+                engine = create_engine(
+                    connection_string,
+                    connect_args=connect_args,
+                    pool_pre_ping=True,
+                )
+                self._engines[key] = engine
+            return engine
+
+    def close(self) -> None:
+        """Dispose all cached SQL engines and clear the engine cache."""
+        with self._engine_lock:
+            engines = list(self._engines.values())
+            self._engines.clear()
+        for engine in engines:
+            engine.dispose()
 
     def _check_factory(self, schema: str | None = None, database: str | None = None) -> Engine:
         """
-        Validate database accessibility and return a working engine.
-
-        Parameters
-        ----------
-        schema : str
-            The database schema to configure in the engine.
-        database : str | None
-            Expected database name from the SQL URI.
-
-        Returns
-        -------
-        Engine
-            A validated SQLAlchemy engine with confirmed database access.
+        Return a cached engine and validate the database requested by the SQL URI.
         """
-        connection_string = self._configurator.get_sql_conn_string()
-        engine = self._get_engine(connection_string, schema)
-        if database is not None and engine.url.database != database:
-            configured_database = engine.url.database
-            engine.dispose()
-            raise StoreError(
-                f"SQL URI database '{database}' does not match configured database '{configured_database}'."
-            )
-        try:
-            self._check_access_to_storage(engine)
-            return engine
-        except ConfigError:
-            if self._configurator.eval_retry():
-                logger.debug("SQL connection failed, retrying with new credentials.")
-                return self._check_factory(schema=schema, database=database)
-            raise
+        for attempt in range(MAX_SQL_CONNECTION_RETRIES):
+            try:
+                connection_string = self._configurator.get_sql_conn_string()
+                engine = self._get_engine(connection_string, schema)
+                if database is not None and engine.url.database != database:
+                    configured_database = engine.url.database
+                    raise StoreError(
+                        f"SQL URI database '{database}' does not match configured database '{configured_database}'."
+                    )
+                return engine
+            except ConfigError:
+                if attempt + 1 == MAX_SQL_CONNECTION_RETRIES or not self._configurator.eval_retry():
+                    raise
+                logger.debug("SQL connection setup failed, retrying with refreshed credentials.")
 
     @staticmethod
     def _parse_path(path: str) -> dict:
         """
         Parse a SQL URI path into its component parts.
-
-        Breaks down a SQL URI into database, schema, and table components.
-        Supports both full three-part paths and simplified two-part paths
-        (using 'public' as default schema) with any registered SQL scheme.
-
-        Parameters
-        ----------
-        path : str
-            The SQL URI path to parse in the format
-            'sql://database/schema/table', 'sql://database/table',
-            'postgresql://database/schema/table', or 'postgresql://database/table'.
-
-        Returns
-        -------
-        dict
-            Dictionary containing parsed components with keys:
-            'database', 'schema', and 'table'.
         """
         # Parse path
         err_msg = (
@@ -557,58 +382,11 @@ class SqlStore(Store):
     def _get_schema(self, uri: str) -> str:
         """
         Extract the schema name from a SQL URI.
-
-        Parses the SQL URI and returns the schema component.
-        Uses 'public' as the default schema if not specified in the URI.
-
-        Parameters
-        ----------
-        uri : str
-            The SQL URI to extract the schema from.
-
-        Returns
-        -------
-        str
-            The schema name extracted from the URI.
         """
         return str(self._parse_path(uri).get("schema"))
 
     def _get_table_name(self, uri: str) -> str:
         """
         Extract the table name from a SQL URI.
-
-        Parses the SQL URI and returns the table component,
-        which is always the last part of the URI path.
-
-        Parameters
-        ----------
-        uri : str
-            The SQL URI to extract the table name from.
-
-        Returns
-        -------
-        str
-            The table name extracted from the URI.
         """
         return str(self._parse_path(uri).get("table"))
-
-    @staticmethod
-    def _check_access_to_storage(engine: Engine) -> None:
-        """
-        Verify database connectivity using the provided engine.
-
-        Tests the database connection by attempting to connect.
-        Properly disposes of the engine if connection fails.
-
-        Parameters
-        ----------
-        engine : Engine
-            The SQLAlchemy engine to test for connectivity.
-        """
-        try:
-            with engine.connect():
-                pass
-        except SQLAlchemyError as e:
-            logger.debug(f"Database connection failed ({engine.url}), disposing engine.", exc_info=True)
-            engine.dispose()
-            raise ConfigError(f"No access to database {engine.url}!") from e

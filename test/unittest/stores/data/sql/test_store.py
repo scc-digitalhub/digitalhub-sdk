@@ -2,7 +2,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from unittest.mock import MagicMock, Mock
+from threading import RLock
+from unittest.mock import MagicMock, Mock, call
 
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -11,18 +12,64 @@ from sqlalchemy import create_engine, text
 
 from digitalhub.stores.data._base import store as base_store_module
 from digitalhub.stores.data.sql import store as store_module
-from digitalhub.stores.data.sql.store import SqlStore
-from digitalhub.utils.exceptions import StoreError
+from digitalhub.stores.data.sql.store import MAX_SQL_CONNECTION_RETRIES, SqlStore
+from digitalhub.utils.exceptions import ConfigError, StoreError
 
 
-def test_check_access_to_storage_closes_probe_connection() -> None:
-    engine = Mock()
-    connection = MagicMock()
-    engine.connect.return_value = connection
+def test_get_engine_reuses_connections_by_url_and_schema(monkeypatch) -> None:
+    store = object.__new__(SqlStore)
+    store._engines = {}
+    store._engine_lock = RLock()
+    first_engine = Mock()
+    second_engine = Mock()
+    third_engine = Mock()
+    create_engine = Mock(side_effect=[first_engine, second_engine, third_engine])
+    monkeypatch.setattr(store_module, "create_engine", create_engine)
 
-    SqlStore._check_access_to_storage(engine)
+    assert store._get_engine("connection-one", "schema-one") is first_engine
+    assert store._get_engine("connection-one", "schema-one") is first_engine
+    assert store._get_engine("connection-one", "schema-two") is second_engine
+    assert store._get_engine("connection-two", "schema-one") is third_engine
 
-    connection.__exit__.assert_called_once()
+    assert create_engine.call_args_list == [
+        call(
+            "connection-one",
+            connect_args={
+                "timeout": store_module.ENGINE_CONNECTION_TIMEOUT,
+                "startup_params": {"search_path": "schema-one"},
+            },
+            pool_pre_ping=True,
+        ),
+        call(
+            "connection-one",
+            connect_args={
+                "timeout": store_module.ENGINE_CONNECTION_TIMEOUT,
+                "startup_params": {"search_path": "schema-two"},
+            },
+            pool_pre_ping=True,
+        ),
+        call(
+            "connection-two",
+            connect_args={
+                "timeout": store_module.ENGINE_CONNECTION_TIMEOUT,
+                "startup_params": {"search_path": "schema-one"},
+            },
+            pool_pre_ping=True,
+        ),
+    ]
+
+
+def test_close_disposes_and_clears_cached_engines() -> None:
+    store = object.__new__(SqlStore)
+    store._engines = {("connection", None): Mock(), ("connection", "schema"): Mock()}
+    store._engine_lock = RLock()
+    engines = list(store._engines.values())
+
+    store.close()
+
+    assert store._engines == {}
+    for engine in engines:
+        engine.dispose.assert_called_once_with()
 
 
 def test_build_temp_accepts_optional_prefix(monkeypatch, tmp_path) -> None:
@@ -70,13 +117,12 @@ def test_check_factory_rejects_uri_database_mismatch() -> None:
     engine = Mock()
     engine.url.database = "configured"
     store._get_engine = Mock(return_value=engine)
-    store._check_access_to_storage = Mock()
 
     with pytest.raises(StoreError, match="requested.*configured"):
         store._check_factory(database="requested")
 
-    engine.dispose.assert_called_once_with()
-    store._check_access_to_storage.assert_not_called()
+    engine.dispose.assert_not_called()
+    engine.connect.assert_not_called()
 
 
 def test_check_factory_accepts_matching_uri_database() -> None:
@@ -86,11 +132,25 @@ def test_check_factory_accepts_matching_uri_database() -> None:
     engine = Mock()
     engine.url.database = "configured"
     store._get_engine = Mock(return_value=engine)
-    store._check_access_to_storage = Mock()
 
     assert store._check_factory(database="configured") is engine
 
-    store._check_access_to_storage.assert_called_once_with(engine)
+    engine.connect.assert_not_called()
+
+
+def test_check_factory_retries_configuration_errors_with_a_bounded_loop() -> None:
+    store = object.__new__(SqlStore)
+    store._configurator = Mock()
+    store._configurator.get_sql_conn_string.side_effect = ConfigError("credentials unavailable")
+    store._configurator.eval_retry.return_value = True
+    store._get_engine = Mock()
+
+    with pytest.raises(ConfigError, match="credentials unavailable"):
+        store._check_factory()
+
+    assert store._configurator.get_sql_conn_string.call_count == MAX_SQL_CONNECTION_RETRIES
+    assert store._configurator.eval_retry.call_count == MAX_SQL_CONNECTION_RETRIES - 1
+    store._get_engine.assert_not_called()
 
 
 def test_write_df_passes_uri_database_to_upload_table() -> None:
@@ -118,7 +178,7 @@ def test_upload_table_passes_schema_to_factory(monkeypatch) -> None:
 
     store._check_factory.assert_called_once_with(schema="analytics", database="database")
     reader.write_table.assert_called_once_with(dataframe, "items", engine, "analytics")
-    engine.dispose.assert_called_once_with()
+    engine.dispose.assert_not_called()
 
 
 def test_create_vector_table_passes_uri_database_to_factory() -> None:
@@ -129,10 +189,10 @@ def test_create_vector_table_passes_uri_database_to_factory() -> None:
     assert store.create_vector_table("postgresql://database/schema/items", "CREATE TABLE items") == ("schema", "items")
 
     store._check_factory.assert_called_once_with(schema="schema", database="database")
-    engine.dispose.assert_called_once_with()
+    engine.dispose.assert_not_called()
 
 
-def test_read_df_disposes_engine_when_reader_fails(monkeypatch) -> None:
+def test_read_df_keeps_cached_engine_when_reader_fails(monkeypatch) -> None:
     store = object.__new__(SqlStore)
     engine = Mock()
     reader = Mock()
@@ -148,7 +208,7 @@ def test_read_df_disposes_engine_when_reader_fails(monkeypatch) -> None:
         store.read_df("sql://database/items")
 
     store._check_factory.assert_called_once_with(schema="public", database="database")
-    engine.dispose.assert_called_once_with()
+    engine.dispose.assert_not_called()
 
 
 def test_download_table_streams_batches_and_handles_null_first_batch(tmp_path) -> None:

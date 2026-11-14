@@ -112,7 +112,12 @@ class Run(ContextEntity, UnversionedMixin, MetricsMixin):
         self.update()
         return self
 
-    def wait(self, log_info: bool = True) -> Run:
+    def wait(
+        self,
+        log_info: bool = True,
+        timeout: float | None = None,
+        poll_interval: float = 5.0,
+    ) -> Run:
         """
         Wait for run to finish.
 
@@ -120,27 +125,42 @@ class Run(ContextEntity, UnversionedMixin, MetricsMixin):
         ----------
         log_info : bool
             If True, log information.
+        timeout : float | None
+            Maximum time to wait in seconds. If None, wait indefinitely.
+        poll_interval : float
+            Time to wait between status checks in seconds.
 
         Returns
         -------
         Run
             Run object.
         """
-        start = time.time()
+        if timeout is not None and timeout < 0:
+            raise ValueError("timeout must be non-negative.")
+        if poll_interval <= 0:
+            raise ValueError("poll_interval must be positive.")
+
+        start = time.monotonic()
         while True:
             if log_info:
                 logger.info(f"Waiting for run {self.id} to finish...")
             self.refresh()
-            time.sleep(5)
+            elapsed = time.monotonic() - start
             if self.status.state in [
                 State.STOPPED.value,
                 State.ERROR.value,
                 State.COMPLETED.value,
             ]:
                 if log_info:
-                    current = time.time() - start
-                    logger.info(f"Run {self.id} finished in {current:.2f} seconds.")
+                    logger.info(f"Run {self.id} finished in {elapsed:.2f} seconds.")
                 return self
+            if timeout is not None:
+                remaining = timeout - elapsed
+                if remaining <= 0:
+                    raise TimeoutError(f"Run {self.id} did not finish within {timeout}s")
+                time.sleep(min(poll_interval, remaining))
+            else:
+                time.sleep(poll_interval)
 
     def logs(self, as_entity: bool = False) -> list[Log] | list[str]:
         """

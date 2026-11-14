@@ -3,13 +3,86 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from types import SimpleNamespace
-from unittest.mock import Mock
+from unittest.mock import Mock, call
 
 import pytest
 
+import digitalhub.entities.run._base.entity as run_entity_module
 from digitalhub.entities._commons.enums import State
 from digitalhub.entities.run._base.entity import Run
 from digitalhub.utils.exceptions import EntityError
+
+
+def test_wait_returns_without_sleep_when_refresh_reports_terminal_state(monkeypatch) -> None:
+    run = object.__new__(Run)
+    run.id = "run-id"
+    run.status = SimpleNamespace(state=State.RUNNING.value)
+    run.refresh = Mock(side_effect=lambda: setattr(run.status, "state", State.COMPLETED.value))
+    sleep = Mock()
+    clock_values = iter([10.0, 10.25])
+    monkeypatch.setattr(
+        run_entity_module,
+        "time",
+        SimpleNamespace(monotonic=lambda: next(clock_values), sleep=sleep),
+    )
+
+    assert run.wait(log_info=False) is run
+
+    run.refresh.assert_called_once_with()
+    sleep.assert_not_called()
+
+
+def test_wait_sleeps_only_between_polls_and_times_out(monkeypatch) -> None:
+    run = object.__new__(Run)
+    run.id = "run-id"
+    run.status = SimpleNamespace(state=State.RUNNING.value)
+    run.refresh = Mock(return_value=run)
+    sleep = Mock()
+    clock_values = iter([0.0, 0.0, 1.0, 2.0])
+    monkeypatch.setattr(
+        run_entity_module,
+        "time",
+        SimpleNamespace(monotonic=lambda: next(clock_values), sleep=sleep),
+    )
+
+    with pytest.raises(TimeoutError, match="Run run-id did not finish within 2s"):
+        run.wait(log_info=False, timeout=2, poll_interval=1)
+
+    assert run.refresh.call_count == 3
+    assert sleep.call_args_list == [call(1), call(1)]
+
+
+def test_wait_limits_sleep_to_remaining_timeout(monkeypatch) -> None:
+    run = object.__new__(Run)
+    run.id = "run-id"
+    run.status = SimpleNamespace(state=State.RUNNING.value)
+    run.refresh = Mock(return_value=run)
+    sleep = Mock()
+    clock_values = iter([0.0, 0.0, 1.0, 1.5])
+    monkeypatch.setattr(
+        run_entity_module,
+        "time",
+        SimpleNamespace(monotonic=lambda: next(clock_values), sleep=sleep),
+    )
+
+    with pytest.raises(TimeoutError):
+        run.wait(log_info=False, timeout=1.5, poll_interval=1)
+
+    assert sleep.call_args_list == [call(1), call(0.5)]
+
+
+@pytest.mark.parametrize(
+    ("timeout", "poll_interval"),
+    [(-1, 1), (None, 0)],
+)
+def test_wait_rejects_invalid_timing_values(timeout, poll_interval) -> None:
+    run = object.__new__(Run)
+    run.refresh = Mock()
+
+    with pytest.raises(ValueError):
+        run.wait(timeout=timeout, poll_interval=poll_interval)
+
+    run.refresh.assert_not_called()
 
 
 def test_run_ends_execution_when_setup_fails() -> None:
