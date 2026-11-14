@@ -152,7 +152,7 @@ class Store:
         dir_path.mkdir(parents=True, exist_ok=True)
 
     @staticmethod
-    def _build_temp() -> Path:
+    def _build_temp(prefix: str | None = None) -> Path:
         """
         Build a temporary path.
 
@@ -161,7 +161,7 @@ class Store:
         Path
             Temporary path.
         """
-        tmpdir = mkdtemp()
+        tmpdir = mkdtemp(prefix=prefix)
         return Path(tmpdir)
 
     @staticmethod
