@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.utils.exceptions import BuilderError
+from digitalhub.utils.exceptions import BuilderError, ReaderError
 
 if typing.TYPE_CHECKING:
     from digitalhub.stores.readers.data._base.builder import ReaderBuilder
@@ -20,8 +20,8 @@ class ReaderFactory:
     """
 
     def __init__(self) -> None:
-        self._builders: dict[str, ReaderBuilder] = None
-        self._default: str = None
+        self._builders: dict[str, ReaderBuilder] = {}
+        self._default: str | None = None
 
     def add_builder(
         self,
@@ -38,11 +38,11 @@ class ReaderFactory:
         builder : ReaderBuilder
             Builder instance.
         """
-        if self._builders is None:
-            self._builders = {}
         if engine in self._builders:
             raise BuilderError(f"Builder for engine '{engine}' already exists.")
         self._builders[engine] = builder
+        if self._default is None:
+            self._default = engine
 
     def build(
         self,
@@ -69,6 +69,7 @@ class ReaderFactory:
         """
         if (engine is None) == (dataframe is None):
             raise BuilderError("Either engine or dataframe must be provided.")
+        self._check_builders()
         if engine is not None:
             return self._builders[engine].build(**kwargs)
         for builder in self._builders.values():
@@ -120,9 +121,16 @@ class ReaderFactory:
         str
             Default engine.
         """
+        self._check_builders()
         if self._default is None:
             raise BuilderError("No default engine set.")
         return self._default
+
+    def _check_builders(self) -> None:
+        if not self._builders:
+            raise ReaderError(
+                "No dataframe readers are installed. Install 'digitalhub[pandas]' or 'digitalhub[polars]'."
+            )
 
 
 factory = ReaderFactory()

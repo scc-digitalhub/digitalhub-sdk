@@ -31,7 +31,7 @@ class DataitemTable(Dataitem):
     def as_df(
         self,
         file_format: str | None = None,
-        engine: str | None = "pandas",
+        engine: str | None = None,
         **kwargs,
     ) -> Any:
         """
@@ -45,8 +45,8 @@ class DataitemTable(Dataitem):
         file_format : str
             Format of the file to read. By default, it will be inferred from
             the extension of the file.
-        engine : str
-            Dataframe framework, by default pandas.
+        engine : str | None
+            Dataframe framework. If omitted, the default available reader is used.
         **kwargs : dict
             Keyword arguments passed to the read_df function.
 

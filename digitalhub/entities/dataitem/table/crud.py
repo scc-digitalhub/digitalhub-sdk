@@ -57,7 +57,7 @@ def log_table(
     labels: list[str] | None = None,
     file_format: str | None = None,
     read_df_params: dict | None = None,
-    engine: str | None = "pandas",
+    engine: str | None = None,
     version: str | None = None,
     schema: dict | None = None,
     **kwargs,
@@ -89,8 +89,9 @@ def log_table(
         Extension of the file source (parquet, csv, json, xlsx, txt).
     read_df_params : dict, optional
         Parameters to pass to the dataframe reader.
-    engine : str, default="pandas"
-        Dataframe engine (pandas, polars, etc.).
+    engine : str | None, default=None
+        Dataframe engine (pandas, polars, etc.). If omitted, the default
+        available reader is used.
     version : str, optional
         Entity version.
     schema : dict, optional
