@@ -7,6 +7,7 @@ from __future__ import annotations
 import base64
 import importlib.util as imputil
 import json
+import stat
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from datetime import date, datetime, time
@@ -86,7 +87,11 @@ def encode_source(path: str) -> str:
     return encode_string(read_text(path))
 
 
-def requests_chunk_download(source: str, filename: Path) -> None:
+def requests_chunk_download(
+    source: str,
+    filename: Path,
+    timeout: float | tuple[float, float] = (10, 60),
+) -> None:
     """
     Download a file from a URL in chunks and save to disk.
 
@@ -96,10 +101,13 @@ def requests_chunk_download(source: str, filename: Path) -> None:
         URL to download the file from.
     filename : Path
         Path where to save the downloaded file.
+    timeout : float | tuple[float, float]
+        Request timeout. Defaults to a 10-second connection timeout and a
+        60-second read timeout.
     """
     import requests
 
-    with requests.get(source, stream=True) as r:
+    with requests.get(source, stream=True, timeout=timeout) as r:
         r.raise_for_status()
         with filename.open("wb") as f:
             for chunk in r.iter_content(chunk_size=8192):
@@ -117,8 +125,18 @@ def extract_archive(path: Path, filename: Path) -> None:
     filename : Path
         Path to the zip archive file.
     """
+    base_dir = path.resolve()
     with ZipFile(filename, "r") as zip_file:
-        zip_file.extractall(path)
+        members = zip_file.infolist()
+        for member in members:
+            if stat.S_ISLNK(member.external_attr >> 16):
+                raise ValueError(f"Unsafe symbolic link in archive: {member.filename}")
+
+            target = (base_dir / member.filename).resolve()
+            if not target.is_relative_to(base_dir):
+                raise ValueError(f"Unsafe path in archive: {member.filename}")
+
+        zip_file.extractall(base_dir, members=members)
 
 
 @contextmanager

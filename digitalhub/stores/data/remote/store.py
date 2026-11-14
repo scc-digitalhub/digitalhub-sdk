@@ -9,6 +9,7 @@ from typing import Any
 
 import requests
 
+from digitalhub.stores.client.common.config import get_client_config
 from digitalhub.stores.data._base.store import Store
 from digitalhub.utils.exceptions import StoreError
 from digitalhub.utils.types import Dataframe, SourcesOrListOfSources
@@ -32,20 +33,6 @@ class RemoteStore(Store):
     ) -> str:
         """
         Download artifacts from storage.
-
-        Parameters
-        ----------
-        src : str
-            Path of the material entity.
-        dst : str
-            The destination of the material entity on local filesystem.
-        overwrite : bool
-            Specify if overwrite existing file(s).
-
-        Returns
-        -------
-        str
-            Destination path of the downloaded files.
         """
         # Handle destination
         if dst is None:
@@ -79,16 +66,6 @@ class RemoteStore(Store):
     ) -> list[dict]:
         """
         Get file information from HTTP(s) storage.
-
-        Parameters
-        ----------
-        paths : list[str]
-            List of source paths.
-
-        Returns
-        -------
-        list[dict]
-            Returns files metadata.
         """
         return []
 
@@ -105,22 +82,6 @@ class RemoteStore(Store):
     ) -> Dataframe:  # type: ignore
         """
         Read DataFrame from path.
-
-        Parameters
-        ----------
-        path : SourcesOrListOfSources
-            Path(s) to read DataFrame from.
-        file_format : str
-            Extension of the file.
-        engine : str
-            Dataframe engine (pandas, polars, etc.).
-        **kwargs : dict
-            Keyword arguments.
-
-        Returns
-        -------
-        Dataframe
-            DataFrame.
         """
         reader = self._get_reader(engine)
         extension = self._head_extension(path, file_format)
@@ -141,34 +102,20 @@ class RemoteStore(Store):
     def _check_head(src) -> None:
         """
         Check if the source exists.
-
-        Parameters
-        ----------
-        src : str
-            The source location.
         """
-        r = requests.head(src, timeout=60)
+        r = requests.head(src, timeout=get_client_config().http_timeout)
         r.raise_for_status()
 
     def _download_file(self, url: str, dst: Path, overwrite: bool) -> str:
         """
         Method to download a file from a given url.
-
-        Parameters
-        ----------
-        url : str
-            The url of the file to download.
-        dst : Path
-            The destination of the file.
-        overwrite : bool
-            Whether to overwrite existing files.
-
-        Returns
-        -------
-        str
-            The path of the downloaded file.
         """
-        with requests.get(url, stream=True, timeout=60, allow_redirects=True) as r:
+        with requests.get(
+            url,
+            stream=True,
+            timeout=get_client_config().http_timeout,
+            allow_redirects=True,
+        ) as r:
             r.raise_for_status()
             with open(dst, "wb") as f:
                 f.writelines(r.iter_content(chunk_size=8192))
@@ -177,23 +124,11 @@ class RemoteStore(Store):
     def _head_extension(self, url: str, file_format: str | None = None) -> str:
         """
         Method to get the extension of a file from a given url.
-
-        Parameters
-        ----------
-        url : str
-            The url of the file to get the extension.
-        file_format : str
-            The file format to check.
-
-        Returns
-        -------
-        str
-            File extension.
         """
         if file_format is not None:
             return file_format
 
-        r = requests.head(url, timeout=60)
+        r = requests.head(url, timeout=get_client_config().http_timeout)
         r.raise_for_status()
         content_type = r.headers["content-type"]
         if "text" in content_type:

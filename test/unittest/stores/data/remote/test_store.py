@@ -1,3 +1,4 @@
+from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock
 
 import digitalhub.stores.data.remote.store as remote_store_module
@@ -13,6 +14,11 @@ def test_download_file_skips_head_and_streams_response(monkeypatch, tmp_path) ->
     head = Mock()
     monkeypatch.setattr(remote_store_module.requests, "get", get)
     monkeypatch.setattr(remote_store_module.requests, "head", head)
+    monkeypatch.setattr(
+        remote_store_module,
+        "get_client_config",
+        lambda: SimpleNamespace(http_timeout=35),
+    )
     destination = tmp_path / "download.bin"
 
     assert store._download_file("https://example.com/download.bin", destination, overwrite=False) == str(destination)
@@ -21,7 +27,7 @@ def test_download_file_skips_head_and_streams_response(monkeypatch, tmp_path) ->
     get.assert_called_once_with(
         "https://example.com/download.bin",
         stream=True,
-        timeout=60,
+        timeout=35,
         allow_redirects=True,
     )
     head.assert_not_called()
