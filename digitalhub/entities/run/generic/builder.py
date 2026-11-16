@@ -30,7 +30,6 @@ class RunGenericBuilder(GenericBuilder, UnversionedBuilder):
         extensions: list[dict] | None = None,
         labels: list[str] | None = None,
         task: str | None = None,
-        local_execution: bool = False,
         **kwargs,
     ) -> RunGeneric:
         """
@@ -50,8 +49,6 @@ class RunGenericBuilder(GenericBuilder, UnversionedBuilder):
             List of labels.
         task : str
             Name of the task associated with the run.
-        local_execution : bool
-            Flag to determine if object has local execution.
         **kwargs : dict
             Spec keyword arguments.
 
@@ -68,11 +65,7 @@ class RunGenericBuilder(GenericBuilder, UnversionedBuilder):
         )
         if name is None:
             name = metadata.name
-        spec = self.build_spec(
-            task=task,
-            local_execution=local_execution,
-            **kwargs,
-        )
+        spec = self.build_spec(task=task, **kwargs)
         status = self.build_status()
         return self.build_entity(
             project=project,
@@ -123,7 +116,7 @@ class RunGenericBuilder(GenericBuilder, UnversionedBuilder):
             name = obj.get("metadata", {}).get("name")
         uuid = self.build_uuid(obj.get("id"))
         metadata = self.build_metadata(**obj.get("metadata", {}))
-        spec = self.build_spec(**obj.get("spec", {}))
+        spec = self.build_spec_from_dict(obj.get("spec", {}))
         status = self.build_status(**obj.get("status", {}))
         user = obj.get("user")
         extensions = obj.get("extensions", [])

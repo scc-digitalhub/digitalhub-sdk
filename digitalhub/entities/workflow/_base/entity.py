@@ -78,7 +78,7 @@ class Workflow(ContextEntity, VersionedMixin, ExecutableMixin):
         # Create or update new task
         task: Task = self._get_or_create_task(action)
 
-        run = self._create_run(task, action, extensions=extensions, local_execution=False, **kwargs)
+        run = self._create_run(task, action, extensions=extensions, **kwargs)
 
         if wait:
             return run.wait(log_info=log_info)

@@ -8,6 +8,8 @@ import pytest
 
 from digitalhub.entities._commons.utils import KindAction
 from digitalhub.entities.run._base.builder import RunBuilder
+from digitalhub.entities.run._base.entity import LocalExecutionRunMixin
+from digitalhub.entities.run._base.spec import LocalExecutionSpecMixin, RunSpec
 from digitalhub.entities.run.generic.builder import RunGenericBuilder
 from digitalhub.utils.exceptions import EntityError
 
@@ -23,6 +25,19 @@ class ValidRuntimeBuilder(InvalidRuntimeBuilder):
     EXECUTABLE_KIND = "function-valid"
     TASKS_KINDS: ClassVar[list[KindAction]] = [KindAction("task-valid", "valid")]
     RUN_KINDS: ClassVar[list[KindAction]] = [KindAction("run-valid", "valid")]
+
+
+class LocalExecutionRunSpec(RunSpec, LocalExecutionSpecMixin):
+    pass
+
+
+class LocalExecutionRuntimeBuilder(ValidRuntimeBuilder):
+    ENTITY_SPEC_CLASS = LocalExecutionRunSpec
+
+
+class LocalExecutionRunStub(LocalExecutionRunMixin):
+    def __init__(self, spec: LocalExecutionSpecMixin) -> None:
+        self.spec = spec
 
 
 def test_run_builder_rejects_incomplete_runtime_configuration() -> None:
@@ -56,3 +71,36 @@ def test_run_generic_builder_builds_entity_without_runtime_configuration() -> No
     assert run.spec.task == "task-id"
     assert run.spec.local_execution is True
     assert run.extensions == [{"key": "value"}]
+
+
+def test_run_builder_only_accepts_local_execution_for_capable_specs() -> None:
+    builder = ValidRuntimeBuilder()
+    builder.ENTITY_SPEC_CLASS = RunSpec
+
+    with pytest.raises(TypeError, match="Unexpected spec parameter.*local_execution"):
+        builder.build(
+            project="my-project",
+            kind="run-valid",
+            task="task-valid://my-project/task-id",
+            local_execution=True,
+        )
+
+    local_builder = LocalExecutionRuntimeBuilder()
+    run = local_builder.build(
+        project="my-project",
+        kind="run-valid",
+        task="task-valid://my-project/task-id",
+        local_execution=True,
+    )
+
+    assert run.spec.local_execution is True
+
+
+@pytest.mark.parametrize(
+    ("local_execution", "expected"),
+    [(False, False), (True, True)],
+)
+def test_local_execution_run_mixin_reads_typed_spec(local_execution: bool, expected: bool) -> None:
+    spec = LocalExecutionRunSpec(task="task://my-project/task-id", local_execution=local_execution)
+
+    assert LocalExecutionRunStub(spec).local_execution() is expected

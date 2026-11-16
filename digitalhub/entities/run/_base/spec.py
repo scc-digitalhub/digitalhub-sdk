@@ -16,3 +16,10 @@ class RunSpec(Spec, K8s):
 
     task: str
     """The task string associated with the run."""
+
+
+class LocalExecutionSpecMixin(Spec):
+    """Spec mixin for runs that support local execution."""
+
+    local_execution: bool = False
+    """Whether to execute the run locally instead of in the cluster."""

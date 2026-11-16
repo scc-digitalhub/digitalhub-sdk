@@ -18,7 +18,17 @@ class TaskSpecFunction(TaskSpec, K8s):
     function: str
 
 
-class TaskSpecWorkflow(TaskSpec, K8s):
-    """TaskSpecWorkflow specifications."""
+class BuildSpecMixin(Spec):
+    """Spec mixin for build action fields."""
+
+    instructions: list[str] | None = None
+
+
+class WorkflowSpecMixin(Spec):
+    """Spec mixin for workflow task and run fields."""
 
     workflow: str
+
+
+class TaskSpecWorkflow(WorkflowSpecMixin, TaskSpec, K8s):
+    """TaskSpecWorkflow specifications."""

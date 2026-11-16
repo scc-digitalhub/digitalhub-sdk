@@ -74,6 +74,10 @@ class EntityBuilder(ABC):
         """
         return build_spec(self.ENTITY_SPEC_CLASS, **kwargs)
 
+    def build_spec_from_dict(self, obj: dict) -> Spec:
+        """Build entity spec from persisted data, preserving forward-compatible fields."""
+        return self.ENTITY_SPEC_CLASS.from_dict(obj)
+
     def build_status(self, **kwargs) -> Status:
         """
         Build entity status object.

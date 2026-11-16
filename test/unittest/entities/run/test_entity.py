@@ -10,6 +10,7 @@ import pytest
 import digitalhub.entities.run._base.entity as run_entity_module
 from digitalhub.entities._commons.enums import State
 from digitalhub.entities.run._base.entity import Run
+from digitalhub.entities.run._base.spec import RunSpec
 from digitalhub.utils.exceptions import EntityError
 
 
@@ -96,6 +97,29 @@ def test_run_ends_execution_when_setup_fails() -> None:
         run.run()
 
     run.end_execution.assert_called_once_with()
+
+
+def test_run_build_preserves_fields_from_runtime_merge() -> None:
+    run = object.__new__(Run)
+    run.spec = RunSpec(task="task://project/task-id")
+    run.status = SimpleNamespace(state=State.READY.value)
+    run._get_executable = Mock(return_value={"spec": {"function": "function-ref"}})
+    run._get_task = Mock(return_value={"spec": {"instructions": ["build"]}})
+    runtime = Mock()
+    runtime.build.return_value = {
+        "task": "task://project/task-id",
+        "function": "function-ref",
+        "future_backend_field": "preserved",
+    }
+    run._get_runtime = Mock(return_value=runtime)
+    run.to_dict = Mock(return_value={"spec": {"task": "task://project/task-id"}})
+    run.update = Mock(return_value=run)
+
+    run.build()
+
+    assert run.spec.future_backend_field == "preserved"
+    assert run.status.state == State.BUILT.value
+    run.update.assert_called_once_with()
 
 
 def test_start_execution_validates_state_before_registering_run() -> None:

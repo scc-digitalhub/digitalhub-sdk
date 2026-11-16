@@ -115,7 +115,7 @@ class ProjectProjectBuilder(EntityBuilder):
         name = self.build_name(obj.get("name"))
         kind = obj.get("kind")
         metadata = self.build_metadata(**obj.get("metadata", {}))
-        spec = self.build_spec(**obj.get("spec", {}))
+        spec = self.build_spec_from_dict(obj.get("spec", {}))
         status = self.build_status(**obj.get("status", {}))
         extensions = obj.get("extensions", [])
         user = obj.get("user")

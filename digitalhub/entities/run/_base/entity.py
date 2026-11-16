@@ -21,11 +21,21 @@ from digitalhub.utils.logger.logger import get_logger
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.metadata.entity import Metadata
     from digitalhub.entities.log._base.entity import Log
-    from digitalhub.entities.run._base.spec import RunSpec
+    from digitalhub.entities.run._base.spec import LocalExecutionSpecMixin, RunSpec
     from digitalhub.entities.run._base.status import RunStatus
     from digitalhub.runtimes._base import Runtime
 
 logger = get_logger(__name__)
+
+
+class LocalExecutionRunMixin:
+    """Entity mixin for runs that support local execution."""
+
+    spec: LocalExecutionSpecMixin
+
+    def local_execution(self) -> bool:
+        """Return whether this run is configured for local execution."""
+        return self.spec.local_execution
 
 
 class Run(ContextEntity, UnversionedMixin, MetricsMixin):
@@ -70,7 +80,7 @@ class Run(ContextEntity, UnversionedMixin, MetricsMixin):
         executable = self._get_executable()
         task = self._get_task()
         new_spec = self._get_runtime().build(executable, task, self.to_dict())
-        self.spec = entity_factory.build_spec(self.kind, **new_spec)
+        self.spec = self.spec.from_dict(new_spec)
         self.status.state = State.BUILT.value
         self.update()
 

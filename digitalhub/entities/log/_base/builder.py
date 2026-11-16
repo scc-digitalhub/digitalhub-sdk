@@ -115,7 +115,7 @@ class LogLogBuilder(EntityBuilder):
         uuid = self.build_uuid(obj.get("id"))
         run = obj.get("run")
         metadata = self.build_metadata(**obj.get("metadata", {}))
-        spec = self.build_spec(**obj.get("spec", {}))
+        spec = self.build_spec_from_dict(obj.get("spec", {}))
         status = self.build_status(**obj.get("status", {}))
         user = obj.get("user")
         extensions = obj.get("extensions")

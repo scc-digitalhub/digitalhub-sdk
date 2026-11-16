@@ -84,7 +84,7 @@ def test_list_runs_filters_by_executable(monkeypatch) -> None:
 
 @pytest.mark.parametrize(
     ("executable_class", "task_kwargs"),
-    [(Function, {}), (Workflow, {"local_execution": False})],
+    [(Function, {}), (Workflow, {})],
 )
 def test_function_and_workflow_runs_append_extensions_consistently(
     monkeypatch, executable_class, task_kwargs: dict
