@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import typing
 
+from digitalhub.entities._commons.crud_factory import ContextEntityCRUD
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._processors.processors import crud_processor, executable_processor
 
@@ -13,7 +14,12 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities.workflow._base.entity import Workflow
 
 
-ENTITY_TYPE = EntityTypes.WORKFLOW.value
+_crud: ContextEntityCRUD[Workflow] = ContextEntityCRUD(
+    EntityTypes.WORKFLOW.value,
+    executable=True,
+    crud_processor=crud_processor,
+    executable_processor=executable_processor,
+)
 
 
 def new_workflow(
@@ -72,7 +78,7 @@ def new_workflow(
     )
     ```
     """
-    return crud_processor.create_context_entity(
+    return _crud.create(
         project=project,
         name=name,
         kind=kind,
@@ -81,7 +87,6 @@ def new_workflow(
         description=description,
         labels=labels,
         embedded=embedded,
-        entity_type=ENTITY_TYPE,
         **kwargs,
     )
 
@@ -126,12 +131,7 @@ def get_workflow(
     )
     ```
     """
-    return crud_processor.read_context_entity(
-        identifier=identifier,
-        entity_type=ENTITY_TYPE,
-        project=project,
-        entity_id=entity_id,
-    )
+    return _crud.get(identifier, project, entity_id)
 
 
 def get_workflow_versions(
@@ -171,11 +171,7 @@ def get_workflow_versions(
     )
     ```
     """
-    return crud_processor.read_context_entity_versions(
-        identifier=identifier,
-        entity_type=ENTITY_TYPE,
-        project=project,
-    )
+    return _crud.get_versions(identifier, project)
 
 
 def list_workflows(
@@ -231,9 +227,8 @@ def list_workflows(
     workflows = dh.list_workflows(project="my-project")
     ```
     """
-    return crud_processor.list_context_entities(
-        project=project,
-        entity_type=ENTITY_TYPE,
+    return _crud.list(
+        project,
         q=q,
         name=name,
         kind=kind,
@@ -285,7 +280,7 @@ def import_workflow(
     workflow = dh.import_workflow("my-workflow.yaml")
     ```
     """
-    return executable_processor.import_executable_entity(file, key, reset_id, context)
+    return _crud.import_entity(file, key, reset_id, context)
 
 
 def load_workflow(file: str) -> Workflow:
@@ -303,7 +298,7 @@ def load_workflow(file: str) -> Workflow:
         Loaded workflow entity. An existing entity is updated when it can be
         identified; otherwise, a new entity is created.
     """
-    return executable_processor.load_executable_entity(file)
+    return _crud.load(file)
 
 
 def update_workflow(entity: Workflow) -> Workflow:
@@ -332,12 +327,7 @@ def update_workflow(entity: Workflow) -> Workflow:
     workflow = dh.update_workflow(workflow)
     ```
     """
-    return crud_processor.update_context_entity(
-        project=entity.project,
-        entity_type=entity.ENTITY_TYPE,
-        entity_id=entity.id,
-        entity_dict=entity.to_dict(),
-    )
+    return _crud.update(entity)
 
 
 def delete_workflow(
@@ -404,11 +394,10 @@ def delete_workflow(
     )
     ```
     """
-    return crud_processor.delete_context_entity(
-        identifier=identifier,
-        entity_type=ENTITY_TYPE,
-        project=project,
-        entity_id=entity_id,
+    return _crud.delete(
+        identifier,
+        project,
+        entity_id,
         delete_all_versions=delete_all_versions,
         cascade=cascade,
     )

@@ -11,6 +11,7 @@ from typing import Any
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.entity.builder import EntityBuilder
+    from digitalhub.runtimes.builder import RuntimeBuilder
 
 
 @dataclass(frozen=True)
@@ -31,10 +32,11 @@ class CrudPlugin:
 
 @dataclass(frozen=True)
 class EntityPlugin:
-    """Entity builder and public extensions owned by one plugin."""
+    """Registration bundle for an entity kind and its optional runtime support."""
 
     builder: EntityBuilder
     shortcuts: tuple[CrudPlugin, ...] = ()
+    runtime_builder: type[RuntimeBuilder] | None = None
 
     @property
     def kind(self) -> str:

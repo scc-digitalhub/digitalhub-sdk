@@ -6,16 +6,20 @@ from __future__ import annotations
 
 import typing
 
+from digitalhub.entities._commons.crud_factory import MaterialEntityCRUD
 from digitalhub.entities._commons.enums import EntityTypes
-from digitalhub.entities._commons.utils import build_log_name_from_source
-from digitalhub.entities._mixin.material.utils import build_register_name, kind_warning
 from digitalhub.entities._processors.processors import crud_processor, material_processor
-from digitalhub.entities.dataitem._base.utils import build_log_kwargs
-from digitalhub.utils.file_utils import eval_local_source
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.dataitem._base.entity import Dataitem
     from digitalhub.utils.types import SourcesOrListOfSources
+
+
+_crud: MaterialEntityCRUD[Dataitem] = MaterialEntityCRUD(
+    EntityTypes.DATAITEM.value,
+    crud_processor=crud_processor,
+    material_processor=material_processor,
+)
 
 
 def new_dataitem(
@@ -65,7 +69,7 @@ def new_dataitem(
     Dataitem
         Created dataitem entity.
     """
-    return crud_processor.create_context_entity(
+    return _crud.create(
         project=project,
         name=name,
         kind=kind,
@@ -74,7 +78,6 @@ def new_dataitem(
         description=description,
         labels=labels,
         embedded=embedded,
-        entity_type=EntityTypes.DATAITEM.value,
         path=path,
         extensions=extensions,
         **kwargs,
@@ -124,25 +127,13 @@ def log_base_dataitem(
     Dataitem
         Created dataitem entity with uploaded files.
     """
-    kwargs = {key: value for key, value in kwargs.items() if value is not None}
-    eval_local_source(source)
-    if name is None:
-        name = build_log_name_from_source(source)
-    kwargs = build_log_kwargs(
-        project,
-        name,
-        entity_type=EntityTypes.DATAITEM.value,
-        source=source,
-        path=path,
-        **kwargs,
-    )
-    return material_processor.log_material_entity(
-        source=source,
+    return _crud.log(
         project=project,
-        name=name,
         kind=kind,
+        source=source,
+        name=name,
         drop_existing=drop_existing,
-        entity_type=EntityTypes.DATAITEM.value,
+        path=path,
         version=version,
         description=description,
         labels=labels,
@@ -196,30 +187,17 @@ def register_base_dataitem(
     Dataitem
         Registered dataitem entity.
     """
-    kwargs = {key: value for key, value in kwargs.items() if value is not None}
-    kind_warning(
-        requested_kind=kwargs.pop("kind", None),
-        set_kind=entity_kind,
-        entity_type=EntityTypes.DATAITEM.value,
-    )
-    name = build_register_name(
-        name=name,
-        source=source,
-        entity_type=EntityTypes.DATAITEM.value,
-        entity_kind=entity_kind,
-    )
-    if isinstance(source, list):
-        source = source[0]
-    return new_dataitem(
+    return _crud.register(
+        new_dataitem,
         project=project,
+        source=source,
+        entity_kind=entity_kind,
         name=name,
-        kind=entity_kind,
         uuid=uuid,
         version=version,
         description=description,
         labels=labels,
         embedded=embedded,
-        path=source,
         extensions=extensions,
         **kwargs,
     )

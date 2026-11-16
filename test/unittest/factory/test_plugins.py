@@ -23,6 +23,10 @@ class OtherBuilder:
     ENTITY_KIND = "function:other"
 
 
+class StubRuntimeBuilder:
+    pass
+
+
 def test_entity_plugin_registers_builder_and_resolves_shortcut(monkeypatch) -> None:
     def new_function_stub(project: str, name: str, image: str | None = None) -> tuple[str, str, str | None]:
         return project, name, image
@@ -30,6 +34,7 @@ def test_entity_plugin_registers_builder_and_resolves_shortcut(monkeypatch) -> N
     plugin = EntityPlugin(
         builder=StubBuilder,
         shortcuts=(CrudPlugin(new_function_stub),),
+        runtime_builder=StubRuntimeBuilder,
     )
     registry = BuilderRegistry()
     registry_module = importlib.import_module(BuilderRegistry.__module__)
@@ -40,13 +45,14 @@ def test_entity_plugin_registers_builder_and_resolves_shortcut(monkeypatch) -> N
         lambda package: (
             SimpleNamespace(entity_builders=(), generic_entity_builders=())
             if package == "digitalhub.entities.builders"
-            else SimpleNamespace(entity_plugins=(plugin,), runtime_builders=())
+            else SimpleNamespace(entity_plugins=(plugin,))
             if package == "stub_runtime"
             else SimpleNamespace()
         ),
     )
 
     assert registry.get_entity_builder("function:stub").__class__ is StubBuilder
+    assert registry.get_runtime_builder("function:stub").__class__ is StubRuntimeBuilder
     assert registry.get_shortcut_names() == ("new_function_stub",)
 
     resolved = registry.get_shortcut("new_function_stub")
@@ -76,13 +82,39 @@ def test_shortcut_collision_is_rejected(monkeypatch) -> None:
     monkeypatch.setattr(registry_module, "list_runtimes", lambda: ["one", "two"])
     modules = {
         "digitalhub.entities.builders": SimpleNamespace(entity_builders=(), generic_entity_builders=()),
-        "one": SimpleNamespace(entity_plugins=(plugin,), runtime_builders=()),
-        "two": SimpleNamespace(entity_plugins=(second_plugin,), runtime_builders=()),
+        "one": SimpleNamespace(entity_plugins=(plugin,)),
+        "two": SimpleNamespace(entity_plugins=(second_plugin,)),
     }
     monkeypatch.setattr(registry_module, "import_module", lambda package: modules[package])
 
     with pytest.raises(BuilderError, match="Shortcut duplicate already exists"):
         registry.get_shortcut_names()
+
+
+def test_core_shortcut_does_not_import_runtime_plugins(monkeypatch) -> None:
+    def core_shortcut(project: str) -> str:
+        return project
+
+    registry = BuilderRegistry()
+    registry_module = importlib.import_module(BuilderRegistry.__module__)
+    core_module = SimpleNamespace(
+        entity_builders=(),
+        generic_entity_builders=(),
+        crud_plugins=(CrudPlugin(core_shortcut),),
+    )
+
+    def import_module(package: str):
+        assert package == "digitalhub.entities.builders"
+        return core_module
+
+    def list_runtimes() -> list[str]:
+        pytest.fail("Core shortcut lookup must not import runtime plugins.")
+
+    monkeypatch.setattr(registry_module, "import_module", import_module)
+    monkeypatch.setattr(registry_module, "list_runtimes", list_runtimes)
+
+    assert registry.get_shortcut("core_shortcut") is core_shortcut
+    assert registry.get_shortcut_spec("core_shortcut").function is core_shortcut
 
 
 def test_project_shortcut_injects_project_and_preserves_signature() -> None:

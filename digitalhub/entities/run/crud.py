@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import typing
 
+from digitalhub.entities._commons.crud_factory import ContextEntityCRUD
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._processors.processors import crud_processor
 
@@ -13,7 +14,11 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities.run._base.entity import Run
 
 
-ENTITY_TYPE = EntityTypes.RUN.value
+_crud: ContextEntityCRUD[Run] = ContextEntityCRUD(
+    EntityTypes.RUN.value,
+    unversioned=True,
+    crud_processor=crud_processor,
+)
 
 
 def new_run(
@@ -64,14 +69,13 @@ def new_run(
     )
     ```
     """
-    return crud_processor.create_context_entity(
+    return _crud.create(
         project=project,
         kind=kind,
         uuid=uuid,
         name=name,
         labels=labels,
         task=task,
-        entity_type=ENTITY_TYPE,
         **kwargs,
     )
 
@@ -112,11 +116,7 @@ def get_run(
     run = dh.get_run("store://my-project/run/python+run/my-run-id")
     ```
     """
-    return crud_processor.read_unversioned_entity(
-        identifier=identifier,
-        entity_type=ENTITY_TYPE,
-        project=project,
-    )
+    return _crud.get(identifier, project)
 
 
 def list_runs(
@@ -178,9 +178,8 @@ def list_runs(
     runs = dh.list_runs(project="my-project")
     ```
     """
-    return crud_processor.list_context_entities(
-        project=project,
-        entity_type=ENTITY_TYPE,
+    return _crud.list(
+        project,
         q=q,
         name=name,
         kind=kind,
@@ -235,7 +234,7 @@ def import_run(
     run = dh.import_run("my-run.yaml")
     ```
     """
-    return crud_processor.import_context_entity(file, key, reset_id, context)
+    return _crud.import_entity(file, key, reset_id, context)
 
 
 def load_run(file: str) -> Run:
@@ -253,7 +252,7 @@ def load_run(file: str) -> Run:
         Loaded run entity. An existing entity is updated when it can be
         identified; otherwise, a new entity is created.
     """
-    return crud_processor.load_context_entity(file)
+    return _crud.load(file)
 
 
 def update_run(entity: Run) -> Run:
@@ -282,12 +281,7 @@ def update_run(entity: Run) -> Run:
     run = dh.update_run(run)
     ```
     """
-    return crud_processor.update_context_entity(
-        project=entity.project,
-        entity_type=entity.ENTITY_TYPE,
-        entity_id=entity.id,
-        entity_dict=entity.to_dict(),
-    )
+    return _crud.update(entity)
 
 
 def delete_run(
@@ -330,10 +324,4 @@ def delete_run(
     dh.delete_run("store://my-project/run/python+run/my-run-id")
     ```
     """
-    return crud_processor.delete_context_entity(
-        identifier=identifier,
-        entity_type=ENTITY_TYPE,
-        project=project,
-        entity_id=entity_id,
-        unversioned=True,
-    )
+    return _crud.delete(identifier, project, entity_id)

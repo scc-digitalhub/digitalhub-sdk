@@ -13,6 +13,7 @@ import digitalhub.entities.dataitem.crud as context_crud
 import digitalhub.entities.dataitem.dataitem.crud as dataitem_crud
 import digitalhub.entities.dataitem.generic.crud as generic_crud
 import digitalhub.entities.dataitem.table.crud as table_crud
+from digitalhub.entities._commons import crud_factory
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
 
 
@@ -168,9 +169,9 @@ def test_log_base_dataitem_validates_source_and_builds_storage_kwargs(monkeypatc
     build_name = Mock(return_value="inferred-data")
     build_kwargs = Mock(return_value={"path": "s3://bucket/data.csv", "format": "csv"})
     log_entity = Mock(return_value="dataitem")
-    monkeypatch.setattr(base_crud, "eval_local_source", eval_source)
-    monkeypatch.setattr(base_crud, "build_log_name_from_source", build_name)
-    monkeypatch.setattr(base_crud, "build_log_kwargs", build_kwargs)
+    monkeypatch.setattr(crud_factory, "eval_local_source", eval_source)
+    monkeypatch.setattr(crud_factory, "build_log_name_from_source", build_name)
+    monkeypatch.setattr(crud_factory, "build_log_kwargs", build_kwargs)
     monkeypatch.setattr(base_crud.material_processor, "log_material_entity", log_entity)
 
     source = ["./data.csv"]

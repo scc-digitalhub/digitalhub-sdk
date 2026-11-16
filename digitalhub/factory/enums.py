@@ -18,7 +18,6 @@ class FactoryEnum(Enum):
     REG_ENTITY_PLUGINS_VAR = "entity_plugins"
     REG_CRUD_PLUGINS_VAR = "crud_plugins"
     REG_GENERIC_ENTITIES_VAR = "generic_entity_builders"
-    REG_RUNTIME_VAR = "runtime_builders"
 
 
 class BuilderMethodsEnum(Enum):

@@ -11,6 +11,7 @@ import digitalhub.entities.artifact._base.crud as artifact_base_crud
 import digitalhub.entities.artifact.artifact.crud as artifact_crud
 import digitalhub.entities.artifact.crud as context_crud
 import digitalhub.entities.artifact.generic.crud as generic_crud
+from digitalhub.entities._commons import crud_factory
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
 
 
@@ -48,7 +49,7 @@ def test_register_base_artifact_uses_source_as_path_and_infers_name(monkeypatch)
     new_artifact = Mock(return_value="artifact")
     kind_warning = Mock()
     monkeypatch.setattr(artifact_base_crud, "new_artifact", new_artifact)
-    monkeypatch.setattr(artifact_base_crud, "kind_warning", kind_warning)
+    monkeypatch.setattr(crud_factory, "kind_warning", kind_warning)
     monkeypatch.setattr(material_utils, "name_warning", Mock())
 
     result = artifact_base_crud.register_base_artifact(
@@ -210,9 +211,9 @@ def test_log_base_artifact_validates_source_and_builds_storage_kwargs(monkeypatc
     build_name = Mock(return_value="inferred-artifact")
     build_kwargs = Mock(return_value={"path": "s3://bucket/artifact.bin", "format": "bin"})
     log_entity = Mock(return_value="artifact")
-    monkeypatch.setattr(artifact_base_crud, "eval_local_source", eval_source)
-    monkeypatch.setattr(artifact_base_crud, "build_log_name_from_source", build_name)
-    monkeypatch.setattr(artifact_base_crud, "build_log_kwargs", build_kwargs)
+    monkeypatch.setattr(crud_factory, "eval_local_source", eval_source)
+    monkeypatch.setattr(crud_factory, "build_log_name_from_source", build_name)
+    monkeypatch.setattr(crud_factory, "build_log_kwargs", build_kwargs)
     monkeypatch.setattr(artifact_base_crud.material_processor, "log_material_entity", log_entity)
 
     source = ["./artifact.bin"]

@@ -7,12 +7,17 @@ from types import SimpleNamespace
 
 import pytest
 
+from digitalhub.factory.plugins import EntityPlugin
 from digitalhub.factory.registry import BuilderRegistry
 from digitalhub.utils.exceptions import BuilderError
 
 
 class StubBuilder:
     pass
+
+
+class RuntimeEntityStubBuilder:
+    ENTITY_KIND = "runtime-entity"
 
 
 class BrokenBuilder:
@@ -49,8 +54,7 @@ def test_core_registration_rolls_back_partial_state_and_can_retry(monkeypatch) -
 def test_runtime_registration_rolls_back_partial_state_and_can_retry(monkeypatch) -> None:
     registry = BuilderRegistry()
     runtime_module = SimpleNamespace(
-        entity_builders=(("runtime-entity", StubBuilder),),
-        runtime_builders=(("runtime", StubBuilder),),
+        entity_plugins=(EntityPlugin(builder=RuntimeEntityStubBuilder, runtime_builder=StubBuilder),),
     )
     registry_module = importlib.import_module(BuilderRegistry.__module__)
     monkeypatch.setattr(registry_module, "list_runtimes", lambda: ["runtime-one", "runtime-two"])
@@ -59,7 +63,7 @@ def test_runtime_registration_rolls_back_partial_state_and_can_retry(monkeypatch
     def import_runtime(package: str):
         if package == "runtime-two" and fail_second_import:
             raise RuntimeError("broken runtime")
-        return runtime_module if package == "runtime-one" else SimpleNamespace()
+        return runtime_module if package == "runtime-one" else SimpleNamespace(entity_plugins=())
 
     monkeypatch.setattr(registry_module, "import_module", import_runtime)
 
@@ -73,4 +77,21 @@ def test_runtime_registration_rolls_back_partial_state_and_can_retry(monkeypatch
     registry._ensure_runtimes_registered()
 
     assert set(registry._entity_builders) == {"runtime-entity"}
-    assert set(registry._runtime_builders) == {"runtime"}
+    assert set(registry._runtime_builders) == {"runtime-entity"}
+
+
+def test_runtime_registration_rejects_legacy_builder_exports(monkeypatch) -> None:
+    registry = BuilderRegistry()
+    legacy_module = SimpleNamespace(
+        entity_builders=(("runtime-entity", RuntimeEntityStubBuilder),),
+        runtime_builders=(("runtime-entity", StubBuilder),),
+    )
+    registry_module = importlib.import_module(BuilderRegistry.__module__)
+    monkeypatch.setattr(registry_module, "list_runtimes", lambda: ["legacy-runtime"])
+    monkeypatch.setattr(registry_module, "import_module", lambda _: legacy_module)
+
+    with pytest.raises(BuilderError, match="does not define 'entity_plugins'"):
+        registry._ensure_runtimes_registered()
+
+    assert registry._entity_builders == {}
+    assert registry._runtime_builders == {}

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import typing
 
+from digitalhub.entities._commons.crud_factory import ContextEntityCRUD
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
 from digitalhub.entities._commons.utils import is_valid_key
 from digitalhub.entities._processors.processors import crud_processor
@@ -15,7 +16,7 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities.secret._base.entity import Secret
 
 
-ENTITY_TYPE = EntityTypes.SECRET.value
+_crud: ContextEntityCRUD[Secret] = ContextEntityCRUD(EntityTypes.SECRET.value, crud_processor=crud_processor)
 
 
 def new_secret(
@@ -71,7 +72,7 @@ def new_secret(
     """
     if secret_value is None:
         raise ValueError("secret_value must be provided.")
-    obj: Secret = crud_processor.create_context_entity(
+    obj: Secret = _crud.create(
         project=project,
         name=name,
         kind=EntityKinds.SECRET_SECRET.value,
@@ -79,7 +80,6 @@ def new_secret(
         description=description,
         labels=labels,
         embedded=embedded,
-        entity_type=ENTITY_TYPE,
         **kwargs,
     )
     obj.set_secret_value(value=secret_value)
@@ -128,12 +128,7 @@ def get_secret(
             if secret.name == identifier:
                 return secret
         raise EntityNotExistsError(f"Secret {identifier} not found.")
-    return crud_processor.read_context_entity(
-        identifier=identifier,
-        entity_type=ENTITY_TYPE,
-        project=project,
-        entity_id=entity_id,
-    )
+    return _crud.get(identifier, project, entity_id)
 
 
 def list_secrets(project: str) -> list[Secret]:
@@ -160,10 +155,7 @@ def list_secrets(project: str) -> list[Secret]:
     secrets = dh.list_secrets(project="my-project")
     ```
     """
-    return crud_processor.list_context_entities(
-        project=project,
-        entity_type=ENTITY_TYPE,
-    )
+    return _crud.list(project)
 
 
 def import_secret(
@@ -206,7 +198,7 @@ def import_secret(
     secret = dh.import_secret(key="store://my-project/secret/secret/my-secret:123e4567-e89b-42d3-a456-426614174000")
     ```
     """
-    return crud_processor.import_context_entity(file, key, reset_id, context)
+    return _crud.import_entity(file, key, reset_id, context)
 
 
 def load_secret(file: str) -> Secret:
@@ -224,7 +216,7 @@ def load_secret(file: str) -> Secret:
         Loaded secret entity. An existing entity is updated when it can be
         identified; otherwise, a new entity is created.
     """
-    return crud_processor.load_context_entity(file)
+    return _crud.load(file)
 
 
 def update_secret(entity: Secret) -> Secret:
@@ -253,12 +245,7 @@ def update_secret(entity: Secret) -> Secret:
     secret = dh.update_secret(secret)
     ```
     """
-    return crud_processor.update_context_entity(
-        project=entity.project,
-        entity_type=entity.ENTITY_TYPE,
-        entity_id=entity.id,
-        entity_dict=entity.to_dict(),
-    )
+    return _crud.update(entity)
 
 
 def delete_secret(
@@ -301,10 +288,9 @@ def delete_secret(
     dh.delete_secret("my-secret", "my-project", delete_all_versions=True)
     ```
     """
-    return crud_processor.delete_context_entity(
-        identifier=identifier,
-        entity_type=ENTITY_TYPE,
-        project=project,
-        entity_id=entity_id,
+    return _crud.delete(
+        identifier,
+        project,
+        entity_id,
         delete_all_versions=delete_all_versions,
     )

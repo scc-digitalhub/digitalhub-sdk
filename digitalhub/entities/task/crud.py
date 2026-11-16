@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import typing
 
+from digitalhub.entities._commons.crud_factory import ContextEntityCRUD
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._processors.processors import crud_processor
 
@@ -13,7 +14,11 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities.task._base.entity import Task
 
 
-ENTITY_TYPE = EntityTypes.TASK.value
+_crud: ContextEntityCRUD[Task] = ContextEntityCRUD(
+    EntityTypes.TASK.value,
+    unversioned=True,
+    crud_processor=crud_processor,
+)
 
 
 def new_task(
@@ -67,13 +72,12 @@ def new_task(
     )
     ```
     """
-    return crud_processor.create_context_entity(
+    return _crud.create(
         project=project,
         kind=kind,
         uuid=uuid,
         name=name,
         labels=labels,
-        entity_type=ENTITY_TYPE,
         function=function,
         workflow=workflow,
         **kwargs,
@@ -113,11 +117,7 @@ def get_task(identifier: str, project: str | None = None) -> Task:
     task = dh.get_task("store://my-project/task/python+job/my-task-id")
     ```
     """
-    return crud_processor.read_unversioned_entity(
-        identifier=identifier,
-        entity_type=ENTITY_TYPE,
-        project=project,
-    )
+    return _crud.get(identifier, project)
 
 
 def list_tasks(
@@ -173,9 +173,8 @@ def list_tasks(
     tasks = dh.list_tasks(project="my-project")
     ```
     """
-    return crud_processor.list_context_entities(
-        project=project,
-        entity_type=ENTITY_TYPE,
+    return _crud.list(
+        project,
         q=q,
         name=name,
         kind=kind,
@@ -228,7 +227,7 @@ def import_task(
     task = dh.import_task("my-task.yaml")
     ```
     """
-    return crud_processor.import_context_entity(file, key, reset_id, context)
+    return _crud.import_entity(file, key, reset_id, context)
 
 
 def load_task(file: str) -> Task:
@@ -256,7 +255,7 @@ def load_task(file: str) -> Task:
     task = dh.load_task("my-task.yaml")
     ```
     """
-    return crud_processor.load_context_entity(file)
+    return _crud.load(file)
 
 
 def update_task(entity: Task) -> Task:
@@ -285,12 +284,7 @@ def update_task(entity: Task) -> Task:
     task = dh.update_task(task)
     ```
     """
-    return crud_processor.update_context_entity(
-        project=entity.project,
-        entity_type=entity.ENTITY_TYPE,
-        entity_id=entity.id,
-        entity_dict=entity.to_dict(),
-    )
+    return _crud.update(entity)
 
 
 def delete_task(
@@ -336,11 +330,9 @@ def delete_task(
     dh.delete_task("store://my-project/task/python+job/my-task-id")
     ```
     """
-    return crud_processor.delete_context_entity(
-        identifier=identifier,
-        entity_type=ENTITY_TYPE,
-        project=project,
-        entity_id=entity_id,
+    return _crud.delete(
+        identifier,
+        project,
+        entity_id,
         cascade=cascade,
-        unversioned=True,
     )

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import typing
 
+from digitalhub.entities._commons.crud_factory import ContextEntityCRUD
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._processors.processors import crud_processor
 
@@ -13,7 +14,7 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities.trigger._base.entity import Trigger
 
 
-ENTITY_TYPE = EntityTypes.TRIGGER.value
+_crud: ContextEntityCRUD[Trigger] = ContextEntityCRUD(EntityTypes.TRIGGER.value, crud_processor=crud_processor)
 
 
 def new_trigger(
@@ -91,7 +92,7 @@ def new_trigger(
     }
     kwargs["template"] = template
 
-    return crud_processor.create_context_entity(
+    return _crud.create(
         project=project,
         name=name,
         kind=kind,
@@ -99,7 +100,6 @@ def new_trigger(
         description=description,
         labels=labels,
         embedded=embedded,
-        entity_type=ENTITY_TYPE,
         **kwargs,
     )
 
@@ -144,12 +144,7 @@ def get_trigger(
     )
     ```
     """
-    return crud_processor.read_context_entity(
-        identifier=identifier,
-        entity_type=ENTITY_TYPE,
-        project=project,
-        entity_id=entity_id,
-    )
+    return _crud.get(identifier, project, entity_id)
 
 
 def list_triggers(
@@ -205,9 +200,8 @@ def list_triggers(
     triggers = dh.list_triggers(project="my-project")
     ```
     """
-    return crud_processor.list_context_entities(
-        project=project,
-        entity_type=ENTITY_TYPE,
+    return _crud.list(
+        project,
         q=q,
         name=name,
         kind=kind,
@@ -259,7 +253,7 @@ def import_trigger(
     trigger = dh.import_trigger("my-trigger.yaml")
     ```
     """
-    return crud_processor.import_context_entity(file, key, reset_id, context)
+    return _crud.import_entity(file, key, reset_id, context)
 
 
 def load_trigger(file: str) -> Trigger:
@@ -277,7 +271,7 @@ def load_trigger(file: str) -> Trigger:
         Loaded trigger entity. An existing entity is updated when it can be
         identified; otherwise, a new entity is created.
     """
-    return crud_processor.load_context_entity(file)
+    return _crud.load(file)
 
 
 def update_trigger(entity: Trigger) -> Trigger:
@@ -306,12 +300,7 @@ def update_trigger(entity: Trigger) -> Trigger:
     trigger = dh.update_trigger(trigger)
     ```
     """
-    return crud_processor.update_context_entity(
-        project=entity.project,
-        entity_type=entity.ENTITY_TYPE,
-        entity_id=entity.id,
-        entity_dict=entity.to_dict(),
-    )
+    return _crud.update(entity)
 
 
 def delete_trigger(
@@ -359,9 +348,4 @@ def delete_trigger(
     )
     ```
     """
-    return crud_processor.delete_context_entity(
-        identifier=identifier,
-        entity_type=ENTITY_TYPE,
-        project=project,
-        entity_id=entity_id,
-    )
+    return _crud.delete(identifier, project, entity_id)
