@@ -15,7 +15,6 @@ from digitalhub.utils.exceptions import EntityError
 class InvalidRuntimeBuilder(RunBuilder):
     ENTITY_CLASS = RunGenericBuilder.ENTITY_CLASS
     ENTITY_SPEC_CLASS = RunGenericBuilder.ENTITY_SPEC_CLASS
-    ENTITY_SPEC_VALIDATOR = RunGenericBuilder.ENTITY_SPEC_VALIDATOR
     ENTITY_STATUS_CLASS = RunGenericBuilder.ENTITY_STATUS_CLASS
     ENTITY_KIND = "invalid-runtime"
 

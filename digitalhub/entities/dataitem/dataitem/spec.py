@@ -4,16 +4,10 @@
 
 from __future__ import annotations
 
-from digitalhub.entities.dataitem._base.spec import DataitemSpec, DataitemValidator
+from digitalhub.entities.dataitem._base.spec import DataitemSpec
 
 
 class DataitemSpecDataitem(DataitemSpec):
     """
     DataitemSpecDataitem specifications.
-    """
-
-
-class DataitemValidatorDataitem(DataitemValidator):
-    """
-    DataitemValidatorDataitem validator.
     """

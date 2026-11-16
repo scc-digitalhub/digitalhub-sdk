@@ -4,16 +4,10 @@
 
 from __future__ import annotations
 
-from digitalhub.entities.dataitem._base.spec import DataitemSpec, DataitemValidator
+from digitalhub.entities.dataitem._base.spec import DataitemSpec
 
 
 class DataitemSpecCroissant(DataitemSpec):
     """
     DataitemSpecCroissant specifications.
-    """
-
-
-class DataitemValidatorCroissant(DataitemValidator):
-    """
-    DataitemValidatorCroissant validator.
     """

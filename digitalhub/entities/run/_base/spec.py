@@ -4,44 +4,15 @@
 
 from __future__ import annotations
 
-from digitalhub.entities._base.entity.spec import Spec, SpecValidator
+from digitalhub.entities._base.entity.spec import Spec
 from digitalhub.entities.task._base.models import K8s
 
 
-class RunSpec(Spec):
+class RunSpec(Spec, K8s):
     """RunSpec specifications."""
 
-    def __init__(
-        self,
-        task: str,
-        function: str | None = None,
-        workflow: str | None = None,
-        volumes: list[dict] | None = None,
-        resources: dict | None = None,
-        envs: list[dict] | None = None,
-        secrets: list[str] | None = None,
-        profile: str | None = None,
-        **kwargs,
-    ) -> None:
-        self.task = task
-        self.function = function
-        self.workflow = workflow
-        self.volumes = volumes
-        self.resources = resources
-        self.envs = envs
-        self.secrets = secrets
-        self.profile = profile
-
-
-class RunValidator(SpecValidator, K8s):
-    """
-    RunValidator validator.
-    """
-
-    # Task parameters
     function: str | None = None
     workflow: str | None = None
 
-    # Run parameters
     task: str
     """The task string associated with the run."""

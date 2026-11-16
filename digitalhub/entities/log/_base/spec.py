@@ -4,7 +4,9 @@
 
 from __future__ import annotations
 
-from digitalhub.entities._base.entity.spec import Spec, SpecValidator
+from typing import ClassVar
+
+from digitalhub.entities._base.entity.spec import Spec
 
 
 class LogSpec(Spec):
@@ -12,19 +14,7 @@ class LogSpec(Spec):
     LogSpec specifications.
     """
 
-    def __init__(
-        self,
-        timestamp: int | None = None,
-        **kwargs,
-    ) -> None:
-        super().__init__(**kwargs)
-        self.timestamp = timestamp
-
-
-class LogValidator(SpecValidator):
-    """
-    LogValidator validator.
-    """
+    ALLOW_EXTRA_INPUTS: ClassVar[bool] = True
 
     timestamp: int | None = None
     """Timestamp of the log."""

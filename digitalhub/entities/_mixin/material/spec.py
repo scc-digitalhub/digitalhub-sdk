@@ -4,23 +4,11 @@
 
 from __future__ import annotations
 
-from digitalhub.entities._base.entity.spec import Spec, SpecValidator
+from digitalhub.entities._base.entity.spec import Spec
 
 
 class MaterialSpec(Spec):
-    """
-    Material specifications.class.
-    """
-
-    def __init__(self, path: str, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.path = path
-
-
-class MaterialValidator(SpecValidator):
-    """
-    Material parameters class.
-    """
+    """Material specifications."""
 
     path: str
-    """Target path to file(s)"""
+    """Target path to file(s)."""

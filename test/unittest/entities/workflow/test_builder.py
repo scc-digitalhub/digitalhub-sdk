@@ -15,7 +15,6 @@ from digitalhub.utils.exceptions import EntityError
 class InvalidRuntimeBuilder(WorkflowBuilder):
     ENTITY_CLASS = WorkflowGenericBuilder.ENTITY_CLASS
     ENTITY_SPEC_CLASS = WorkflowGenericBuilder.ENTITY_SPEC_CLASS
-    ENTITY_SPEC_VALIDATOR = WorkflowGenericBuilder.ENTITY_SPEC_VALIDATOR
     ENTITY_STATUS_CLASS = WorkflowGenericBuilder.ENTITY_STATUS_CLASS
     ENTITY_KIND = "invalid-runtime"
 

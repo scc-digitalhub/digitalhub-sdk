@@ -7,7 +7,7 @@ from __future__ import annotations
 from digitalhub.entities._base.entity.builder import EntityBuilder
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
 from digitalhub.entities.log._base.entity import Log
-from digitalhub.entities.log._base.spec import LogSpec, LogValidator
+from digitalhub.entities.log._base.spec import LogSpec
 from digitalhub.entities.log._base.status import LogStatus
 
 
@@ -19,7 +19,6 @@ class LogLogBuilder(EntityBuilder):
     ENTITY_TYPE = EntityTypes.LOG.value
     ENTITY_CLASS = Log
     ENTITY_SPEC_CLASS = LogSpec
-    ENTITY_SPEC_VALIDATOR = LogValidator
     ENTITY_STATUS_CLASS = LogStatus
     ENTITY_KIND = EntityKinds.LOG_LOG.value
 

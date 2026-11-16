@@ -4,31 +4,12 @@
 
 from __future__ import annotations
 
-from digitalhub.entities._base.entity.spec import Spec, SpecValidator
+from digitalhub.entities._base.entity.spec import Spec
 
 
 class TriggerSpec(Spec):
     """
     TriggerSpec specifications.
-    """
-
-    def __init__(
-        self,
-        task: str,
-        template: dict,
-        function: str | None = None,
-        workflow: str | None = None,
-    ) -> None:
-        super().__init__()
-        self.task = task
-        self.template = template
-        self.function = function
-        self.workflow = workflow
-
-
-class TriggerValidator(SpecValidator):
-    """
-    TriggerValidator validator.
     """
 
     task: str
@@ -37,8 +18,8 @@ class TriggerValidator(SpecValidator):
     template: dict
     """Template map."""
 
-    function: str = None
+    function: str | None = None
     """Function string."""
 
-    workflow: str = None
+    workflow: str | None = None
     """Workflow string."""

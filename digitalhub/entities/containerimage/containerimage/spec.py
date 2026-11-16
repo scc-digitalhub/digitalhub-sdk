@@ -4,16 +4,10 @@
 
 from __future__ import annotations
 
-from digitalhub.entities.containerimage._base.spec import ContainerimageSpec, ContainerimageValidator
+from digitalhub.entities.containerimage._base.spec import ContainerimageSpec
 
 
 class ContainerimageContainerimageSpec(ContainerimageSpec):
     """
     ContainerimageContainerimage specifications.
-    """
-
-
-class ContainerimageContainerimageValidator(ContainerimageValidator):
-    """
-    ContainerimageContainerimageValidator validator.
     """

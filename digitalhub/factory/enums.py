@@ -35,4 +35,3 @@ class BuilderMethodsEnum(Enum):
     GET_TASK_KIND_FROM_ACTION = "get_task_kind_from_action"
     GET_RUN_KIND_FROM_ACTION = "get_run_kind_from_action"
     GET_ALL_KINDS = "get_all_kinds"
-    GET_SPEC_VALIDATOR = "get_spec_validator"

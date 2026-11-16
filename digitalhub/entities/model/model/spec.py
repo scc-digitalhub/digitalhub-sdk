@@ -4,16 +4,10 @@
 
 from __future__ import annotations
 
-from digitalhub.entities.model._base.spec import ModelSpec, ModelValidator
+from digitalhub.entities.model._base.spec import ModelSpec
 
 
 class ModelSpecModel(ModelSpec):
     """
     ModelSpecModel specifications.
-    """
-
-
-class ModelValidatorModel(ModelValidator):
-    """
-    ModelValidatorModel validator.
     """

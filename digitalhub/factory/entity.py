@@ -13,7 +13,7 @@ from digitalhub.utils.exceptions import BuilderError
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.context.entity import ContextEntity
-    from digitalhub.entities._base.entity.spec import Spec, SpecValidator
+    from digitalhub.entities._base.entity.spec import Spec
     from digitalhub.entities._base.entity.status import Status
     from digitalhub.entities._base.metadata.entity import Metadata
     from digitalhub.entities._mixin.executable.protocol import ExecutableProtocol
@@ -302,22 +302,6 @@ class EntityFactory:
             All kinds.
         """
         return self._call_builder_method(kind, BuilderMethodsEnum.GET_ALL_KINDS.value)
-
-    def get_spec_validator(self, kind: str) -> SpecValidator:
-        """
-        Get spec validators.
-
-        Parameters
-        ----------
-        kind : str
-            Kind.
-
-        Returns
-        -------
-        SpecValidator
-            Spec validator.
-        """
-        return self._call_builder_method(kind, BuilderMethodsEnum.GET_SPEC_VALIDATOR.value)
 
     @staticmethod
     def _get_kind(**kwargs) -> str:

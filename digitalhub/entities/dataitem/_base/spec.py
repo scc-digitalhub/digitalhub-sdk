@@ -4,16 +4,10 @@
 
 from __future__ import annotations
 
-from digitalhub.entities._mixin.material.spec import MaterialSpec, MaterialValidator
+from digitalhub.entities._mixin.material.spec import MaterialSpec
 
 
 class DataitemSpec(MaterialSpec):
     """
     DataitemSpec specifications.
-    """
-
-
-class DataitemValidator(MaterialValidator):
-    """
-    DataitemValidator validator.
     """

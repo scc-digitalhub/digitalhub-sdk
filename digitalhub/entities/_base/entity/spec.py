@@ -4,17 +4,23 @@
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 from pydantic import BaseModel, ConfigDict
 
-from digitalhub.entities._base._base.entity import Base
+from digitalhub.utils.generic_utils import dump_json
 
 
-class Spec(Base):
+class Spec(BaseModel):
     """
     A class representing the specifications.of an entity.
     specifications.is a collection of information about an entity
     thought to be immutable by the user.
     """
+
+    model_config = ConfigDict(extra="allow", use_enum_values=True)
+
+    ALLOW_EXTRA_INPUTS: ClassVar[bool] = False
 
     @classmethod
     def from_dict(cls, obj: dict) -> Spec:
@@ -31,37 +37,15 @@ class Spec(Base):
         EntitySpec
             An entity specifications.object.
         """
-        return cls(**obj)
-
-
-class SpecValidator(BaseModel):
-    """
-    A class representing the parameters of an entity.
-    This base class is used to define the parameters of an entity
-    specifications.and is used to validate the parameters passed
-    to the constructor.
-    """
-
-    model_config = ConfigDict(extra="ignore", use_enum_values=True)
+        return cls.model_validate(obj)
 
     def to_dict(self) -> dict:
+        """Return the spec as a dictionary using the SDK serialization rules."""
         return self.model_dump(by_alias=True, exclude_none=True)
 
+    def to_json(self) -> str:
+        """Return the spec as JSON."""
+        return dump_json(self.to_dict())
 
-class MaterialSpec(Spec):
-    """
-    Material specifications.class.
-    """
-
-    def __init__(self, path: str, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.path = path
-
-
-class MaterialValidator(SpecValidator):
-    """
-    Material parameters class.
-    """
-
-    path: str
-    """Target path to file(s)"""
+    def __repr__(self) -> str:
+        return str(self.to_dict())

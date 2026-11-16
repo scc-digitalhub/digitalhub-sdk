@@ -4,14 +4,15 @@
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 from digitalhub.entities._base.entity.spec import Spec
 
 
 class GenericSpec(Spec):
     """Spec that preserves arbitrary payload fields without filtering."""
 
-    def __init__(self, **kwargs) -> None:
-        self._any_setter(**kwargs)
+    ALLOW_EXTRA_INPUTS: ClassVar[bool] = True
 
     @classmethod
     def from_dict(cls, obj: dict) -> GenericSpec:

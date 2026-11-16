@@ -4,16 +4,8 @@
 
 from __future__ import annotations
 
-from digitalhub.entities._mixin.material.spec import MaterialSpec, MaterialValidator
+from digitalhub.entities._mixin.material.spec import MaterialSpec
 
 
 class ArtifactSpec(MaterialSpec):
-    """
-    ArtifactSpec specifications.
-    """
-
-
-class ArtifactValidator(MaterialValidator):
-    """
-    ArtifactValidator validator.
-    """
+    """Artifact spec."""

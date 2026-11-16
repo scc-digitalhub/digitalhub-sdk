@@ -15,7 +15,6 @@ from digitalhub.utils.exceptions import EntityError
 class InvalidRuntimeBuilder(TaskBuilder):
     ENTITY_CLASS = TaskGenericBuilder.ENTITY_CLASS
     ENTITY_SPEC_CLASS = TaskGenericBuilder.ENTITY_SPEC_CLASS
-    ENTITY_SPEC_VALIDATOR = TaskGenericBuilder.ENTITY_SPEC_VALIDATOR
     ENTITY_STATUS_CLASS = TaskGenericBuilder.ENTITY_STATUS_CLASS
     ENTITY_KIND = "invalid-runtime"
 

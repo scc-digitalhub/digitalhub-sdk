@@ -12,7 +12,6 @@ from digitalhub.factory.entity import entity_factory
 from digitalhub.utils.exceptions import EntityError
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities._base.entity.spec import SpecValidator
     from digitalhub.entities.task._base.entity import Task
     from digitalhub.entities.trigger._base.entity import Trigger
 
@@ -60,7 +59,6 @@ class ExecutableTriggerMixin(ExecutableBaseMixin):
         exec_string = self._get_executable_string()
 
         run_kind = entity_factory.get_run_kind_from_action(self.kind, action)
-        run_validator: SpecValidator = entity_factory.get_spec_validator(run_kind)
 
         kwargs["project"] = self.project
         kwargs["kind"] = kind
@@ -73,7 +71,7 @@ class ExecutableTriggerMixin(ExecutableBaseMixin):
 
         template["task"] = task_string
         template[self.ENTITY_TYPE] = exec_string
-        template = run_validator(**template).to_dict()
+        template = entity_factory.build_spec(run_kind, **template).to_dict()
 
         kwargs[self.ENTITY_TYPE] = exec_string
         kwargs["task"] = task_string

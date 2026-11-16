@@ -4,30 +4,12 @@
 
 from __future__ import annotations
 
-from digitalhub.entities._mixin.material.spec import MaterialSpec, MaterialValidator
+from digitalhub.entities._mixin.material.spec import MaterialSpec
 
 
 class ModelSpec(MaterialSpec):
     """
     ModelSpec specifications.
-    """
-
-    def __init__(
-        self,
-        path: str,
-        framework: str | None = None,
-        algorithm: str | None = None,
-        parameters: dict | None = None,
-    ) -> None:
-        super().__init__(path)
-        self.framework = framework
-        self.algorithm = algorithm
-        self.parameters = parameters
-
-
-class ModelValidator(MaterialValidator):
-    """
-    ModelValidator validator.
     """
 
     framework: str | None = None

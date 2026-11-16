@@ -4,29 +4,12 @@
 
 from __future__ import annotations
 
-from digitalhub.entities.trigger._base.spec import TriggerSpec, TriggerValidator
+from digitalhub.entities.trigger._base.spec import TriggerSpec
 
 
 class TriggerSpecScheduler(TriggerSpec):
     """
     TriggerSpecScheduler specifications.
-    """
-
-    def __init__(
-        self,
-        task: str,
-        template: dict,
-        function: str | None = None,
-        workflow: str | None = None,
-        schedule: str | None = None,
-    ) -> None:
-        super().__init__(task, template, function, workflow)
-        self.schedule = schedule
-
-
-class TriggerValidatorScheduler(TriggerValidator):
-    """
-    TriggerValidatorScheduler validator.
     """
 
     schedule: str
