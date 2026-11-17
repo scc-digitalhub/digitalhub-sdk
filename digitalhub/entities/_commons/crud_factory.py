@@ -7,6 +7,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Generic, Protocol, TypeVar, cast
 
+from digitalhub.context.api import get_default_store
 from digitalhub.entities._commons.utils import build_log_name_from_source, build_log_path_from_source
 from digitalhub.entities._constructors.uuid import build_uuid
 from digitalhub.entities._mixin.material.utils import build_register_name, kind_warning
@@ -161,7 +162,14 @@ def build_log_kwargs(
     if path is None:
         uuid = build_uuid()
         kwargs["uuid"] = uuid
-        kwargs["path"] = build_log_path_from_source(project, entity_type, name, uuid, source)
+        kwargs["path"] = build_log_path_from_source(
+            project,
+            entity_type,
+            name,
+            uuid,
+            source,
+            default_store=get_default_store(project),
+        )
     else:
         kwargs["path"] = path
     return kwargs

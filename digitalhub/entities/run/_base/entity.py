@@ -11,7 +11,7 @@ from digitalhub.entities._base.context.entity import ContextEntity
 from digitalhub.entities._commons.enums import EntityTypes, State
 from digitalhub.entities._mixin.metrics.mixin import MetricsMixin
 from digitalhub.entities._mixin.unversioned.mixin import UnversionedMixin
-from digitalhub.entities._processors.processors import crud_processor, run_processor
+from digitalhub.entities._processors.processors import run_processor
 from digitalhub.entities.run._base.utils import init_run_extensions
 from digitalhub.factory.entity import entity_factory
 from digitalhub.factory.runtime import runtime_factory
@@ -269,38 +269,22 @@ class Run(ContextEntity, UnversionedMixin, MetricsMixin):
 
     def _get_executable(self) -> dict:
         """
-        Get executable object from backend. Reimplemented to avoid
-        circular imports.
+        Get executable object from backend.
 
         Returns
         -------
         dict
             Executable (function or workflow) from backend.
         """
-        exec_kind = entity_factory.get_executable_kind(self.kind)
-        exec_type = entity_factory.get_entity_type_from_kind(exec_kind)
-        string_to_split = getattr(self.spec, exec_type)
-        exec_name, exec_id = string_to_split.split("://")[-1].split("/")[-1].split(":")
-        return crud_processor.read_context_entity(
-            exec_name,
-            entity_type=exec_type,
-            project=self.project,
-            entity_id=exec_id,
-        ).to_dict()
+        return run_processor.get_run_executable(self)
 
     def _get_task(self) -> dict:
         """
-        Get object from backend. Reimplemented to avoid
-        circular imports.
+        Get task object from backend.
 
         Returns
         -------
         dict
             Task from backend.
         """
-        task_id = self.spec.task.split("://")[-1].split("/")[-1]
-        return crud_processor.read_unversioned_entity(
-            task_id,
-            entity_type=EntityTypes.TASK.value,
-            project=self.project,
-        ).to_dict()
+        return run_processor.get_run_task(self)

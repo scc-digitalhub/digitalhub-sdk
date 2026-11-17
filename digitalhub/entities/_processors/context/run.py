@@ -7,6 +7,7 @@ from __future__ import annotations
 import typing
 
 from digitalhub.entities._commons.enums import EntityKinds
+from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
 from digitalhub.entities._processors.utils import get_context
 from digitalhub.factory.entity import entity_factory
 from digitalhub.stores.client.common.enums import ApiType, BackendOp
@@ -14,14 +15,40 @@ from digitalhub.stores.client.compiler.operation import ClientOp
 from digitalhub.stores.client.compiler.options import LogsOptions, StopResumeOptions
 from digitalhub.stores.client.compiler.targets import ContextEntityTarget
 from digitalhub.utils.logger.logger import get_logger
+from digitalhub.utils.uri_utils import parse_entity_reference
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.log._base.entity import Log
+    from digitalhub.entities.run._base.entity import Run
 
 logger = get_logger(__name__)
 
 
 class ContextEntityRunProcessor:
+    def __init__(self, crud_processor: ContextEntityCRUDProcessor | None = None) -> None:
+        self.crud_processor = crud_processor if crud_processor is not None else ContextEntityCRUDProcessor()
+
+    def get_run_executable(self, run: Run) -> dict:
+        exec_kind = entity_factory.get_executable_kind(run.kind)
+        entity_type = entity_factory.get_entity_type_from_kind(exec_kind)
+        entity_name, entity_id = parse_entity_reference(getattr(run.spec, entity_type))
+        if entity_name is None:
+            raise ValueError(f"Run executable reference for '{entity_type}' must contain a name and id.")
+        return self.crud_processor.read_context_entity(
+            entity_name,
+            entity_type=entity_type,
+            project=run.project,
+            entity_id=entity_id,
+        ).to_dict()
+
+    def get_run_task(self, run: Run) -> dict:
+        _, task_id = parse_entity_reference(run.spec.task)
+        return self.crud_processor.read_unversioned_entity(
+            task_id,
+            entity_type="task",
+            project=run.project,
+        ).to_dict()
+
     def read_run_logs(
         self,
         project: str,

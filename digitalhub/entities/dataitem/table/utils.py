@@ -65,6 +65,8 @@ def process_data_kwargs(
     path: str | None = None,
     source: SourcesOrListOfSources | None = None,
     filename: str | None = None,
+    *,
+    default_store: str | None = None,
     **kwargs,
 ) -> dict:
     """
@@ -78,6 +80,8 @@ def process_data_kwargs(
         The name of the dataitem entity.
     kind : str
         The kind of dataitem being created (e.g., 'table').
+    default_store : str, optional
+        The default store URI used when generating an output path.
     path : str
         The destination path for the dataitem entity.
         If None, a path will be automatically generated.
@@ -104,9 +108,13 @@ def process_data_kwargs(
         arg = source
 
     if path is None:
+        if default_store is None:
+            raise ValueError("A default store is required when no output path is provided.")
         uuid = build_uuid()
         kwargs["uuid"] = uuid
-        kwargs["path"] = fn(project, EntityTypes.DATAITEM.value, name, uuid, arg)
+        kwargs["path"] = fn(project, EntityTypes.DATAITEM.value, name, uuid, arg, default_store=default_store)
+    else:
+        kwargs["path"] = path
 
     from digitalhub.stores.readers.data.api import get_reader_by_object
 

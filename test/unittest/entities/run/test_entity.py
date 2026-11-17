@@ -122,6 +122,26 @@ def test_run_build_preserves_fields_from_runtime_merge() -> None:
     run.update.assert_called_once_with()
 
 
+def test_get_executable_delegates_to_run_processor(monkeypatch) -> None:
+    run = object.__new__(Run)
+    executable = {"spec": {"function": "function-ref"}}
+    get_run_executable = Mock(return_value=executable)
+    monkeypatch.setattr(run_entity_module.run_processor, "get_run_executable", get_run_executable)
+
+    assert run._get_executable() is executable
+    get_run_executable.assert_called_once_with(run)
+
+
+def test_get_task_delegates_to_run_processor(monkeypatch) -> None:
+    run = object.__new__(Run)
+    task = {"spec": {"instructions": ["build"]}}
+    get_run_task = Mock(return_value=task)
+    monkeypatch.setattr(run_entity_module.run_processor, "get_run_task", get_run_task)
+
+    assert run._get_task() is task
+    get_run_task.assert_called_once_with(run)
+
+
 def test_start_execution_validates_state_before_registering_run() -> None:
     run = object.__new__(Run)
     run.status = SimpleNamespace(state=State.CREATED.value)

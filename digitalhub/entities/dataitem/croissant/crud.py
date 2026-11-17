@@ -8,6 +8,7 @@ import os
 import typing
 from pathlib import Path
 
+from digitalhub.context.api import get_default_store
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
 from digitalhub.entities.dataitem._base.crud import log_base_dataitem, register_base_dataitem
 from digitalhub.entities.dataitem.croissant.utils import (
@@ -85,7 +86,14 @@ def log_croissant(
     metadata_file = validate_croissant_source(source)
     metadata_folder = Path(metadata_file).parent.resolve()
 
-    kwargs = build_croissant_kwargs(project, name, EntityTypes.DATAITEM.value, path, **kwargs)
+    kwargs = build_croissant_kwargs(
+        project,
+        name,
+        EntityTypes.DATAITEM.value,
+        path,
+        default_store=get_default_store(project) if path is None else None,
+        **kwargs,
+    )
 
     # Get the dataset and files from the Croissant metadata
     dataset = get_croissant_dataset(metadata_file)

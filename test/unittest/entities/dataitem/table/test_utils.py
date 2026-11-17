@@ -28,3 +28,53 @@ def test_read_data_sample_dispatches_source_list_by_first_path(monkeypatch) -> N
         engine="polars",
         n_rows=10,
     )
+
+
+def test_process_data_kwargs_builds_path_from_explicit_default_store(monkeypatch) -> None:
+    data = object()
+    reader = Mock()
+    reader.get_schema.return_value = {"fields": []}
+    monkeypatch.setattr(reader_api, "get_reader_by_object", Mock(return_value=reader))
+    monkeypatch.setattr(table_utils, "build_uuid", Mock(return_value="entity-id"))
+    build_path = Mock(return_value="s3://bucket/project/dataitem/table/entity-id/table.parquet")
+    monkeypatch.setattr(table_utils, "build_log_path_from_filename", build_path)
+
+    result = table_utils.process_data_kwargs(
+        "project",
+        "table",
+        data,
+        default_store="s3://bucket",
+        filename="table.parquet",
+    )
+
+    assert result == {
+        "uuid": "entity-id",
+        "path": "s3://bucket/project/dataitem/table/entity-id/table.parquet",
+        "schema": {"fields": []},
+    }
+    build_path.assert_called_once_with(
+        "project",
+        "dataitem",
+        "table",
+        "entity-id",
+        "table.parquet",
+        default_store="s3://bucket",
+    )
+
+
+def test_process_data_kwargs_preserves_positional_path_argument(monkeypatch) -> None:
+    data = object()
+    reader = Mock()
+    reader.get_schema.return_value = {"fields": []}
+    monkeypatch.setattr(reader_api, "get_reader_by_object", Mock(return_value=reader))
+
+    result = table_utils.process_data_kwargs(
+        "project",
+        "table",
+        data,
+        "s3://bucket/custom/path",
+        ["input.csv"],
+        None,
+    )
+
+    assert result == {"path": "s3://bucket/custom/path", "schema": {"fields": []}}

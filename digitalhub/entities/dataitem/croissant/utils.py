@@ -210,6 +210,8 @@ def build_croissant_kwargs(
     entity_type: str,
     name: str,
     path: str | None = None,
+    *,
+    default_store: str | None = None,
     **kwargs,
 ) -> dict[str, Any]:
     """
@@ -233,9 +235,17 @@ def build_croissant_kwargs(
     """
     validate_output_path(path)
     if path is None:
+        if default_store is None:
+            raise ValueError("A default store is required when no output path is provided.")
         uuid = build_uuid()
         kwargs["uuid"] = uuid
-        kwargs["path"] = build_log_path_as_partition(project, entity_type, name, uuid)
+        kwargs["path"] = build_log_path_as_partition(
+            project,
+            entity_type,
+            name,
+            uuid,
+            default_store=default_store,
+        )
     else:
         kwargs["path"] = path
 

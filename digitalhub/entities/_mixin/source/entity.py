@@ -12,7 +12,7 @@ from typing_extensions import Self
 from digitalhub.entities._commons.utils import build_zip_path
 from digitalhub.entities._mixin.source.models import SourceCode
 from digitalhub.entities._mixin.versioned.protocol import VersionedEntityProtocol
-from digitalhub.stores.data.api import get_store
+from digitalhub.stores.data.api import get_default_store_uri, get_store
 from digitalhub.utils.exceptions import EntityError
 from digitalhub.utils.file_utils import eval_zip_type
 from digitalhub.utils.generic_utils import create_archive, decode_base64_string, read_source
@@ -66,11 +66,19 @@ class SourceEntityMixin:
 
         if path.is_dir():
             with create_archive(path) as archive_path:
-                destination = build_zip_path(cast(VersionedEntityProtocol, entity), archive_path.name)
+                destination = build_zip_path(
+                    cast(VersionedEntityProtocol, entity),
+                    archive_path.name,
+                    default_store=get_default_store_uri(entity._context().config),
+                )
                 get_store(destination).upload(str(archive_path), destination)
             source.source = destination
         elif eval_zip_type(source_path):
-            destination = build_zip_path(cast(VersionedEntityProtocol, entity), path.name)
+            destination = build_zip_path(
+                cast(VersionedEntityProtocol, entity),
+                path.name,
+                default_store=get_default_store_uri(entity._context().config),
+            )
             get_store(destination).upload(source_path, destination)
             source.source = destination
         elif self._is_inlineable_source(source_path):

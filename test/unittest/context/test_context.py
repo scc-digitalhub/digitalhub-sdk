@@ -3,12 +3,26 @@ from unittest.mock import Mock
 
 import pytest
 
+import digitalhub.context.api as context_api
 from digitalhub.context.builder import ContextBuilder
 from digitalhub.context.context import Context
 from digitalhub.entities._commons.enums import Relationship
 from digitalhub.entities.project._base.entity import Project
 from digitalhub.runtimes.enums import RuntimeEnvVar
 from digitalhub.utils.exceptions import ContextError
+
+
+def test_get_default_store_uses_project_configuration(monkeypatch) -> None:
+    config = {"default_files_store": "s3://project-store"}
+    context = SimpleNamespace(config=config)
+    get_default_store_uri = Mock(return_value="s3://project-store")
+    get_context = Mock(return_value=context)
+    monkeypatch.setattr(context_api, "get_context", get_context)
+    monkeypatch.setattr(context_api, "get_default_store_uri", get_default_store_uri)
+
+    assert context_api.get_default_store("project") == "s3://project-store"
+    get_context.assert_called_once_with("project")
+    get_default_store_uri.assert_called_once_with(config)
 
 
 def test_project_context_io_is_lazy(monkeypatch, tmp_path) -> None:

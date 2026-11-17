@@ -7,6 +7,7 @@ from __future__ import annotations
 import typing
 from enum import Enum
 
+from digitalhub.context.api import get_default_store
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
 from digitalhub.entities._commons.utils import build_log_name_from_source
 from digitalhub.entities._processors.processors import material_processor
@@ -158,6 +159,7 @@ def log_table(
                 project,
                 name,
                 data=data,
+                default_store=get_default_store(project) if path is None else None,
                 path=path,
                 source=source,
                 filename=filename,
@@ -181,6 +183,7 @@ def log_table(
                 project,
                 name,
                 data=data,
+                default_store=get_default_store(project) if path is None else None,
                 path=path,
                 source=source,
                 filename=filename,

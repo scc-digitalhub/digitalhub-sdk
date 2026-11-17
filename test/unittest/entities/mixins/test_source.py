@@ -55,7 +55,7 @@ class SourceEntity(SourceEntityMixin):
         self.name = "entity"
         self.id = "entity-id"
         self.ENTITY_TYPE = "function"
-        self._context = Mock(return_value=SimpleNamespace(root=context_root))
+        self._context = Mock(return_value=SimpleNamespace(root=context_root, config={}))
 
     def _is_inlineable_source(self, path: str) -> bool:
         return path.endswith(".py")
@@ -143,8 +143,14 @@ def test_source_entity_archives_directories_and_cleans_temporary_archive(tmp_pat
         assert destination == "store://project/entity/archive.zip"
 
     store.upload.side_effect = upload
+    get_default_store_uri = Mock(return_value="s3://default")
     monkeypatch.setattr(source_entity_module, "has_local_scheme", lambda _: True)
-    monkeypatch.setattr(source_entity_module, "build_zip_path", lambda _entity, _name: "store://project/entity/archive.zip")
+    monkeypatch.setattr(source_entity_module, "get_default_store_uri", get_default_store_uri)
+    monkeypatch.setattr(
+        source_entity_module,
+        "build_zip_path",
+        lambda _entity, _name, **_kwargs: "store://project/entity/archive.zip",
+    )
     monkeypatch.setattr(source_entity_module, "get_store", lambda _destination: store)
 
     entity._post_build_source_check()
@@ -152,6 +158,7 @@ def test_source_entity_archives_directories_and_cleans_temporary_archive(tmp_pat
     assert entity.spec.source.source == "store://project/entity/archive.zip"
     assert len(uploaded_paths) == 1
     assert not uploaded_paths[0].exists()
+    get_default_store_uri.assert_called_once_with({})
 
 
 def test_source_export_restores_base64_when_export_raises(tmp_path, monkeypatch):

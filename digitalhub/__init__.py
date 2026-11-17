@@ -106,8 +106,8 @@ from digitalhub.stores.client.common.api import (
     refresh_token,
     set_current_profile,
 )
+from digitalhub.stores.data.utils import get_s3_client, get_sql_engine, get_store_by_entity
 from digitalhub.utils.logger.logger import configure_logging as configure_logging
-from digitalhub.utils.store_utils import get_s3_client, get_sql_engine, get_store_by_entity
 
 
 def __getattr__(name: str):

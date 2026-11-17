@@ -194,6 +194,8 @@ def build_log_path_from_source(
     name: str,
     uuid: str,
     source: str | list[str],
+    *,
+    default_store: str,
 ) -> str:
     """
     Build log path.
@@ -216,7 +218,7 @@ def build_log_path_from_source(
     str
         Log path.
     """
-    path = _get_base_path(project, entity_type, name, uuid)
+    path = _get_base_path(default_store, project, entity_type, name, uuid)
 
     prefix = "zip+" if eval_zip_sources(source) else ""
     path = f"{prefix}{path}"
@@ -273,6 +275,8 @@ def build_log_path_as_partition(
     entity_type: str,
     name: str,
     uuid: str,
+    *,
+    default_store: str,
 ) -> str:
     """
     Build log path as partition.
@@ -293,7 +297,7 @@ def build_log_path_as_partition(
     str
         Log path as partition.
     """
-    return _get_base_path(project, entity_type, name, uuid) + "/"
+    return _get_base_path(default_store, project, entity_type, name, uuid) + "/"
 
 
 def build_log_path_from_filename(
@@ -302,6 +306,8 @@ def build_log_path_from_filename(
     name: str,
     uuid: str,
     filename: str,
+    *,
+    default_store: str,
 ) -> str:
     """
     Build log path.
@@ -324,10 +330,11 @@ def build_log_path_from_filename(
     str
         Log path.
     """
-    return _get_base_path(project, entity_type, name, uuid) + f"/{filename}"
+    return _get_base_path(default_store, project, entity_type, name, uuid) + f"/{filename}"
 
 
 def _get_base_path(
+    default_store: str,
     project: str,
     entity_type: str,
     name: str,
@@ -352,12 +359,10 @@ def _get_base_path(
     str
         Base path.
     """
-    from digitalhub.stores.data.api import get_default_store
-
-    return f"{get_default_store(project)}/{project}/{entity_type}/{name}/{uuid}"
+    return f"{default_store}/{project}/{entity_type}/{name}/{uuid}"
 
 
-def build_zip_path(entity: VersionedEntityProtocol, filename: str) -> str:
+def build_zip_path(entity: VersionedEntityProtocol, filename: str, *, default_store: str) -> str:
     """
     Get destination path.
 
@@ -373,9 +378,7 @@ def build_zip_path(entity: VersionedEntityProtocol, filename: str) -> str:
     str
         Destination path.
     """
-    from digitalhub.stores.data.api import get_default_store
-
-    return f"zip+{get_default_store(entity.project)}/{entity.project}/{entity.ENTITY_TYPE}/{entity.name}/{entity.id}/{filename}"
+    return f"zip+{default_store}/{entity.project}/{entity.ENTITY_TYPE}/{entity.name}/{entity.id}/{filename}"
 
 
 def refresh_decorator(

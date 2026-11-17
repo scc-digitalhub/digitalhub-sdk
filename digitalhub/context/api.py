@@ -13,6 +13,7 @@ from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
 from digitalhub.stores.client.compiler.targets import BaseEntityTarget
 from digitalhub.stores.client.factory import get_client
+from digitalhub.stores.data.api import get_default_store_uri
 from digitalhub.utils.exceptions import ContextError, EntityNotExistsError
 
 if typing.TYPE_CHECKING:
@@ -61,6 +62,11 @@ def get_context(project: str) -> Context:
             return get_context_from_remote(project)
         except EntityNotExistsError as e:
             raise ContextError(f"Context '{project}' not found remotely nor locally.") from e
+
+
+def get_default_store(project: str) -> str:
+    """Resolve the project's default file store, falling back to client settings."""
+    return get_default_store_uri(get_context(project).config)
 
 
 def get_context_from_remote(project: str) -> Context:

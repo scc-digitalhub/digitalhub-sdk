@@ -95,3 +95,44 @@ def test_resume_entity_creates_backend_operation(monkeypatch) -> None:
             options=StopResumeOptions(reason="retry"),
         )
     )
+
+
+def test_get_run_executable_reads_reference_through_crud(monkeypatch) -> None:
+    executable = Mock()
+    executable.to_dict.return_value = {"kind": "python-function"}
+    crud_processor = Mock()
+    crud_processor.read_context_entity.return_value = executable
+    monkeypatch.setattr(run_module.entity_factory, "get_executable_kind", Mock(return_value="python-function"))
+    monkeypatch.setattr(run_module.entity_factory, "get_entity_type_from_kind", Mock(return_value="function"))
+    run = SimpleNamespace(
+        kind="python-run",
+        project="project",
+        spec=SimpleNamespace(function="python-function://project/model:version"),
+    )
+
+    result = ContextEntityRunProcessor(crud_processor).get_run_executable(run)
+
+    assert result == {"kind": "python-function"}
+    crud_processor.read_context_entity.assert_called_once_with(
+        "model",
+        entity_type="function",
+        project="project",
+        entity_id="version",
+    )
+
+
+def test_get_run_task_reads_unversioned_reference_through_crud() -> None:
+    task = Mock()
+    task.to_dict.return_value = {"kind": "python-task"}
+    crud_processor = Mock()
+    crud_processor.read_unversioned_entity.return_value = task
+    run = SimpleNamespace(project="project", spec=SimpleNamespace(task="task://project/task-id"))
+
+    result = ContextEntityRunProcessor(crud_processor).get_run_task(run)
+
+    assert result == {"kind": "python-task"}
+    crud_processor.read_unversioned_entity.assert_called_once_with(
+        "task-id",
+        entity_type="task",
+        project="project",
+    )

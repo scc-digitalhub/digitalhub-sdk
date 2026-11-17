@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.context.api import get_context
 from digitalhub.stores.client.common.enums import ConfigurationVars
 from digitalhub.stores.client.factory import get_client
 from digitalhub.stores.data.builder import store_builder
@@ -15,14 +14,14 @@ if typing.TYPE_CHECKING:
     from digitalhub.stores.data._base.store import Store
 
 
-def get_default_store(project: str) -> str:
+def get_default_store_uri(project_config: dict | None = None) -> str:
     """
-    Returns the default store URI for a given project.
+    Resolve the default store URI from project settings or client configuration.
 
     Parameters
     ----------
-    project : str
-        The name of the project.
+    project_config : dict, optional
+        Project-specific configuration.
 
     Returns
     -------
@@ -31,8 +30,7 @@ def get_default_store(project: str) -> str:
     """
     var = ConfigurationVars.DEFAULT_FILES_STORE.value
 
-    context = get_context(project)
-    store = context.config.get(var.lower().replace("dhcore_", ""))
+    store = (project_config or {}).get(var.lower().replace("dhcore_", ""))
     if store is not None:
         return store
 

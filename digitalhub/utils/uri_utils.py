@@ -127,6 +127,22 @@ def map_uri_scheme(uri: str) -> str:
     raise ValueError(f"Unknown scheme '{scheme}'!")
 
 
+def parse_entity_reference(identifier: str) -> tuple[str | None, str]:
+    """Parse the final name and id from an entity reference URI."""
+    parsed = urlparse(identifier)
+    path = parsed.path if parsed.scheme else identifier
+    component = path.rstrip("/").rsplit("/", 1)[-1]
+    if not component:
+        raise ValueError(f"Invalid entity reference '{identifier}'.")
+
+    name, separator, entity_id = component.rpartition(":")
+    if separator:
+        if not name or not entity_id:
+            raise ValueError(f"Invalid entity reference '{identifier}'.")
+        return name, entity_id
+    return None, component
+
+
 def has_local_scheme(uri: str) -> bool:
     """
     Check if a URI has a local scheme.
