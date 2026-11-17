@@ -37,6 +37,7 @@ class MaterialMixin(ExtensionsMixin):
     key: str
     spec: MaterialSpec
     status: MaterialStatus
+
     @refresh_decorator
     @contextmanager
     def as_file(self) -> Generator[list[str], None, None]:
