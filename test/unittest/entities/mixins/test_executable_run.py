@@ -8,6 +8,8 @@ from unittest.mock import Mock
 import pytest
 
 import digitalhub.entities._mixin.executable.run as run_module
+import digitalhub.entities.function._base.entity as function_entity_module
+import digitalhub.entities.workflow._base.entity as workflow_entity_module
 from digitalhub.entities._commons.enums import Relationship
 from digitalhub.entities._mixin.executable.run import ExecutableRunMixin
 from digitalhub.entities.function._base.entity import Function
@@ -97,11 +99,14 @@ def test_function_and_workflow_runs_append_extensions_consistently(
     additional_extensions = [{"name": "run-extension"}]
     run = Mock()
     run.extensions = existing_extensions.copy()
-    run.local_execution.return_value = False
     task = Mock()
     task.run.return_value = run
     executable._get_or_create_task = Mock(return_value=task)
     monkeypatch.setattr(entity_factory, "get_run_kind_from_action", Mock(return_value="python+run"))
+    processor = Mock()
+    processor.execute_run.return_value = run
+    entity_module = function_entity_module if executable_class is Function else workflow_entity_module
+    monkeypatch.setattr(entity_module, "run_processor", processor)
 
     assert executable.run("execute", extensions=additional_extensions) is run
 
@@ -109,3 +114,4 @@ def test_function_and_workflow_runs_append_extensions_consistently(
     assert run.extensions == existing_extensions + additional_extensions
     run.add_relationship.assert_called_once_with(Relationship.RUN_OF.value, "executable-key")
     run.save.assert_called_once_with()
+    processor.execute_run.assert_called_once_with(run, wait=False, log_info=True)

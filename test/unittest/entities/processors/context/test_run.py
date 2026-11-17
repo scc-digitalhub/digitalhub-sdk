@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+from threading import current_thread
 from types import SimpleNamespace
 from unittest.mock import Mock
 
@@ -136,3 +137,38 @@ def test_get_run_task_reads_unversioned_reference_through_crud() -> None:
         entity_type="task",
         project="project",
     )
+
+
+def test_execute_run_builds_and_runs_local_run_in_caller_thread() -> None:
+    run = Mock()
+    run.local_execution.return_value = True
+    run.run.side_effect = current_thread
+
+    result = ContextEntityRunProcessor().execute_run(run, wait=True)
+
+    assert result is current_thread()
+    run.build.assert_called_once_with()
+    run.run.assert_called_once_with()
+    run.wait.assert_not_called()
+
+
+def test_execute_run_returns_backend_run_without_waiting() -> None:
+    run = Mock()
+    run.local_execution.return_value = False
+
+    assert ContextEntityRunProcessor().execute_run(run) is run
+
+    run.build.assert_not_called()
+    run.run.assert_not_called()
+    run.wait.assert_not_called()
+
+
+def test_execute_run_waits_for_backend_run_when_requested() -> None:
+    run = Mock()
+    run.local_execution.return_value = False
+    waited_run = Mock()
+    run.wait.return_value = waited_run
+
+    assert ContextEntityRunProcessor().execute_run(run, wait=True, log_info=False) is waited_run
+
+    run.wait.assert_called_once_with(log_info=False)

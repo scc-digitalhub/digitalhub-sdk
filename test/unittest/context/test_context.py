@@ -1,3 +1,4 @@
+import contextvars
 from types import SimpleNamespace
 from unittest.mock import Mock
 
@@ -10,6 +11,15 @@ from digitalhub.entities._commons.enums import Relationship
 from digitalhub.entities.project._base.entity import Project
 from digitalhub.runtimes.enums import RuntimeEnvVar
 from digitalhub.utils.exceptions import ContextError
+
+
+def _context() -> Context:
+    project = SimpleNamespace(
+        name="project",
+        _client=Mock(),
+        spec=SimpleNamespace(config={}, source="."),
+    )
+    return Context(project)
 
 
 def test_get_default_store_uses_project_configuration(monkeypatch) -> None:
@@ -65,7 +75,7 @@ def test_project_context_io_is_lazy(monkeypatch, tmp_path) -> None:
 
 
 def test_register_entity_requires_an_active_run() -> None:
-    context = object.__new__(Context)
+    context = _context()
     context.run = None
     context.logged = {}
     entity = Mock()
@@ -78,7 +88,7 @@ def test_register_entity_requires_an_active_run() -> None:
 
 
 def test_register_entity_records_producer_relationship() -> None:
-    context = object.__new__(Context)
+    context = _context()
     context.run = SimpleNamespace(key="run-key", id="run-id")
     context.logged = {}
     entity = Mock(name="artifact")
@@ -89,3 +99,62 @@ def test_register_entity_records_producer_relationship() -> None:
 
     entity.add_relationship.assert_called_once_with(Relationship.PRODUCEDBY.value, "run-key:run-id")
     assert context.logged == {"artifact": "artifact-key"}
+
+
+def test_active_run_and_logged_entities_are_isolated_by_contextvars_context(monkeypatch) -> None:
+    context = _context()
+    monkeypatch.delenv(RuntimeEnvVar.RUN_ID.value, raising=False)
+    first_run = SimpleNamespace(key="run-key", id="run-1")
+    second_run = SimpleNamespace(key="run-key", id="run-2")
+
+    def register(run: SimpleNamespace, name: str) -> None:
+        context.set_run(run)
+        entity = Mock()
+        entity.name = name
+        entity.key = f"{name}-key"
+        context.register_entity(entity)
+
+    first_context = contextvars.Context()
+    second_context = contextvars.Context()
+    first_context.run(register, first_run, "first")
+    second_context.run(register, second_run, "second")
+
+    assert first_context.run(lambda: (context.run, context.is_running, dict(context.logged))) == (
+        first_run,
+        True,
+        {"first": "first-key"},
+    )
+    assert second_context.run(lambda: (context.run, context.is_running, dict(context.logged))) == (
+        second_run,
+        True,
+        {"second": "second-key"},
+    )
+
+    first_context.run(context.unset_run)
+
+    assert first_context.run(lambda: (context.run, context.is_running, dict(context.logged))) == (
+        None,
+        False,
+        {},
+    )
+    assert second_context.run(lambda: context.run) is second_run
+
+
+def test_context_run_id_fallback_is_restored_after_local_run(monkeypatch) -> None:
+    context = _context()
+    backend_run = SimpleNamespace(key="run-key", id="backend-run")
+    local_run = SimpleNamespace(key="run-key", id="local-run")
+    get_run = Mock(return_value=backend_run)
+    monkeypatch.setattr(context, "_get_run", get_run)
+    monkeypatch.setenv(RuntimeEnvVar.RUN_ID.value, "backend-run")
+
+    assert context.run is backend_run
+    assert context.is_running
+
+    context.set_run(local_run)
+    assert context.run is local_run
+
+    context.unset_run()
+    assert context.run is backend_run
+    assert context.is_running
+    get_run.assert_called_once_with("backend-run")

@@ -6,7 +6,10 @@ from __future__ import annotations
 
 import os
 import typing
+from contextvars import ContextVar
 from pathlib import Path
+from threading import Lock
+from typing import NamedTuple
 
 from digitalhub.entities._commons.enums import EntityTypes, Relationship
 from digitalhub.factory.entity import entity_factory
@@ -24,6 +27,12 @@ if typing.TYPE_CHECKING:
     from digitalhub.stores.client.client import Client
 
 logger = get_logger(__name__)
+
+
+class _RunContextState(NamedTuple):
+    run: Run | None
+    is_running: bool
+    logged: dict[str, str]
 
 
 class Context:
@@ -45,8 +54,8 @@ class Context:
         The local context project path.
     is_running : bool
         Flag indicating if the context has an active run.
-    _run : Run
-        Current Run instance, if any.
+    run : Run | None
+        Active Run in the current execution context, or the container run fallback.
     """
 
     def __init__(self, project: Project) -> None:
@@ -57,9 +66,10 @@ class Context:
         self._root: Path = Path(project.spec.source)
 
         self._run_ctx_searched = False
-        self._is_running = False
-        self._run: Run | None = None
-        self.logged: dict[str, str] = {}
+        self._run_ctx_lock = Lock()
+        self._fallback_state = _RunContextState(None, False, {})
+        context_name = f"digitalhub_run_context_{self.name}_{id(self)}"
+        self._run_context: ContextVar[_RunContextState | None] = ContextVar(context_name, default=None)
 
     @property
     def root(self) -> Path:
@@ -78,58 +88,85 @@ class Context:
     @property
     def is_running(self) -> bool:
         self._resolve_run_ctx()
-        return self._is_running
+        return self._get_run_context_state().is_running
 
     @is_running.setter
     def is_running(self, value: bool) -> None:
-        self._is_running = value
-        self._run_ctx_searched = True
+        self._set_run_context_state(self._get_run_context_state()._replace(is_running=value))
+        if self._run_context.get() is None:
+            self._run_ctx_searched = True
 
     @property
     def run(self) -> Run | None:
         self._resolve_run_ctx()
-        return self._run
+        return self._get_run_context_state().run
 
     @run.setter
     def run(self, value: Run | None) -> None:
-        self._run = value
-        self._run_ctx_searched = True
+        self._set_run_context_state(self._get_run_context_state()._replace(run=value))
+        if self._run_context.get() is None:
+            self._run_ctx_searched = True
+
+    @property
+    def logged(self) -> dict[str, str]:
+        return self._get_run_context_state().logged
+
+    @logged.setter
+    def logged(self, value: dict[str, str]) -> None:
+        self._set_run_context_state(self._get_run_context_state()._replace(logged=value))
+
+    def _get_run_context_state(self) -> _RunContextState:
+        state = self._run_context.get()
+        return state if state is not None else self._fallback_state
+
+    def _set_run_context_state(self, state: _RunContextState) -> None:
+        if self._run_context.get() is None:
+            self._fallback_state = state
+        else:
+            self._run_context.set(state)
 
     def _resolve_run_ctx(self) -> None:
-        if not self._run_ctx_searched and self._run is None:
+        if self._run_context.get() is None and not self._run_ctx_searched:
             self._search_run_ctx()
 
     def _search_run_ctx(self) -> None:
         """
         Search for an existing run id in env.
         """
-        self._run_ctx_searched = True
-        run_id = os.getenv(RuntimeEnvVar.RUN_ID.value)
-        if run_id is not None:
-            try:
-                self.set_run(self._get_run(run_id))
-            except BackendError:
-                logger.debug(
-                    f"Run '{run_id}' set in environment but not found in backend",
-                    exc_info=True,
-                )
+        with self._run_ctx_lock:
+            if self._run_ctx_searched:
+                return
+
+            self._run_ctx_searched = True
+            run_id = os.getenv(RuntimeEnvVar.RUN_ID.value)
+            if run_id is not None:
+                try:
+                    self._fallback_state = self._fallback_state._replace(
+                        run=self._get_run(run_id),
+                        is_running=True,
+                    )
+                except BackendError:
+                    logger.debug(
+                        f"Run '{run_id}' set in environment but not found in backend",
+                        exc_info=True,
+                    )
 
     def set_run(self, run: Run) -> None:
         """
         Set the current run.
         """
-        self._run_ctx_searched = True
-        self._is_running = True
-        self._run = run
+        state = _RunContextState(run, True, {})
+        self._run_context.set(state)
 
     def unset_run(self) -> None:
         """
         Clear the current run and reset running state and logged items.
         """
-        self._run_ctx_searched = True
-        self._is_running = False
-        self._run = None
-        self.logged.clear()
+        state = self._run_context.get()
+        if state is not None:
+            state.logged.clear()
+        self._fallback_state.logged.clear()
+        self._run_context.set(None)
 
     def register_entity(self, obj: ContextEntity) -> ContextEntity:
         """

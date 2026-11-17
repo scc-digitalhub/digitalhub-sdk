@@ -49,6 +49,14 @@ class ContextEntityRunProcessor:
             project=run.project,
         ).to_dict()
 
+    def execute_run(self, run: Run, wait: bool = False, log_info: bool = True) -> Run:
+        """Build and execute local runs, or wait for backend execution when requested."""
+        if not run.local_execution():
+            return run.wait(log_info=log_info) if wait else run
+
+        run.build()
+        return run.run()
+
     def read_run_logs(
         self,
         project: str,

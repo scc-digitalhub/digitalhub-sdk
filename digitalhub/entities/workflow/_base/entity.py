@@ -10,6 +10,7 @@ from digitalhub.entities._base.context.entity import ContextEntity
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._mixin.executable.mixin import ExecutableMixin
 from digitalhub.entities._mixin.versioned.mixin import VersionedMixin
+from digitalhub.entities._processors.processors import run_processor
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.run._base.entity import Run
@@ -79,7 +80,4 @@ class Workflow(ContextEntity, VersionedMixin, ExecutableMixin):
         task: Task = self._get_or_create_task(action)
 
         run = self._create_run(task, action, extensions=extensions, **kwargs)
-
-        if wait:
-            return run.wait(log_info=log_info)
-        return run
+        return run_processor.execute_run(run, wait=wait, log_info=log_info)

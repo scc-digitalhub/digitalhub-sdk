@@ -5,12 +5,12 @@
 from __future__ import annotations
 
 import typing
-from concurrent.futures import ThreadPoolExecutor
 
 from digitalhub.entities._base.context.entity import ContextEntity
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._mixin.executable.mixin import ExecutableMixin
 from digitalhub.entities._mixin.versioned.mixin import VersionedMixin
+from digitalhub.entities._processors.processors import run_processor
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.function._base.spec import FunctionSpec
@@ -80,17 +80,4 @@ class Function(ContextEntity, VersionedMixin, ExecutableMixin):
         task: Task = self._get_or_create_task(action)
 
         run = self._create_run(task, action, extensions=extensions, **kwargs)
-
-        # If execution is done by DHCore backend, return the object
-        if not run.local_execution():
-            if wait:
-                return run.wait(log_info=log_info)
-            return run
-
-        # If local execution, build and launch run.
-        # Detach the run from the main thread
-        run.build()
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            result = executor.submit(run.run)
-            r = result.result()
-        return r
+        return run_processor.execute_run(run, wait=wait, log_info=log_info)
