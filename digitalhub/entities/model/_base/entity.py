@@ -23,7 +23,7 @@ class Model(ContextEntity, VersionedMixin, MaterialMixin, MetricsMixin):
     """
 
     ENTITY_TYPE = EntityTypes.MODEL.value
-    _obj_attr = (*ContextEntity._obj_attr, "extensions")
+    _obj_attr = (*ContextEntity._obj_attr, *MaterialMixin._obj_attr)
 
     def __init__(
         self,
@@ -42,4 +42,4 @@ class Model(ContextEntity, VersionedMixin, MaterialMixin, MetricsMixin):
         self._init_metrics_state()
         self.spec: ModelSpec
         self.status: ModelStatus
-        self._init_material_extensions(extensions)
+        self._init_extensions(extensions)

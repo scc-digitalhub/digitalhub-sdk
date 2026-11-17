@@ -22,7 +22,7 @@ class Dataitem(ContextEntity, VersionedMixin, MaterialMixin):
     """
 
     ENTITY_TYPE = EntityTypes.DATAITEM.value
-    _obj_attr = (*ContextEntity._obj_attr, "extensions")
+    _obj_attr = (*ContextEntity._obj_attr, *MaterialMixin._obj_attr)
 
     def __init__(
         self,
@@ -40,4 +40,4 @@ class Dataitem(ContextEntity, VersionedMixin, MaterialMixin):
         self._init_versioned_identity(project, name, uuid, kind)
         self.spec: DataitemSpec
         self.status: DataitemStatus
-        self._init_material_extensions(extensions)
+        self._init_extensions(extensions)

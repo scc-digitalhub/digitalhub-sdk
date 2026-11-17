@@ -7,6 +7,7 @@ import pytest
 from digitalhub.entities._base.context.entity import ContextEntity
 from digitalhub.entities._base.entity.entity import BaseEntity, PersistedEntity
 from digitalhub.entities._base.metadata.entity import Metadata
+from digitalhub.entities._mixin.extensions.mixin import ExtensionsMixin
 from digitalhub.entities._mixin.generic.spec import GenericSpec
 from digitalhub.entities._mixin.generic.status import GenericStatus
 from digitalhub.entities.artifact._base.entity import Artifact
@@ -50,11 +51,11 @@ def _build_entity(name: str = "entity") -> StubEntity:
 def test_serialization_attributes_are_immutable_class_contracts() -> None:
     entity_attributes = ("kind", "metadata", "spec", "status", "user", "key")
     context_attributes = (*entity_attributes, "project", "id", "name")
-    material_attributes = (*context_attributes, "extensions")
+    material_attributes = (*context_attributes, *ExtensionsMixin._obj_attr)
 
     assert PersistedEntity._obj_attr == entity_attributes
     assert ContextEntity._obj_attr == context_attributes
-    assert Project._obj_attr == (*entity_attributes, "id", "name", "extensions")
+    assert Project._obj_attr == (*entity_attributes, "id", "name", *ExtensionsMixin._obj_attr)
 
     for entity_class in (Artifact, ArtifactGeneric, Dataitem, Model, ModelGeneric):
         assert entity_class._obj_attr == material_attributes

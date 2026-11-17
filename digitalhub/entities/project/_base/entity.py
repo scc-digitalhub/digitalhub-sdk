@@ -11,6 +11,7 @@ from digitalhub.context.api import build_context
 from digitalhub.entities._base.entity.entity import PersistedEntity
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._constructors.uuid import build_uuid
+from digitalhub.entities._mixin.extensions.mixin import ExtensionsMixin
 from digitalhub.entities._processors.processors import (
     base_crud_processor,
     base_special_ops_processor,
@@ -44,13 +45,13 @@ else:
         pass
 
 
-class Project(PersistedEntity, ProjectListShortcuts):
+class Project(PersistedEntity, ProjectListShortcuts, ExtensionsMixin):
     """
     A class representing a project.
     """
 
     ENTITY_TYPE = EntityTypes.PROJECT.value
-    _obj_attr = (*PersistedEntity._obj_attr, "id", "name", "extensions")
+    _obj_attr = (*PersistedEntity._obj_attr, "id", "name", *ExtensionsMixin._obj_attr)
     _CONTEXT_ENTITY_SECTIONS = (
         f"{EntityTypes.ARTIFACT.value}s",
         f"{EntityTypes.DATAITEM.value}s",
@@ -81,7 +82,7 @@ class Project(PersistedEntity, ProjectListShortcuts):
         super().__init__(kind, metadata, spec, status, user)
         self.spec: ProjectSpec
         self.status: ProjectStatus
-        self.extensions = extensions if extensions is not None else []
+        self._init_extensions(extensions)
 
         self.id = name  # Unique identifier for the project
         self.name = name

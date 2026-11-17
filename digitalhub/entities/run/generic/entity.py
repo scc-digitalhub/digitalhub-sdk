@@ -8,10 +8,10 @@ import typing
 
 from digitalhub.entities._base.context.entity import ContextEntity
 from digitalhub.entities._commons.enums import EntityTypes
+from digitalhub.entities._mixin.extensions.mixin import ExtensionsMixin
 from digitalhub.entities._mixin.generic.entity import GenericMixin
 from digitalhub.entities._mixin.metrics.mixin import MetricsMixin
 from digitalhub.entities._mixin.unversioned.mixin import UnversionedMixin
-from digitalhub.entities.run._base.utils import init_run_extensions
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.metadata.entity import Metadata
@@ -19,11 +19,11 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities._mixin.generic.status import GenericStatus
 
 
-class RunGeneric(ContextEntity, UnversionedMixin, MetricsMixin, GenericMixin):
+class RunGeneric(ContextEntity, UnversionedMixin, MetricsMixin, GenericMixin, ExtensionsMixin):
     """Generic run entity that preserves runtime fields without run-specific methods."""
 
     ENTITY_TYPE = EntityTypes.RUN.value
-    _obj_attr = (*ContextEntity._obj_attr, "extensions")
+    _obj_attr = (*ContextEntity._obj_attr, *ExtensionsMixin._obj_attr)
 
     def __init__(
         self,
@@ -45,4 +45,4 @@ class RunGeneric(ContextEntity, UnversionedMixin, MetricsMixin, GenericMixin):
         self.status: GenericStatus
 
         self.name = name
-        init_run_extensions(self, extensions)
+        self._init_extensions(extensions)

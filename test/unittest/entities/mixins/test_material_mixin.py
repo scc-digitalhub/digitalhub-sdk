@@ -41,10 +41,10 @@ def _configure_material_upload(monkeypatch, store) -> None:
     )
 
 
-def test_init_material_extensions_defaults_to_empty_list() -> None:
+def test_init_extensions_defaults_to_empty_list() -> None:
     entity = MaterialEntityForTest()
 
-    entity._init_material_extensions()
+    entity._init_extensions()
 
     assert entity.extensions == []
 

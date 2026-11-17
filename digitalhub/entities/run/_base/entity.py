@@ -9,10 +9,10 @@ import typing
 
 from digitalhub.entities._base.context.entity import ContextEntity
 from digitalhub.entities._commons.enums import EntityTypes, State
+from digitalhub.entities._mixin.extensions.mixin import ExtensionsMixin
 from digitalhub.entities._mixin.metrics.mixin import MetricsMixin
 from digitalhub.entities._mixin.unversioned.mixin import UnversionedMixin
 from digitalhub.entities._processors.processors import run_processor
-from digitalhub.entities.run._base.utils import init_run_extensions
 from digitalhub.factory.entity import entity_factory
 from digitalhub.factory.runtime import runtime_factory
 from digitalhub.utils.exceptions import EntityError
@@ -38,13 +38,13 @@ class LocalExecutionRunMixin:
         return self.spec.local_execution
 
 
-class Run(ContextEntity, UnversionedMixin, MetricsMixin):
+class Run(ContextEntity, UnversionedMixin, MetricsMixin, ExtensionsMixin):
     """
     A class representing a run.
     """
 
     ENTITY_TYPE = EntityTypes.RUN.value
-    _obj_attr = (*ContextEntity._obj_attr, "extensions")
+    _obj_attr = (*ContextEntity._obj_attr, *ExtensionsMixin._obj_attr)
 
     def __init__(
         self,
@@ -67,7 +67,7 @@ class Run(ContextEntity, UnversionedMixin, MetricsMixin):
         self.name = name
         self._init_metrics_state()
 
-        init_run_extensions(self, extensions)
+        self._init_extensions(extensions)
 
     ##############################
     #  Run Methods

@@ -12,6 +12,7 @@ from tempfile import TemporaryDirectory
 from typing import ClassVar
 
 from digitalhub.entities._commons.utils import refresh_decorator
+from digitalhub.entities._mixin.extensions.mixin import ExtensionsMixin
 from digitalhub.entities._mixin.material.files import MaterialFile
 from digitalhub.entities._processors.processors import material_processor
 from digitalhub.stores.data.api import get_store
@@ -27,7 +28,7 @@ logger = get_logger(__name__)
 MAX_FILES_IN_STATUS = 100
 
 
-class MaterialMixin:
+class MaterialMixin(ExtensionsMixin):
     ENTITY_TYPE: ClassVar[str]
     project: str
     kind: str
@@ -36,11 +37,6 @@ class MaterialMixin:
     key: str
     spec: MaterialSpec
     status: MaterialStatus
-    extensions: list[dict]
-
-    def _init_material_extensions(self, extensions: list[dict] | None = None) -> None:
-        self.extensions = extensions if extensions is not None else []
-
     @refresh_decorator
     @contextmanager
     def as_file(self) -> Generator[list[str], None, None]:
