@@ -44,6 +44,15 @@ class _ExportBase(Protocol):
 class SourceEntityMixin:
     """Handle source file uploads and local source export for versioned entities."""
 
+    @property
+    def source(self) -> str | None:
+        source = cast(_SourceEntity, self).spec.source
+        if source is None:
+            return None
+        if source.base64 is not None:
+            return decode_base64_string(source.base64)
+        return source.code
+
     def _is_inlineable_source(self, path: str) -> bool:
         raise NotImplementedError(f"{type(self).__name__} must define inlineable source types for {path!r}.")
 

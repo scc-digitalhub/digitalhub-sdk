@@ -87,6 +87,40 @@ def test_source_code_normalizes_inline_code_and_validates_required_fields():
         PythonSourceCode(source="main.py")
 
 
+def test_source_property_prefers_base64_to_inline_code(tmp_path):
+    source = PythonSourceCode.model_construct(
+        source="main.py",
+        code="inline code",
+        base64="YmFzZTY0IGNvZGU=",
+        lang="python",
+        handler="main",
+    )
+    entity = SourceEntity(source, tmp_path)
+
+    assert entity.source == "base64 code"
+    assert "source" not in entity.__dict__
+
+
+def test_source_property_uses_inline_code_when_base64_is_missing(tmp_path):
+    source = PythonSourceCode.model_construct(
+        source="main.py",
+        code="inline code",
+        base64=None,
+        lang="python",
+        handler="main",
+    )
+    entity = SourceEntity(source, tmp_path)
+
+    assert entity.source == "inline code"
+
+
+def test_source_property_decodes_validated_inline_input(tmp_path):
+    source = PythonSourceCode(code="print('hello')", handler="main")
+    entity = SourceEntity(source, tmp_path)
+
+    assert entity.source == "print('hello')"
+
+
 def test_source_builder_collects_top_level_inputs_without_mutating_nested_source():
     nested_source = {"source": "nested.py", "handler": "nested"}
     builder = SourceBuilder()
