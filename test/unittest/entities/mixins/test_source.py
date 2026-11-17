@@ -69,7 +69,8 @@ class ExportFailure:
 class ExportableSourceEntity(SourceEntityMixin, ExportFailure):
     def __init__(self, source: PythonSourceCode, context_root: Path):
         self.spec = SimpleNamespace(source=source)
-        self._context = Mock(return_value=SimpleNamespace(root=context_root))
+        context = SimpleNamespace(root=context_root, ensure_root=Mock(return_value=context_root))
+        self._context = Mock(return_value=context)
 
     def _is_inlineable_source(self, path: str) -> bool:
         return path.endswith(".py")
@@ -156,6 +157,7 @@ def test_source_entity_archives_directories_and_cleans_temporary_archive(tmp_pat
 def test_source_export_restores_base64_when_export_raises(tmp_path, monkeypatch):
     source = PythonSourceCode(source="main.py", handler="main", base64="cHJpbnQoJ2hlbGxvJyk=")
     entity = ExportableSourceEntity(source, tmp_path)
+    context = entity._context.return_value
     monkeypatch.setattr(source_entity_module, "has_local_scheme", lambda _: True)
     monkeypatch.setattr(source_entity_module, "write_text", lambda *_args: None)
 
@@ -163,3 +165,4 @@ def test_source_export_restores_base64_when_export_raises(tmp_path, monkeypatch)
         entity.export()
 
     assert source.base64 == "cHJpbnQoJ2hlbGxvJyk="
+    context.ensure_root.assert_called_once_with()

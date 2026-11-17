@@ -54,19 +54,56 @@ class Context:
         self.name: str = project.name
         self.client: Client = project._client
         self.config: dict = project.spec.config
-        self.root: Path = Path(project.spec.source)
-        self.root.mkdir(parents=True, exist_ok=True)
+        self._root: Path = Path(project.spec.source)
 
-        # Initialize run context
-        self.is_running: bool = False
-        self.run: Run | None = None
+        self._run_ctx_searched = False
+        self._is_running = False
+        self._run: Run | None = None
         self.logged: dict[str, str] = {}
-        self._search_run_ctx()
+
+    @property
+    def root(self) -> Path:
+        """Return the local context root without creating it."""
+        return self._root
+
+    @root.setter
+    def root(self, path: str | Path) -> None:
+        self._root = Path(path)
+
+    def ensure_root(self) -> Path:
+        """Create and return the local context root."""
+        self._root.mkdir(parents=True, exist_ok=True)
+        return self._root
+
+    @property
+    def is_running(self) -> bool:
+        self._resolve_run_ctx()
+        return self._is_running
+
+    @is_running.setter
+    def is_running(self, value: bool) -> None:
+        self._is_running = value
+        self._run_ctx_searched = True
+
+    @property
+    def run(self) -> Run | None:
+        self._resolve_run_ctx()
+        return self._run
+
+    @run.setter
+    def run(self, value: Run | None) -> None:
+        self._run = value
+        self._run_ctx_searched = True
+
+    def _resolve_run_ctx(self) -> None:
+        if not self._run_ctx_searched and self._run is None:
+            self._search_run_ctx()
 
     def _search_run_ctx(self) -> None:
         """
         Search for an existing run id in env.
         """
+        self._run_ctx_searched = True
         run_id = os.getenv(RuntimeEnvVar.RUN_ID.value)
         if run_id is not None:
             try:
@@ -81,15 +118,17 @@ class Context:
         """
         Set the current run.
         """
-        self.is_running = True
-        self.run = run
+        self._run_ctx_searched = True
+        self._is_running = True
+        self._run = run
 
     def unset_run(self) -> None:
         """
         Clear the current run and reset running state and logged items.
         """
-        self.is_running = False
-        self.run = None
+        self._run_ctx_searched = True
+        self._is_running = False
+        self._run = None
         self.logged.clear()
 
     def register_entity(self, obj: ContextEntity) -> ContextEntity:

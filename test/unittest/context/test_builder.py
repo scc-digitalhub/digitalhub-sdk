@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -36,3 +37,34 @@ def test_build_rolls_back_failed_context_and_can_retry(monkeypatch) -> None:
 
     assert context.name == project.name
     assert initialization_count == 2
+
+
+def test_build_updates_cached_context_without_resetting_run_state(tmp_path) -> None:
+    builder = ContextBuilder()
+    first_client = object()
+    first_project = SimpleNamespace(
+        name="project",
+        _client=first_client,
+        spec=SimpleNamespace(config={"profile": "old"}, source=str(tmp_path / "old")),
+    )
+    context = builder.build(first_project)
+    run = SimpleNamespace(key="run-key", id="run-id")
+    context.set_run(run)
+    context.logged["artifact"] = "artifact-key"
+
+    updated_client = object()
+    updated_root = tmp_path / "updated"
+    updated_project = SimpleNamespace(
+        name="project",
+        _client=updated_client,
+        spec=SimpleNamespace(config={"profile": "new"}, source=str(updated_root)),
+    )
+
+    assert builder.build(updated_project) is context
+    assert context.client is updated_client
+    assert context.config == {"profile": "new"}
+    assert context.root == Path(updated_root)
+    assert context.run is run
+    assert context.is_running
+    assert context.logged == {"artifact": "artifact-key"}
+    assert not updated_root.exists()

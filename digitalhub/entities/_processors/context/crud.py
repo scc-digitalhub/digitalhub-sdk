@@ -77,7 +77,8 @@ class ContextEntityCRUDProcessor:
 
     def export_context_entity(self, _entity: ContextEntity) -> str:
         obj = _entity.to_dict()
-        pth = _entity._context().root / f"{_entity.ENTITY_TYPE}s-{_entity.id}.yaml"
+        context = _entity._context()
+        pth = context.ensure_root() / f"{_entity.ENTITY_TYPE}s-{_entity.id}.yaml"
         write_yaml(pth, obj)
         return str(pth)
 

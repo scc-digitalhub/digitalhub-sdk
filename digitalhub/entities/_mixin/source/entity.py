@@ -88,7 +88,8 @@ class SourceEntityMixin:
         base64 = source.base64
         source.base64 = None
         try:
-            write_text(entity._context().root / source_path, decode_base64_string(base64))
+            context = entity._context()
+            write_text(context.ensure_root() / source_path, decode_base64_string(base64))
             return cast(_ExportBase, super()).export()
         finally:
             source.base64 = base64

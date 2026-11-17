@@ -211,8 +211,10 @@ class Project(PersistedEntity, ProjectListShortcuts):
             Exported filepath.
         """
         obj = self._refresh_to_dict()
-        pth = Path(self.spec.source) / f"{self.ENTITY_TYPE}s-{self.name}.yaml"
         obj = self._export_not_embedded(obj)
+        root = Path(self.spec.source)
+        root.mkdir(parents=True, exist_ok=True)
+        pth = root / f"{self.ENTITY_TYPE}s-{self.name}.yaml"
         write_yaml(pth, obj)
         return str(pth)
 

@@ -35,18 +35,23 @@ class ContextBuilder:
         Context
             The newly created or existing Context instance.
         """
-        if project.name not in self._instances:
-            # Create context without initialization to prevent recursion
-            # then call __init__ to properly set up the context
-            ctx = Context.__new__(Context)
-            self._instances[project.name] = ctx
-            try:
-                ctx.__init__(project)
-            except BaseException:
-                if self._instances.get(project.name) is ctx:
-                    self._instances.pop(project.name)
-                raise
-        return self._instances[project.name]
+        context = self._instances.get(project.name)
+        if context is not None:
+            context.client = project._client
+            context.config = project.spec.config
+            context.root = project.spec.source
+            return context
+
+        # Register before initialization so a failed init can be rolled back.
+        context = Context.__new__(Context)
+        self._instances[project.name] = context
+        try:
+            context.__init__(project)
+        except BaseException:
+            if self._instances.get(project.name) is context:
+                self._instances.pop(project.name)
+            raise
+        return context
 
     def get(self, project: str) -> Context:
         """
