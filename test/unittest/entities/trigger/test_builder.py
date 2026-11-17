@@ -66,3 +66,19 @@ def test_trigger_builders_build_entities(builder_class, kind, spec_kwargs, expec
     assert trigger.kind == kind
     for key, value in expected_spec.items():
         assert getattr(trigger.spec, key) == value
+
+
+def test_trigger_builder_routes_embedded_to_metadata() -> None:
+    builder = TriggerSchedulerBuilder()
+    trigger = builder.build(
+        project="project",
+        name="trigger",
+        kind=builder.ENTITY_KIND,
+        embedded=True,
+        task="task-key",
+        template={"interval": "daily"},
+        schedule="0 0 12 * * ?",
+    )
+
+    assert trigger.metadata.embedded is True
+    assert "embedded" not in trigger.spec.to_dict()

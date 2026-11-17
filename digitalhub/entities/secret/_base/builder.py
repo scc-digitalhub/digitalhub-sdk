@@ -30,6 +30,7 @@ class SecretSecretBuilder(VersionedBuilder):
         uuid: str | None = None,
         description: str | None = None,
         labels: list[str] | None = None,
+        embedded: bool = False,
         **kwargs,
     ) -> Secret:
         """
@@ -49,6 +50,8 @@ class SecretSecretBuilder(VersionedBuilder):
             Description of the object (human readable).
         labels : list[str]
             List of labels.
+        embedded : bool
+            Flag to determine if object spec must be embedded in project spec.
         **kwargs : dict
             Spec keyword arguments.
 
@@ -64,6 +67,7 @@ class SecretSecretBuilder(VersionedBuilder):
             name=name,
             description=description,
             labels=labels,
+            embedded=embedded,
         )
         path = f"secret://{name}"
         provider = "kubernetes"

@@ -27,6 +27,7 @@ class ContainerimageBuilder(VersionedBuilder):
         description: str | None = None,
         labels: list[str] | None = None,
         image: str | None = None,
+        embedded: bool = False,
         **kwargs,
     ) -> Containerimage:
         """
@@ -48,6 +49,10 @@ class ContainerimageBuilder(VersionedBuilder):
             Description of the object (human readable).
         labels : list[str]
             List of labels.
+        image : str
+            Image URI.
+        embedded : bool
+            Flag to determine if object spec must be embedded in project spec.
         **kwargs : dict
             Spec keyword arguments.
 
@@ -67,6 +72,7 @@ class ContainerimageBuilder(VersionedBuilder):
             version=version,
             description=description,
             labels=labels,
+            embedded=embedded,
         )
         spec = self.build_spec(
             image=image,
