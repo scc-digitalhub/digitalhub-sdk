@@ -126,7 +126,7 @@ def test_get_executable_delegates_to_run_processor(monkeypatch) -> None:
     run = object.__new__(Run)
     executable = {"spec": {"function": "function-ref"}}
     get_run_executable = Mock(return_value=executable)
-    monkeypatch.setattr(run_entity_module.run_processor, "get_run_executable", get_run_executable)
+    monkeypatch.setattr(run_entity_module.executable_processor, "get_run_executable", get_run_executable)
 
     assert run._get_executable() is executable
     get_run_executable.assert_called_once_with(run)
@@ -136,7 +136,7 @@ def test_get_task_delegates_to_run_processor(monkeypatch) -> None:
     run = object.__new__(Run)
     task = {"spec": {"instructions": ["build"]}}
     get_run_task = Mock(return_value=task)
-    monkeypatch.setattr(run_entity_module.run_processor, "get_run_task", get_run_task)
+    monkeypatch.setattr(run_entity_module.executable_processor, "get_run_task", get_run_task)
 
     assert run._get_task() is task
     get_run_task.assert_called_once_with(run)

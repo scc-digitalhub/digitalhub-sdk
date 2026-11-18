@@ -17,6 +17,7 @@ from digitalhub.entities._processors.utils import (
 from digitalhub.factory.entity import entity_factory
 from digitalhub.utils.exceptions import EntityAlreadyExistsError, EntityError, EntityNotExistsError
 from digitalhub.utils.io_utils import read_yaml
+from digitalhub.utils.uri_utils import parse_entity_reference
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._mixin.executable.protocol import ExecutableProtocol
@@ -141,12 +142,12 @@ class ContextEntityExecutableProcessor:
     def create_run(
         self,
         executable: ExecutableProtocol,
-        task: Task,
         action: str,
         extensions: list[dict] | None = None,
         **kwargs,
     ) -> Run:
         """Create and persist a run for an executable action."""
+        task = self.get_or_create_task(executable, action)
         run_kind = entity_factory.get_run_kind_from_action(executable.kind, action)
         run = task.run(run_kind, save=False, **kwargs)
         if extensions is not None:
@@ -154,6 +155,90 @@ class ContextEntityExecutableProcessor:
         run.add_relationship(Relationship.RUN_OF.value, executable.key)
         run.save()
         return run
+
+    def execute_executable(
+        self,
+        executable: ExecutableProtocol,
+        action: str,
+        wait: bool = False,
+        log_info: bool = True,
+        extensions: list[dict] | None = None,
+        **kwargs,
+    ) -> Run:
+        """Create and execute a run for an executable action."""
+        run = self.create_run(
+            executable,
+            action,
+            extensions=extensions,
+            **kwargs,
+        )
+        return self.execute_run(run, wait=wait, log_info=log_info)
+
+    def execute_run(self, run: Run, wait: bool = False, log_info: bool = True) -> Run:
+        """Build and execute local runs, or wait for backend execution when requested."""
+        if not run.local_execution():
+            return run.wait(log_info=log_info) if wait else run
+
+        run.build()
+        return run.run()
+
+    def build_task_run(
+        self,
+        task: Task,
+        run_kind: str,
+        save: bool = True,
+        **kwargs,
+    ) -> Run:
+        """Build a run from a task, optionally persisting it."""
+        exec_kind = entity_factory.get_executable_kind(task.kind)
+        exec_type = entity_factory.get_entity_type_from_kind(exec_kind)
+        kwargs[exec_type] = getattr(task.spec, exec_type)
+        params = {
+            **kwargs,
+            "project": task.project,
+            "task": task._get_task_string(),
+            "kind": run_kind,
+            "entity_type": EntityTypes.RUN.value,
+        }
+        if save:
+            return self.crud_processor.create_context_entity(**params)
+        return entity_factory.build_entity_from_params(**params)
+
+    def get_run_executable(self, run: Run) -> dict:
+        """Read the executable related to a run."""
+        exec_kind = entity_factory.get_executable_kind(run.kind)
+        entity_type = entity_factory.get_entity_type_from_kind(exec_kind)
+        entity_name, entity_id = parse_entity_reference(getattr(run.spec, entity_type))
+        if entity_name is None:
+            raise ValueError(f"Run executable reference for '{entity_type}' must contain a name and id.")
+        return self.crud_processor.read_context_entity(
+            entity_name,
+            entity_type=entity_type,
+            project=run.project,
+            entity_id=entity_id,
+        ).to_dict()
+
+    def get_run_task(self, run: Run) -> dict:
+        """Read the task related to a run."""
+        _, task_id = parse_entity_reference(run.spec.task)
+        return self.crud_processor.read_unversioned_entity(
+            task_id,
+            entity_type=EntityTypes.TASK.value,
+            project=run.project,
+        ).to_dict()
+
+    def delete_executable_run(
+        self,
+        executable: ExecutableProtocol,
+        identifier: str,
+    ) -> dict:
+        """Delete a run only when it belongs to the executable."""
+        run = self.get_executable_run(executable, identifier)
+        return self.crud_processor.delete_context_entity(
+            run.key,
+            entity_type=EntityTypes.RUN.value,
+            unversioned=True,
+        )
 
     def list_executable_triggers(
         self,

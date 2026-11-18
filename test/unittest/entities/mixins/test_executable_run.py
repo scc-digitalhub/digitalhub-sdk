@@ -7,8 +7,7 @@ from unittest.mock import Mock
 
 import pytest
 
-import digitalhub.entities.function._base.entity as function_entity_module
-import digitalhub.entities.workflow._base.entity as workflow_entity_module
+import digitalhub.entities._mixin.executable.mixin as executable_mixin_module
 from digitalhub.entities._mixin.executable.run import ExecutableRunMixin
 from digitalhub.entities.function._base.entity import Function
 from digitalhub.entities.workflow._base.entity import Workflow
@@ -29,6 +28,23 @@ def _run(executable: StubExecutable, run_id: str, run_key: str, function: str):
         id=run_id,
         key=run_key,
         spec=SimpleNamespace(function=function),
+    )
+
+
+def test_new_run_delegates_to_executable_processor(monkeypatch) -> None:
+    executable = StubExecutable()
+    run = Mock()
+    create_run = Mock(return_value=run)
+    monkeypatch.setattr(
+        "digitalhub.entities._mixin.executable.run.executable_processor.create_run",
+        create_run,
+    )
+
+    assert executable.new_run("execute", extensions=[{"name": "extension"}]) is run
+    create_run.assert_called_once_with(
+        executable,
+        "execute",
+        extensions=[{"name": "extension"}],
     )
 
 
@@ -77,6 +93,18 @@ def test_list_runs_forwards_filters(monkeypatch) -> None:
     )
 
 
+def test_delete_run_delegates_to_executable_processor(monkeypatch) -> None:
+    executable = StubExecutable()
+    delete_run = Mock(return_value={"deleted": True})
+    monkeypatch.setattr(
+        "digitalhub.entities._mixin.executable.run.executable_processor.delete_executable_run",
+        delete_run,
+    )
+
+    assert executable.delete_run("run-id") == {"deleted": True}
+    delete_run.assert_called_once_with(executable, "run-id")
+
+
 @pytest.mark.parametrize(
     ("executable_class", "task_kwargs"),
     [(Function, {}), (Workflow, {})],
@@ -90,11 +118,10 @@ def test_function_and_workflow_runs_append_extensions_consistently(
 
     additional_extensions = [{"name": "run-extension"}]
     run = Mock()
-    entity_module = function_entity_module if executable_class is Function else workflow_entity_module
     execute_executable = Mock(return_value=run)
     processor = Mock()
     processor.execute_executable = execute_executable
-    monkeypatch.setattr(entity_module, "run_processor", processor)
+    monkeypatch.setattr(executable_mixin_module, "executable_processor", processor)
 
     assert executable.run("execute", extensions=additional_extensions) is run
 

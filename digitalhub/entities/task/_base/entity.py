@@ -9,7 +9,7 @@ import typing
 from digitalhub.entities._base.context.entity import ContextEntity
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._mixin.unversioned.mixin import UnversionedMixin
-from digitalhub.entities._processors.processors import run_processor
+from digitalhub.entities._processors.processors import executable_processor
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.run._base.entity import Run
@@ -64,7 +64,7 @@ class Task(ContextEntity, UnversionedMixin):
         Run
             Run object.
         """
-        return run_processor.build_task_run(self, run_kind, save=save, **kwargs)
+        return executable_processor.build_task_run(self, run_kind, save=save, **kwargs)
 
     def _get_task_string(self) -> str:
         """
@@ -76,57 +76,3 @@ class Task(ContextEntity, UnversionedMixin):
             Task string.
         """
         return f"{self.kind}://{self.project}/{self.id}"
-
-    ##############################
-    # CRUD Methods for Run
-    ##############################
-
-    def new_run(self, save: bool = True, **kwargs) -> Run:
-        """
-        Create a new run.
-
-        Parameters
-        ----------
-        save : bool
-            Flag to indicate save.
-        **kwargs : dict
-            Keyword arguments to build run. See new_run().
-
-        Returns
-        -------
-        Run
-            Run object.
-        """
-        return run_processor.create_run(save=save, **kwargs)
-
-    def get_run(self, entity_key: str) -> Run:
-        """
-        Get run.
-
-        Parameters
-        ----------
-        entity_key : str
-            Entity key.
-
-        Returns
-        -------
-        Run
-            Run object.
-        """
-        return run_processor.get_run(entity_key)
-
-    def delete_run(self, entity_key: str) -> dict:
-        """
-        Delete run.
-
-        Parameters
-        ----------
-        entity_key : str
-            Entity key.
-
-        Returns
-        -------
-        dict
-            Response from backend.
-        """
-        return run_processor.delete_run(entity_key)

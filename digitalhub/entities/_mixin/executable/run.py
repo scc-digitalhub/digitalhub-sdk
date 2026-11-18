@@ -14,6 +14,35 @@ if typing.TYPE_CHECKING:
 
 
 class ExecutableRunMixin(ExecutableBaseMixin):
+    def new_run(
+        self,
+        action: str,
+        extensions: list[dict] | None = None,
+        **kwargs,
+    ) -> Run:
+        """Create a persisted run for an executable action.
+
+        Parameters
+        ----------
+        action : str
+            Action implemented by the task.
+        extensions : list[dict], optional
+            Additional run extensions.
+        **kwargs : dict
+            Run construction parameters.
+
+        Returns
+        -------
+        Run
+            Created run.
+        """
+        return executable_processor.create_run(
+            self,
+            action,
+            extensions=extensions,
+            **kwargs,
+        )
+
     def get_run(self, identifier: str) -> Run:
         """Get a run belonging to the executable.
 
@@ -86,3 +115,18 @@ class ExecutableRunMixin(ExecutableBaseMixin):
             task=task,
             action=action,
         )
+
+    def delete_run(self, identifier: str) -> dict:
+        """Delete a run belonging to the executable.
+
+        Parameters
+        ----------
+        identifier : str
+            Run ID or key.
+
+        Returns
+        -------
+        dict
+            Backend deletion response.
+        """
+        return executable_processor.delete_executable_run(self, identifier)
