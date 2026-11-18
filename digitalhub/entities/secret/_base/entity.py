@@ -52,10 +52,9 @@ class Secret(ContextEntity, VersionedMixin):
         value : str
             Value of the secret.
         """
-        obj = {self.name: value}
-        secret_processor.update_secret_data(self.project, self.ENTITY_TYPE, obj)
+        secret_processor.set_secret_value(self, value)
 
-    def read_secret_value(self) -> dict:
+    def read_secret_value(self) -> str:
         """
         Read the secret value from backend.
 
@@ -64,6 +63,4 @@ class Secret(ContextEntity, VersionedMixin):
         str
             Value of the secret.
         """
-        params = {"keys": self.name}
-        data = secret_processor.read_secret_data(self.project, self.ENTITY_TYPE, params=params)
-        return data[self.name]
+        return secret_processor.read_secret_value(self)

@@ -4,15 +4,35 @@
 
 from __future__ import annotations
 
+import typing
+
 from digitalhub.entities._processors.utils import get_context
 from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
 from digitalhub.stores.client.compiler.options import OpaqueOptions
 from digitalhub.stores.client.compiler.targets import ContextCollectionTarget
 
+if typing.TYPE_CHECKING:
+    from digitalhub.entities.secret._base.entity import Secret
+
 
 class ContextEntitySecretProcessor:
-    def read_secret_data(
+    def read_secret_value(self, obj: Secret) -> str:
+        data = self._read_secret_data(
+            obj.project,
+            obj.ENTITY_TYPE,
+            params={"keys": obj.name},
+        )
+        return data[obj.name]
+
+    def set_secret_value(self, obj: Secret, value: str) -> None:
+        self._update_secret_data(
+            obj.project,
+            obj.ENTITY_TYPE,
+            {obj.name: value},
+        )
+
+    def _read_secret_data(
         self,
         project: str,
         entity_type: str,
@@ -27,7 +47,7 @@ class ContextEntitySecretProcessor:
             )
         )
 
-    def update_secret_data(
+    def _update_secret_data(
         self,
         project: str,
         entity_type: str,

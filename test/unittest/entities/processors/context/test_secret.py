@@ -21,16 +21,17 @@ def _context() -> tuple[SimpleNamespace, Mock, object]:
 
 def test_read_secret_data_uses_backend_operation_request(monkeypatch) -> None:
     context, client, _ = _context()
-    client.execute.return_value = {"value": "secret"}
+    client.execute.return_value = {"token": "secret"}
     monkeypatch.setattr(secret_module, "get_context", Mock(return_value=context))
-
-    result = ContextEntitySecretProcessor().read_secret_data(
-        "project",
-        "secret",
-        params={"keys": "token"},
+    entity = SimpleNamespace(
+        project="project",
+        ENTITY_TYPE="secret",
+        name="token",
     )
 
-    assert result == {"value": "secret"}
+    result = ContextEntitySecretProcessor().read_secret_value(entity)
+
+    assert result == "secret"
     client.execute.assert_called_once_with(
         ClientOp(
             category=ApiType.CONTEXT,
@@ -44,13 +45,13 @@ def test_read_secret_data_uses_backend_operation_request(monkeypatch) -> None:
 def test_update_secret_data_uses_backend_operation_request(monkeypatch) -> None:
     context, client, _ = _context()
     monkeypatch.setattr(secret_module, "get_context", Mock(return_value=context))
-    data = {"value": "secret"}
-
-    result = ContextEntitySecretProcessor().update_secret_data(
-        "project",
-        "secret",
-        data,
+    entity = SimpleNamespace(
+        project="project",
+        ENTITY_TYPE="secret",
+        name="token",
     )
+
+    result = ContextEntitySecretProcessor().set_secret_value(entity, "secret")
 
     assert result is None
     client.execute.assert_called_once_with(
@@ -59,6 +60,6 @@ def test_update_secret_data_uses_backend_operation_request(monkeypatch) -> None:
             operation=BackendOp.DATA_UPDATE,
             target=ContextCollectionTarget("project", "secret"),
             options=NoOptions(),
-            payload=data,
+            payload={"token": "secret"},
         )
     )
