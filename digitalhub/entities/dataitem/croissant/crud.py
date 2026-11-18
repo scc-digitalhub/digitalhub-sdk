@@ -91,7 +91,7 @@ def log_croissant(
         name,
         EntityTypes.DATAITEM.value,
         path,
-        default_store=get_default_store(project) if path is None else None,
+        default_store=lambda: get_default_store(project),
         **kwargs,
     )
 

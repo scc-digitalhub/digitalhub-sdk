@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import importlib
+from collections.abc import Callable
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -211,7 +212,7 @@ def build_croissant_kwargs(
     name: str,
     path: str | None = None,
     *,
-    default_store: str | None = None,
+    default_store: str | Callable[[], str] | None = None,
     **kwargs,
 ) -> dict[str, Any]:
     """
@@ -235,6 +236,8 @@ def build_croissant_kwargs(
     """
     validate_output_path(path)
     if path is None:
+        if callable(default_store):
+            default_store = default_store()
         if default_store is None:
             raise ValueError("A default store is required when no output path is provided.")
         uuid = build_uuid()

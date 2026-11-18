@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import typing
+from collections.abc import Callable
 
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._commons.utils import build_log_path_from_filename, build_log_path_from_source
@@ -66,7 +67,7 @@ def process_data_kwargs(
     source: SourcesOrListOfSources | None = None,
     filename: str | None = None,
     *,
-    default_store: str | None = None,
+    default_store: str | Callable[[], str] | None = None,
     **kwargs,
 ) -> dict:
     """
@@ -108,6 +109,8 @@ def process_data_kwargs(
         arg = source
 
     if path is None:
+        if callable(default_store):
+            default_store = default_store()
         if default_store is None:
             raise ValueError("A default store is required when no output path is provided.")
         uuid = build_uuid()
