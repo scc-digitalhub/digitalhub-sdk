@@ -16,6 +16,7 @@ if typing.TYPE_CHECKING:
 
 class MetricsEntityProtocol(UnversionedEntityProtocol, Protocol):
     status: MetricsStatus
+    _entity_has_metrics: bool | None
 
     @property
     def metrics(self) -> dict: ...

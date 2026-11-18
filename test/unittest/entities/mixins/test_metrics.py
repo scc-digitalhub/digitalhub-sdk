@@ -12,15 +12,19 @@ import digitalhub.entities._mixin.metrics.mixin as metrics_mixin
 from digitalhub.entities._mixin.metrics.mixin import MetricsMixin
 
 
-def test_metrics_rechecks_backend_after_negative_lookup() -> None:
+def test_metrics_rechecks_backend_after_negative_lookup(monkeypatch) -> None:
     entity = MetricsMixin()
+    entity.project = "project"
+    entity.ENTITY_TYPE = "artifact"
+    entity.id = "entity-id"
     entity.status = SimpleNamespace(metrics=None)
     entity._init_metrics_state()
-    entity._read_metrics = Mock(return_value={})
+    read_metrics = Mock(return_value={})
+    monkeypatch.setattr(metrics_mixin.metrics_processor, "read_metrics", read_metrics)
 
     assert entity.metrics == {}
 
-    entity._read_metrics.return_value = {"accuracy": 0.9}
+    read_metrics.return_value = {"accuracy": 0.9}
 
     assert entity.metrics == {"accuracy": 0.9}
 

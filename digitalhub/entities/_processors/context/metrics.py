@@ -4,16 +4,79 @@
 
 from __future__ import annotations
 
+import typing
 from typing import Any
 
+from digitalhub.entities._commons.metrics import MetricType, update_metrics, validate_metric_value
 from digitalhub.entities._processors.utils import get_context
 from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
 from digitalhub.stores.client.compiler.options import MetricsOptions
 from digitalhub.stores.client.compiler.targets import ContextMetricTarget
 
+if typing.TYPE_CHECKING:
+    from digitalhub.entities._mixin.metrics.protocol import MetricsEntityProtocol
+
 
 class ContextEntityMetricsProcessor:
+    def get_metrics(self, obj: MetricsEntityProtocol) -> dict[str, MetricType]:
+        """Return backend metrics when available, otherwise status metrics."""
+        if obj._entity_has_metrics is True and obj.status.metrics:
+            return obj.status.metrics
+        backend_metrics = self.read_metrics_for_entity(obj)
+        has_metrics = bool(backend_metrics) or bool(obj.status.metrics)
+        obj._entity_has_metrics = has_metrics
+        if not has_metrics:
+            return {}
+        if obj.status.metrics:
+            return obj.status.metrics
+        return backend_metrics
+
+    def read_metrics_for_entity(self, obj: MetricsEntityProtocol) -> dict[str, MetricType]:
+        return self.read_metrics(
+            project=obj.project,
+            entity_type=obj.ENTITY_TYPE,
+            entity_id=obj.id,
+        )
+
+    def log_metric(
+        self,
+        obj: MetricsEntityProtocol,
+        key: str,
+        value: MetricType,
+        overwrite: bool = False,
+        single_value: bool = False,
+    ) -> None:
+        """Validate, aggregate, and persist one metric for an entity."""
+        validate_metric_value(value)
+        metrics = self.read_metrics_for_entity(obj)
+        if not metrics and not obj.status.metrics and not obj._entity_has_metrics:
+            obj.status.metrics = {}
+            obj.update()
+        metrics = update_metrics(metrics, key, value, overwrite, single_value)
+        self.update_metric(
+            obj.project,
+            obj.ENTITY_TYPE,
+            obj.id,
+            key,
+            metrics[key],
+        )
+        obj._entity_has_metrics = True
+
+    def log_metrics(
+        self,
+        obj: MetricsEntityProtocol,
+        metrics: dict[str, MetricType],
+        overwrite: bool = False,
+    ) -> None:
+        """Persist multiple metrics while preserving append and overwrite semantics."""
+        stored_metrics = self.read_metrics_for_entity(obj)
+        has_metrics = bool(stored_metrics) or bool(obj.status.metrics)
+        obj._entity_has_metrics = obj._entity_has_metrics or has_metrics
+        for key, value in metrics.items():
+            single_value = not isinstance(value, list) and (overwrite or not has_metrics or key not in stored_metrics)
+            self.log_metric(obj, key, value, overwrite, single_value)
+
     def read_metrics(
         self,
         project: str,
