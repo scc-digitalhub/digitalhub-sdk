@@ -4,28 +4,21 @@
 
 from __future__ import annotations
 
-import time
 import typing
 
 from digitalhub.entities._base.context.entity import ContextEntity
-from digitalhub.entities._commons.enums import EntityTypes, State
+from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._mixin.extensions.mixin import ExtensionsMixin
 from digitalhub.entities._mixin.metrics.mixin import MetricsMixin
 from digitalhub.entities._mixin.unversioned.mixin import UnversionedMixin
-from digitalhub.entities._processors.processors import control_processor, executable_processor, run_processor
+from digitalhub.entities._processors.processors import control_processor, executable_processor
 from digitalhub.factory.entity import entity_factory
-from digitalhub.factory.runtime import runtime_factory
-from digitalhub.utils.exceptions import EntityError
-from digitalhub.utils.logger.logger import get_logger
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.metadata.entity import Metadata
     from digitalhub.entities.log._base.entity import Log
     from digitalhub.entities.run._base.spec import LocalExecutionSpecMixin, RunSpec
     from digitalhub.entities.run._base.status import RunStatus
-    from digitalhub.runtimes._base import Runtime
-
-logger = get_logger(__name__)
 
 
 class LocalExecutionRunMixin:
@@ -77,12 +70,7 @@ class Run(ContextEntity, UnversionedMixin, MetricsMixin, ExtensionsMixin):
         """
         Build run.
         """
-        executable = self._get_executable()
-        task = self._get_task()
-        new_spec = self._get_runtime().build(executable, task, self.to_dict())
-        self.spec = self.spec.from_dict(new_spec)
-        self.status.state = State.BUILT.value
-        self.update()
+        executable_processor.build_run(self)
 
     def run(self) -> Run:
         """
@@ -93,34 +81,7 @@ class Run(ContextEntity, UnversionedMixin, MetricsMixin, ExtensionsMixin):
         Run
             Run object.
         """
-        self.refresh()
-
-        self.start_execution()
-        try:
-            self._setup_execution()
-            try:
-                status = self._get_runtime().run(self.to_dict())
-
-            # Handle exceptions and set run status and message
-            except Exception as e:
-                self.refresh()
-                if self.local_execution():
-                    self.status.state = State.ERROR.value
-                self.status.message = str(e)
-                self.update()
-                raise
-
-        # Unset run in context after setup or execution
-        finally:
-            self.end_execution()
-
-        self.refresh()
-        if not self.local_execution():
-            status.pop("state", None)
-        new_status = {**self.status.to_dict(), **status}
-        self.set_status(new_status)
-        self.update()
-        return self
+        return executable_processor.run_run(self)
 
     def wait(
         self,
@@ -145,32 +106,12 @@ class Run(ContextEntity, UnversionedMixin, MetricsMixin, ExtensionsMixin):
         Run
             Run object.
         """
-        if timeout is not None and timeout < 0:
-            raise ValueError("timeout must be non-negative.")
-        if poll_interval <= 0:
-            raise ValueError("poll_interval must be positive.")
-
-        start = time.monotonic()
-        while True:
-            if log_info:
-                logger.info(f"Waiting for run {self.id} to finish...")
-            self.refresh()
-            elapsed = time.monotonic() - start
-            if self.status.state in [
-                State.STOPPED.value,
-                State.ERROR.value,
-                State.COMPLETED.value,
-            ]:
-                if log_info:
-                    logger.info(f"Run {self.id} finished in {elapsed:.2f} seconds.")
-                return self
-            if timeout is not None:
-                remaining = timeout - elapsed
-                if remaining <= 0:
-                    raise TimeoutError(f"Run {self.id} did not finish within {timeout}s")
-                time.sleep(min(poll_interval, remaining))
-            else:
-                time.sleep(poll_interval)
+        return executable_processor.wait_run(
+            self,
+            log_info=log_info,
+            timeout=timeout,
+            poll_interval=poll_interval,
+        )
 
     def logs(self, as_entity: bool = False) -> list[Log] | list[str]:
         """
@@ -182,7 +123,7 @@ class Run(ContextEntity, UnversionedMixin, MetricsMixin, ExtensionsMixin):
         list[Log] | list[str]
             List of run logs. If `as_entity` is True, returns a list of `Log` objects, otherwise returns a list of log texts.
         """
-        logs = run_processor.read_run_logs(self.project, self.ENTITY_TYPE, self.id)
+        logs = executable_processor.read_run_logs(self)
         if as_entity:
             return logs
         return [i.text for i in logs]
@@ -224,26 +165,13 @@ class Run(ContextEntity, UnversionedMixin, MetricsMixin, ExtensionsMixin):
         """
         Start run execution.
         """
-        if self.local_execution() and self.status.state not in (State.BUILT.value, State.STOPPED.value):
-            raise EntityError("Run is not in a state to run.")
-
-        context = self._context()
-        context.set_run(self)
-        try:
-            if self.local_execution():
-                self.status.state = State.READY.value
-                self.update()
-                self.status.state = State.RUNNING.value
-                self.update()
-        except BaseException:
-            context.unset_run()
-            raise
+        executable_processor.start_run_execution(self)
 
     def end_execution(self) -> None:
         """
         End run execution.
         """
-        self._context().unset_run()
+        executable_processor.end_run_execution(self)
 
     def set_status(self, status: dict) -> None:
         """
@@ -254,37 +182,4 @@ class Run(ContextEntity, UnversionedMixin, MetricsMixin, ExtensionsMixin):
         status : dict
             Status to set.
         """
-        self.status: RunStatus = entity_factory.build_status(self.kind, **status)
-
-    def _get_runtime(self) -> Runtime:
-        """
-        Build runtime to build run or execute it.
-
-        Returns
-        -------
-        Runtime
-            Runtime object.
-        """
-        return runtime_factory.build_runtime(self.kind, self.project)
-
-    def _get_executable(self) -> dict:
-        """
-        Get executable object from backend.
-
-        Returns
-        -------
-        dict
-            Executable (function or workflow) from backend.
-        """
-        return executable_processor.get_run_executable(self)
-
-    def _get_task(self) -> dict:
-        """
-        Get task object from backend.
-
-        Returns
-        -------
-        dict
-            Task from backend.
-        """
-        return executable_processor.get_run_task(self)
+        self.status = entity_factory.build_status(self.kind, **status)

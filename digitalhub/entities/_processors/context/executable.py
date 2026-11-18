@@ -4,9 +4,10 @@
 
 from __future__ import annotations
 
+import time
 import typing
 
-from digitalhub.entities._commons.enums import EntityTypes, Relationship
+from digitalhub.entities._commons.enums import EntityKinds, EntityTypes, Relationship, State
 from digitalhub.entities._constructors.uuid import build_uuid
 from digitalhub.entities._processors.utils import (
     get_context,
@@ -15,16 +16,25 @@ from digitalhub.entities._processors.utils import (
     update_entity_identity,
 )
 from digitalhub.factory.entity import entity_factory
+from digitalhub.factory.runtime import runtime_factory
+from digitalhub.stores.client.common.enums import ApiType, BackendOp
+from digitalhub.stores.client.compiler.operation import ClientOp
+from digitalhub.stores.client.compiler.options import LogsOptions
+from digitalhub.stores.client.compiler.targets import ContextEntityTarget
 from digitalhub.utils.exceptions import EntityAlreadyExistsError, EntityError, EntityNotExistsError
 from digitalhub.utils.io_utils import read_yaml
+from digitalhub.utils.logger.logger import get_logger
 from digitalhub.utils.uri_utils import parse_entity_reference
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._mixin.executable.protocol import ExecutableProtocol
     from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
+    from digitalhub.entities.log._base.entity import Log
     from digitalhub.entities.run._base.entity import Run
     from digitalhub.entities.task._base.entity import Task
     from digitalhub.entities.trigger._base.entity import Trigger
+
+logger = get_logger(__name__)
 
 
 class ContextEntityExecutableProcessor:
@@ -175,10 +185,127 @@ class ContextEntityExecutableProcessor:
     def execute_run(self, run: Run, wait: bool = False, log_info: bool = True) -> Run:
         """Build and execute local runs, or wait for backend execution when requested."""
         if not run.local_execution():
-            return run.wait(log_info=log_info) if wait else run
+            return self.wait_run(run, log_info=log_info) if wait else run
 
-        run.build()
-        return run.run()
+        self.build_run(run)
+        return self.run_run(run)
+
+    def build_run(self, run: Run) -> None:
+        """Build a run specification with its executable, task, and runtime."""
+        runtime = runtime_factory.build_runtime(run.kind, run.project)
+        spec = runtime.build(
+            self.get_run_executable(run),
+            self.get_run_task(run),
+            run.to_dict(),
+        )
+        run.spec = run.spec.from_dict(spec)
+        run.status.state = State.BUILT.value
+        run.update()
+
+    def run_run(self, run: Run) -> Run:
+        """Execute the run state machine and persist the resulting status."""
+        run.refresh()
+        self.start_run_execution(run)
+        try:
+            run._setup_execution()
+            try:
+                status = runtime_factory.build_runtime(run.kind, run.project).run(run.to_dict())
+            except Exception as error:
+                run.refresh()
+                if run.local_execution():
+                    run.status.state = State.ERROR.value
+                run.status.message = str(error)
+                run.update()
+                raise
+        finally:
+            self.end_run_execution(run)
+
+        run.refresh()
+        if not run.local_execution():
+            status.pop("state", None)
+        run.status = entity_factory.build_status(run.kind, **{**run.status.to_dict(), **status})
+        run.update()
+        return run
+
+    def start_run_execution(self, run: Run) -> None:
+        """Register an active run and persist initial local execution state."""
+        if run.local_execution() and run.status.state not in (State.BUILT.value, State.STOPPED.value):
+            raise EntityError("Run is not in a state to run.")
+
+        context = run._context()
+        context.set_run(run)
+        try:
+            if run.local_execution():
+                run.status.state = State.READY.value
+                run.update()
+                run.status.state = State.RUNNING.value
+                run.update()
+        except BaseException:
+            context.unset_run()
+            raise
+
+    def end_run_execution(self, run: Run) -> None:
+        """Unregister the active run from its context."""
+        run._context().unset_run()
+
+    def wait_run(
+        self,
+        run: Run,
+        log_info: bool = True,
+        timeout: float | None = None,
+        poll_interval: float = 5.0,
+    ) -> Run:
+        """Wait until a run reaches a terminal state."""
+        if timeout is not None and timeout < 0:
+            raise ValueError("timeout must be non-negative.")
+        if poll_interval <= 0:
+            raise ValueError("poll_interval must be positive.")
+
+        start = time.monotonic()
+        terminal_states = {
+            State.STOPPED.value,
+            State.ERROR.value,
+            State.COMPLETED.value,
+        }
+        while True:
+            if log_info:
+                logger.info(f"Waiting for run {run.id} to finish...")
+            run.refresh()
+            elapsed = time.monotonic() - start
+            if run.status.state in terminal_states:
+                if log_info:
+                    logger.info(f"Run {run.id} finished in {elapsed:.2f} seconds.")
+                return run
+            if timeout is not None:
+                remaining = timeout - elapsed
+                if remaining <= 0:
+                    raise TimeoutError(f"Run {run.id} did not finish within {timeout}s")
+                time.sleep(min(poll_interval, remaining))
+            else:
+                time.sleep(poll_interval)
+
+    def read_run_logs(
+        self,
+        run: Run,
+        state: str | None = None,
+    ) -> list[Log]:
+        """Read and build logs associated with a run."""
+        objects: list[dict] = get_context(run.project).client.execute(
+            ClientOp(
+                category=ApiType.CONTEXT,
+                operation=BackendOp.LOGS_READ,
+                target=ContextEntityTarget(run.project, run.ENTITY_TYPE, run.id),
+                options=LogsOptions(state=state),
+            )
+        )
+        logs = []
+        for obj in objects:
+            content = obj.pop("content", None)
+            obj["kind"] = EntityKinds.LOG_LOG.value
+            log: Log = entity_factory.build_entity_from_dict(obj)
+            log.set_content(content)
+            logs.append(log)
+        return logs
 
     def build_task_run(
         self,

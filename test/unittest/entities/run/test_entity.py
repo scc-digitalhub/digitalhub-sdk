@@ -3,197 +3,67 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from types import SimpleNamespace
-from unittest.mock import Mock, call
-
-import pytest
+from unittest.mock import Mock
 
 import digitalhub.entities.run._base.entity as run_entity_module
-from digitalhub.entities._commons.enums import State
 from digitalhub.entities.run._base.entity import Run
-from digitalhub.entities.run._base.spec import RunSpec
-from digitalhub.utils.exceptions import EntityError
 
 
-def test_wait_returns_without_sleep_when_refresh_reports_terminal_state(monkeypatch) -> None:
+def test_build_delegates_to_executable_processor(monkeypatch) -> None:
     run = object.__new__(Run)
-    run.id = "run-id"
-    run.status = SimpleNamespace(state=State.RUNNING.value)
-    run.refresh = Mock(side_effect=lambda: setattr(run.status, "state", State.COMPLETED.value))
-    sleep = Mock()
-    clock_values = iter([10.0, 10.25])
-    monkeypatch.setattr(
-        run_entity_module,
-        "time",
-        SimpleNamespace(monotonic=lambda: next(clock_values), sleep=sleep),
+    build_run = Mock()
+    monkeypatch.setattr(run_entity_module.executable_processor, "build_run", build_run)
+
+    assert run.build() is None
+    build_run.assert_called_once_with(run)
+
+
+def test_run_delegates_to_executable_processor(monkeypatch) -> None:
+    run = object.__new__(Run)
+    executed = Mock()
+    run_run = Mock(return_value=executed)
+    monkeypatch.setattr(run_entity_module.executable_processor, "run_run", run_run)
+
+    assert run.run() is executed
+    run_run.assert_called_once_with(run)
+
+
+def test_wait_delegates_to_executable_processor(monkeypatch) -> None:
+    run = object.__new__(Run)
+    waited = Mock()
+    wait_run = Mock(return_value=waited)
+    monkeypatch.setattr(run_entity_module.executable_processor, "wait_run", wait_run)
+
+    assert run.wait(log_info=False, timeout=10, poll_interval=2) is waited
+    wait_run.assert_called_once_with(
+        run,
+        log_info=False,
+        timeout=10,
+        poll_interval=2,
     )
 
-    assert run.wait(log_info=False) is run
 
-    run.refresh.assert_called_once_with()
-    sleep.assert_not_called()
-
-
-def test_wait_sleeps_only_between_polls_and_times_out(monkeypatch) -> None:
+def test_logs_delegates_and_returns_selected_representation(monkeypatch) -> None:
     run = object.__new__(Run)
-    run.id = "run-id"
-    run.status = SimpleNamespace(state=State.RUNNING.value)
-    run.refresh = Mock(return_value=run)
-    sleep = Mock()
-    clock_values = iter([0.0, 0.0, 1.0, 2.0])
-    monkeypatch.setattr(
-        run_entity_module,
-        "time",
-        SimpleNamespace(monotonic=lambda: next(clock_values), sleep=sleep),
-    )
+    logs = [SimpleNamespace(text="first"), SimpleNamespace(text="second")]
+    read_run_logs = Mock(return_value=logs)
+    monkeypatch.setattr(run_entity_module.executable_processor, "read_run_logs", read_run_logs)
 
-    with pytest.raises(TimeoutError, match="Run run-id did not finish within 2s"):
-        run.wait(log_info=False, timeout=2, poll_interval=1)
-
-    assert run.refresh.call_count == 3
-    assert sleep.call_args_list == [call(1), call(1)]
+    assert run.logs() == ["first", "second"]
+    assert run.logs(as_entity=True) is logs
+    assert read_run_logs.call_count == 2
+    read_run_logs.assert_called_with(run)
 
 
-def test_wait_limits_sleep_to_remaining_timeout(monkeypatch) -> None:
+def test_execution_context_methods_delegate_for_compatibility(monkeypatch) -> None:
     run = object.__new__(Run)
-    run.id = "run-id"
-    run.status = SimpleNamespace(state=State.RUNNING.value)
-    run.refresh = Mock(return_value=run)
-    sleep = Mock()
-    clock_values = iter([0.0, 0.0, 1.0, 1.5])
-    monkeypatch.setattr(
-        run_entity_module,
-        "time",
-        SimpleNamespace(monotonic=lambda: next(clock_values), sleep=sleep),
-    )
+    start = Mock()
+    end = Mock()
+    monkeypatch.setattr(run_entity_module.executable_processor, "start_run_execution", start)
+    monkeypatch.setattr(run_entity_module.executable_processor, "end_run_execution", end)
 
-    with pytest.raises(TimeoutError):
-        run.wait(log_info=False, timeout=1.5, poll_interval=1)
+    run.start_execution()
+    run.end_execution()
 
-    assert sleep.call_args_list == [call(1), call(0.5)]
-
-
-@pytest.mark.parametrize(
-    ("timeout", "poll_interval"),
-    [(-1, 1), (None, 0)],
-)
-def test_wait_rejects_invalid_timing_values(timeout, poll_interval) -> None:
-    run = object.__new__(Run)
-    run.refresh = Mock()
-
-    with pytest.raises(ValueError):
-        run.wait(timeout=timeout, poll_interval=poll_interval)
-
-    run.refresh.assert_not_called()
-
-
-def test_run_ends_execution_when_setup_fails() -> None:
-    run = object.__new__(Run)
-    run.refresh = Mock(return_value=run)
-    run.start_execution = Mock()
-    run._setup_execution = Mock(side_effect=RuntimeError("setup failed"))
-    run.end_execution = Mock()
-
-    with pytest.raises(RuntimeError, match="setup failed"):
-        run.run()
-
-    run.end_execution.assert_called_once_with()
-
-
-def test_run_build_preserves_fields_from_runtime_merge() -> None:
-    run = object.__new__(Run)
-    run.spec = RunSpec(task="task://project/task-id")
-    run.status = SimpleNamespace(state=State.READY.value)
-    run._get_executable = Mock(return_value={"spec": {"function": "function-ref"}})
-    run._get_task = Mock(return_value={"spec": {"instructions": ["build"]}})
-    runtime = Mock()
-    runtime.build.return_value = {
-        "task": "task://project/task-id",
-        "function": "function-ref",
-        "future_backend_field": "preserved",
-    }
-    run._get_runtime = Mock(return_value=runtime)
-    run.to_dict = Mock(return_value={"spec": {"task": "task://project/task-id"}})
-    run.update = Mock(return_value=run)
-
-    run.build()
-
-    assert run.spec.future_backend_field == "preserved"
-    assert run.status.state == State.BUILT.value
-    run.update.assert_called_once_with()
-
-
-def test_get_executable_delegates_to_run_processor(monkeypatch) -> None:
-    run = object.__new__(Run)
-    executable = {"spec": {"function": "function-ref"}}
-    get_run_executable = Mock(return_value=executable)
-    monkeypatch.setattr(run_entity_module.executable_processor, "get_run_executable", get_run_executable)
-
-    assert run._get_executable() is executable
-    get_run_executable.assert_called_once_with(run)
-
-
-def test_get_task_delegates_to_run_processor(monkeypatch) -> None:
-    run = object.__new__(Run)
-    task = {"spec": {"instructions": ["build"]}}
-    get_run_task = Mock(return_value=task)
-    monkeypatch.setattr(run_entity_module.executable_processor, "get_run_task", get_run_task)
-
-    assert run._get_task() is task
-    get_run_task.assert_called_once_with(run)
-
-
-def test_start_execution_validates_state_before_registering_run() -> None:
-    run = object.__new__(Run)
-    run.status = SimpleNamespace(state=State.CREATED.value)
-    run.local_execution = Mock(return_value=True)
-    run.update = Mock()
-    context = Mock()
-    run._context = Mock(return_value=context)
-
-    with pytest.raises(EntityError, match="not in a state to run"):
-        run.start_execution()
-
-    context.set_run.assert_not_called()
-
-
-def test_start_execution_rolls_back_registration_when_state_update_fails() -> None:
-    run = object.__new__(Run)
-    run.status = SimpleNamespace(state=State.BUILT.value)
-    run.local_execution = Mock(return_value=True)
-    run.update = Mock(side_effect=RuntimeError("update failed"))
-    context = Mock()
-    run._context = Mock(return_value=context)
-
-    with pytest.raises(RuntimeError, match="update failed"):
-        run.start_execution()
-
-    context.set_run.assert_called_once_with(run)
-    context.unset_run.assert_called_once_with()
-
-
-@pytest.mark.parametrize(
-    ("local_execution", "expected_state"),
-    [
-        (False, "BACKEND"),
-        (True, "RUNTIME"),
-    ],
-)
-def test_run_state_precedence(local_execution: bool, expected_state: str) -> None:
-    run = object.__new__(Run)
-    run.status = SimpleNamespace(to_dict=Mock(return_value={"state": "BACKEND"}))
-    run.refresh = Mock(return_value=run)
-    run.start_execution = Mock()
-    run._setup_execution = Mock()
-    run.end_execution = Mock()
-    run.local_execution = Mock(return_value=local_execution)
-    run.to_dict = Mock(return_value={})
-    run.set_status = Mock()
-    run.update = Mock(return_value=run)
-    runtime = Mock()
-    runtime.run.return_value = {"state": "RUNTIME"}
-    run._get_runtime = Mock(return_value=runtime)
-
-    result = run.run()
-
-    assert result is run
-    run.set_status.assert_called_once_with({"state": expected_state})
+    start.assert_called_once_with(run)
+    end.assert_called_once_with(run)

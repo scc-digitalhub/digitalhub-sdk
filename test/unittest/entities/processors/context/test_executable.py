@@ -9,10 +9,17 @@ from unittest.mock import Mock, call
 import pytest
 
 import digitalhub.entities._processors.context.executable as executable_module
-from digitalhub.entities._commons.enums import Relationship
+from digitalhub.entities._commons.enums import Relationship, State
 from digitalhub.entities._mixin.versioned.mixin import VersionedMixin
 from digitalhub.entities._processors.context.executable import ContextEntityExecutableProcessor
+from digitalhub.entities.log._base.entity import Log
+from digitalhub.entities.run._base.spec import RunSpec
+from digitalhub.stores.client.common.enums import ApiType, BackendOp
+from digitalhub.stores.client.compiler.operation import ClientOp
+from digitalhub.stores.client.compiler.options import LogsOptions
+from digitalhub.stores.client.compiler.targets import ContextEntityTarget
 from digitalhub.utils.exceptions import EntityAlreadyExistsError, EntityError, EntityNotExistsError
+from digitalhub.utils.generic_utils import encode_string
 
 
 def _context(name: str = "project") -> SimpleNamespace:
@@ -227,26 +234,31 @@ def test_execute_run_builds_and_runs_local_run_in_caller_thread() -> None:
     processor = ContextEntityExecutableProcessor(Mock())
     run = Mock()
     run.local_execution.return_value = True
-    run.run.side_effect = current_thread
+    processor.build_run = Mock()
+    processor.run_run = Mock(side_effect=lambda _run: current_thread())
+    processor.wait_run = Mock()
 
     result = processor.execute_run(run, wait=True)
 
     assert result is current_thread()
-    run.build.assert_called_once_with()
-    run.run.assert_called_once_with()
-    run.wait.assert_not_called()
+    processor.build_run.assert_called_once_with(run)
+    processor.run_run.assert_called_once_with(run)
+    processor.wait_run.assert_not_called()
 
 
 def test_execute_run_returns_backend_run_without_waiting() -> None:
     processor = ContextEntityExecutableProcessor(Mock())
     run = Mock()
     run.local_execution.return_value = False
+    processor.build_run = Mock()
+    processor.run_run = Mock()
+    processor.wait_run = Mock()
 
     assert processor.execute_run(run) is run
 
-    run.build.assert_not_called()
-    run.run.assert_not_called()
-    run.wait.assert_not_called()
+    processor.build_run.assert_not_called()
+    processor.run_run.assert_not_called()
+    processor.wait_run.assert_not_called()
 
 
 def test_execute_run_waits_for_backend_run_when_requested() -> None:
@@ -254,11 +266,11 @@ def test_execute_run_waits_for_backend_run_when_requested() -> None:
     run = Mock()
     run.local_execution.return_value = False
     waited_run = Mock()
-    run.wait.return_value = waited_run
+    processor.wait_run = Mock(return_value=waited_run)
 
     assert processor.execute_run(run, wait=True, log_info=False) is waited_run
 
-    run.wait.assert_called_once_with(log_info=False)
+    processor.wait_run.assert_called_once_with(run, log_info=False)
 
 
 def test_build_task_run_adds_executable_reference(monkeypatch) -> None:
@@ -333,6 +345,238 @@ def test_get_run_task_reads_unversioned_reference_through_crud() -> None:
         "task-id",
         entity_type="task",
         project="project",
+    )
+
+
+def test_build_run_preserves_fields_from_runtime_merge(monkeypatch) -> None:
+    processor = ContextEntityExecutableProcessor(Mock())
+    run = SimpleNamespace(
+        kind="python+run",
+        project="project",
+        spec=RunSpec(task="task://project/task-id"),
+        status=SimpleNamespace(state=State.READY.value),
+        to_dict=Mock(return_value={"spec": {"task": "task://project/task-id"}}),
+        update=Mock(),
+    )
+    processor.get_run_executable = Mock(return_value={"spec": {"function": "function-ref"}})
+    processor.get_run_task = Mock(return_value={"spec": {"instructions": ["build"]}})
+    runtime = Mock()
+    runtime.build.return_value = {
+        "task": "task://project/task-id",
+        "function": "function-ref",
+        "future_backend_field": "preserved",
+    }
+    monkeypatch.setattr(
+        executable_module.runtime_factory,
+        "build_runtime",
+        Mock(return_value=runtime),
+    )
+
+    processor.build_run(run)
+
+    assert run.spec.future_backend_field == "preserved"
+    assert run.status.state == State.BUILT.value
+    run.update.assert_called_once_with()
+
+
+def test_wait_run_returns_without_sleep_for_terminal_state(monkeypatch) -> None:
+    processor = ContextEntityExecutableProcessor(Mock())
+    run = SimpleNamespace(
+        id="run-id",
+        status=SimpleNamespace(state=State.RUNNING.value),
+        refresh=Mock(side_effect=lambda: setattr(run.status, "state", State.COMPLETED.value)),
+    )
+    sleep = Mock()
+    clock_values = iter([10.0, 10.25])
+    monkeypatch.setattr(
+        executable_module,
+        "time",
+        SimpleNamespace(monotonic=lambda: next(clock_values), sleep=sleep),
+    )
+
+    assert processor.wait_run(run, log_info=False) is run
+
+    run.refresh.assert_called_once_with()
+    sleep.assert_not_called()
+
+
+def test_wait_run_sleeps_only_between_polls_and_times_out(monkeypatch) -> None:
+    processor = ContextEntityExecutableProcessor(Mock())
+    run = SimpleNamespace(
+        id="run-id",
+        status=SimpleNamespace(state=State.RUNNING.value),
+        refresh=Mock(),
+    )
+    sleep = Mock()
+    clock_values = iter([0.0, 0.0, 1.0, 2.0])
+    monkeypatch.setattr(
+        executable_module,
+        "time",
+        SimpleNamespace(monotonic=lambda: next(clock_values), sleep=sleep),
+    )
+
+    with pytest.raises(TimeoutError, match="Run run-id did not finish within 2s"):
+        processor.wait_run(run, log_info=False, timeout=2, poll_interval=1)
+
+    assert run.refresh.call_count == 3
+    assert sleep.call_args_list == [call(1), call(1)]
+
+
+def test_wait_run_limits_sleep_to_remaining_timeout(monkeypatch) -> None:
+    processor = ContextEntityExecutableProcessor(Mock())
+    run = SimpleNamespace(
+        id="run-id",
+        status=SimpleNamespace(state=State.RUNNING.value),
+        refresh=Mock(),
+    )
+    sleep = Mock()
+    clock_values = iter([0.0, 0.0, 1.0, 1.5])
+    monkeypatch.setattr(
+        executable_module,
+        "time",
+        SimpleNamespace(monotonic=lambda: next(clock_values), sleep=sleep),
+    )
+
+    with pytest.raises(TimeoutError):
+        processor.wait_run(run, log_info=False, timeout=1.5, poll_interval=1)
+
+    assert sleep.call_args_list == [call(1), call(0.5)]
+
+
+@pytest.mark.parametrize(
+    ("timeout", "poll_interval"),
+    [(-1, 1), (None, 0)],
+)
+def test_wait_run_rejects_invalid_timing_values(timeout, poll_interval) -> None:
+    processor = ContextEntityExecutableProcessor(Mock())
+    run = SimpleNamespace(refresh=Mock())
+
+    with pytest.raises(ValueError):
+        processor.wait_run(run, timeout=timeout, poll_interval=poll_interval)
+
+    run.refresh.assert_not_called()
+
+
+def test_run_run_ends_execution_when_setup_fails() -> None:
+    processor = ContextEntityExecutableProcessor(Mock())
+    processor.start_run_execution = Mock()
+    processor.end_run_execution = Mock()
+    run = SimpleNamespace(
+        refresh=Mock(),
+        _setup_execution=Mock(side_effect=RuntimeError("setup failed")),
+    )
+
+    with pytest.raises(RuntimeError, match="setup failed"):
+        processor.run_run(run)
+
+    processor.end_run_execution.assert_called_once_with(run)
+
+
+def test_start_run_execution_validates_state_before_registration() -> None:
+    processor = ContextEntityExecutableProcessor(Mock())
+    context = Mock()
+    run = SimpleNamespace(
+        status=SimpleNamespace(state=State.CREATED.value),
+        local_execution=Mock(return_value=True),
+        update=Mock(),
+        _context=Mock(return_value=context),
+    )
+
+    with pytest.raises(EntityError, match="not in a state to run"):
+        processor.start_run_execution(run)
+
+    context.set_run.assert_not_called()
+
+
+def test_start_run_execution_rolls_back_registration() -> None:
+    processor = ContextEntityExecutableProcessor(Mock())
+    context = Mock()
+    run = SimpleNamespace(
+        status=SimpleNamespace(state=State.BUILT.value),
+        local_execution=Mock(return_value=True),
+        update=Mock(side_effect=RuntimeError("update failed")),
+        _context=Mock(return_value=context),
+    )
+
+    with pytest.raises(RuntimeError, match="update failed"):
+        processor.start_run_execution(run)
+
+    context.set_run.assert_called_once_with(run)
+    context.unset_run.assert_called_once_with()
+
+
+@pytest.mark.parametrize(
+    ("local_execution", "expected_state"),
+    [
+        (False, "BACKEND"),
+        (True, "RUNTIME"),
+    ],
+)
+def test_run_run_state_precedence(monkeypatch, local_execution: bool, expected_state: str) -> None:
+    processor = ContextEntityExecutableProcessor(Mock())
+    processor.start_run_execution = Mock()
+    processor.end_run_execution = Mock()
+    run = SimpleNamespace(
+        kind="python+run",
+        project="project",
+        status=SimpleNamespace(to_dict=Mock(return_value={"state": "BACKEND"})),
+        refresh=Mock(),
+        _setup_execution=Mock(),
+        local_execution=Mock(return_value=local_execution),
+        to_dict=Mock(return_value={}),
+        update=Mock(),
+    )
+    runtime = Mock()
+    runtime.run.return_value = {"state": "RUNTIME"}
+    build_status = Mock(return_value=SimpleNamespace(state=expected_state))
+    monkeypatch.setattr(
+        executable_module.runtime_factory,
+        "build_runtime",
+        Mock(return_value=runtime),
+    )
+    monkeypatch.setattr(executable_module.entity_factory, "build_status", build_status)
+
+    result = processor.run_run(run)
+
+    assert result is run
+    build_status.assert_called_once_with("python+run", state=expected_state)
+    assert run.status.state == expected_state
+
+
+def test_read_run_logs_builds_logs_and_decodes_content(monkeypatch) -> None:
+    client = Mock()
+    context = SimpleNamespace(client=client)
+    logs = [
+        {
+            "project": "project",
+            "name": "run-log",
+            "id": "log-id",
+            "spec": {"run": "run-id"},
+            "content": encode_string("run finished"),
+        },
+        {
+            "project": "project",
+            "name": "other-log",
+            "id": "other-id",
+            "spec": {"run": "run-id"},
+        },
+    ]
+    client.execute.return_value = logs
+    monkeypatch.setattr(executable_module, "get_context", Mock(return_value=context))
+    run = SimpleNamespace(project="project", ENTITY_TYPE="run", id="run-id")
+
+    result = ContextEntityExecutableProcessor(Mock()).read_run_logs(run, state="READY")
+
+    assert all(isinstance(log, Log) for log in result)
+    assert [log.kind for log in result] == ["log", "log"]
+    assert [log.text for log in result] == ["run finished", None]
+    client.execute.assert_called_once_with(
+        ClientOp(
+            category=ApiType.CONTEXT,
+            operation=BackendOp.LOGS_READ,
+            target=ContextEntityTarget("project", "run", "run-id"),
+            options=LogsOptions(state="READY"),
+        )
     )
 
 
