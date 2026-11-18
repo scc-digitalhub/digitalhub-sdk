@@ -53,13 +53,13 @@ class TaskBuilder(UnversionedBuilder, RuntimeEntityBuilder):
         Task
             Object instance.
         """
-        # Check executable kind validity
-        fnc = kwargs.get("function", None)
-        wkf = kwargs.get("workflow", None)
-        executable = fnc if fnc is not None else wkf
-        if executable is None:
-            raise EntityError("Function or workflow must be provided")
-        self._check_kind_validity(executable)
+        if self.VALIDATE_RUNTIME_ATTRIBUTES:
+            fnc = kwargs.get("function", None)
+            wkf = kwargs.get("workflow", None)
+            executable = fnc if fnc is not None else wkf
+            if executable is None:
+                raise EntityError("Function or workflow must be provided")
+            self._check_kind_validity(executable)
 
         uuid = self.build_uuid(uuid)
         metadata = self.build_metadata(
