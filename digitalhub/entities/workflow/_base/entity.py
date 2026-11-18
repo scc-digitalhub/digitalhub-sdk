@@ -14,7 +14,6 @@ from digitalhub.entities._processors.processors import run_processor
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.run._base.entity import Run
-    from digitalhub.entities.task._base.entity import Task
     from digitalhub.entities.workflow._base.spec import WorkflowSpec
     from digitalhub.entities.workflow._base.status import WorkflowStatus
 
@@ -76,8 +75,11 @@ class Workflow(ContextEntity, VersionedMixin, ExecutableMixin):
         Run
             Run instance.
         """
-        # Create or update new task
-        task: Task = self._get_or_create_task(action)
-
-        run = self._create_run(task, action, extensions=extensions, **kwargs)
-        return run_processor.execute_run(run, wait=wait, log_info=log_info)
+        return run_processor.execute_executable(
+            self,
+            action,
+            wait=wait,
+            log_info=log_info,
+            extensions=extensions,
+            **kwargs,
+        )

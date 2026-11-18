@@ -6,33 +6,14 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.entities._commons.enums import Relationship
 from digitalhub.entities._mixin.executable.base import ExecutableBaseMixin
-from digitalhub.entities.run.crud import list_runs
-from digitalhub.factory.entity import entity_factory
-from digitalhub.utils.exceptions import EntityError
+from digitalhub.entities._processors.processors import executable_processor
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.run._base.entity import Run
-    from digitalhub.entities.task._base.entity import Task
 
 
 class ExecutableRunMixin(ExecutableBaseMixin):
-    def _create_run(
-        self,
-        task: Task,
-        action: str,
-        extensions: list[dict] | None = None,
-        **kwargs,
-    ) -> Run:
-        run_kind = entity_factory.get_run_kind_from_action(self.kind, action)
-        run = task.run(run_kind, save=False, **kwargs)
-        if extensions is not None:
-            run.extensions.extend(extensions)
-        run.add_relationship(Relationship.RUN_OF.value, self.key)
-        run.save()
-        return run
-
     def get_run(self, identifier: str) -> Run:
         """Get a run belonging to the executable.
 
@@ -51,14 +32,7 @@ class ExecutableRunMixin(ExecutableBaseMixin):
         EntityError
             If the run does not exist or belongs to another executable.
         """
-        entities = self._list_runs()
-        for entity in entities:
-            if getattr(entity.spec, self.ENTITY_TYPE) == self._get_executable_string():
-                if entity.id == identifier:
-                    return entity
-                if entity.key == identifier:
-                    return entity
-        raise EntityError(f"Run '{identifier}' does not exist or does not belong to this executable.")
+        return executable_processor.get_executable_run(self, identifier)
 
     def list_runs(
         self,
@@ -100,7 +74,8 @@ class ExecutableRunMixin(ExecutableBaseMixin):
         list[Run]
             Runs matching the filters.
         """
-        return self._list_runs(
+        return executable_processor.list_executable_runs(
+            self,
             q=q,
             name=name,
             kind=kind,
@@ -111,7 +86,3 @@ class ExecutableRunMixin(ExecutableBaseMixin):
             task=task,
             action=action,
         )
-
-    def _list_runs(self, **kwargs) -> list[Run]:
-        kwargs[self.ENTITY_TYPE] = self._get_executable_string()
-        return list_runs(self.project, **kwargs)

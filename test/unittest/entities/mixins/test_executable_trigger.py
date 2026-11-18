@@ -2,45 +2,22 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from types import SimpleNamespace
 from unittest.mock import Mock
 
-import pytest
-
-import digitalhub.entities._mixin.executable.trigger as trigger_module
 from digitalhub.entities._mixin.executable.trigger import ExecutableTriggerMixin
-from digitalhub.utils.exceptions import EntityError
 
 
 class StubExecutable(ExecutableTriggerMixin):
-    ENTITY_TYPE = "function"
-    project = "project"
-    kind = "python"
-    name = "function"
-    id = "function-id"
-    key = "function-key"
+    pass
 
 
-def _trigger(executable: StubExecutable, trigger_id: str, trigger_key: str, function: str):
-    return SimpleNamespace(
-        id=trigger_id,
-        key=trigger_key,
-        spec=SimpleNamespace(function=function),
-    )
-
-
-def test_trigger_builds_template_and_saves_entity(monkeypatch) -> None:
+def test_trigger_delegates_to_executable_processor(monkeypatch) -> None:
     executable = StubExecutable()
-    task = Mock()
-    task._get_task_string.return_value = "task://project/task-id"
-    executable._get_or_create_task = Mock(return_value=task)
-    get_run_kind = Mock(return_value="python+run")
-    build_spec = Mock()
-    build_spec.return_value.to_dict.return_value = {"validated": True}
-    build_entity = Mock(return_value=Mock())
-    monkeypatch.setattr(trigger_module.entity_factory, "get_run_kind_from_action", get_run_kind)
-    monkeypatch.setattr(trigger_module.entity_factory, "build_spec", build_spec)
-    monkeypatch.setattr(trigger_module.entity_factory, "build_entity_from_params", build_entity)
+    create_trigger = Mock(return_value="trigger")
+    monkeypatch.setattr(
+        "digitalhub.entities._mixin.executable.trigger.executable_processor.create_trigger",
+        create_trigger,
+    )
 
     result = executable.trigger(
         action="execute",
@@ -50,62 +27,40 @@ def test_trigger_builds_template_and_saves_entity(monkeypatch) -> None:
         description="A trigger",
     )
 
-    assert result is build_entity.return_value
-    executable._get_or_create_task.assert_called_once_with("execute")
-    get_run_kind.assert_called_once_with("python", "execute")
-    build_spec.assert_called_once_with(
-        "python+run",
-        custom="value",
-        task="task://project/task-id",
-        function="python://project/function:function-id",
-    )
-    build_entity.assert_called_once_with(
+    assert result == "trigger"
+    create_trigger.assert_called_once_with(
+        executable,
+        "execute",
+        "lifecycle",
+        "on-demand",
+        template={"custom": "value"},
         description="A trigger",
-        project="project",
-        kind="lifecycle",
-        name="on-demand",
-        function="python://project/function:function-id",
-        task="task://project/task-id",
-        template={"validated": True},
-    )
-    build_entity.return_value.save.assert_called_once_with()
-
-
-def test_trigger_rejects_non_dictionary_template(monkeypatch) -> None:
-    executable = StubExecutable()
-    task = Mock()
-    task._get_task_string.return_value = "task://project/task-id"
-    executable._get_or_create_task = Mock(return_value=task)
-    monkeypatch.setattr(trigger_module.entity_factory, "get_run_kind_from_action", Mock(return_value="python+run"))
-    monkeypatch.setattr(trigger_module.entity_factory, "build_spec", Mock())
-
-    with pytest.raises(EntityError, match="Template must be a dictionary"):
-        executable.trigger("execute", "lifecycle", "on-demand", template="invalid")
-
-
-def test_get_trigger_matches_id_or_key_and_rejects_other_executables() -> None:
-    executable = StubExecutable()
-    executable._list_triggers = Mock(
-        return_value=[
-            _trigger(executable, "trigger-id", "trigger-key", executable._get_executable_string()),
-            _trigger(executable, "other-id", "other-key", "python://project/other:other-id"),
-        ]
     )
 
-    matching_trigger = executable._list_triggers.return_value[0]
-    assert executable.get_trigger("trigger-id") is matching_trigger
-    assert executable.get_trigger("trigger-key") is matching_trigger
 
-    with pytest.raises(EntityError, match="Trigger 'other-id' does not exist"):
-        executable.get_trigger("other-id")
-
-
-def test_list_triggers_forwards_filters() -> None:
+def test_get_trigger_delegates_to_executable_processor(monkeypatch) -> None:
     executable = StubExecutable()
-    executable._list_triggers = Mock(return_value=[])
+    get_trigger = Mock(return_value="trigger")
+    monkeypatch.setattr(
+        "digitalhub.entities._mixin.executable.trigger.executable_processor.get_executable_trigger",
+        get_trigger,
+    )
+
+    assert executable.get_trigger("trigger-id") == "trigger"
+    get_trigger.assert_called_once_with(executable, "trigger-id")
+
+
+def test_list_triggers_delegates_filters(monkeypatch) -> None:
+    executable = StubExecutable()
+    list_triggers = Mock(return_value=[])
+    monkeypatch.setattr(
+        "digitalhub.entities._mixin.executable.trigger.executable_processor.list_executable_triggers",
+        list_triggers,
+    )
 
     assert executable.list_triggers(q="query", task="task-key") == []
-    executable._list_triggers.assert_called_once_with(
+    list_triggers.assert_called_once_with(
+        executable,
         q="query",
         name=None,
         kind=None,
@@ -114,18 +69,4 @@ def test_list_triggers_forwards_filters() -> None:
         updated=None,
         versions=None,
         task="task-key",
-    )
-
-
-def test_list_triggers_filters_by_executable(monkeypatch) -> None:
-    executable = StubExecutable()
-    list_triggers = Mock(return_value=["trigger"])
-    monkeypatch.setattr(trigger_module, "list_triggers", list_triggers)
-
-    assert executable._list_triggers(state="READY") == ["trigger"]
-
-    list_triggers.assert_called_once_with(
-        "project",
-        state="READY",
-        function="python://project/function:function-id",
     )

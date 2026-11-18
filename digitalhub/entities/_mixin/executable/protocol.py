@@ -4,17 +4,13 @@
 
 from __future__ import annotations
 
-import typing
 from typing import Protocol
 
 from digitalhub.entities._mixin.versioned.protocol import VersionedEntityProtocol
 
-if typing.TYPE_CHECKING:
-    from digitalhub.entities.task._base.entity import Task
-
 
 class ExecutableProtocol(VersionedEntityProtocol, Protocol):
-    _tasks: dict[str, Task]
+    def _get_executable_string(self) -> str: ...
 
     def import_tasks(self, tasks: list[dict]) -> None: ...
 

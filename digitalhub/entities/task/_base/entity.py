@@ -9,8 +9,7 @@ import typing
 from digitalhub.entities._base.context.entity import ContextEntity
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._mixin.unversioned.mixin import UnversionedMixin
-from digitalhub.entities._processors.processors import crud_processor
-from digitalhub.factory.entity import entity_factory
+from digitalhub.entities._processors.processors import run_processor
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.run._base.entity import Run
@@ -65,17 +64,7 @@ class Task(ContextEntity, UnversionedMixin):
         Run
             Run object.
         """
-        exec_kind = entity_factory.get_executable_kind(self.kind)
-        exec_type = entity_factory.get_entity_type_from_kind(exec_kind)
-        kwargs[exec_type] = getattr(self.spec, exec_type)
-        return self.new_run(
-            save=save,
-            project=self.project,
-            task=self._get_task_string(),
-            kind=run_kind,
-            entity_type=EntityTypes.RUN.value,
-            **kwargs,
-        )
+        return run_processor.build_task_run(self, run_kind, save=save, **kwargs)
 
     def _get_task_string(self) -> str:
         """
@@ -108,9 +97,7 @@ class Task(ContextEntity, UnversionedMixin):
         Run
             Run object.
         """
-        if save:
-            return crud_processor.create_context_entity(**kwargs)
-        return entity_factory.build_entity_from_params(**kwargs)
+        return run_processor.create_run(save=save, **kwargs)
 
     def get_run(self, entity_key: str) -> Run:
         """
@@ -126,7 +113,7 @@ class Task(ContextEntity, UnversionedMixin):
         Run
             Run object.
         """
-        return crud_processor.read_context_entity(entity_key)
+        return run_processor.get_run(entity_key)
 
     def delete_run(self, entity_key: str) -> dict:
         """
@@ -142,4 +129,4 @@ class Task(ContextEntity, UnversionedMixin):
         dict
             Response from backend.
         """
-        return crud_processor.delete_context_entity(entity_key)
+        return run_processor.delete_run(entity_key)

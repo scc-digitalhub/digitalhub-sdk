@@ -12,7 +12,7 @@ from digitalhub.entities._commons.enums import EntityTypes, State
 from digitalhub.entities._mixin.extensions.mixin import ExtensionsMixin
 from digitalhub.entities._mixin.metrics.mixin import MetricsMixin
 from digitalhub.entities._mixin.unversioned.mixin import UnversionedMixin
-from digitalhub.entities._processors.processors import run_processor
+from digitalhub.entities._processors.processors import control_processor, run_processor
 from digitalhub.factory.entity import entity_factory
 from digitalhub.factory.runtime import runtime_factory
 from digitalhub.utils.exceptions import EntityError
@@ -191,13 +191,13 @@ class Run(ContextEntity, UnversionedMixin, MetricsMixin, ExtensionsMixin):
         """
         Stop run.
         """
-        return run_processor.stop_entity(self.project, self.ENTITY_TYPE, self.id)
+        return control_processor.stop_entity(self.project, self.ENTITY_TYPE, self.id)
 
     def resume(self) -> None:
         """
         Resume run.
         """
-        return run_processor.resume_entity(self.project, self.ENTITY_TYPE, self.id)
+        return control_processor.resume_entity(self.project, self.ENTITY_TYPE, self.id)
 
     ##############################
     #  Helpers

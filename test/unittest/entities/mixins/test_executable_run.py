@@ -7,14 +7,11 @@ from unittest.mock import Mock
 
 import pytest
 
-import digitalhub.entities._mixin.executable.run as run_module
 import digitalhub.entities.function._base.entity as function_entity_module
 import digitalhub.entities.workflow._base.entity as workflow_entity_module
-from digitalhub.entities._commons.enums import Relationship
 from digitalhub.entities._mixin.executable.run import ExecutableRunMixin
 from digitalhub.entities.function._base.entity import Function
 from digitalhub.entities.workflow._base.entity import Workflow
-from digitalhub.factory.entity import entity_factory
 from digitalhub.utils.exceptions import EntityError
 
 
@@ -35,16 +32,21 @@ def _run(executable: StubExecutable, run_id: str, run_key: str, function: str):
     )
 
 
-def test_get_run_matches_id_or_key_and_rejects_other_executables() -> None:
+def test_get_run_matches_id_or_key_and_rejects_other_executables(monkeypatch) -> None:
     executable = StubExecutable()
-    executable._list_runs = Mock(
-        return_value=[
-            _run(executable, "run-id", "run-key", executable._get_executable_string()),
-            _run(executable, "other-id", "other-key", "python://project/other:other-id"),
+    matching_run = _run(executable, "run-id", "run-key", executable._get_executable_string())
+    get_run = Mock(
+        side_effect=[
+            matching_run,
+            matching_run,
+            EntityError("Run 'other-id' does not exist or does not belong to this executable."),
         ]
     )
+    monkeypatch.setattr(
+        "digitalhub.entities._mixin.executable.run.executable_processor.get_executable_run",
+        get_run,
+    )
 
-    matching_run = executable._list_runs.return_value[0]
     assert executable.get_run("run-id") is matching_run
     assert executable.get_run("run-key") is matching_run
 
@@ -52,12 +54,17 @@ def test_get_run_matches_id_or_key_and_rejects_other_executables() -> None:
         executable.get_run("other-id")
 
 
-def test_list_runs_forwards_filters() -> None:
+def test_list_runs_forwards_filters(monkeypatch) -> None:
     executable = StubExecutable()
-    executable._list_runs = Mock(return_value=[])
+    list_runs = Mock(return_value=[])
+    monkeypatch.setattr(
+        "digitalhub.entities._mixin.executable.run.executable_processor.list_executable_runs",
+        list_runs,
+    )
 
     assert executable.list_runs(q="query", task="task-key", action="execute") == []
-    executable._list_runs.assert_called_once_with(
+    list_runs.assert_called_once_with(
+        executable,
         q="query",
         name=None,
         kind=None,
@@ -67,20 +74,6 @@ def test_list_runs_forwards_filters() -> None:
         updated=None,
         task="task-key",
         action="execute",
-    )
-
-
-def test_list_runs_filters_by_executable(monkeypatch) -> None:
-    executable = StubExecutable()
-    list_runs = Mock(return_value=["run"])
-    monkeypatch.setattr(run_module, "list_runs", list_runs)
-
-    assert executable._list_runs(state="RUNNING") == ["run"]
-
-    list_runs.assert_called_once_with(
-        "project",
-        state="RUNNING",
-        function="python://project/function:function-id",
     )
 
 
@@ -95,23 +88,21 @@ def test_function_and_workflow_runs_append_extensions_consistently(
     executable.kind = "python"
     executable.key = "executable-key"
 
-    existing_extensions = [{"name": "task-extension"}]
     additional_extensions = [{"name": "run-extension"}]
     run = Mock()
-    run.extensions = existing_extensions.copy()
-    task = Mock()
-    task.run.return_value = run
-    executable._get_or_create_task = Mock(return_value=task)
-    monkeypatch.setattr(entity_factory, "get_run_kind_from_action", Mock(return_value="python+run"))
-    processor = Mock()
-    processor.execute_run.return_value = run
     entity_module = function_entity_module if executable_class is Function else workflow_entity_module
+    execute_executable = Mock(return_value=run)
+    processor = Mock()
+    processor.execute_executable = execute_executable
     monkeypatch.setattr(entity_module, "run_processor", processor)
 
     assert executable.run("execute", extensions=additional_extensions) is run
 
-    task.run.assert_called_once_with("python+run", save=False, **task_kwargs)
-    assert run.extensions == existing_extensions + additional_extensions
-    run.add_relationship.assert_called_once_with(Relationship.RUN_OF.value, "executable-key")
-    run.save.assert_called_once_with()
-    processor.execute_run.assert_called_once_with(run, wait=False, log_info=True)
+    execute_executable.assert_called_once_with(
+        executable,
+        "execute",
+        wait=False,
+        log_info=True,
+        extensions=additional_extensions,
+        **task_kwargs,
+    )

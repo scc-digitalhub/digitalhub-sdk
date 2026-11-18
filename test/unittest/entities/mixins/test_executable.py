@@ -4,11 +4,7 @@
 
 from unittest.mock import Mock
 
-import pytest
-
-import digitalhub.entities._mixin.executable.task as task_module
 from digitalhub.entities._mixin.executable.mixin import ExecutableMixin
-from digitalhub.utils.exceptions import EntityError
 
 
 class StubExecutable(ExecutableMixin):
@@ -23,48 +19,24 @@ class StubExecutable(ExecutableMixin):
         return None
 
 
-def test_list_task_does_not_forward_project_twice() -> None:
+def test_list_task_delegates_without_forwarding_project_twice(monkeypatch) -> None:
     executable = StubExecutable()
-    executable._list_tasks = Mock(return_value=[])
+    list_tasks = Mock(return_value=[])
+    monkeypatch.setattr(
+        "digitalhub.entities._mixin.executable.task.executable_processor.list_tasks",
+        list_tasks,
+    )
 
     result = executable.list_task(q="query")
 
     assert result == []
-    assert executable._list_tasks.call_args.args == ()
-    assert executable._list_tasks.call_args.kwargs["q"] == "query"
-
-
-def test_new_task_builds_and_caches_task_when_action_is_missing(monkeypatch) -> None:
-    executable = StubExecutable()
-    task = Mock()
-    list_tasks = Mock(return_value=[])
-    build_entity = Mock(return_value=task)
-    monkeypatch.setattr(task_module.crud_processor, "list_context_entities", list_tasks)
-    monkeypatch.setattr(task_module.entity_factory, "get_task_kind_from_action", Mock(return_value="task-kind"))
-    monkeypatch.setattr(task_module.entity_factory, "build_entity_from_params", build_entity)
-
-    result = executable.new_task("build", name="task")
-
-    assert result is task
-    assert executable._task_store()["build"] is task
-    task.save.assert_called_once_with()
-    build_entity.assert_called_once_with(
-        name="task",
-        project="project",
-        function="function-kind://project/function-name:function-id",
-        kind="task-kind",
+    list_tasks.assert_called_once_with(
+        executable,
+        q="query",
+        name=None,
+        kind=None,
+        user=None,
+        state=None,
+        created=None,
+        updated=None,
     )
-
-
-def test_new_task_rejects_existing_action(monkeypatch) -> None:
-    executable = StubExecutable()
-    list_tasks = Mock(return_value=[Mock()])
-    build_entity = Mock()
-    monkeypatch.setattr(task_module.crud_processor, "list_context_entities", list_tasks)
-    monkeypatch.setattr(task_module.entity_factory, "get_task_kind_from_action", Mock(return_value="task-kind"))
-    monkeypatch.setattr(task_module.entity_factory, "build_entity_from_params", build_entity)
-
-    with pytest.raises(EntityError, match="Task 'build' already exists"):
-        executable.new_task("build")
-
-    build_entity.assert_not_called()

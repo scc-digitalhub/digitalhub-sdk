@@ -11,7 +11,7 @@ from digitalhub.entities._processors.context.run import ContextEntityRunProcesso
 from digitalhub.entities.log._base.entity import Log
 from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
-from digitalhub.stores.client.compiler.options import LogsOptions, StopResumeOptions
+from digitalhub.stores.client.compiler.options import LogsOptions
 from digitalhub.stores.client.compiler.targets import ContextEntityTarget
 from digitalhub.utils.generic_utils import encode_string
 
@@ -58,42 +58,6 @@ def test_read_run_logs_builds_logs_and_decodes_content(monkeypatch) -> None:
             operation=BackendOp.LOGS_READ,
             target=ContextEntityTarget("project", "run", "run-id"),
             options=LogsOptions(state="READY"),
-        )
-    )
-
-
-def test_stop_entity_creates_backend_operation(monkeypatch) -> None:
-    context, client, _ = _context()
-    monkeypatch.setattr(run_module, "get_context", Mock(return_value=context))
-
-    result = ContextEntityRunProcessor().stop_entity("project", "run", "run-id", reason="cancelled")
-
-    assert result is None
-    client.execute.assert_called_once_with(
-        ClientOp(
-            category=ApiType.CONTEXT,
-            operation=BackendOp.STOP,
-            target=ContextEntityTarget("project", "run", "run-id"),
-            payload={},
-            options=StopResumeOptions(reason="cancelled"),
-        )
-    )
-
-
-def test_resume_entity_creates_backend_operation(monkeypatch) -> None:
-    context, client, _ = _context()
-    monkeypatch.setattr(run_module, "get_context", Mock(return_value=context))
-
-    result = ContextEntityRunProcessor().resume_entity("project", "run", "run-id", reason="retry")
-
-    assert result is None
-    client.execute.assert_called_once_with(
-        ClientOp(
-            category=ApiType.CONTEXT,
-            operation=BackendOp.RESUME,
-            target=ContextEntityTarget("project", "run", "run-id"),
-            payload={},
-            options=StopResumeOptions(reason="retry"),
         )
     )
 
@@ -172,3 +136,80 @@ def test_execute_run_waits_for_backend_run_when_requested() -> None:
     assert ContextEntityRunProcessor().execute_run(run, wait=True, log_info=False) is waited_run
 
     run.wait.assert_called_once_with(log_info=False)
+
+
+def test_execute_executable_creates_task_run_and_executes_it() -> None:
+    executable = Mock()
+    task = Mock()
+    run = Mock()
+    run.local_execution.return_value = False
+    executable_processor = Mock()
+    executable_processor.get_or_create_task.return_value = task
+    executable_processor.create_run.return_value = run
+    processor = ContextEntityRunProcessor(executable_processor=executable_processor)
+
+    result = processor.execute_executable(
+        executable,
+        "execute",
+        wait=False,
+        extensions=[{"name": "extension"}],
+        parameter="value",
+    )
+
+    assert result is run
+    executable_processor.get_or_create_task.assert_called_once_with(executable, "execute")
+    executable_processor.create_run.assert_called_once_with(
+        executable,
+        task,
+        "execute",
+        extensions=[{"name": "extension"}],
+        parameter="value",
+    )
+
+
+def test_build_task_run_adds_executable_reference(monkeypatch) -> None:
+    crud_processor = Mock()
+    processor = ContextEntityRunProcessor(crud_processor)
+    task = SimpleNamespace(
+        kind="python+job",
+        project="project",
+        spec=SimpleNamespace(function="function-ref"),
+        _get_task_string=Mock(return_value="task-ref"),
+    )
+    run = Mock()
+    monkeypatch.setattr(run_module.entity_factory, "get_executable_kind", Mock(return_value="python-function"))
+    monkeypatch.setattr(run_module.entity_factory, "get_entity_type_from_kind", Mock(return_value="function"))
+    processor.create_run = Mock(return_value=run)
+
+    result = processor.build_task_run(task, "python+run", save=False, labels=["run"])
+
+    assert result is run
+    processor.create_run.assert_called_once_with(
+        project="project",
+        task="task-ref",
+        kind="python+run",
+        entity_type="run",
+        save=False,
+        function="function-ref",
+        labels=["run"],
+    )
+
+
+def test_run_crud_operations_delegate_to_crud_processor() -> None:
+    crud_processor = Mock()
+    processor = ContextEntityRunProcessor(crud_processor)
+    built = Mock()
+    crud_processor.create_context_entity.return_value = built
+
+    assert processor.create_run(save=True, project="project") is built
+    crud_processor.create_context_entity.assert_called_once_with(project="project")
+
+    run = Mock()
+    crud_processor.read_context_entity.return_value = run
+    assert processor.get_run("run-key") is run
+    crud_processor.read_context_entity.assert_called_once_with("run-key")
+
+    deleted = {"deleted": True}
+    crud_processor.delete_context_entity.return_value = deleted
+    assert processor.delete_run("run-key") is deleted
+    crud_processor.delete_context_entity.assert_called_once_with("run-key")

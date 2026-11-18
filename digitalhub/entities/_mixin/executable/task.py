@@ -6,40 +6,16 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._mixin.executable.base import ExecutableBaseMixin
-from digitalhub.entities._processors.processors import crud_processor
-from digitalhub.entities.task.crud import delete_task, list_tasks
-from digitalhub.factory.entity import entity_factory
-from digitalhub.utils.exceptions import EntityAlreadyExistsError, EntityError
-from digitalhub.utils.logger.logger import get_logger
+from digitalhub.entities._processors.processors import executable_processor
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.task._base.entity import Task
 
-logger = get_logger(__name__)
-
 
 class ExecutableTaskMixin(ExecutableBaseMixin):
-    _tasks: dict[str, Task]
-
-    def _task_store(self) -> dict[str, Task]:
-        try:
-            return self._tasks
-        except AttributeError:
-            self._tasks = {}
-            return self._tasks
-
     def _get_or_create_task(self, action: str) -> Task:
-        tasks = self._task_store()
-        if tasks.get(action) is None:
-            try:
-                tasks[action] = self.get_task(action)
-                logger.debug(f"Loaded existing task for action '{action}'.")
-            except EntityError:
-                logger.debug(f"Task for action '{action}' not found, creating new one.")
-                tasks[action] = self.new_task(action)
-        return tasks[action]
+        return executable_processor.get_or_create_task(self, action)
 
     def import_tasks(self, tasks: list[dict]) -> None:
         """Import tasks and associate matching ones with the executable.
@@ -49,23 +25,7 @@ class ExecutableTaskMixin(ExecutableBaseMixin):
         tasks : list[dict]
             Serialized tasks to import.
         """
-        task_store = self._task_store()
-        for task in tasks:
-            if not isinstance(task, dict):
-                continue
-
-            task_obj: Task = entity_factory.build_entity_from_dict(task, entity_type=EntityTypes.TASK.value)
-
-            try:
-                task_obj.save()
-            except EntityAlreadyExistsError:
-                logger.debug(
-                    f"Task '{task_obj.kind}' already exists in backend, skipping save.",
-                )
-
-            if getattr(task_obj.spec, self.ENTITY_TYPE, None) == self._get_executable_string():
-                action = entity_factory.get_action_from_task_kind(self.kind, task_obj.kind)
-                task_store[action] = task_obj
+        executable_processor.import_tasks(self, tasks)
 
     def new_task(self, action: str, **kwargs) -> Task:
         """Create and persist a task for an executable action.
@@ -87,18 +47,7 @@ class ExecutableTaskMixin(ExecutableBaseMixin):
         EntityError
             If a task already exists for the action or the action is not supported.
         """
-        self._raise_if_exists(action)
-        task_store = self._task_store()
-
-        kwargs["project"] = self.project
-        kwargs[self.ENTITY_TYPE] = self._get_executable_string()
-        kwargs["kind"] = entity_factory.get_task_kind_from_action(self.kind, action)
-
-        task: Task = entity_factory.build_entity_from_params(**kwargs)
-        task.save()
-
-        task_store[action] = task
-        return task
+        return executable_processor.create_task(self, action, **kwargs)
 
     def get_task(self, action: str) -> Task:
         """Get the task associated with an executable action.
@@ -118,16 +67,7 @@ class ExecutableTaskMixin(ExecutableBaseMixin):
         EntityError
             If no task exists for the action or the action is not supported.
         """
-        task_store = self._task_store()
-        try:
-            return task_store[action]
-        except KeyError:
-            kind = entity_factory.get_task_kind_from_action(self.kind, action)
-            resp = self._get_task_from_backend(kind)
-            if not resp:
-                raise EntityError(f"Task {kind} is not created")
-            task_store[action] = resp[0]
-            return task_store[action]
+        return executable_processor.get_task(self, action)
 
     def list_task(
         self,
@@ -163,7 +103,8 @@ class ExecutableTaskMixin(ExecutableBaseMixin):
         list[Task]
             Tasks matching the filters.
         """
-        return self._list_tasks(
+        return executable_processor.list_tasks(
+            self,
             q=q,
             name=name,
             kind=kind,
@@ -172,10 +113,6 @@ class ExecutableTaskMixin(ExecutableBaseMixin):
             created=created,
             updated=updated,
         )
-
-    def _list_tasks(self, **kwargs) -> list[Task]:
-        kwargs[self.ENTITY_TYPE] = self._get_executable_string()
-        return list_tasks(self.project, **kwargs)
 
     def update_task(self, action: str, **kwargs) -> Task:
         """Update the task associated with an executable action.
@@ -197,18 +134,7 @@ class ExecutableTaskMixin(ExecutableBaseMixin):
         EntityError
             If no task exists for the action or the action is not supported.
         """
-        existing_task = self.get_task(action)
-        task_store = self._task_store()
-
-        kwargs["project"] = self.project
-        kwargs["kind"] = entity_factory.get_task_kind_from_action(self.kind, action)
-        kwargs[self.ENTITY_TYPE] = self._get_executable_string()
-        kwargs["uuid"] = existing_task.id
-
-        task: Task = entity_factory.build_entity_from_params(**kwargs)
-        task.update()
-        task_store[action] = task
-        return task
+        return executable_processor.update_task(self, action, **kwargs)
 
     def delete_task(self, action: str, cascade: bool = True) -> dict:
         """Delete the task associated with an executable action.
@@ -225,11 +151,7 @@ class ExecutableTaskMixin(ExecutableBaseMixin):
         dict
             Backend deletion response.
         """
-        task = self.get_task(action)
-        task_store = self._task_store()
-        resp = delete_task(task.key, cascade=cascade)
-        task_store.pop(action, None)
-        return resp
+        return executable_processor.delete_task(self, action, cascade=cascade)
 
     def set_task(self, action: str, **kwargs) -> Task:
         """Create or replace the task associated with an executable action.
@@ -251,36 +173,4 @@ class ExecutableTaskMixin(ExecutableBaseMixin):
         EntityError
             If the action is not supported.
         """
-        try:
-            existing_task = self.get_task(action)
-        except EntityError:
-            return self.new_task(action, **kwargs)
-
-        task_store = self._task_store()
-
-        kwargs["project"] = self.project
-        kwargs[self.ENTITY_TYPE] = self._get_executable_string()
-        kwargs["kind"] = entity_factory.get_task_kind_from_action(self.kind, action)
-        kwargs["uuid"] = existing_task.id
-
-        task: Task = entity_factory.build_entity_from_params(**kwargs)
-        task.update()
-        task_store[action] = task
-        return task
-
-    def _get_task_from_backend(self, kind: str) -> list[Task]:
-        params = {self.ENTITY_TYPE: self._get_executable_string(), "kind": kind}
-        return crud_processor.list_context_entities(self.project, EntityTypes.TASK.value, **params)
-
-    def _check_task_in_backend(self, kind: str) -> bool:
-        return bool(self._get_task_from_backend(kind))
-
-    def _raise_if_exists(self, action: str) -> None:
-        kind = entity_factory.get_task_kind_from_action(self.kind, action)
-        if self._check_task_in_backend(kind):
-            raise EntityError(f"Task '{action}' already exists.")
-
-    def _raise_if_not_exists(self, action: str) -> None:
-        kind = entity_factory.get_task_kind_from_action(self.kind, action)
-        if not self._check_task_in_backend(kind):
-            raise EntityError(f"Task '{action}' is not created.")
+        return executable_processor.set_task(self, action, **kwargs)
