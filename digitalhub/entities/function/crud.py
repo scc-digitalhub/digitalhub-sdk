@@ -6,19 +6,13 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.entities._commons.crud_factory import ContextEntityCRUD
 from digitalhub.entities._commons.enums import EntityTypes
-from digitalhub.entities._processors.processors import crud_processor, executable_processor
+from digitalhub.entities._processors.crud_factory import ContextEntityCRUD
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.function._base.entity import Function
 
-_crud: ContextEntityCRUD[Function] = ContextEntityCRUD(
-    EntityTypes.FUNCTION.value,
-    executable=True,
-    crud_processor=crud_processor,
-    executable_processor=executable_processor,
-)
+_crud: ContextEntityCRUD[Function] = ContextEntityCRUD(EntityTypes.FUNCTION.value, executable=True)
 
 
 def new_function(

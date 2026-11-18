@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import ClassVar
 
-from digitalhub.entities._processors.processors import key_processor
+from digitalhub.entities._commons.keys import build_context_entity_key
 
 
 class UnversionedMixin:
@@ -22,7 +22,7 @@ class UnversionedMixin:
     def _init_unversioned_identity(self, project: str, uuid: str, kind: str) -> None:
         self.id = uuid
         self.name = uuid
-        self.key = key_processor.build_context_entity_key(
+        self.key = build_context_entity_key(
             project,
             self.ENTITY_TYPE,
             kind,

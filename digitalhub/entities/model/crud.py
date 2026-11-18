@@ -6,14 +6,13 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.entities._commons.crud_factory import ContextEntityCRUD
 from digitalhub.entities._commons.enums import EntityTypes
-from digitalhub.entities._processors.processors import crud_processor
+from digitalhub.entities._processors.crud_factory import ContextEntityCRUD
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.model._base.entity import Model
 
-_crud: ContextEntityCRUD[Model] = ContextEntityCRUD(EntityTypes.MODEL.value, crud_processor=crud_processor)
+_crud: ContextEntityCRUD[Model] = ContextEntityCRUD(EntityTypes.MODEL.value)
 
 
 def get_model(

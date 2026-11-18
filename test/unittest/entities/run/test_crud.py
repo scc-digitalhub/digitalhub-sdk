@@ -12,7 +12,7 @@ from digitalhub.entities._commons.enums import EntityTypes
 
 def test_new_run_delegates_to_context_processor(monkeypatch) -> None:
     create_entity = Mock(return_value="run")
-    monkeypatch.setattr(run_crud.crud_processor, "create_context_entity", create_entity)
+    monkeypatch.setattr(run_crud._crud.crud_processor, "create_context_entity", create_entity)
 
     result = run_crud.new_run(
         project="my-project",
@@ -105,7 +105,7 @@ def test_run_operations_delegate_to_processor(
     monkeypatch,
 ) -> None:
     processor = Mock(return_value="result")
-    monkeypatch.setattr(run_crud.crud_processor, processor_name, processor)
+    monkeypatch.setattr(run_crud._crud.crud_processor, processor_name, processor)
 
     result = getattr(run_crud, function_name)(**kwargs)
 
@@ -133,7 +133,7 @@ def test_run_import_and_load_delegate_to_processor(
     monkeypatch,
 ) -> None:
     processor = Mock(return_value="run")
-    monkeypatch.setattr(run_crud.crud_processor, processor_name, processor)
+    monkeypatch.setattr(run_crud._crud.crud_processor, processor_name, processor)
 
     result = getattr(run_crud, function_name)(**kwargs)
 
@@ -148,7 +148,7 @@ def test_update_run_delegates_entity_fields(monkeypatch) -> None:
     entity.id = "run-id"
     entity.to_dict.return_value = {"status": {"state": "RUNNING"}}
     update_entity = Mock(return_value="run")
-    monkeypatch.setattr(run_crud.crud_processor, "update_context_entity", update_entity)
+    monkeypatch.setattr(run_crud._crud.crud_processor, "update_context_entity", update_entity)
 
     result = run_crud.update_run(entity)
 

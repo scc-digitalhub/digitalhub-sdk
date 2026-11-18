@@ -6,17 +6,16 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.entities._commons.crud_factory import ContextEntityCRUD
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
 from digitalhub.entities._commons.utils import is_valid_key
-from digitalhub.entities._processors.processors import crud_processor
+from digitalhub.entities._processors.crud_factory import ContextEntityCRUD
 from digitalhub.utils.exceptions import EntityNotExistsError
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.secret._base.entity import Secret
 
 
-_crud: ContextEntityCRUD[Secret] = ContextEntityCRUD(EntityTypes.SECRET.value, crud_processor=crud_processor)
+_crud: ContextEntityCRUD[Secret] = ContextEntityCRUD(EntityTypes.SECRET.value)
 
 
 def new_secret(

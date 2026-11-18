@@ -6,20 +6,15 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.entities._commons.crud_factory import MaterialEntityCRUD
 from digitalhub.entities._commons.enums import EntityTypes
-from digitalhub.entities._processors.processors import crud_processor, material_processor
+from digitalhub.entities._processors.crud_factory import MaterialEntityCRUD
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.artifact._base.entity import Artifact
     from digitalhub.utils.types import SourcesOrListOfSources
 
 
-_crud: MaterialEntityCRUD[Artifact] = MaterialEntityCRUD(
-    EntityTypes.ARTIFACT.value,
-    crud_processor=crud_processor,
-    material_processor=material_processor,
-)
+_crud: MaterialEntityCRUD[Artifact] = MaterialEntityCRUD(EntityTypes.ARTIFACT.value)
 
 
 def new_artifact(

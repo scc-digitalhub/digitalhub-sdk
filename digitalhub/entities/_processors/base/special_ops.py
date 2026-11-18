@@ -12,9 +12,6 @@ from digitalhub.stores.client.factory import get_client
 
 
 class BaseEntitySpecialOpsProcessor:
-    def build_project_key(self, entity_id: str) -> str:
-        return f"store://{entity_id}"
-
     def share_project_entity(
         self,
         entity_type: str,

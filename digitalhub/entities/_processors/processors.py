@@ -6,7 +6,6 @@ from digitalhub.entities._processors.base.crud import BaseEntityCRUDProcessor
 from digitalhub.entities._processors.base.special_ops import BaseEntitySpecialOpsProcessor
 from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
 from digitalhub.entities._processors.context.executable import ContextEntityExecutableProcessor
-from digitalhub.entities._processors.context.key import ContextEntityKeyProcessor
 from digitalhub.entities._processors.context.material import ContextEntityMaterialProcessor
 from digitalhub.entities._processors.context.metrics import ContextEntityMetricsProcessor
 from digitalhub.entities._processors.context.run import ContextEntityRunProcessor
@@ -21,7 +20,6 @@ base_special_ops_processor = BaseEntitySpecialOpsProcessor()
 crud_processor = ContextEntityCRUDProcessor()
 material_processor = ContextEntityMaterialProcessor(crud_processor)
 executable_processor = ContextEntityExecutableProcessor(crud_processor)
-key_processor = ContextEntityKeyProcessor()
 secret_processor = ContextEntitySecretProcessor()
 run_processor = ContextEntityRunProcessor(crud_processor)
 metrics_processor = ContextEntityMetricsProcessor()

@@ -6,8 +6,12 @@ from __future__ import annotations
 
 import typing
 from collections.abc import Callable
+from typing import Any
 
+from digitalhub.context.api import get_default_store
 from digitalhub.entities._commons.enums import State
+from digitalhub.entities._commons.utils import build_log_path_from_source
+from digitalhub.entities._constructors.uuid import build_uuid
 from digitalhub.entities._processors.utils import get_context
 from digitalhub.factory.entity import entity_factory
 from digitalhub.stores.client.common.enums import ApiType, BackendOp
@@ -28,6 +32,32 @@ if typing.TYPE_CHECKING:
 class ContextEntityMaterialProcessor:
     def __init__(self, crud_processor: ContextEntityCRUDProcessor):
         self.crud_processor = crud_processor
+
+    def build_log_kwargs(
+        self,
+        project: str,
+        name: str,
+        entity_type: str,
+        source: SourcesOrListOfSources,
+        path: str | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """Build storage parameters for a material log operation."""
+        if path is None:
+            default_store = get_default_store(project)
+            uuid = build_uuid()
+            kwargs["uuid"] = uuid
+            kwargs["path"] = build_log_path_from_source(
+                project,
+                entity_type,
+                name,
+                uuid,
+                source,
+                default_store=default_store,
+            )
+        else:
+            kwargs["path"] = path
+        return kwargs
 
     def log_material_entity(self, **kwargs) -> MaterialProtocol:
         source: SourcesOrListOfSources = kwargs.pop("source")

@@ -13,7 +13,7 @@ from digitalhub.entities._commons.enums import EntityTypes
 
 def test_new_containerimage_delegates_to_context_processor(monkeypatch) -> None:
     create_entity = Mock(return_value="containerimage")
-    monkeypatch.setattr(containerimage_crud.crud_processor, "create_context_entity", create_entity)
+    monkeypatch.setattr(containerimage_crud._crud.crud_processor, "create_context_entity", create_entity)
 
     result = containerimage_crud.new_containerimage(
         project="my-project",
@@ -129,7 +129,7 @@ def test_containerimage_operations_delegate_to_processor(
     monkeypatch,
 ) -> None:
     processor = Mock(return_value="result")
-    monkeypatch.setattr(containerimage_crud.crud_processor, processor_name, processor)
+    monkeypatch.setattr(containerimage_crud._crud.crud_processor, processor_name, processor)
 
     result = getattr(containerimage_crud, function_name)(**kwargs)
 
@@ -155,7 +155,7 @@ def test_update_containerimage_delegates_entity_fields(monkeypatch) -> None:
         to_dict=Mock(return_value={"spec": {"image": "api:latest"}}),
     )
     update_entity = Mock(return_value="containerimage")
-    monkeypatch.setattr(containerimage_crud.crud_processor, "update_context_entity", update_entity)
+    monkeypatch.setattr(containerimage_crud._crud.crud_processor, "update_context_entity", update_entity)
 
     result = containerimage_crud.update_containerimage(entity)
 

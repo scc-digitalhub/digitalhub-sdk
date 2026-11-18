@@ -14,10 +14,6 @@ from digitalhub.stores.client.compiler.options import NoOptions, ShareOptions
 from digitalhub.stores.client.compiler.targets import BaseEntityTarget
 
 
-def test_build_project_key_uses_store_scheme() -> None:
-    assert BaseEntitySpecialOpsProcessor().build_project_key("project-id") == "store://project-id"
-
-
 def test_unshare_finds_user_after_first_acl_entry(monkeypatch) -> None:
     client = Mock()
     client.execute.side_effect = [

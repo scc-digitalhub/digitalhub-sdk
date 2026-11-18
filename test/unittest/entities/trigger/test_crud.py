@@ -32,7 +32,7 @@ def test_new_trigger_builds_executable_template(
     monkeypatch,
 ) -> None:
     create_entity = Mock(return_value="trigger")
-    monkeypatch.setattr(trigger_crud.crud_processor, "create_context_entity", create_entity)
+    monkeypatch.setattr(trigger_crud._crud.crud_processor, "create_context_entity", create_entity)
     original_template = template.copy() if template is not None else None
 
     result = trigger_crud.new_trigger(
@@ -75,7 +75,7 @@ def test_new_trigger_builds_executable_template(
 
 def test_new_trigger_requires_function_or_workflow(monkeypatch) -> None:
     create_entity = Mock()
-    monkeypatch.setattr(trigger_crud.crud_processor, "create_context_entity", create_entity)
+    monkeypatch.setattr(trigger_crud._crud.crud_processor, "create_context_entity", create_entity)
 
     with pytest.raises(ValueError, match="Workflow or function must be provided"):
         trigger_crud.new_trigger(
@@ -164,7 +164,7 @@ def test_trigger_operations_delegate_to_processor(
     monkeypatch,
 ) -> None:
     processor = Mock(return_value="result")
-    monkeypatch.setattr(trigger_crud.crud_processor, processor_name, processor)
+    monkeypatch.setattr(trigger_crud._crud.crud_processor, processor_name, processor)
 
     result = getattr(trigger_crud, function_name)(**kwargs)
 
@@ -192,7 +192,7 @@ def test_trigger_import_and_load_delegate_to_processor(
     monkeypatch,
 ) -> None:
     processor = Mock(return_value="trigger")
-    monkeypatch.setattr(trigger_crud.crud_processor, processor_name, processor)
+    monkeypatch.setattr(trigger_crud._crud.crud_processor, processor_name, processor)
 
     result = getattr(trigger_crud, function_name)(**kwargs)
 
@@ -207,7 +207,7 @@ def test_update_trigger_delegates_entity_fields(monkeypatch) -> None:
     entity.id = "trigger-id"
     entity.to_dict.return_value = {"metadata": {"name": "on-demand"}}
     update_entity = Mock(return_value="trigger")
-    monkeypatch.setattr(trigger_crud.crud_processor, "update_context_entity", update_entity)
+    monkeypatch.setattr(trigger_crud._crud.crud_processor, "update_context_entity", update_entity)
 
     result = trigger_crud.update_trigger(entity)
 

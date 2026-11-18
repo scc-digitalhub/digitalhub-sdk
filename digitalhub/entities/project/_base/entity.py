@@ -10,6 +10,7 @@ from pathlib import Path
 from digitalhub.context.api import build_context
 from digitalhub.entities._base.entity.entity import PersistedEntity
 from digitalhub.entities._commons.enums import EntityTypes
+from digitalhub.entities._commons.keys import build_project_key
 from digitalhub.entities._constructors.uuid import build_uuid
 from digitalhub.entities._mixin.extensions.mixin import ExtensionsMixin
 from digitalhub.entities._processors.processors import (
@@ -86,7 +87,7 @@ class Project(PersistedEntity, ProjectListShortcuts, ExtensionsMixin):
 
         self.id = name  # Unique identifier for the project
         self.name = name
-        self.key = base_special_ops_processor.build_project_key(self.name)
+        self.key = build_project_key(self.name)
 
         # Set client
         self._client = get_client()

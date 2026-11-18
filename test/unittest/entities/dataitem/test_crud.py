@@ -13,8 +13,8 @@ import digitalhub.entities.dataitem.crud as context_crud
 import digitalhub.entities.dataitem.dataitem.crud as dataitem_crud
 import digitalhub.entities.dataitem.generic.crud as generic_crud
 import digitalhub.entities.dataitem.table.crud as table_crud
-from digitalhub.entities._commons import crud_factory
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
+from digitalhub.entities._processors import crud_factory
 
 
 def test_register_dataitem_delegates_to_base_with_specific_kind(monkeypatch) -> None:
@@ -131,7 +131,7 @@ def test_register_dataitem_specialized_delegates_to_base(crud_module, register_n
 
 def test_new_dataitem_delegates_to_context_processor(monkeypatch) -> None:
     create_entity = Mock(return_value="dataitem")
-    monkeypatch.setattr(base_crud.crud_processor, "create_context_entity", create_entity)
+    monkeypatch.setattr(base_crud._crud.crud_processor, "create_context_entity", create_entity)
 
     result = base_crud.new_dataitem(
         project="my-project",
@@ -171,8 +171,8 @@ def test_log_base_dataitem_validates_source_and_builds_storage_kwargs(monkeypatc
     log_entity = Mock(return_value="dataitem")
     monkeypatch.setattr(crud_factory, "eval_local_source", eval_source)
     monkeypatch.setattr(crud_factory, "build_log_name_from_source", build_name)
-    monkeypatch.setattr(crud_factory, "build_log_kwargs", build_kwargs)
-    monkeypatch.setattr(base_crud.material_processor, "log_material_entity", log_entity)
+    monkeypatch.setattr(base_crud._crud.material_processor, "build_log_kwargs", build_kwargs)
+    monkeypatch.setattr(base_crud._crud.material_processor, "log_material_entity", log_entity)
 
     source = ["./data.csv"]
     result = base_crud.log_base_dataitem(
@@ -367,7 +367,7 @@ def test_update_dataitem_delegates_entity_fields(monkeypatch) -> None:
         to_dict=Mock(return_value={"metadata": {"name": "data"}}),
     )
     update_entity = Mock(return_value="dataitem")
-    monkeypatch.setattr(context_crud.crud_processor, "update_context_entity", update_entity)
+    monkeypatch.setattr(context_crud._crud.crud_processor, "update_context_entity", update_entity)
 
     result = context_crud.update_dataitem(entity)
 
@@ -446,7 +446,7 @@ def test_dataitem_read_operations_delegate_to_processor(
     monkeypatch,
 ) -> None:
     processor = Mock(return_value="dataitem")
-    monkeypatch.setattr(context_crud.crud_processor, processor_name, processor)
+    monkeypatch.setattr(context_crud._crud.crud_processor, processor_name, processor)
 
     result = getattr(context_crud, function_name)(**kwargs)
 
