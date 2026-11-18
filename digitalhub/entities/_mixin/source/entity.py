@@ -5,36 +5,18 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Protocol, cast
+from typing import Protocol, cast
 
 from typing_extensions import Self
 
 from digitalhub.entities._commons.utils import build_zip_path
-from digitalhub.entities._mixin.source.models import SourceCode
-from digitalhub.entities._mixin.versioned.protocol import VersionedEntityProtocol
+from digitalhub.entities._mixin.source.protocol import SourceEntityProtocol
 from digitalhub.stores.data.api import get_default_store_uri, get_store
 from digitalhub.utils.exceptions import EntityError
 from digitalhub.utils.file_utils import eval_zip_type
 from digitalhub.utils.generic_utils import create_archive, decode_base64_string, read_source
 from digitalhub.utils.io_utils import write_text
 from digitalhub.utils.uri_utils import has_local_scheme
-
-if TYPE_CHECKING:
-    from digitalhub.context.context import Context
-
-
-class _SourceSpec(Protocol):
-    source: SourceCode | None
-
-
-class _SourceEntity(Protocol):
-    spec: _SourceSpec
-    project: str
-    name: str
-    id: str
-    ENTITY_TYPE: str
-
-    def _context(self) -> Context: ...
 
 
 class _ExportBase(Protocol):
@@ -46,7 +28,7 @@ class SourceEntityMixin:
 
     @property
     def source(self) -> str | None:
-        source = cast(_SourceEntity, self).spec.source
+        source = cast(SourceEntityProtocol, self).spec.source
         if source is None:
             return None
         if source.base64 is not None:
@@ -72,7 +54,7 @@ class SourceEntityMixin:
         return destination
 
     def _post_build_source_check(self) -> Self:
-        entity = cast(_SourceEntity, self)
+        entity = cast(SourceEntityProtocol, self)
         source = entity.spec.source
         if source is None or source.source is None or source.base64 is not None:
             return self
@@ -88,7 +70,7 @@ class SourceEntityMixin:
         if path.is_dir():
             with create_archive(path) as archive_path:
                 destination = build_zip_path(
-                    cast(VersionedEntityProtocol, entity),
+                    entity,
                     archive_path.name,
                     default_store=get_default_store_uri(entity._context().config),
                 )
@@ -96,7 +78,7 @@ class SourceEntityMixin:
             source.source = destination
         elif eval_zip_type(source_path):
             destination = build_zip_path(
-                cast(VersionedEntityProtocol, entity),
+                entity,
                 path.name,
                 default_store=get_default_store_uri(entity._context().config),
             )
@@ -108,7 +90,7 @@ class SourceEntityMixin:
         return self
 
     def export(self) -> str:
-        entity = cast(_SourceEntity, self)
+        entity = cast(SourceEntityProtocol, self)
         source = entity.spec.source
         if source is None or source.source is None or source.base64 is None or not has_local_scheme(source.source):
             return cast(_ExportBase, super()).export()
