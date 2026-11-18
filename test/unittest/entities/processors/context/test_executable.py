@@ -472,6 +472,36 @@ def test_run_run_ends_execution_when_setup_fails() -> None:
     processor.end_run_execution.assert_called_once_with(run)
 
 
+def test_run_run_ends_execution_when_runtime_fails(monkeypatch) -> None:
+    processor = ContextEntityExecutableProcessor(Mock())
+    processor.start_run_execution = Mock()
+    processor.end_run_execution = Mock()
+    run = SimpleNamespace(
+        kind="python+run",
+        project="project",
+        status=SimpleNamespace(state=State.RUNNING.value, message=None),
+        refresh=Mock(),
+        _setup_execution=Mock(),
+        local_execution=Mock(return_value=True),
+        to_dict=Mock(return_value={}),
+        update=Mock(),
+    )
+    runtime = Mock()
+    runtime.run.side_effect = RuntimeError("runtime failed")
+    monkeypatch.setattr(
+        executable_module.runtime_factory,
+        "build_runtime",
+        Mock(return_value=runtime),
+    )
+
+    with pytest.raises(RuntimeError, match="runtime failed"):
+        processor.run_run(run)
+
+    processor.end_run_execution.assert_called_once_with(run)
+    assert run.status.state == State.ERROR.value
+    assert run.status.message == "runtime failed"
+
+
 def test_start_run_execution_validates_state_before_registration() -> None:
     processor = ContextEntityExecutableProcessor(Mock())
     context = Mock()

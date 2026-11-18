@@ -169,7 +169,6 @@ class Context:
         state = self._run_context.get()
         if state is not None:
             state.logged.clear()
-        self._fallback_state.logged.clear()
         self._run_context.set(None)
 
     def register_entity(self, obj: ContextEntity) -> ContextEntity:

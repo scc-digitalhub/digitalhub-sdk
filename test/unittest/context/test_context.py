@@ -150,13 +150,16 @@ def test_context_run_id_fallback_is_restored_after_local_run(monkeypatch) -> Non
 
     assert context.run is backend_run
     assert context.is_running
+    context.logged["fallback-entry"] = "value"
 
     context.set_run(local_run)
+    context.logged["local-entry"] = "value"
     assert context.run is local_run
 
     context.unset_run()
     assert context.run is backend_run
     assert context.is_running
+    assert context.logged == {"fallback-entry": "value"}
     get_run.assert_called_once_with("backend-run")
 
 
