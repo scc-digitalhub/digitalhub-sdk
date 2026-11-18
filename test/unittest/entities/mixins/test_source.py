@@ -207,3 +207,35 @@ def test_source_export_restores_base64_when_export_raises(tmp_path, monkeypatch)
 
     assert source.base64 == "cHJpbnQoJ2hlbGxvJyk="
     context.ensure_root.assert_called_once_with()
+
+
+def test_source_export_creates_nested_file_inside_context_root(tmp_path, monkeypatch):
+    root = tmp_path / "project"
+    source = PythonSourceCode(source="nested/main.py", handler="main", base64="cHJpbnQoJ2hlbGxvJyk=")
+    entity = ExportableSourceEntity(source, root)
+    monkeypatch.setattr(source_entity_module, "has_local_scheme", lambda _: True)
+
+    with pytest.raises(RuntimeError, match="export failed"):
+        entity.export()
+
+    assert (root / "nested" / "main.py").read_text() == "print('hello')"
+    assert source.base64 == "cHJpbnQoJ2hlbGxvJyk="
+
+
+@pytest.mark.parametrize("absolute", [False, True], ids=["traversal", "absolute"])
+def test_source_export_rejects_paths_outside_context_root(tmp_path, monkeypatch, absolute):
+    root = tmp_path / "project"
+    root.mkdir()
+    outside = tmp_path / "outside.py"
+    outside.write_text("original")
+    source_path = str(outside) if absolute else "../outside.py"
+    encoded = "cHJpbnQoJ2hlbGxvJyk="
+    source = PythonSourceCode(source=source_path, handler="main", base64=encoded)
+    entity = ExportableSourceEntity(source, root)
+    monkeypatch.setattr(source_entity_module, "has_local_scheme", lambda _: True)
+
+    with pytest.raises(EntityError, match="outside the context root"):
+        entity.export()
+
+    assert outside.read_text() == "original"
+    assert source.base64 == encoded

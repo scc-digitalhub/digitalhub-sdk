@@ -59,6 +59,18 @@ class SourceEntityMixin:
     def _read_inline_source(self, path: str) -> str:
         return read_source(path)
 
+    @staticmethod
+    def _resolve_export_path(root: Path, source_path: str) -> Path:
+        relative_path = Path(source_path)
+        if relative_path.is_absolute():
+            raise EntityError(f"Source path {source_path!r} is outside the context root.")
+
+        resolved_root = root.resolve()
+        destination = (resolved_root / relative_path).resolve()
+        if not destination.is_relative_to(resolved_root):
+            raise EntityError(f"Source path {source_path!r} is outside the context root.")
+        return destination
+
     def _post_build_source_check(self) -> Self:
         entity = cast(_SourceEntity, self)
         source = entity.spec.source
@@ -103,10 +115,13 @@ class SourceEntityMixin:
 
         source_path = source.source
         base64 = source.base64
+        context = entity._context()
+        destination = self._resolve_export_path(context.ensure_root(), source_path)
+        content = decode_base64_string(base64)
         source.base64 = None
         try:
-            context = entity._context()
-            write_text(context.ensure_root() / source_path, decode_base64_string(base64))
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            write_text(destination, content)
             return cast(_ExportBase, super()).export()
         finally:
             source.base64 = base64
