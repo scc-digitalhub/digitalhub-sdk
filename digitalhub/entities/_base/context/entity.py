@@ -18,6 +18,12 @@ if typing.TYPE_CHECKING:
 
 
 class ContextEntity(PersistedEntity):
+    """Active Record facade for entities persisted in a project context.
+
+    Identity, spec, and status stay on the entity. Backend persistence and
+    context lookup are delegated through the explicit SDK processors.
+    """
+
     _obj_attr = (*PersistedEntity._obj_attr, "project", "id", "name")
 
     def __init__(
@@ -35,7 +41,7 @@ class ContextEntity(PersistedEntity):
         self.id: str
 
     ##############################
-    #  Save / Refresh / Export
+    #  Active Record persistence
     ##############################
 
     def save(self, update: bool = False) -> ContextEntity:
@@ -99,7 +105,7 @@ class ContextEntity(PersistedEntity):
         return self
 
     ##############################
-    #  Context
+    #  Project context
     ##############################
 
     def _context(self) -> Context:

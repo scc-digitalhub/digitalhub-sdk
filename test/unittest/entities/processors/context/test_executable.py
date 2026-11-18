@@ -266,11 +266,11 @@ def test_execute_run_waits_for_backend_run_when_requested() -> None:
     run = Mock()
     run.local_execution.return_value = False
     waited_run = Mock()
-    processor.wait_run = Mock(return_value=waited_run)
+    run.wait.return_value = waited_run
 
     assert processor.execute_run(run, wait=True, log_info=False) is waited_run
 
-    processor.wait_run.assert_called_once_with(run, log_info=False)
+    run.wait.assert_called_once_with(log_info=False)
 
 
 def test_build_task_run_adds_executable_reference(monkeypatch) -> None:
@@ -528,18 +528,17 @@ def test_run_run_state_precedence(monkeypatch, local_execution: bool, expected_s
     )
     runtime = Mock()
     runtime.run.return_value = {"state": "RUNTIME"}
-    build_status = Mock(return_value=SimpleNamespace(state=expected_state))
+    run.set_status = Mock(side_effect=lambda status: setattr(run, "status", SimpleNamespace(state=status["state"])))
     monkeypatch.setattr(
         executable_module.runtime_factory,
         "build_runtime",
         Mock(return_value=runtime),
     )
-    monkeypatch.setattr(executable_module.entity_factory, "build_status", build_status)
 
     result = processor.run_run(run)
 
     assert result is run
-    build_status.assert_called_once_with("python+run", state=expected_state)
+    run.set_status.assert_called_once_with({"state": expected_state})
     assert run.status.state == expected_state
 
 
@@ -565,7 +564,8 @@ def test_read_run_logs_builds_logs_and_decodes_content(monkeypatch) -> None:
     monkeypatch.setattr(executable_module, "get_context", Mock(return_value=context))
     run = SimpleNamespace(project="project", ENTITY_TYPE="run", id="run-id")
 
-    result = ContextEntityExecutableProcessor(Mock()).read_run_logs(run, state="READY")
+    processor = ContextEntityExecutableProcessor(Mock())
+    result = processor.read_run_logs(run, as_entity=True, state="READY")
 
     assert all(isinstance(log, Log) for log in result)
     assert [log.kind for log in result] == ["log", "log"]
@@ -578,6 +578,19 @@ def test_read_run_logs_builds_logs_and_decodes_content(monkeypatch) -> None:
             options=LogsOptions(state="READY"),
         )
     )
+
+    client.reset_mock()
+    client.execute.return_value = [
+        {
+            "project": "project",
+            "name": "text-log",
+            "id": "text-log-id",
+            "spec": {"run": "run-id"},
+            "content": encode_string("text output"),
+        }
+    ]
+
+    assert processor.read_run_logs(run) == ["text output"]
 
 
 def test_list_and_get_executable_trigger() -> None:

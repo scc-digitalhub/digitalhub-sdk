@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from types import SimpleNamespace
 from unittest.mock import Mock
 
 import digitalhub.entities.run._base.entity as run_entity_module
@@ -45,14 +44,16 @@ def test_wait_delegates_to_executable_processor(monkeypatch) -> None:
 
 def test_logs_delegates_and_returns_selected_representation(monkeypatch) -> None:
     run = object.__new__(Run)
-    logs = [SimpleNamespace(text="first"), SimpleNamespace(text="second")]
-    read_run_logs = Mock(return_value=logs)
+    read_run_logs = Mock(side_effect=[["first", "second"], [Mock()]])
     monkeypatch.setattr(run_entity_module.executable_processor, "read_run_logs", read_run_logs)
 
     assert run.logs() == ["first", "second"]
-    assert run.logs(as_entity=True) is logs
+    assert isinstance(run.logs(as_entity=True), list)
     assert read_run_logs.call_count == 2
-    read_run_logs.assert_called_with(run)
+    assert read_run_logs.call_args_list == [
+        ((run,), {"as_entity": False}),
+        ((run,), {"as_entity": True}),
+    ]
 
 
 def test_execution_context_methods_delegate_for_compatibility(monkeypatch) -> None:

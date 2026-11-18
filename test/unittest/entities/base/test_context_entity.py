@@ -54,6 +54,45 @@ def test_export_delegates_to_processor(monkeypatch) -> None:
     export_entity.assert_called_once_with(entity)
 
 
+def test_update_delegates_to_processor_and_updates_attributes(monkeypatch) -> None:
+    entity = _build_entity()
+    updated = _build_entity("updated")
+    payload = entity.to_dict()
+    update_entity = Mock(return_value=updated)
+    monkeypatch.setattr(context_entity_module.crud_processor, "update_context_entity", update_entity)
+
+    result = entity.update()
+
+    assert result is entity
+    update_entity.assert_called_once_with(
+        entity.project,
+        entity.ENTITY_TYPE,
+        entity.id,
+        payload,
+    )
+    assert entity.metadata is updated.metadata
+    assert entity.spec is updated.spec
+    assert entity.status is updated.status
+
+
+def test_refresh_delegates_to_processor_and_updates_attributes(monkeypatch) -> None:
+    entity = _build_entity()
+    refreshed = _build_entity("refreshed")
+    read_entity = Mock(return_value=refreshed)
+    monkeypatch.setattr(context_entity_module.crud_processor, "read_context_entity", read_entity)
+
+    result = entity.refresh()
+
+    assert result is entity
+    read_entity.assert_called_once_with(
+        entity.key,
+        entity_type=entity.ENTITY_TYPE,
+    )
+    assert entity.metadata is refreshed.metadata
+    assert entity.spec is refreshed.spec
+    assert entity.status is refreshed.status
+
+
 def test_context_resolves_project_context(monkeypatch) -> None:
     entity = _build_entity()
     get_context = Mock(return_value="context")

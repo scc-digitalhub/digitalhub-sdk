@@ -185,7 +185,7 @@ class ContextEntityExecutableProcessor:
     def execute_run(self, run: Run, wait: bool = False, log_info: bool = True) -> Run:
         """Build and execute local runs, or wait for backend execution when requested."""
         if not run.local_execution():
-            return self.wait_run(run, log_info=log_info) if wait else run
+            return run.wait(log_info=log_info) if wait else run
 
         self.build_run(run)
         return self.run_run(run)
@@ -223,7 +223,7 @@ class ContextEntityExecutableProcessor:
         run.refresh()
         if not run.local_execution():
             status.pop("state", None)
-        run.status = entity_factory.build_status(run.kind, **{**run.status.to_dict(), **status})
+        run.set_status({**run.status.to_dict(), **status})
         run.update()
         return run
 
@@ -287,8 +287,9 @@ class ContextEntityExecutableProcessor:
     def read_run_logs(
         self,
         run: Run,
+        as_entity: bool = False,
         state: str | None = None,
-    ) -> list[Log]:
+    ) -> list[Log] | list[str]:
         """Read and build logs associated with a run."""
         objects: list[dict] = get_context(run.project).client.execute(
             ClientOp(
@@ -305,7 +306,9 @@ class ContextEntityExecutableProcessor:
             log: Log = entity_factory.build_entity_from_dict(obj)
             log.set_content(content)
             logs.append(log)
-        return logs
+        if as_entity:
+            return logs
+        return [log.text for log in logs]
 
     def build_task_run(
         self,

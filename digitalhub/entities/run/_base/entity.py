@@ -123,10 +123,7 @@ class Run(ContextEntity, UnversionedMixin, MetricsMixin, ExtensionsMixin):
         list[Log] | list[str]
             List of run logs. If `as_entity` is True, returns a list of `Log` objects, otherwise returns a list of log texts.
         """
-        logs = executable_processor.read_run_logs(self)
-        if as_entity:
-            return logs
-        return [i.text for i in logs]
+        return executable_processor.read_run_logs(self, as_entity=as_entity)
 
     def stop(self) -> None:
         """
