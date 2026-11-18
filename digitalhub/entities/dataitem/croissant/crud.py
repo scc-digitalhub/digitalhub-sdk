@@ -87,10 +87,10 @@ def log_croissant(
     metadata_folder = Path(metadata_file).parent.resolve()
 
     kwargs = build_croissant_kwargs(
-        project,
-        name,
-        EntityTypes.DATAITEM.value,
-        path,
+        project=project,
+        entity_type=EntityTypes.DATAITEM.value,
+        name=name,
+        path=path,
         default_store=lambda: get_default_store(project),
         **kwargs,
     )

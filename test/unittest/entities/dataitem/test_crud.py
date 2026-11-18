@@ -318,9 +318,10 @@ def test_log_dataitem_specialized_delegates_to_implementation(crud_module, log_n
             update=Mock(),
         )
         implementation.return_value = dataitem
+        build_kwargs = Mock(return_value={})
         monkeypatch.setattr(crud_module, "log_base_dataitem", implementation)
         monkeypatch.setattr(crud_module, "validate_croissant_source", Mock(return_value="metadata.json"))
-        monkeypatch.setattr(crud_module, "build_croissant_kwargs", Mock(return_value={}))
+        monkeypatch.setattr(crud_module, "build_croissant_kwargs", build_kwargs)
         monkeypatch.setattr(crud_module, "get_croissant_dataset", Mock(return_value=object()))
         monkeypatch.setattr(crud_module, "get_files_from_croissant", Mock(return_value=[]))
         monkeypatch.setattr(crud_module, "get_metadata_fields_from_croissant", Mock(return_value=(None, None, None)))
@@ -328,6 +329,12 @@ def test_log_dataitem_specialized_delegates_to_implementation(crud_module, log_n
         assert result is dataitem
         implementation.assert_called_once()
         assert implementation.call_args.kwargs["kind"] == kind
+        assert build_kwargs.call_args.args == ()
+        assert build_kwargs.call_args.kwargs["project"] == "my-project"
+        assert build_kwargs.call_args.kwargs["entity_type"] == EntityTypes.DATAITEM.value
+        assert build_kwargs.call_args.kwargs["name"] == "data"
+        assert build_kwargs.call_args.kwargs["path"] is None
+        assert callable(build_kwargs.call_args.kwargs["default_store"])
         dataitem.update.assert_called_once_with()
         return
 
