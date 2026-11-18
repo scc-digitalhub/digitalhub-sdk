@@ -22,7 +22,6 @@ class MaterialEntityForTest(MaterialMixin):
         self.project = "my-project"
         self.id = "entity-id"
         self.status = SimpleNamespace(files=None)
-        self._context = Mock(return_value=SimpleNamespace(root=Path("/context")))
         self.update = Mock()
         self.refresh = Mock()
 
@@ -60,7 +59,7 @@ def test_as_file_downloads_to_store_temp_directory_and_cleans_up(monkeypatch) ->
         return [str(dst / "file.txt")]
 
     store.download.side_effect = download
-    monkeypatch.setattr(material_mixin, "get_store", Mock(return_value=store))
+    monkeypatch.setattr(context_material, "get_store", Mock(return_value=store))
 
     with entity.as_file() as result:
         assert result == [str(download_dirs[0] / "file.txt")]
@@ -81,10 +80,14 @@ def test_download_uses_context_or_explicit_destination(
 ) -> None:
     entity = MaterialEntityForTest()
     entity.spec = SimpleNamespace(path="store://material")
-    entity._context = Mock(return_value=SimpleNamespace(root=Path("/context")))
     store = Mock()
     store.download.return_value = "/downloaded"
-    monkeypatch.setattr(material_mixin, "get_store", Mock(return_value=store))
+    monkeypatch.setattr(context_material, "get_store", Mock(return_value=store))
+    monkeypatch.setattr(
+        context_material,
+        "get_context",
+        Mock(return_value=SimpleNamespace(root=Path("/context"))),
+    )
 
     result = entity.download(destination=destination, overwrite=True)
 
@@ -239,7 +242,10 @@ def test_log_material_entity_uses_shared_upload_transaction(monkeypatch) -> None
     entity = SimpleNamespace(
         spec=SimpleNamespace(path="store://material"),
         status=SimpleNamespace(state=None, message=None, files=None),
-        _update_files_info=Mock(),
+        project="my-project",
+        ENTITY_TYPE="artifact",
+        id="entity-id",
+        update=Mock(),
     )
     store = Mock()
     store.upload.return_value = ["file.txt"]
@@ -267,7 +273,7 @@ def test_log_material_entity_uses_shared_upload_transaction(monkeypatch) -> None
         "store://material",
         keep_dir_structure=True,
     )
-    entity._update_files_info.assert_called_once_with([{"path": "file.txt"}])
+    assert entity.status.files == [{"path": "file.txt"}]
 
 
 def test_update_material_entity_mutates_original_entity() -> None:
@@ -299,6 +305,11 @@ def test_files_reads_backend_info_and_falls_back_to_status(monkeypatch) -> None:
     entity.status.files = [{"path": "status.txt"}]
     read_files_info = Mock(return_value=[{"path": "backend.txt"}])
     monkeypatch.setattr(material_mixin.material_processor, "read_files_info", read_files_info)
+    monkeypatch.setattr(
+        context_material,
+        "get_context",
+        Mock(return_value=SimpleNamespace(root=Path("/context"))),
+    )
 
     backend_files = entity.files
     assert backend_files[0].path == "backend.txt"
@@ -349,11 +360,15 @@ def test_material_file_download_uses_material_path_and_destination(
     entity = MaterialEntityForTest()
     entity.spec = SimpleNamespace(path=material_path)
     entity.status.files = [{"path": "status.txt"}]
-    entity._context = Mock(return_value=SimpleNamespace(root=Path("/context")))
     monkeypatch.setattr(
         material_mixin.material_processor,
         "read_files_info",
         Mock(return_value=[{"path": file_path}]),
+    )
+    monkeypatch.setattr(
+        context_material,
+        "get_context",
+        Mock(return_value=SimpleNamespace(root=Path("/context"))),
     )
     store = Mock()
     store.download.return_value = "/downloaded/file.txt"
@@ -379,6 +394,11 @@ def test_material_file_as_file_downloads_and_cleans_up(monkeypatch) -> None:
         material_mixin.material_processor,
         "read_files_info",
         Mock(return_value=[{"path": "nested/file.txt"}]),
+    )
+    monkeypatch.setattr(
+        context_material,
+        "get_context",
+        Mock(return_value=SimpleNamespace(root=Path("/context"))),
     )
     store = Mock()
     download_dirs = []

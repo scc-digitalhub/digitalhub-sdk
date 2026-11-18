@@ -5,13 +5,17 @@
 from __future__ import annotations
 
 import typing
-from collections.abc import Callable
+from collections.abc import Callable, Generator
+from contextlib import contextmanager
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Any
 
 from digitalhub.context.api import get_default_store
 from digitalhub.entities._commons.enums import State
 from digitalhub.entities._commons.utils import build_log_path_from_source
 from digitalhub.entities._constructors.uuid import build_uuid
+from digitalhub.entities._mixin.material.files import MaterialFile
 from digitalhub.entities._processors.utils import get_context
 from digitalhub.factory.entity import entity_factory
 from digitalhub.stores.client.common.enums import ApiType, BackendOp
@@ -19,7 +23,8 @@ from digitalhub.stores.client.compiler.operation import ClientOp
 from digitalhub.stores.client.compiler.targets import ContextEntityTarget
 from digitalhub.stores.data.api import get_store
 from digitalhub.utils.enums import FileExtensions
-from digitalhub.utils.exceptions import BuilderError, EntityError, EntityErrorFileNotFound
+from digitalhub.utils.exceptions import BackendError, BuilderError, EntityError, EntityErrorFileNotFound
+from digitalhub.utils.logger.logger import get_logger
 
 if typing.TYPE_CHECKING:
     from digitalhub.context.context import Context
@@ -27,6 +32,9 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
     from digitalhub.entities.dataitem.table.entity import DataitemTable
     from digitalhub.utils.types import Dataframe, SourcesOrListOfSources
+
+logger = get_logger(__name__)
+MAX_FILES_IN_STATUS = 100
 
 
 class ContextEntityMaterialProcessor:
@@ -94,6 +102,85 @@ class ContextEntityMaterialProcessor:
                 source,
                 keep_dir_structure,
             ),
+        )
+
+    @contextmanager
+    def as_file(self, obj: MaterialProtocol) -> Generator[list[str], None, None]:
+        """Temporarily download an entity's material into a local directory."""
+        store = get_store(obj.spec.path)
+        with TemporaryDirectory() as temp_dir:
+            yield store.download(obj.spec.path, dst=Path(temp_dir))
+
+    def download_material(
+        self,
+        obj: MaterialProtocol,
+        destination: str | None = None,
+        overwrite: bool = False,
+    ) -> str:
+        """Download an entity's material to an explicit or project-local path."""
+        if destination is None:
+            destination_path = get_context(obj.project).root / obj.ENTITY_TYPE
+        else:
+            destination_path = Path(destination)
+        return get_store(obj.spec.path).download(obj.spec.path, destination_path, overwrite=overwrite)
+
+    def get_material_files(self, obj: MaterialProtocol) -> list[MaterialFile]:
+        """Build file objects from backend metadata, falling back to entity status."""
+        if obj.status.files is None:
+            return []
+
+        try:
+            files_info = self.read_files_info(
+                project=obj.project,
+                entity_type=obj.ENTITY_TYPE,
+                entity_id=obj.id,
+            )
+        except BackendError:
+            logger.debug(
+                f"Could not retrieve files info for entity '{obj.id}' from backend.",
+                exc_info=True,
+            )
+            files_info = []
+
+        if not files_info:
+            files_info = obj.status.files or []
+        if not files_info:
+            return []
+
+        context_root = get_context(obj.project).root / obj.ENTITY_TYPE
+        return [
+            MaterialFile(
+                path=file_info.get("path"),
+                name=file_info.get("name"),
+                content_type=file_info.get("content_type"),
+                size=file_info.get("size"),
+                hash=file_info.get("hash"),
+                last_modified=file_info.get("last_modified"),
+                material_path=obj.spec.path,
+                context_root=context_root,
+            )
+            for file_info in (info or {} for info in files_info)
+        ]
+
+    def update_material_files(
+        self,
+        obj: MaterialProtocol,
+        files_info: list[dict] | None = None,
+    ) -> None:
+        """Store small file lists on the entity and large lists through the files API."""
+        if files_info is None:
+            return
+        if len(files_info) <= MAX_FILES_IN_STATUS:
+            obj.status.files = files_info
+            return
+
+        obj.status.files = []
+        obj.update()
+        self.update_files_info(
+            obj.project,
+            obj.ENTITY_TYPE,
+            obj.id,
+            files_info,
         )
 
     def read_files_info(
@@ -239,7 +326,7 @@ class ContextEntityMaterialProcessor:
             keep_dir_structure=keep_dir_structure,
         )
         files_info = store.get_file_info(obj.spec.path, paths)
-        obj._update_files_info(files_info)
+        self.update_material_files(obj, files_info)
 
     def _update_material_entity(
         self,
