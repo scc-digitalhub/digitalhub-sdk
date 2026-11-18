@@ -9,8 +9,8 @@ import typing
 from digitalhub.entities.model._base.entity import Model
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities.model.model.spec import ModelSpecModel
-    from digitalhub.entities.model.model.status import ModelStatusModel
+    from digitalhub.entities.model._base.spec import ModelSpec
+    from digitalhub.entities.model._base.status import ModelStatus
 
 
 class ModelModel(Model):
@@ -21,5 +21,5 @@ class ModelModel(Model):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        self.spec: ModelSpecModel
-        self.status: ModelStatusModel
+        self.spec: ModelSpec
+        self.status: ModelStatus

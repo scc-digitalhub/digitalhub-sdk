@@ -9,8 +9,8 @@ import typing
 from digitalhub.entities.artifact._base.entity import Artifact
 
 if typing.TYPE_CHECKING:
+    from digitalhub.entities._mixin.material.status import MaterialStatus
     from digitalhub.entities.artifact.artifact.spec import ArtifactSpecArtifact
-    from digitalhub.entities.artifact.artifact.status import ArtifactStatusArtifact
 
 
 class ArtifactArtifact(Artifact):
@@ -22,4 +22,4 @@ class ArtifactArtifact(Artifact):
         super().__init__(*args, **kwargs)
 
         self.spec: ArtifactSpecArtifact
-        self.status: ArtifactStatusArtifact
+        self.status: MaterialStatus

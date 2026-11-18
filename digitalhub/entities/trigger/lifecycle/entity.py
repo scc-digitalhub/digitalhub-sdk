@@ -9,8 +9,8 @@ import typing
 from digitalhub.entities.trigger._base.entity import Trigger
 
 if typing.TYPE_CHECKING:
+    from digitalhub.entities._base.entity.status import Status
     from digitalhub.entities.trigger.lifecycle.spec import TriggerSpecLifecycle
-    from digitalhub.entities.trigger.lifecycle.status import TriggerStatusLifecycle
 
 
 class TriggerLifecycle(Trigger):
@@ -22,4 +22,4 @@ class TriggerLifecycle(Trigger):
         super().__init__(*args, **kwargs)
 
         self.spec: TriggerSpecLifecycle
-        self.status: TriggerStatusLifecycle
+        self.status: Status

@@ -4,10 +4,10 @@
 
 from __future__ import annotations
 
-from digitalhub.entities.artifact._base.spec import ArtifactSpec
+from digitalhub.entities._mixin.material.spec import MaterialSpec
 
 
-class ArtifactSpecArtifact(ArtifactSpec):
+class ArtifactSpecArtifact(MaterialSpec):
     """
     ArtifactSpecArtifact specifications.
     """

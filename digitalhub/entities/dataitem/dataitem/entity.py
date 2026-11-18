@@ -9,8 +9,8 @@ import typing
 from digitalhub.entities.dataitem._base.entity import Dataitem
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities.dataitem.dataitem.spec import DataitemSpecDataitem
-    from digitalhub.entities.dataitem.dataitem.status import DataitemStatusDataitem
+    from digitalhub.entities._mixin.material.spec import MaterialSpec
+    from digitalhub.entities.dataitem._base.status import DataitemStatus
 
 
 class DataitemDataitem(Dataitem):
@@ -21,5 +21,5 @@ class DataitemDataitem(Dataitem):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        self.spec: DataitemSpecDataitem
-        self.status: DataitemStatusDataitem
+        self.spec: MaterialSpec
+        self.status: DataitemStatus

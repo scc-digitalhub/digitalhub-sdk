@@ -3,12 +3,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from digitalhub.entities._base.entity.entity import BaseEntity, PersistedEntity
+from digitalhub.entities._base.entity.status import Status
 from digitalhub.entities._base.metadata.entity import Metadata
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes, State
 from digitalhub.entities.log._base.builder import LogLogBuilder
 from digitalhub.entities.log._base.entity import Log
 from digitalhub.entities.log._base.spec import LogSpec
-from digitalhub.entities.log._base.status import LogStatus
 from digitalhub.utils.generic_utils import encode_string
 
 
@@ -19,7 +19,7 @@ def build_log() -> Log:
         kind=EntityKinds.LOG_LOG.value,
         metadata=Metadata(name="run-log"),
         spec=LogSpec(),
-        status=LogStatus(state=State.CREATED.value),
+        status=Status(state=State.CREATED.value),
         run="run-id",
     )
 

@@ -10,8 +10,8 @@ from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities.containerimage._base.entity import Containerimage
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities.containerimage.containerimage.spec import ContainerimageContainerimageSpec
-    from digitalhub.entities.containerimage.containerimage.status import ContainerimageContainerimageStatus
+    from digitalhub.entities.containerimage._base.spec import ContainerimageSpec
+    from digitalhub.entities.containerimage._base.status import ContainerimageStatus
 
 
 class ContainerimageContainerimage(Containerimage):
@@ -23,5 +23,5 @@ class ContainerimageContainerimage(Containerimage):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.spec: ContainerimageContainerimageSpec
-        self.status: ContainerimageContainerimageStatus
+        self.spec: ContainerimageSpec
+        self.status: ContainerimageStatus

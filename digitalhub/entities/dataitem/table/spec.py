@@ -6,11 +6,11 @@ from __future__ import annotations
 
 from pydantic import Field
 
-from digitalhub.entities.dataitem._base.spec import DataitemSpec
+from digitalhub.entities._mixin.material.spec import MaterialSpec
 from digitalhub.entities.dataitem.table.models import TableSchema
 
 
-class DataitemSpecTable(DataitemSpec):
+class DataitemSpecTable(MaterialSpec):
     """
     DataitemSpecTable specifications.
     """

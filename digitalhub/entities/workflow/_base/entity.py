@@ -12,8 +12,8 @@ from digitalhub.entities._mixin.executable.mixin import ExecutableMixin
 from digitalhub.entities._mixin.versioned.mixin import VersionedMixin
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities.workflow._base.spec import WorkflowSpec
-    from digitalhub.entities.workflow._base.status import WorkflowStatus
+    from digitalhub.entities._base.entity.spec import Spec
+    from digitalhub.entities._base.entity.status import Status
 
 
 class Workflow(ContextEntity, VersionedMixin, ExecutableMixin):
@@ -37,5 +37,5 @@ class Workflow(ContextEntity, VersionedMixin, ExecutableMixin):
         super().__init__(project, kind, metadata, spec, status, user)
         self._init_versioned_identity(project, name, uuid, kind)
 
-        self.spec: WorkflowSpec
-        self.status: WorkflowStatus
+        self.spec: Spec
+        self.status: Status

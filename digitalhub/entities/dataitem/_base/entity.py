@@ -12,7 +12,7 @@ from digitalhub.entities._mixin.material.mixin import MaterialMixin
 from digitalhub.entities._mixin.versioned.mixin import VersionedMixin
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities.dataitem._base.spec import DataitemSpec
+    from digitalhub.entities._mixin.material.spec import MaterialSpec
     from digitalhub.entities.dataitem._base.status import DataitemStatus
 
 
@@ -38,6 +38,6 @@ class Dataitem(ContextEntity, VersionedMixin, MaterialMixin):
     ) -> None:
         super().__init__(project, kind, metadata, spec, status, user)
         self._init_versioned_identity(project, name, uuid, kind)
-        self.spec: DataitemSpec
+        self.spec: MaterialSpec
         self.status: DataitemStatus
         self._init_extensions(extensions)

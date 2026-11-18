@@ -12,9 +12,9 @@ from digitalhub.entities._mixin.unversioned.mixin import UnversionedMixin
 from digitalhub.entities._processors.processors import executable_processor
 
 if typing.TYPE_CHECKING:
+    from digitalhub.entities._base.entity.spec import Spec
+    from digitalhub.entities._base.entity.status import Status
     from digitalhub.entities.run._base.entity import Run
-    from digitalhub.entities.task._base.spec import TaskSpec
-    from digitalhub.entities.task._base.status import TaskStatus
 
 
 class Task(ContextEntity, UnversionedMixin):
@@ -36,8 +36,8 @@ class Task(ContextEntity, UnversionedMixin):
     ) -> None:
         super().__init__(project, kind, metadata, spec, status, user)
         self._init_unversioned_identity(project, uuid, kind)
-        self.spec: TaskSpec
-        self.status: TaskStatus
+        self.spec: Spec
+        self.status: Status
 
     ##############################
     #  Task methods

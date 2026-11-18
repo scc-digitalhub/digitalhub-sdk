@@ -12,8 +12,8 @@ from digitalhub.entities._mixin.executable.mixin import ExecutableMixin
 from digitalhub.entities._mixin.versioned.mixin import VersionedMixin
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities.function._base.spec import FunctionSpec
-    from digitalhub.entities.function._base.status import FunctionStatus
+    from digitalhub.entities._base.entity.spec import Spec
+    from digitalhub.entities._base.entity.status import Status
 
 
 class Function(ContextEntity, VersionedMixin, ExecutableMixin):
@@ -37,5 +37,5 @@ class Function(ContextEntity, VersionedMixin, ExecutableMixin):
         super().__init__(project, kind, metadata, spec, status, user)
         self._init_versioned_identity(project, name, uuid, kind)
 
-        self.spec: FunctionSpec
-        self.status: FunctionStatus
+        self.spec: Spec
+        self.status: Status

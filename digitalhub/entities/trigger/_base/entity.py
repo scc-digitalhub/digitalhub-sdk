@@ -12,8 +12,8 @@ from digitalhub.entities._mixin.versioned.mixin import VersionedMixin
 from digitalhub.entities._processors.processors import control_processor
 
 if typing.TYPE_CHECKING:
+    from digitalhub.entities._base.entity.status import Status
     from digitalhub.entities.trigger._base.spec import TriggerSpec
-    from digitalhub.entities.trigger._base.status import TriggerStatus
 
 
 class Trigger(ContextEntity, VersionedMixin):
@@ -37,7 +37,7 @@ class Trigger(ContextEntity, VersionedMixin):
         super().__init__(project, kind, metadata, spec, status, user)
         self._init_versioned_identity(project, name, uuid, kind)
         self.spec: TriggerSpec
-        self.status: TriggerStatus
+        self.status: Status
 
     def stop(self) -> None:
         """

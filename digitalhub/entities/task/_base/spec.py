@@ -10,11 +10,7 @@ from digitalhub.entities._base.entity.spec import Spec
 from digitalhub.entities.task._base.models import CorePort, CoreServiceType, K8s
 
 
-class TaskSpec(Spec):
-    """TaskSpec specifications."""
-
-
-class TaskSpecFunction(TaskSpec, K8s):
+class TaskSpecFunction(Spec, K8s):
     """TaskSpecFunction specifications."""
 
     function: str
@@ -41,5 +37,5 @@ class WorkflowSpecMixin(Spec):
     workflow: str
 
 
-class TaskSpecWorkflow(WorkflowSpecMixin, TaskSpec, K8s):
+class TaskSpecWorkflow(WorkflowSpecMixin, Spec, K8s):
     """TaskSpecWorkflow specifications."""

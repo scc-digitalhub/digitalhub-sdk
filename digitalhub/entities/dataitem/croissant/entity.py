@@ -19,8 +19,8 @@ from digitalhub.stores.data.api import get_store
 from digitalhub.utils.uri_utils import has_remote_scheme, has_s3_scheme
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities.dataitem.croissant.spec import DataitemSpecCroissant
-    from digitalhub.entities.dataitem.croissant.status import DataitemStatusCroissant
+    from digitalhub.entities._mixin.material.spec import MaterialSpec
+    from digitalhub.entities.dataitem._base.status import DataitemStatus
 
 
 class DataitemCroissant(Dataitem):
@@ -31,8 +31,8 @@ class DataitemCroissant(Dataitem):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        self.spec: DataitemSpecCroissant
-        self.status: DataitemStatusCroissant
+        self.spec: MaterialSpec
+        self.status: DataitemStatus
 
     @refresh_decorator
     def as_dataset(self, overwrite: bool = False) -> Any:

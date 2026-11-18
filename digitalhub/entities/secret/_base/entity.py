@@ -12,8 +12,8 @@ from digitalhub.entities._mixin.versioned.mixin import VersionedMixin
 from digitalhub.entities._processors.processors import secret_processor
 
 if typing.TYPE_CHECKING:
+    from digitalhub.entities._base.entity.status import Status
     from digitalhub.entities.secret._base.spec import SecretSpec
-    from digitalhub.entities.secret._base.status import SecretStatus
 
 
 class Secret(ContextEntity, VersionedMixin):
@@ -37,7 +37,7 @@ class Secret(ContextEntity, VersionedMixin):
         super().__init__(project, kind, metadata, spec, status, user)
         self._init_versioned_identity(project, name, uuid, kind)
         self.spec: SecretSpec
-        self.status: SecretStatus
+        self.status: Status
 
     ##############################
     #  Secret methods

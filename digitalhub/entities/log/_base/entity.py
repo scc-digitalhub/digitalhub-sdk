@@ -11,8 +11,8 @@ from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.utils.generic_utils import decode_base64_string
 
 if typing.TYPE_CHECKING:
+    from digitalhub.entities._base.entity.status import Status
     from digitalhub.entities.log._base.spec import LogSpec
-    from digitalhub.entities.log._base.status import LogStatus
 
 
 class Log(BaseEntity):
@@ -29,7 +29,7 @@ class Log(BaseEntity):
         kind: str,
         metadata: dict,
         spec: LogSpec,
-        status: LogStatus,
+        status: Status,
         run: str,
         user: str | None = None,
         extensions: list | None = None,
@@ -37,7 +37,7 @@ class Log(BaseEntity):
         super().__init__(kind, metadata, spec, status, user)
 
         self.spec: LogSpec
-        self.status: LogStatus
+        self.status: Status
 
         self.project = project
         self.uuid = uuid

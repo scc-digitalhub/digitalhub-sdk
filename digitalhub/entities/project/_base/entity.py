@@ -30,6 +30,7 @@ from digitalhub.utils.uri_utils import has_local_scheme
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.context.entity import ContextEntity
+    from digitalhub.entities._base.entity.status import Status
     from digitalhub.entities._base.metadata.entity import Metadata
     from digitalhub.entities.artifact._base.entity import Artifact
     from digitalhub.entities.dataitem._base.entity import Dataitem
@@ -37,7 +38,6 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities.model._base.entity import Model
     from digitalhub.entities.project._base.protocol import ProjectListShortcuts
     from digitalhub.entities.project._base.spec import ProjectSpec
-    from digitalhub.entities.project._base.status import ProjectStatus
     from digitalhub.entities.run._base.entity import Run
     from digitalhub.entities.workflow._base.entity import Workflow
 else:
@@ -76,13 +76,13 @@ class Project(PersistedEntity, ProjectListShortcuts, ExtensionsMixin):
         kind: str,
         metadata: Metadata,
         spec: ProjectSpec,
-        status: ProjectStatus,
+        status: Status,
         extensions: list[dict] | None = None,
         user: str | None = None,
     ) -> None:
         super().__init__(kind, metadata, spec, status, user)
         self.spec: ProjectSpec
-        self.status: ProjectStatus
+        self.status: Status
         self._init_extensions(extensions)
 
         self.id = name  # Unique identifier for the project

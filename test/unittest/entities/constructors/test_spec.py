@@ -8,8 +8,6 @@ from digitalhub.entities._base.entity.spec import Spec
 from digitalhub.entities._constructors.spec import build_spec
 from digitalhub.entities._mixin.generic.spec import GenericSpec
 from digitalhub.entities._mixin.material.spec import MaterialSpec
-from digitalhub.entities.artifact._base.spec import ArtifactSpec
-from digitalhub.entities.dataitem._base.spec import DataitemSpec
 from digitalhub.entities.model._base.spec import ModelSpec
 
 
@@ -48,7 +46,7 @@ def test_generic_spec_accepts_arbitrary_fields() -> None:
 
 @pytest.mark.parametrize(
     "spec_cls",
-    [ArtifactSpec, DataitemSpec, ModelSpec],
+    [MaterialSpec, ModelSpec],
 )
 def test_material_specs_validate_path(spec_cls) -> None:
     path = "s3://bucket/material"

@@ -9,8 +9,8 @@ import typing
 from digitalhub.entities.trigger._base.entity import Trigger
 
 if typing.TYPE_CHECKING:
+    from digitalhub.entities._base.entity.status import Status
     from digitalhub.entities.trigger.scheduler.spec import TriggerSpecScheduler
-    from digitalhub.entities.trigger.scheduler.status import TriggerStatusScheduler
 
 
 class TriggerScheduler(Trigger):
@@ -22,4 +22,4 @@ class TriggerScheduler(Trigger):
         super().__init__(*args, **kwargs)
 
         self.spec: TriggerSpecScheduler
-        self.status: TriggerStatusScheduler
+        self.status: Status

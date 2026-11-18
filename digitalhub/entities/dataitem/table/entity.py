@@ -12,8 +12,8 @@ from digitalhub.entities.dataitem._base.entity import Dataitem
 from digitalhub.stores.data.api import get_store
 
 if typing.TYPE_CHECKING:
+    from digitalhub.entities.dataitem._base.status import DataitemStatus
     from digitalhub.entities.dataitem.table.spec import DataitemSpecTable
-    from digitalhub.entities.dataitem.table.status import DataitemStatusTable
 
 
 class DataitemTable(Dataitem):
@@ -25,7 +25,7 @@ class DataitemTable(Dataitem):
         super().__init__(*args, **kwargs)
 
         self.spec: DataitemSpecTable
-        self.status: DataitemStatusTable
+        self.status: DataitemStatus
 
     @refresh_decorator
     def as_df(

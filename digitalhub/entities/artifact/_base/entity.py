@@ -12,8 +12,8 @@ from digitalhub.entities._mixin.material.mixin import MaterialMixin
 from digitalhub.entities._mixin.versioned.mixin import VersionedMixin
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities.artifact._base.spec import ArtifactSpec
-    from digitalhub.entities.artifact._base.status import ArtifactStatus
+    from digitalhub.entities._mixin.material.spec import MaterialSpec
+    from digitalhub.entities._mixin.material.status import MaterialStatus
 
 
 class Artifact(ContextEntity, VersionedMixin, MaterialMixin):
@@ -42,6 +42,6 @@ class Artifact(ContextEntity, VersionedMixin, MaterialMixin):
     ) -> None:
         super().__init__(project, kind, metadata, spec, status, user)
         self._init_versioned_identity(project, name, uuid, kind)
-        self.spec: ArtifactSpec
-        self.status: ArtifactStatus
+        self.spec: MaterialSpec
+        self.status: MaterialStatus
         self._init_extensions(extensions)
