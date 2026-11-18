@@ -27,7 +27,6 @@ from digitalhub.utils.exceptions import BackendError, BuilderError, EntityError,
 from digitalhub.utils.logger.logger import get_logger
 
 if typing.TYPE_CHECKING:
-    from digitalhub.context.context import Context
     from digitalhub.entities._mixin.material.protocol import MaterialProtocol
     from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
     from digitalhub.entities.dataitem.table.entity import DataitemTable
@@ -229,25 +228,7 @@ class ContextEntityMaterialProcessor:
         self,
         **kwargs,
     ) -> MaterialProtocol:
-        # Validate entity type
         drop_existing = kwargs.pop("drop_existing", False)
-        kwargs = self._validate_entity_type(kwargs)
-
-        # Build initial entity object
-        obj: MaterialProtocol = entity_factory.build_entity_from_params(**kwargs)
-
-        # Register entity in context if running
-        context = get_context(kwargs["project"])
-        obj: MaterialProtocol = self._register_entity_in_context(obj, context)
-
-        # Handle existing entity drop
-        self._drop_existing_entity(drop_existing, obj)
-
-        # Create entity in backend and return
-        new_obj: MaterialProtocol = self.crud_processor._create_context_entity(context, obj.ENTITY_TYPE, obj.to_dict())
-        return entity_factory.build_entity_from_dict(new_obj, entity_type=obj.ENTITY_TYPE)
-
-    def _validate_entity_type(self, kwargs: dict) -> dict:
         entity_kind = kwargs["kind"]
         entity_type = kwargs.pop("entity_type")
         try:
@@ -258,22 +239,11 @@ class ContextEntityMaterialProcessor:
             raise ValueError(
                 f"Entity kind '{entity_kind}' does not match expected type '{expected_type}'.",
             )
-        return kwargs
-
-    def _register_entity_in_context(
-        self,
-        obj: MaterialProtocol,
-        context: Context,
-    ) -> MaterialProtocol:
+        obj: MaterialProtocol = entity_factory.build_entity_from_params(**kwargs)
+        context = get_context(obj.project)
         if context.is_running:
             obj = context.register_entity(obj)
-        return obj
 
-    def _drop_existing_entity(
-        self,
-        drop_existing: bool,
-        obj: MaterialProtocol,
-    ) -> None:
         if drop_existing:
             self.crud_processor.delete_context_entity(
                 obj.name,
@@ -281,6 +251,12 @@ class ContextEntityMaterialProcessor:
                 entity_type=obj.ENTITY_TYPE,
                 delete_all_versions=True,
             )
+        backend_obj = self.crud_processor._create_context_entity(
+            context,
+            obj.ENTITY_TYPE,
+            obj.to_dict(),
+        )
+        return entity_factory.build_entity_from_dict(backend_obj, entity_type=obj.ENTITY_TYPE)
 
     def _upload_material_entity(
         self,

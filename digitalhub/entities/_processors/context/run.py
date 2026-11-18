@@ -7,7 +7,6 @@ from __future__ import annotations
 import typing
 
 from digitalhub.entities._commons.enums import EntityKinds
-from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
 from digitalhub.entities._processors.utils import get_context
 from digitalhub.factory.entity import entity_factory
 from digitalhub.stores.client.common.enums import ApiType, BackendOp
@@ -23,19 +22,13 @@ logger = get_logger(__name__)
 
 
 class ContextEntityRunProcessor:
-    def __init__(
-        self,
-        crud_processor: ContextEntityCRUDProcessor | None = None,
-    ) -> None:
-        self.crud_processor = crud_processor if crud_processor is not None else ContextEntityCRUDProcessor()
-
     def read_run_logs(
         self,
         project: str,
         entity_type: str,
         entity_id: str,
         state: str | None = None,
-    ) -> list[Log]:
+    ) -> list:
         objects: list[dict] = get_context(project).client.execute(
             ClientOp(
                 category=ApiType.CONTEXT,

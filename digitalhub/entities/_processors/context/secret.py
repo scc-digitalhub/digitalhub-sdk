@@ -18,46 +18,22 @@ if typing.TYPE_CHECKING:
 
 class ContextEntitySecretProcessor:
     def read_secret_value(self, obj: Secret) -> str:
-        data = self._read_secret_data(
-            obj.project,
-            obj.ENTITY_TYPE,
-            params={"keys": obj.name},
+        data = get_context(obj.project).client.execute(
+            ClientOp(
+                category=ApiType.CONTEXT,
+                operation=BackendOp.DATA_READ,
+                target=ContextCollectionTarget(obj.project, obj.ENTITY_TYPE),
+                options=OpaqueOptions({"keys": obj.name}),
+            )
         )
         return data[obj.name]
 
     def set_secret_value(self, obj: Secret, value: str) -> None:
-        self._update_secret_data(
-            obj.project,
-            obj.ENTITY_TYPE,
-            {obj.name: value},
-        )
-
-    def _read_secret_data(
-        self,
-        project: str,
-        entity_type: str,
-        params: dict | None = None,
-    ) -> dict:
-        return get_context(project).client.execute(
-            ClientOp(
-                category=ApiType.CONTEXT,
-                operation=BackendOp.DATA_READ,
-                target=ContextCollectionTarget(project, entity_type),
-                options=OpaqueOptions(params or {}),
-            )
-        )
-
-    def _update_secret_data(
-        self,
-        project: str,
-        entity_type: str,
-        data: dict,
-    ) -> None:
-        get_context(project).client.execute(
+        get_context(obj.project).client.execute(
             ClientOp(
                 category=ApiType.CONTEXT,
                 operation=BackendOp.DATA_UPDATE,
-                target=ContextCollectionTarget(project, entity_type),
-                payload=data,
+                target=ContextCollectionTarget(obj.project, obj.ENTITY_TYPE),
+                payload={obj.name: value},
             )
         )

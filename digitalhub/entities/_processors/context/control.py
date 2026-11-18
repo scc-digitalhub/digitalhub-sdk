@@ -21,15 +21,7 @@ class ContextEntityControlProcessor:
         entity_id: str,
         reason: str | None = None,
     ) -> None:
-        get_context(project).client.execute(
-            ClientOp(
-                category=ApiType.CONTEXT,
-                operation=BackendOp.STOP,
-                payload={},
-                target=ContextEntityTarget(project, entity_type, entity_id),
-                options=StopResumeOptions(reason=reason),
-            )
-        )
+        self._change_entity_state(BackendOp.STOP, project, entity_type, entity_id, reason)
 
     def resume_entity(
         self,
@@ -38,10 +30,20 @@ class ContextEntityControlProcessor:
         entity_id: str,
         reason: str | None = None,
     ) -> None:
+        self._change_entity_state(BackendOp.RESUME, project, entity_type, entity_id, reason)
+
+    @staticmethod
+    def _change_entity_state(
+        operation: BackendOp,
+        project: str,
+        entity_type: str,
+        entity_id: str,
+        reason: str | None,
+    ) -> None:
         get_context(project).client.execute(
             ClientOp(
                 category=ApiType.CONTEXT,
-                operation=BackendOp.RESUME,
+                operation=operation,
                 target=ContextEntityTarget(project, entity_type, entity_id),
                 payload={},
                 options=StopResumeOptions(reason=reason),

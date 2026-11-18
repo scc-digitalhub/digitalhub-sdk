@@ -112,8 +112,6 @@ class ContextEntityExecutableProcessor:
                 task_obj.save()
             except EntityAlreadyExistsError:
                 pass
-            if getattr(task_obj.spec, executable.ENTITY_TYPE, None) != executable._get_executable_string():
-                continue
 
     def list_executable_runs(
         self,
