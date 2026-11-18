@@ -158,3 +158,31 @@ def test_context_run_id_fallback_is_restored_after_local_run(monkeypatch) -> Non
     assert context.run is backend_run
     assert context.is_running
     get_run.assert_called_once_with("backend-run")
+
+
+def test_local_run_before_fallback_read_disables_late_run_id_lookup(monkeypatch) -> None:
+    context = _context()
+    local_run = SimpleNamespace(key="run-key", id="local-run")
+    get_run = Mock()
+    monkeypatch.setattr(context, "_get_run", get_run)
+    monkeypatch.setenv(RuntimeEnvVar.RUN_ID.value, "backend-run")
+
+    context.set_run(local_run)
+    context.unset_run()
+
+    assert context.run is None
+    assert not context.is_running
+    get_run.assert_not_called()
+
+
+def test_unset_before_fallback_read_disables_late_run_id_lookup(monkeypatch) -> None:
+    context = _context()
+    get_run = Mock()
+    monkeypatch.setattr(context, "_get_run", get_run)
+    monkeypatch.setenv(RuntimeEnvVar.RUN_ID.value, "backend-run")
+
+    context.unset_run()
+
+    assert context.run is None
+    assert not context.is_running
+    get_run.assert_not_called()

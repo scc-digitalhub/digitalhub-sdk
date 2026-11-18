@@ -37,28 +37,28 @@ def _runtime_imports(path: Path) -> list[tuple[int, str]]:
 
 def test_common_modules_remain_pure() -> None:
     common_root = PACKAGE_ROOT / "entities" / "_commons"
-    forbidden = (
+    forbidden_prefixes = (
         "digitalhub.context",
         "digitalhub.entities._processors",
-        "digitalhub.entities.artifact.crud",
-        "digitalhub.entities.containerimage.crud",
-        "digitalhub.entities.dataitem.crud",
-        "digitalhub.entities.function.crud",
-        "digitalhub.entities.model.crud",
-        "digitalhub.entities.run.crud",
-        "digitalhub.entities.secret.crud",
-        "digitalhub.entities.task.crud",
-        "digitalhub.entities.trigger.crud",
-        "digitalhub.entities.workflow.crud",
     )
 
     violations = []
     for path in sorted(common_root.rglob("*.py")):
         for line, module in _runtime_imports(path):
-            if any(module == prefix or module.startswith(f"{prefix}.") for prefix in forbidden):
+            forbidden_dependency = any(
+                module == prefix or module.startswith(f"{prefix}.") for prefix in forbidden_prefixes
+            )
+            imports_crud_module = "crud" in module.split(".")
+            if forbidden_dependency or imports_crud_module:
                 violations.append(f"{path.relative_to(PACKAGE_ROOT.parent)}:{line}: {module}")
 
     assert violations == [], "\n".join(violations)
+
+
+def test_pure_helpers_remain_in_their_owner_modules() -> None:
+    assert (PACKAGE_ROOT / "entities" / "_commons" / "keys.py").is_file()
+    assert (PACKAGE_ROOT / "entities" / "_processors" / "crud_factory.py").is_file()
+    assert not (PACKAGE_ROOT / "entities" / "_commons" / "crud_factory.py").exists()
 
 
 def test_transport_and_reader_modules_do_not_depend_on_entities() -> None:
@@ -74,3 +74,20 @@ def test_transport_and_reader_modules_do_not_depend_on_entities() -> None:
                     violations.append(f"{path.relative_to(PACKAGE_ROOT.parent)}:{line}: {module}")
 
     assert violations == [], "\n".join(violations)
+
+
+def test_entity_mixins_do_not_import_public_crud_modules() -> None:
+    mixin_root = PACKAGE_ROOT / "entities" / "_mixin"
+    violations = []
+    for path in sorted(mixin_root.rglob("*.py")):
+        for line, module in _runtime_imports(path):
+            if "crud" in module.split("."):
+                violations.append(f"{path.relative_to(PACKAGE_ROOT.parent)}:{line}: {module}")
+
+    assert violations == [], "\n".join(violations)
+
+
+def test_processors_remain_explicit_without_provider_registry() -> None:
+    processor_root = PACKAGE_ROOT / "entities" / "_processors"
+    assert not (processor_root / "operations.py").exists()
+    assert not (processor_root / "service_locator.py").exists()

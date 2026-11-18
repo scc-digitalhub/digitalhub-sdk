@@ -92,9 +92,8 @@ class Context:
 
     @is_running.setter
     def is_running(self, value: bool) -> None:
+        self._mark_run_ctx_searched()
         self._set_run_context_state(self._get_run_context_state()._replace(is_running=value))
-        if self._run_context.get() is None:
-            self._run_ctx_searched = True
 
     @property
     def run(self) -> Run | None:
@@ -103,9 +102,8 @@ class Context:
 
     @run.setter
     def run(self, value: Run | None) -> None:
+        self._mark_run_ctx_searched()
         self._set_run_context_state(self._get_run_context_state()._replace(run=value))
-        if self._run_context.get() is None:
-            self._run_ctx_searched = True
 
     @property
     def logged(self) -> dict[str, str]:
@@ -128,6 +126,10 @@ class Context:
     def _resolve_run_ctx(self) -> None:
         if self._run_context.get() is None and not self._run_ctx_searched:
             self._search_run_ctx()
+
+    def _mark_run_ctx_searched(self) -> None:
+        with self._run_ctx_lock:
+            self._run_ctx_searched = True
 
     def _search_run_ctx(self) -> None:
         """
@@ -155,6 +157,7 @@ class Context:
         """
         Set the current run.
         """
+        self._mark_run_ctx_searched()
         state = _RunContextState(run, True, {})
         self._run_context.set(state)
 
@@ -162,6 +165,7 @@ class Context:
         """
         Clear the current run and reset running state and logged items.
         """
+        self._mark_run_ctx_searched()
         state = self._run_context.get()
         if state is not None:
             state.logged.clear()
