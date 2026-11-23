@@ -2,157 +2,40 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from __future__ import annotations
+"""Compatibility exports for infrastructure models.
 
-from enum import Enum
-from typing import Annotated
+Runtime packages should import these models from
+``digitalhub.entities._commons.models``.
+"""
 
-from pydantic import BaseModel, ConfigDict, Field
+from digitalhub.entities._frameworks.k8s.models import (
+    RESOURCE_REGEX,
+    CorePort,
+    CorePullPolicy,
+    CoreServiceType,
+    Env,
+    K8s,
+    Resource,
+    SharedVolumeSpec,
+    SpecEmptyDir,
+    SpecEphemeral,
+    SpecPVC,
+    Volume,
+    VolumeType,
+)
 
-RESOURCE_REGEX = r"[\d]+|^([0-9])+([a-zA-Z])+$"
-
-
-class VolumeType(Enum):
-    """
-    Volume type.
-    """
-
-    PERSISTENT_VOLUME_CLAIM = "persistent_volume_claim"
-    EMPTY_DIR = "empty_dir"
-    EPHEMERAL = "ephemeral"
-    SHARED_VOLUME = "shared_volume"
-
-
-class SpecEmptyDir(BaseModel):
-    """
-    Spec empty dir model.
-    """
-
-    size_limit: str | None = None
-
-    medium: str | None = None
-
-
-class SpecPVC(BaseModel):
-    """
-    Spec PVC model.
-    """
-
-    size: str | None = None
-
-
-class SpecEphemeral(BaseModel):
-    """
-    Ephemeral volume model.
-    """
-
-    size: str | None = None
-
-
-class SharedVolumeSpec(BaseModel):
-    """
-    Shared volume spec model.
-    """
-
-    size: str | None = None
-
-
-class Volume(BaseModel):
-    """
-    Volume model.
-    """
-
-    model_config = ConfigDict(use_enum_values=True)
-
-    volume_type: VolumeType
-    """Volume type."""
-
-    name: str
-    """Volume name."""
-
-    mount_path: str
-    """Volume mount path inside the container."""
-
-    spec: SpecEmptyDir | SpecPVC | SpecEphemeral | SharedVolumeSpec | None = None
-    """Volume spec."""
-
-
-class Resource(BaseModel):
-    """
-    Resource model.
-    """
-
-    cpu: Annotated[str, Field(pattern=RESOURCE_REGEX)] | int | None = None
-    """CPU resource model."""
-
-    mem: Annotated[str, Field(pattern=RESOURCE_REGEX)] | int | None = None
-    """Memory resource model."""
-
-    gpu: Annotated[str, Field(pattern=RESOURCE_REGEX)] | int | None = None
-    """GPU resource model."""
-
-    disk: Annotated[str, Field(pattern=RESOURCE_REGEX)] | int | None = None
-    """Space for mounted default disk."""
-
-
-class Env(BaseModel):
-    """
-    Env variable model.
-    """
-
-    name: str
-    """Env variable name."""
-
-    value: str
-    """Env variable value."""
-
-
-class K8s(BaseModel):
-    """
-    Kubernetes resource model.
-    """
-
-    volumes: list[Volume] | None = None
-    """List of volumes."""
-
-    resources: Resource | None = None
-    """Resources restrictions."""
-
-    envs: list[Env] | None = None
-    """Env variables."""
-
-    secrets: list[str] | None = None
-    """List of secret names."""
-
-    profile: str | None = None
-    """Profile template."""
-
-
-class CorePort(BaseModel):
-    """
-    Port mapper model.
-    """
-
-    port: int
-    target_port: int
-
-
-class CoreServiceType(Enum):
-    """
-    CoreServiceType enum.
-    """
-
-    EXTERNAL_NAME = "ExternalName"
-    CLUSTER_IP = "ClusterIP"
-    NODE_PORT = "NodePort"
-    LOAD_BALANCER = "LoadBalancer"
-
-
-class CorePullPolicy(Enum):
-    """
-    CorePullPolicy enum.
-    """
-
-    ALWAYS = "Always"
-    IF_NOT_PRESENT = "IfNotPresent"
-    NEVER = "Never"
+__all__ = [
+    "RESOURCE_REGEX",
+    "CorePort",
+    "CorePullPolicy",
+    "CoreServiceType",
+    "Env",
+    "K8s",
+    "Resource",
+    "SharedVolumeSpec",
+    "SpecEmptyDir",
+    "SpecEphemeral",
+    "SpecPVC",
+    "Volume",
+    "VolumeType",
+]

@@ -9,7 +9,12 @@ import pytest
 from digitalhub.entities._commons.utils import KindAction
 from digitalhub.entities.run._base.builder import RunBuilder
 from digitalhub.entities.run._base.entity import LocalExecutionRunMixin
-from digitalhub.entities.run._base.spec import LocalExecutionSpecMixin, RunSpec
+from digitalhub.entities.run._base.spec import (
+    LocalExecutionSpecMixin,
+    RunSpec,
+    RunSpecFunction,
+    RunSpecWorkflow,
+)
 from digitalhub.entities.run.generic.builder import RunGenericBuilder
 from digitalhub.utils.exceptions import EntityError
 
@@ -27,7 +32,7 @@ class ValidRuntimeBuilder(InvalidRuntimeBuilder):
     RUN_KINDS: ClassVar[list[KindAction]] = [KindAction("run-valid", "valid")]
 
 
-class LocalExecutionRunSpec(RunSpec, LocalExecutionSpecMixin):
+class LocalExecutionRunSpec(RunSpecFunction, LocalExecutionSpecMixin):
     pass
 
 
@@ -82,6 +87,7 @@ def test_run_builder_only_accepts_local_execution_for_capable_specs() -> None:
             project="my-project",
             kind="run-valid",
             task="task-valid://my-project/task-id",
+            function="function-valid://my-project/function-id",
             local_execution=True,
         )
 
@@ -90,6 +96,7 @@ def test_run_builder_only_accepts_local_execution_for_capable_specs() -> None:
         project="my-project",
         kind="run-valid",
         task="task-valid://my-project/task-id",
+        function="function-valid://my-project/function-id",
         local_execution=True,
     )
 
@@ -101,6 +108,31 @@ def test_run_builder_only_accepts_local_execution_for_capable_specs() -> None:
     [(False, False), (True, True)],
 )
 def test_local_execution_run_mixin_reads_typed_spec(local_execution: bool, expected: bool) -> None:
-    spec = LocalExecutionRunSpec(task="task://my-project/task-id", local_execution=local_execution)
+    spec = LocalExecutionRunSpec(
+        task="task://my-project/task-id",
+        function="function://my-project/function-id",
+        local_execution=local_execution,
+    )
 
     assert LocalExecutionRunStub(spec).local_execution() is expected
+
+
+def test_run_spec_function_and_workflow_require_only_their_reference() -> None:
+    function_run = RunSpecFunction(
+        task="task://project/task-id",
+        function="function://project/function-id",
+    )
+    workflow_run = RunSpecWorkflow(
+        task="task://project/task-id",
+        workflow="workflow://project/workflow-id",
+    )
+
+    assert function_run.function == "function://project/function-id"
+    assert workflow_run.workflow == "workflow://project/workflow-id"
+    assert "workflow" not in function_run.to_dict()
+    assert "function" not in workflow_run.to_dict()
+
+    with pytest.raises(ValueError):
+        RunSpecFunction(task="task://project/task-id")
+    with pytest.raises(ValueError):
+        RunSpecWorkflow(task="task://project/task-id")

@@ -5,17 +5,23 @@
 from __future__ import annotations
 
 from digitalhub.entities._base.entity.spec import Spec
-from digitalhub.entities.task._base.models import K8s
+from digitalhub.entities._frameworks.k8s.models import K8s
+from digitalhub.entities._mixin.execution.spec import FunctionSpecMixin, WorkflowSpecMixin
 
 
 class RunSpec(Spec, K8s):
-    """RunSpec specifications."""
-
-    function: str | None = None
-    workflow: str | None = None
+    """Common Run specification."""
 
     task: str
     """The task string associated with the run."""
+
+
+class RunSpecFunction(FunctionSpecMixin, RunSpec):
+    """Run specification linked to a Function."""
+
+
+class RunSpecWorkflow(WorkflowSpecMixin, RunSpec):
+    """Run specification linked to a Workflow."""
 
 
 class LocalExecutionSpecMixin(Spec):

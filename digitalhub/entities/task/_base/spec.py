@@ -4,37 +4,25 @@
 
 from __future__ import annotations
 
-from pydantic import Field
-
 from digitalhub.entities._base.entity.spec import Spec
-from digitalhub.entities.task._base.models import CorePort, CoreServiceType, K8s
+from digitalhub.entities._frameworks.k8s.models import K8s
+from digitalhub.entities._mixin.execution.spec import (
+    BuildSpecMixin,
+    FunctionSpecMixin,
+    ServeSpecMixin,
+    WorkflowSpecMixin,
+)
+
+__all__ = [
+    "BuildSpecMixin",
+    "ServeSpecMixin",
+    "TaskSpecFunction",
+    "TaskSpecWorkflow",
+]
 
 
-class TaskSpecFunction(Spec, K8s):
+class TaskSpecFunction(FunctionSpecMixin, Spec, K8s):
     """TaskSpecFunction specifications."""
-
-    function: str
-
-
-class BuildSpecMixin(Spec):
-    """Spec mixin for build action fields."""
-
-    instructions: list[str] | None = None
-
-
-class ServeSpecMixin(Spec):
-    """Common specification fields for serve actions."""
-
-    replicas: int | None = Field(default=None, ge=0)
-    service_type: CoreServiceType | None = None
-    service_name: str | None = None
-    service_ports: list[CorePort] | None = None
-
-
-class WorkflowSpecMixin(Spec):
-    """Spec mixin for workflow task and run fields."""
-
-    workflow: str
 
 
 class TaskSpecWorkflow(WorkflowSpecMixin, Spec, K8s):
