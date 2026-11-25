@@ -2,7 +2,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from digitalhub.entities.artifact.generic.builder import ArtifactGenericBuilder
+from digitalhub.entities._commons.enums import EntityTypes
+from digitalhub.entities.builders import generic_entity_builders
+
+ArtifactGenericBuilder = dict(generic_entity_builders)[EntityTypes.ARTIFACT.value]
 
 
 def test_artifact_generic_builder_accepts_version_and_arbitrary_spec_fields() -> None:

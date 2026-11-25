@@ -2,14 +2,15 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from digitalhub.entities.secret._base.builder import SecretSecretBuilder
+from digitalhub.entities._commons.enums import EntityKinds
+from digitalhub.factory.registry import registry
 
 
 def test_secret_builder_routes_embedded_to_metadata() -> None:
-    secret = SecretSecretBuilder().build(
+    secret = registry.get_entity_builder(EntityKinds.SECRET_SECRET.value).build(
         project="project",
         name="secret",
-        kind=SecretSecretBuilder.ENTITY_KIND,
+        kind=EntityKinds.SECRET_SECRET.value,
         embedded=True,
     )
 

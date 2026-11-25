@@ -21,12 +21,11 @@ from digitalhub.entities._base.context.entity import ContextEntity
 from digitalhub.entities._base.entity.spec import Spec
 from digitalhub.entities._base.entity.status import Status
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes, Relationship, State
-from digitalhub.entities._commons.utils import KindAction, get_entity_type_from_key, map_actions
+from digitalhub.entities._commons.utils import get_entity_type_from_key
 from digitalhub.entities._constructors.spec import build_spec
 from digitalhub.entities._constructors.uuid import build_uuid
 from digitalhub.entities._frameworks.k8s.models import CorePort, CorePullPolicy, CoreServiceType
 from digitalhub.entities._mixin.execution.spec import BuildSpecMixin, ServeSpecMixin
-from digitalhub.entities._mixin.runtime_entity.builder import RuntimeEntityBuilder
 from digitalhub.entities._mixin.source.builder import SourceBuilderMixin
 from digitalhub.entities._mixin.source.entity import SourceEntityMixin
 from digitalhub.entities._mixin.source.models import HandlerSourceCode, SourceCode
@@ -50,13 +49,16 @@ from digitalhub.entities.task._base.entity import Task
 from digitalhub.entities.task._base.spec import TaskSpecFunction, TaskSpecWorkflow
 from digitalhub.entities.workflow._base.builder import WorkflowBuilder
 from digitalhub.entities.workflow._base.entity import Workflow
+from digitalhub.factory.builders import Action, BuilderDef, ExecFamily
 from digitalhub.factory.plugins import CrudPlugin, EntityPlugin
 from digitalhub.runtimes._base import Runtime
 from digitalhub.runtimes.builder import RuntimeBuilder
 
 __all__ = [
+    "Action",
     "Artifact",
     "BuildSpecMixin",
+    "BuilderDef",
     "ContextEntity",
     "CorePort",
     "CorePullPolicy",
@@ -66,10 +68,10 @@ __all__ = [
     "EntityKinds",
     "EntityPlugin",
     "EntityTypes",
+    "ExecFamily",
     "Function",
     "FunctionBuilder",
     "HandlerSourceCode",
-    "KindAction",
     "LocalExecutionRunMixin",
     "LocalExecutionSpecMixin",
     "Model",
@@ -85,7 +87,6 @@ __all__ = [
     "RunStatus",
     "Runtime",
     "RuntimeBuilder",
-    "RuntimeEntityBuilder",
     "ServeSpecMixin",
     "SourceBuilderMixin",
     "SourceCode",
@@ -103,7 +104,6 @@ __all__ = [
     "build_uuid",
     "get_entity_type_from_key",
     "log_base_model",
-    "map_actions",
     "new_dataitem",
     "register_base_model",
 ]

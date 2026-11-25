@@ -2,11 +2,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from digitalhub.entities.containerimage.containerimage.builder import ContainerimageContainerimageBuilder
+from digitalhub.entities._commons.enums import EntityKinds
+from digitalhub.factory.registry import registry
 
 
 def test_containerimage_builder_routes_embedded_to_metadata() -> None:
-    builder = ContainerimageContainerimageBuilder()
+    builder = registry.get_entity_builder(EntityKinds.CONTAINERIMAGE_CONTAINERIMAGE.value)
     containerimage = builder.build(
         project="project",
         name="image",

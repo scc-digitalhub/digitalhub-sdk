@@ -4,8 +4,7 @@
 
 import pytest
 
-from digitalhub.entities._commons.utils import KindAction
-from digitalhub.entities._mixin.runtime_entity.builder import RuntimeEntityBuilder
+from digitalhub.entities._mixin.runtime_entity.builder import KindAction, RuntimeEntityBuilder
 from digitalhub.utils.exceptions import EntityError
 
 

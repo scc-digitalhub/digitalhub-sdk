@@ -6,10 +6,13 @@ from typing import ClassVar
 
 import pytest
 
-from digitalhub.entities._commons.utils import KindAction
+from digitalhub.entities._commons.enums import EntityTypes
+from digitalhub.entities._mixin.runtime_entity.builder import KindAction
+from digitalhub.entities.builders import generic_entity_builders
 from digitalhub.entities.function._base.builder import FunctionBuilder
-from digitalhub.entities.function.generic.builder import FunctionGenericBuilder
 from digitalhub.utils.exceptions import EntityError
+
+FunctionGenericBuilder = dict(generic_entity_builders)[EntityTypes.FUNCTION.value]
 
 
 class InvalidRuntimeBuilder(FunctionBuilder):

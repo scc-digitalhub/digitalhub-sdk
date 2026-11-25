@@ -6,10 +6,13 @@ from typing import ClassVar
 
 import pytest
 
-from digitalhub.entities._commons.utils import KindAction
+from digitalhub.entities._commons.enums import EntityTypes
+from digitalhub.entities._mixin.runtime_entity.builder import KindAction
+from digitalhub.entities.builders import generic_entity_builders
 from digitalhub.entities.workflow._base.builder import WorkflowBuilder
-from digitalhub.entities.workflow.generic.builder import WorkflowGenericBuilder
 from digitalhub.utils.exceptions import EntityError
+
+WorkflowGenericBuilder = dict(generic_entity_builders)[EntityTypes.WORKFLOW.value]
 
 
 class InvalidRuntimeBuilder(WorkflowBuilder):

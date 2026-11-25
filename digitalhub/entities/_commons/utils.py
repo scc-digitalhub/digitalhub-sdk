@@ -7,7 +7,6 @@ from __future__ import annotations
 import re
 import typing
 from collections.abc import Callable
-from dataclasses import dataclass
 from functools import wraps
 from pathlib import Path
 from typing import Concatenate, ParamSpec, Protocol, TypeVar
@@ -33,12 +32,6 @@ class _Refreshable(Protocol):
 _RefreshableT = TypeVar("_RefreshableT", bound=_Refreshable)
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
-
-
-@dataclass
-class KindAction:
-    kind: str
-    action: str
 
 
 KEY_PATTERN_WITH_ID = "store://([^/]+)/([^/]+)/([^/]+)/([^:]+):(.+)"
@@ -169,23 +162,6 @@ def get_project_from_key(key: str) -> str:
     """
     project, _, _, _, _ = parse_entity_key(key)
     return project
-
-
-def map_actions(kind_action_list: list[tuple[str, str]]) -> list[KindAction]:
-    """
-    Build task actions as KindAction namedtuples.
-
-    Parameters
-    ----------
-    kind_action_list : list[tuple[str, str]]
-        List of kind-action couples.
-
-    Returns
-    -------
-    list[KindAction]
-        Returns the task actions as KindAction namedtuples.
-    """
-    return [KindAction(kind, action) for (kind, action) in kind_action_list]
 
 
 def build_log_path_from_source(

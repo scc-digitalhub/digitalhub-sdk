@@ -4,14 +4,19 @@
 
 import pytest
 
-from digitalhub.entities._commons.enums import EntityKinds
-from digitalhub.entities.trigger.generic.builder import TriggerGenericBuilder
-from digitalhub.entities.trigger.lifecycle.builder import TriggerLifecycleBuilder
-from digitalhub.entities.trigger.scheduler.builder import TriggerSchedulerBuilder
+from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
+from digitalhub.entities.builders import generic_entity_builders
+from digitalhub.factory.registry import registry
+
+TriggerGenericBuilder = dict(generic_entity_builders)[EntityTypes.TRIGGER.value]
+
+
+def _registered(kind: EntityKinds):
+    return lambda: registry.get_entity_builder(kind.value)
 
 
 @pytest.mark.parametrize(
-    ("builder_class", "kind", "spec_kwargs", "expected_spec"),
+    ("make_builder", "kind", "spec_kwargs", "expected_spec"),
     [
         (
             TriggerGenericBuilder,
@@ -20,7 +25,7 @@ from digitalhub.entities.trigger.scheduler.builder import TriggerSchedulerBuilde
             {"event": "completed"},
         ),
         (
-            TriggerLifecycleBuilder,
+            _registered(EntityKinds.TRIGGER_LIFECYCLE),
             EntityKinds.TRIGGER_LIFECYCLE.value,
             {
                 "task": "task-key",
@@ -36,7 +41,7 @@ from digitalhub.entities.trigger.scheduler.builder import TriggerSchedulerBuilde
             },
         ),
         (
-            TriggerSchedulerBuilder,
+            _registered(EntityKinds.TRIGGER_SCHEDULER),
             EntityKinds.TRIGGER_SCHEDULER.value,
             {
                 "task": "task-key",
@@ -51,8 +56,8 @@ from digitalhub.entities.trigger.scheduler.builder import TriggerSchedulerBuilde
         ),
     ],
 )
-def test_trigger_builders_build_entities(builder_class, kind, spec_kwargs, expected_spec) -> None:
-    trigger = builder_class().build(
+def test_trigger_builders_build_entities(make_builder, kind, spec_kwargs, expected_spec) -> None:
+    trigger = make_builder().build(
         project="my-project",
         name="trigger",
         kind=kind,
@@ -69,7 +74,7 @@ def test_trigger_builders_build_entities(builder_class, kind, spec_kwargs, expec
 
 
 def test_trigger_builder_routes_embedded_to_metadata() -> None:
-    builder = TriggerSchedulerBuilder()
+    builder = registry.get_entity_builder(EntityKinds.TRIGGER_SCHEDULER.value)
     trigger = builder.build(
         project="project",
         name="trigger",

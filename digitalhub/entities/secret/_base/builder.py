@@ -4,23 +4,21 @@
 
 from __future__ import annotations
 
-from digitalhub.entities._base.entity.status import Status
-from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
+import typing
+
+from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._mixin.versioned.builder import VersionedBuilder
-from digitalhub.entities.secret._base.entity import Secret
-from digitalhub.entities.secret._base.spec import SecretSpec
+
+if typing.TYPE_CHECKING:
+    from digitalhub.entities.secret._base.entity import Secret
 
 
-class SecretSecretBuilder(VersionedBuilder):
+class SecretBuilder(VersionedBuilder):
     """
-    SecretSecretBuilder builder.
+    Secret builder.
     """
 
     ENTITY_TYPE = EntityTypes.SECRET.value
-    ENTITY_CLASS = Secret
-    ENTITY_SPEC_CLASS = SecretSpec
-    ENTITY_STATUS_CLASS = Status
-    ENTITY_KIND = EntityKinds.SECRET_SECRET.value
 
     def build(
         self,
@@ -69,11 +67,9 @@ class SecretSecretBuilder(VersionedBuilder):
             labels=labels,
             embedded=embedded,
         )
-        path = f"secret://{name}"
-        provider = "kubernetes"
         spec = self.build_spec(
-            path=path,
-            provider=provider,
+            path=f"secret://{name}",
+            provider="kubernetes",
             **kwargs,
         )
         status = self.build_status()

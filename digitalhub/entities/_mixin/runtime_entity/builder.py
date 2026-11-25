@@ -4,8 +4,17 @@
 
 from __future__ import annotations
 
-from digitalhub.entities._commons.utils import KindAction
+from dataclasses import dataclass
+
 from digitalhub.utils.exceptions import EntityError
+
+
+@dataclass
+class KindAction:
+    """A task or run kind and the action it performs."""
+
+    kind: str
+    action: str
 
 
 class RuntimeEntityBuilder:

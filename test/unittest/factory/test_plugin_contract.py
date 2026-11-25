@@ -13,29 +13,50 @@ from plugin_contract import check_plugin_package
 
 _package_ids = itertools.count()
 
-ALL_BUILDERS = ("FakeFunctionBuilder", "FakeTaskBuilder", "FakeRunBuilder")
 ALL_KINDS = ("fake", "fake+job", "fake+job:run")
 
-BUILDERS = """\
-from digitalhub.plugins import FunctionBuilder, RunBuilder, RuntimeEntityBuilder, TaskBuilder, map_actions
+# Declared like the real runtimes; RUNTIME_BUILDER is replaced with the path of the runtime builder.
+FAMILY = """\
+from enum import Enum
+
+from digitalhub.plugins import (
+    Action,
+    BuilderDef,
+    ExecFamily,
+    Function,
+    FunctionBuilder,
+    Run,
+    RunBuilder,
+    RunSpecFunction,
+    RunStatus,
+    Spec,
+    Status,
+    Task,
+    TaskBuilder,
+    TaskSpecFunction,
+)
 
 
-class Family(RuntimeEntityBuilder):
-    EXECUTABLE_KIND = "fake"
-    TASKS_KINDS = map_actions([("fake+job", "job")])
-    RUN_KINDS = map_actions([("fake+job:run", "job")])
+class EntityKinds(Enum):
+    FUNCTION = "fake"
+    TASK_JOB = "fake+job"
+    RUN_JOB = "fake+job:run"
 
 
-class FakeFunctionBuilder(FunctionBuilder, Family):
-    ENTITY_KIND = "fake"
+class Actions(Enum):
+    JOB = "job"
 
 
-class FakeTaskBuilder(TaskBuilder, Family):
-    ENTITY_KIND = "fake+job"
-
-
-class FakeRunBuilder(RunBuilder, Family):
-    ENTITY_KIND = "fake+job:run"
+fake = ExecFamily(
+    executable=BuilderDef(EntityKinds.FUNCTION, Function, Spec, Status, base=FunctionBuilder),
+    actions={
+        Actions.JOB: Action(
+            task=BuilderDef(EntityKinds.TASK_JOB, Task, TaskSpecFunction, Status, base=TaskBuilder),
+            run=BuilderDef(EntityKinds.RUN_JOB, Run, RunSpecFunction, RunStatus, base=RunBuilder),
+        ),
+    },
+    runtime_builder=RUNTIME_BUILDER,
+)
 """
 
 RUNTIME = """\
@@ -59,30 +80,25 @@ MakePackage = Callable[..., str]
 
 @pytest.fixture
 def make_package(tmp_path: Path, monkeypatch) -> MakePackage:
-    """Write and install a runtime package that registers ``builders``; return its name."""
+    """Write and install a runtime package that registers the ``registered`` kinds; return its name."""
     monkeypatch.syspath_prepend(str(tmp_path))
     created: list[str] = []
 
     def make(
-        builders: tuple[str, ...] = ALL_BUILDERS,
+        registered: tuple[str, ...] = ALL_KINDS,
         runtime_builder: str = "runtimes:Builder",
         extra: dict[str, str] | None = None,
         entry_point: bool = True,
     ) -> str:
         name = f"fake_runtime_{next(_package_ids)}"
         created.append(name)
-        plugins = "".join(
-            f"    EntityPlugin(builder={builder}, runtime_builder='{name}.{runtime_builder}'),\n"
-            for builder in builders
-        )
         sources = {
             "__init__.py": f"from {name}.entities import entity_plugins\n",
             "runtimes.py": RUNTIME,
-            "entities/builders.py": BUILDERS,
+            "entities/family.py": FAMILY.replace("RUNTIME_BUILDER", repr(f"{name}.{runtime_builder}")),
             "entities/__init__.py": (
-                "from digitalhub.plugins import EntityPlugin\n"
-                f"from {name}.entities.builders import FakeFunctionBuilder, FakeRunBuilder, FakeTaskBuilder\n\n"
-                f"entity_plugins = (\n{plugins})\n"
+                f"from {name}.entities.family import fake\n\n"
+                f"entity_plugins = tuple(plugin for plugin in fake.plugins() if plugin.kind in {registered!r})\n"
             ),
             **(extra or {}),
         }
@@ -140,14 +156,10 @@ def test_drift_between_declared_and_registered_kinds_is_reported(make_package: M
 
 
 def test_an_incomplete_family_is_reported(make_package: MakePackage) -> None:
-    package = make_package(builders=("FakeFunctionBuilder", "FakeTaskBuilder"))
+    package = make_package(registered=("fake", "fake+job"))
 
-    with pytest.raises(AssertionError) as error:
+    with pytest.raises(AssertionError, match=r"family 'fake': kind 'fake\+job:run' is not registered by a builder"):
         check_plugin_package(package)
-
-    message = str(error.value)
-    assert "family 'fake': kind 'fake+job:run' is not registered by a builder of the family" in message
-    assert "builder FakeRunBuilder for kind 'fake+job:run' is not registered" in message
 
 
 def test_an_unavailable_runtime_builder_is_reported(make_package: MakePackage) -> None:

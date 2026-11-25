@@ -6,7 +6,9 @@ from typing import ClassVar
 
 import pytest
 
-from digitalhub.entities._commons.utils import KindAction
+from digitalhub.entities._commons.enums import EntityTypes
+from digitalhub.entities._mixin.runtime_entity.builder import KindAction
+from digitalhub.entities.builders import generic_entity_builders
 from digitalhub.entities.run._base.builder import RunBuilder
 from digitalhub.entities.run._base.entity import LocalExecutionRunMixin
 from digitalhub.entities.run._base.spec import (
@@ -15,8 +17,9 @@ from digitalhub.entities.run._base.spec import (
     RunSpecFunction,
     RunSpecWorkflow,
 )
-from digitalhub.entities.run.generic.builder import RunGenericBuilder
 from digitalhub.utils.exceptions import EntityError
+
+RunGenericBuilder = dict(generic_entity_builders)[EntityTypes.RUN.value]
 
 
 class InvalidRuntimeBuilder(RunBuilder):
