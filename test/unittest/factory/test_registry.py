@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import importlib
+import sys
 import threading
 from collections.abc import Callable
 from types import SimpleNamespace
@@ -29,6 +30,11 @@ class RuntimeEntityStubBuilder:
 class BrokenBuilder:
     def __init__(self) -> None:
         raise RuntimeError("broken builder")
+
+
+def _runtime(name: str, load: Callable[[], object]) -> SimpleNamespace:
+    """Stand-in for the entry point of an installed runtime."""
+    return SimpleNamespace(name=name, value=f"{name}:entity_plugins", load=load)
 
 
 def test_core_registration_rolls_back_partial_state_and_can_retry(monkeypatch) -> None:
@@ -59,44 +65,46 @@ def test_core_registration_rolls_back_partial_state_and_can_retry(monkeypatch) -
 
 def test_runtime_registration_rolls_back_partial_state_and_can_retry(monkeypatch) -> None:
     registry = BuilderRegistry()
-    runtime_module = SimpleNamespace(
-        entity_plugins=(EntityPlugin(builder=RuntimeEntityStubBuilder, runtime_builder=StubBuilder),),
-    )
+    plugins = (EntityPlugin(builder=RuntimeEntityStubBuilder, runtime_builder=StubBuilder),)
     registry_module = importlib.import_module(BuilderRegistry.__module__)
-    monkeypatch.setattr(registry_module, "list_runtimes", lambda: ["runtime-one", "runtime-two"])
-    fail_second_import = True
+    fail_second_load = True
 
-    def import_runtime(package: str):
-        if package == "runtime-two" and fail_second_import:
+    def load_second() -> tuple:
+        if fail_second_load:
             raise RuntimeError("broken runtime")
-        return runtime_module if package == "runtime-one" else SimpleNamespace(entity_plugins=())
+        return ()
 
-    monkeypatch.setattr(registry_module, "import_module", import_runtime)
+    monkeypatch.setattr(
+        registry_module,
+        "list_runtime_entry_points",
+        lambda: [_runtime("runtime-one", lambda: plugins), _runtime("runtime-two", load_second)],
+    )
 
-    with pytest.raises(BuilderError, match="Failed to register runtime entities"):
+    with pytest.raises(BuilderError, match="'runtime-two' .* cannot be loaded: broken runtime"):
         registry._ensure_runtimes_registered()
 
     assert registry._entity_builders == {}
     assert registry._runtime_builders == {}
 
-    fail_second_import = False
+    fail_second_load = False
     registry._ensure_runtimes_registered()
 
     assert set(registry._entity_builders) == {"runtime-entity"}
     assert set(registry._runtime_builders) == {"runtime-entity"}
 
 
-def test_runtime_registration_rejects_legacy_builder_exports(monkeypatch) -> None:
+def test_runtime_entry_point_must_point_to_entity_plugins(monkeypatch) -> None:
     registry = BuilderRegistry()
     legacy_module = SimpleNamespace(
         entity_builders=(("runtime-entity", RuntimeEntityStubBuilder),),
         runtime_builders=(("runtime-entity", StubBuilder),),
     )
     registry_module = importlib.import_module(BuilderRegistry.__module__)
-    monkeypatch.setattr(registry_module, "list_runtimes", lambda: ["legacy-runtime"])
-    monkeypatch.setattr(registry_module, "import_module", lambda _: legacy_module)
+    monkeypatch.setattr(
+        registry_module, "list_runtime_entry_points", lambda: [_runtime("legacy", lambda: legacy_module)]
+    )
 
-    with pytest.raises(BuilderError, match="does not define 'entity_plugins'"):
+    with pytest.raises(BuilderError, match="'legacy' .* must be a tuple of EntityPlugin"):
         registry._ensure_runtimes_registered()
 
     assert registry._entity_builders == {}
@@ -113,22 +121,23 @@ def _install_fake_plugins(monkeypatch, calls: list[str] | None = None) -> Builde
     """Return a fresh registry wired to one core kind and one runtime kind."""
     registry = BuilderRegistry()
     registry_module = importlib.import_module(BuilderRegistry.__module__)
-    modules = {
-        "digitalhub.entities.builders": SimpleNamespace(
-            entity_plugins=(EntityPlugin(builder=CoreEntityStubBuilder),),
-            generic_entity_builders=(),
-        ),
-        "fake_runtime": SimpleNamespace(
-            entity_plugins=(EntityPlugin(builder=RuntimeEntityStubBuilder, runtime_builder=StubBuilder),),
-        ),
-    }
+    core = SimpleNamespace(
+        entity_plugins=(EntityPlugin(builder=CoreEntityStubBuilder),),
+        generic_entity_builders=(),
+    )
+    runtime_plugins = (EntityPlugin(builder=RuntimeEntityStubBuilder, runtime_builder=StubBuilder),)
 
     def import_module(package: str):
         if calls is not None:
             calls.append(package)
-        return modules[package]
+        return core
 
-    monkeypatch.setattr(registry_module, "list_runtimes", lambda: ["fake_runtime"])
+    def load_runtime() -> tuple:
+        if calls is not None:
+            calls.append("fake_runtime")
+        return runtime_plugins
+
+    monkeypatch.setattr(registry_module, "list_runtime_entry_points", lambda: [_runtime("fake_runtime", load_runtime)])
     monkeypatch.setattr(registry_module, "import_module", import_module)
     return registry
 
@@ -227,12 +236,11 @@ def test_core_registration_requires_entity_plugins(monkeypatch) -> None:
 def _registry_with_runtime_plugin(monkeypatch, plugin: EntityPlugin) -> BuilderRegistry:
     registry = BuilderRegistry()
     registry_module = importlib.import_module(BuilderRegistry.__module__)
-    modules = {
-        "digitalhub.entities.builders": SimpleNamespace(entity_plugins=(), generic_entity_builders=()),
-        "fake_runtime": SimpleNamespace(entity_plugins=(plugin,)),
-    }
-    monkeypatch.setattr(registry_module, "list_runtimes", lambda: ["fake_runtime"])
-    monkeypatch.setattr(registry_module, "import_module", lambda package: modules[package])
+    core = SimpleNamespace(entity_plugins=(), generic_entity_builders=())
+    monkeypatch.setattr(
+        registry_module, "list_runtime_entry_points", lambda: [_runtime("fake_runtime", lambda: (plugin,))]
+    )
+    monkeypatch.setattr(registry_module, "import_module", lambda _: core)
     return registry
 
 
@@ -282,11 +290,15 @@ def test_shortcut_lookup_raises_only_attribute_errors(monkeypatch) -> None:
 
     def import_module(package: str):
         discovered.append(package)
-        if package == "broken_runtime":
-            raise RuntimeError("broken runtime")
         return SimpleNamespace(entity_plugins=(), generic_entity_builders=())
 
-    monkeypatch.setattr(registry_module, "list_runtimes", lambda: ["broken_runtime"])
+    def load_broken_runtime() -> tuple:
+        discovered.append("broken_runtime")
+        raise RuntimeError("broken runtime")
+
+    monkeypatch.setattr(
+        registry_module, "list_runtime_entry_points", lambda: [_runtime("broken_runtime", load_broken_runtime)]
+    )
     monkeypatch.setattr(registry_module, "import_module", import_module)
 
     with pytest.raises(AttributeError):
@@ -297,3 +309,26 @@ def test_shortcut_lookup_raises_only_attribute_errors(monkeypatch) -> None:
         registry.get_shortcut_spec("new_function_python")
 
     assert isinstance(error.value.__cause__, BuilderError)
+
+
+def test_installed_runtimes_are_found_through_their_entry_point(tmp_path, monkeypatch) -> None:
+    # Only the entry point is read: a package named like a runtime but not
+    # declaring one is never imported.
+    (tmp_path / "fake_installed_runtime").mkdir()
+    (tmp_path / "fake_installed_runtime" / "__init__.py").write_text(
+        "from digitalhub.factory.plugins import EntityPlugin\n\n"
+        "class Builder:\n"
+        "    ENTITY_KIND = 'fake-installed'\n\n"
+        "entity_plugins = (EntityPlugin(builder=Builder),)\n"
+    )
+    (tmp_path / "digitalhub_runtime_undeclared.py").write_text("raise RuntimeError('must not be imported')\n")
+    dist_info = tmp_path / "fake_installed_runtime-0.0.0.dist-info"
+    dist_info.mkdir()
+    (dist_info / "METADATA").write_text("Metadata-Version: 2.1\nName: fake-installed-runtime\nVersion: 0.0.0\n")
+    (dist_info / "entry_points.txt").write_text("[digitalhub.runtimes]\nfake = fake_installed_runtime:entity_plugins\n")
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    registry = BuilderRegistry()
+
+    assert registry.get_entity_builder("fake-installed").__class__.__name__ == "Builder"
+    assert "digitalhub_runtime_undeclared" not in sys.modules

@@ -4,6 +4,7 @@
 
 import importlib
 import inspect
+from collections.abc import Callable
 from types import SimpleNamespace
 
 import pytest
@@ -27,6 +28,15 @@ class StubRuntimeBuilder:
     pass
 
 
+def _runtime(name: str, load: Callable[[], object]) -> SimpleNamespace:
+    """Stand-in for the entry point of an installed runtime."""
+    return SimpleNamespace(name=name, value=f"{name}:entity_plugins", load=load)
+
+
+def _core(**attributes) -> SimpleNamespace:
+    return SimpleNamespace(entity_plugins=(), generic_entity_builders=(), **attributes)
+
+
 def test_entity_plugin_registers_builder_and_resolves_shortcut(monkeypatch) -> None:
     def new_function_stub(project: str, name: str, image: str | None = None) -> tuple[str, str, str | None]:
         return project, name, image
@@ -38,18 +48,8 @@ def test_entity_plugin_registers_builder_and_resolves_shortcut(monkeypatch) -> N
     )
     registry = BuilderRegistry()
     registry_module = importlib.import_module(BuilderRegistry.__module__)
-    monkeypatch.setattr(registry_module, "list_runtimes", lambda: ["stub_runtime"])
-    monkeypatch.setattr(
-        registry_module,
-        "import_module",
-        lambda package: (
-            SimpleNamespace(entity_plugins=(), generic_entity_builders=())
-            if package == "digitalhub.entities.builders"
-            else SimpleNamespace(entity_plugins=(plugin,))
-            if package == "stub_runtime"
-            else SimpleNamespace()
-        ),
-    )
+    monkeypatch.setattr(registry_module, "list_runtime_entry_points", lambda: [_runtime("stub", lambda: (plugin,))])
+    monkeypatch.setattr(registry_module, "import_module", lambda _: _core())
 
     assert registry.get_entity_builder("function:stub").__class__ is StubBuilder
     assert registry.get_runtime_builder("function:stub").__class__ is StubRuntimeBuilder
@@ -79,13 +79,12 @@ def test_shortcut_collision_is_rejected(monkeypatch) -> None:
     )
     registry = BuilderRegistry()
     registry_module = importlib.import_module(BuilderRegistry.__module__)
-    monkeypatch.setattr(registry_module, "list_runtimes", lambda: ["one", "two"])
-    modules = {
-        "digitalhub.entities.builders": SimpleNamespace(entity_plugins=(), generic_entity_builders=()),
-        "one": SimpleNamespace(entity_plugins=(plugin,)),
-        "two": SimpleNamespace(entity_plugins=(second_plugin,)),
-    }
-    monkeypatch.setattr(registry_module, "import_module", lambda package: modules[package])
+    monkeypatch.setattr(
+        registry_module,
+        "list_runtime_entry_points",
+        lambda: [_runtime("one", lambda: (plugin,)), _runtime("two", lambda: (second_plugin,))],
+    )
+    monkeypatch.setattr(registry_module, "import_module", lambda _: _core())
 
     with pytest.raises(BuilderError, match="Shortcut duplicate already exists"):
         registry.get_shortcut_names()
@@ -97,21 +96,17 @@ def test_core_shortcut_does_not_import_runtime_plugins(monkeypatch) -> None:
 
     registry = BuilderRegistry()
     registry_module = importlib.import_module(BuilderRegistry.__module__)
-    core_module = SimpleNamespace(
-        entity_plugins=(),
-        generic_entity_builders=(),
-        crud_plugins=(CrudPlugin(core_shortcut),),
-    )
+    core_module = _core(crud_plugins=(CrudPlugin(core_shortcut),))
 
     def import_module(package: str):
         assert package == "digitalhub.entities.builders"
         return core_module
 
-    def list_runtimes() -> list[str]:
+    def list_runtime_entry_points() -> list:
         pytest.fail("Core shortcut lookup must not import runtime plugins.")
 
     monkeypatch.setattr(registry_module, "import_module", import_module)
-    monkeypatch.setattr(registry_module, "list_runtimes", list_runtimes)
+    monkeypatch.setattr(registry_module, "list_runtime_entry_points", list_runtime_entry_points)
 
     assert registry.get_shortcut("core_shortcut") is core_shortcut
     assert registry.get_shortcut_spec("core_shortcut").function is core_shortcut
@@ -247,7 +242,7 @@ def test_project_resolves_shortcut_and_lists_project_shortcuts(monkeypatch) -> N
 def test_core_artifact_crud_plugins_are_discovered(monkeypatch) -> None:
     registry = BuilderRegistry()
     registry_module = importlib.import_module(BuilderRegistry.__module__)
-    monkeypatch.setattr(registry_module, "list_runtimes", list)
+    monkeypatch.setattr(registry_module, "list_runtime_entry_points", list)
 
     assert {
         "new_artifact",
@@ -269,7 +264,7 @@ def test_core_artifact_crud_plugins_are_discovered(monkeypatch) -> None:
 def test_generic_plugins_are_not_project_bound(monkeypatch) -> None:
     registry = BuilderRegistry()
     registry_module = importlib.import_module(BuilderRegistry.__module__)
-    monkeypatch.setattr(registry_module, "list_runtimes", list)
+    monkeypatch.setattr(registry_module, "list_runtime_entry_points", list)
 
     shortcut_names = registry.get_shortcut_names()
     project_shortcut_names = registry.get_project_shortcut_names()
@@ -289,7 +284,7 @@ def test_generic_plugins_are_not_project_bound(monkeypatch) -> None:
 def test_core_entity_crud_plugins_are_discovered(monkeypatch) -> None:
     registry = BuilderRegistry()
     registry_module = importlib.import_module(BuilderRegistry.__module__)
-    monkeypatch.setattr(registry_module, "list_runtimes", list)
+    monkeypatch.setattr(registry_module, "list_runtime_entry_points", list)
 
     assert {
         "new_function",
@@ -321,14 +316,18 @@ def test_hasattr_on_the_package_survives_a_broken_runtime(monkeypatch) -> None:
     registry = BuilderRegistry()
     registry_module = importlib.import_module(BuilderRegistry.__module__)
 
-    def import_module(package: str):
-        if package == "digitalhub_runtime_broken":
-            raise RuntimeError("broken runtime")
-        return importlib.import_module(package)
+    def load_broken_runtime() -> tuple:
+        raise RuntimeError("broken runtime")
 
-    monkeypatch.setattr(registry_module, "list_runtimes", lambda: ["digitalhub_runtime_broken"])
-    monkeypatch.setattr(registry_module, "import_module", import_module)
+    monkeypatch.setattr(registry_module, "list_runtime_entry_points", lambda: [_runtime("broken", load_broken_runtime)])
     monkeypatch.setattr(digitalhub, "_registry", registry)
 
     assert not hasattr(digitalhub, "new_function_missing")
     assert digitalhub.new_artifact is registry.get_shortcut("new_artifact")
+
+
+def test_plugins_module_exports_resolve() -> None:
+    plugins = importlib.import_module("digitalhub.plugins")
+
+    assert plugins.__all__
+    assert [name for name in plugins.__all__ if not hasattr(plugins, name)] == []

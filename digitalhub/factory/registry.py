@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, TypeVar
 
 from digitalhub.factory.enums import FactoryEnum
 from digitalhub.factory.plugins import CrudPlugin, EntityPlugin
-from digitalhub.factory.utils import import_module, import_object, list_runtimes
+from digitalhub.factory.utils import import_module, import_object, list_runtime_entry_points
 from digitalhub.utils.exceptions import BuilderError
 
 if TYPE_CHECKING:
@@ -25,7 +25,8 @@ class BuilderRegistry:
     """
     Registry for resolving entity, runtime, and CRUD plugins.
 
-    Registrations are loaded lazily from the core SDK and installed runtime modules.
+    Registrations are loaded lazily from the core SDK and from the runtimes
+    installed with an entry point in the ``digitalhub.runtimes`` group.
 
     Thread safety: each registration phase runs once, under ``_lock``. A phase
     copies the current dictionaries, fills the copies and swaps them in before
@@ -243,11 +244,19 @@ class BuilderRegistry:
         runtime_builders = self._runtime_builders.copy()
         crud_plugins = self._crud_plugins.copy()
 
-        for package in sorted(list_runtimes()):
-            module = import_module(package)
-            entity_plugins = getattr(module, FactoryEnum.REG_ENTITY_PLUGINS_VAR.value, None)
-            if entity_plugins is None:
-                raise BuilderError(f"Runtime package '{package}' does not define 'entity_plugins'.")
+        for entry_point in list_runtime_entry_points():
+            try:
+                entity_plugins = entry_point.load()
+            except Exception as e:
+                raise BuilderError(
+                    f"Runtime plugin '{entry_point.name}' ({entry_point.value}) cannot be loaded: {e}"
+                ) from e
+            if not isinstance(entity_plugins, (tuple, list)) or not all(
+                isinstance(plugin, EntityPlugin) for plugin in entity_plugins
+            ):
+                raise BuilderError(
+                    f"Runtime plugin '{entry_point.name}' ({entry_point.value}) must be a tuple of EntityPlugin."
+                )
             self._register_entity_plugins(entity_plugins, entity_builders, crud_plugins, runtime_builders)
 
         self._entity_builders = entity_builders

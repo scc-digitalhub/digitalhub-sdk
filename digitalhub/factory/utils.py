@@ -5,8 +5,7 @@
 from __future__ import annotations
 
 import importlib
-import pkgutil
-import re
+from importlib.metadata import EntryPoint, entry_points
 from types import ModuleType
 from typing import Any
 
@@ -59,23 +58,17 @@ def import_object(path: str) -> Any:
         raise ImportError(f"Module '{module_name}' has no attribute '{attribute}'.") from e
 
 
-def list_runtimes() -> list[str]:
+def list_runtime_entry_points() -> list[EntryPoint]:
     """
-    List all installed DigitalHub runtime packages.
+    List the installed runtime plugins.
 
-    Scans installed packages for those matching the pattern
-    'digitalhub_runtime_*'.
+    Each runtime declares, in the ``digitalhub.runtimes`` entry point group,
+    the tuple of ``EntityPlugin`` it registers.
 
     Returns
     -------
-    list of str
-        List of runtime package names.
+    list[EntryPoint]
+        Runtime entry points, sorted by name.
     """
-    try:
-        runtimes: list[str] = []
-        for _, name, _ in pkgutil.iter_modules():
-            if re.match(FactoryEnum.RGX_RUNTIMES.value, name):
-                runtimes.append(name)
-        return runtimes
-    except Exception as e:
-        raise RuntimeError("Error listing installed runtimes.") from e
+    group = entry_points(group=FactoryEnum.RUNTIMES_ENTRY_POINT_GROUP.value)
+    return sorted(group, key=lambda entry_point: entry_point.name)

@@ -11,11 +11,15 @@ as they already do for ``validate_entities``.
 
 from __future__ import annotations
 
+import ast
 import importlib
+import importlib.util
 import inspect
 import pkgutil
 from collections.abc import Iterable
 from enum import Enum
+from importlib.metadata import entry_points
+from pathlib import Path
 from types import ModuleType
 
 from digitalhub.entities._base.entity.builder import EntityBuilder
@@ -43,7 +47,13 @@ def check_plugin_package(
     - the executable, task and run kinds of a family are not all registered by
       builders of that family, the members declare different topologies, or an
       action has a task kind but no run kind;
-    - a runtime builder cannot be imported or is not a ``RuntimeBuilder``.
+    - a runtime builder cannot be imported or is not a ``RuntimeBuilder``; when
+      only an execution dependency is missing (``psycopg2`` for ``dbt``), its
+      module must still define the class;
+    - a module of the package imports a private core module
+      (``digitalhub.<...>._<...>``) instead of ``digitalhub.plugins``;
+    - no entry point in the ``digitalhub.runtimes`` group loads the package's
+      ``entity_plugins``, so the core would not find the runtime.
 
     Builders are looked up in the ``entities`` subpackage, where runtimes keep
     them, so modules that need optional execution dependencies are not
@@ -73,7 +83,9 @@ def check_plugin_package(
     if kinds is not None:
         _check_kinds(kinds, registered, problems)
     _check_families(registered, problems)
-    _check_runtime_builders(plugins, problems)
+    _check_runtime_builders(module, plugins, problems)
+    _check_private_imports(module, problems)
+    _check_entry_point(module, plugins, problems)
 
     if problems:
         details = "\n- ".join(problems)
@@ -158,15 +170,78 @@ def _check_families(registered: dict[str, type], problems: list[str]) -> None:
             problems.append(f"{prefix}: action '{action}' has a task kind but no run kind")
 
 
-def _check_runtime_builders(plugins: tuple[EntityPlugin, ...], problems: list[str]) -> None:
+def _check_runtime_builders(module: ModuleType, plugins: tuple[EntityPlugin, ...], problems: list[str]) -> None:
+    kinds_by_builder: dict[object, list[str]] = {}
     for plugin in plugins:
-        runtime_builder = plugin.runtime_builder
-        if runtime_builder is None:
+        if plugin.runtime_builder is not None:
+            kinds_by_builder.setdefault(plugin.runtime_builder, []).append(plugin.kind)
+
+    package = module.__name__.split(".")[0]
+    for runtime_builder, kinds in kinds_by_builder.items():
+        subject = f"runtime builder {runtime_builder!r} (kinds {', '.join(kinds)})"
+        if not isinstance(runtime_builder, str):
+            builder = runtime_builder
+        else:
+            try:
+                builder = import_object(runtime_builder)
+            except ModuleNotFoundError as e:
+                # A dependency installed only where runs execute, such as
+                # psycopg2 for dbt: the path itself must still be right.
+                missing = (e.name or "").split(".")[0]
+                if missing in (package, "digitalhub") or not _defines(runtime_builder):
+                    problems.append(f"{subject} cannot be imported: {e!r}")
+                continue
+            except Exception as e:  # noqa: BLE001 - reported as a contract problem
+                problems.append(f"{subject} cannot be imported: {e!r}")
+                continue
+        if not (isinstance(builder, type) and issubclass(builder, RuntimeBuilder)):
+            problems.append(f"{subject} is not a RuntimeBuilder")
+
+
+def _defines(path: str) -> bool:
+    """Return whether the module of ``"module:Class"`` defines the class, without importing it."""
+    module_name, _, attribute = path.partition(":")
+    try:
+        spec = importlib.util.find_spec(module_name)
+    except ModuleNotFoundError:
+        return False
+    if spec is None or spec.origin is None:
+        return False
+    tree = ast.parse(Path(spec.origin).read_text())
+    return any(isinstance(node, ast.ClassDef) and node.name == attribute for node in tree.body)
+
+
+def _check_private_imports(module: ModuleType, problems: list[str]) -> None:
+    paths = getattr(module, "__path__", None) or [str(Path(module.__file__).parent)]
+    for root in paths:
+        for path in sorted(Path(root).rglob("*.py")):
+            for node in ast.walk(ast.parse(path.read_text(), filename=str(path))):
+                if isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+                    imported = [node.module]
+                elif isinstance(node, ast.Import):
+                    imported = [alias.name for alias in node.names]
+                else:
+                    continue
+                for name in imported:
+                    parts = name.split(".")
+                    if parts[0] == "digitalhub" and any(part.startswith("_") for part in parts[1:]):
+                        location = f"{path.relative_to(Path(root).parent)}:{node.lineno}"
+                        problems.append(f"{location} imports the private core module '{name}'; use digitalhub.plugins")
+
+
+def _check_entry_point(module: ModuleType, plugins: tuple[EntityPlugin, ...], problems: list[str]) -> None:
+    group = FactoryEnum.RUNTIMES_ENTRY_POINT_GROUP.value
+    for entry_point in entry_points(group=group):
+        if entry_point.module.split(".")[0] != module.__name__.split(".")[0]:
             continue
         try:
-            builder = import_object(runtime_builder) if isinstance(runtime_builder, str) else runtime_builder
+            loaded = entry_point.load()
         except Exception as e:  # noqa: BLE001 - reported as a contract problem
-            problems.append(f"runtime builder of kind '{plugin.kind}' cannot be imported: {e!r}")
+            problems.append(f"entry point '{entry_point.name}' ({entry_point.value}) cannot be loaded: {e!r}")
             continue
-        if not (isinstance(builder, type) and issubclass(builder, RuntimeBuilder)):
-            problems.append(f"runtime builder of kind '{plugin.kind}' is not a RuntimeBuilder: {builder!r}")
+        if plugins and isinstance(loaded, (tuple, list)) and tuple(loaded) == plugins:
+            return
+    problems.append(
+        f"no entry point in the '{group}' group loads the package's entity_plugins: declare it in pyproject.toml "
+        "and reinstall the package"
+    )

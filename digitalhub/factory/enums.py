@@ -12,7 +12,7 @@ class FactoryEnum(Enum):
     Enumeration for factory.
     """
 
-    RGX_RUNTIMES = r"digitalhub_runtime_.*"
+    RUNTIMES_ENTRY_POINT_GROUP = "digitalhub.runtimes"
     REG_ENTITIES = "digitalhub.entities.builders"
     REG_ENTITY_PLUGINS_VAR = "entity_plugins"
     REG_CRUD_PLUGINS_VAR = "crud_plugins"
