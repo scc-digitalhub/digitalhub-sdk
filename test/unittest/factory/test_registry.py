@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import importlib
+import threading
+from collections.abc import Callable
 from types import SimpleNamespace
 
 import pytest
@@ -95,3 +97,114 @@ def test_runtime_registration_rejects_legacy_builder_exports(monkeypatch) -> Non
 
     assert registry._entity_builders == {}
     assert registry._runtime_builders == {}
+
+
+# Time a competing thread is given to overtake a paused registration. With the
+# lock it stays blocked, so this only bounds the test; it never decides it.
+OVERTAKE_WINDOW = 0.5
+JOIN_TIMEOUT = 5
+
+
+def _install_fake_plugins(monkeypatch, calls: list[str] | None = None) -> BuilderRegistry:
+    """Return a fresh registry wired to one core kind and one runtime kind."""
+    registry = BuilderRegistry()
+    registry_module = importlib.import_module(BuilderRegistry.__module__)
+    modules = {
+        "digitalhub.entities.builders": SimpleNamespace(
+            entity_builders=(("core-entity", StubBuilder),),
+            generic_entity_builders=(),
+        ),
+        "fake_runtime": SimpleNamespace(
+            entity_plugins=(EntityPlugin(builder=RuntimeEntityStubBuilder, runtime_builder=StubBuilder),),
+        ),
+    }
+
+    def import_module(package: str):
+        if calls is not None:
+            calls.append(package)
+        return modules[package]
+
+    monkeypatch.setattr(registry_module, "list_runtimes", lambda: ["fake_runtime"])
+    monkeypatch.setattr(registry_module, "import_module", import_module)
+    return registry
+
+
+def _pause_first_registration(monkeypatch, registry: BuilderRegistry) -> tuple[threading.Event, threading.Event]:
+    """
+    Pause the first registration pass after it has copied the registry state.
+
+    Returns the event set once the pass is paused and the event that resumes it.
+    """
+    paused = threading.Event()
+    resume = threading.Event()
+    original = registry._register_entity_plugins
+
+    def register_entity_plugins(*args) -> None:
+        if not paused.is_set():
+            paused.set()
+            resume.wait(JOIN_TIMEOUT)
+        original(*args)
+
+    monkeypatch.setattr(registry, "_register_entity_plugins", register_entity_plugins)
+    return paused, resume
+
+
+def _start(target: Callable[[], object], errors: list[BaseException]) -> tuple[threading.Thread, threading.Event]:
+    done = threading.Event()
+
+    def run() -> None:
+        try:
+            target()
+        except BaseException as e:  # noqa: BLE001 - surfaced by the test
+            errors.append(e)
+        finally:
+            done.set()
+
+    thread = threading.Thread(target=run, daemon=True)
+    thread.start()
+    return thread, done
+
+
+def test_concurrent_registration_does_not_lose_runtime_builders(monkeypatch) -> None:
+    # Thread B copies the empty state and pauses; thread A then registers core
+    # and runtime kinds. Without a lock B's stale copy overwrites A's work while
+    # both flags end up True, so the runtime kind stays unresolvable forever.
+    registry = _install_fake_plugins(monkeypatch)
+    paused, resume = _pause_first_registration(monkeypatch, registry)
+    errors: list[BaseException] = []
+
+    thread_b, _ = _start(lambda: registry.get_entity_builder("core-entity"), errors)
+    assert paused.wait(JOIN_TIMEOUT)
+
+    thread_a, a_done = _start(lambda: registry.get_entity_builder("runtime-entity"), errors)
+    a_done.wait(OVERTAKE_WINDOW)
+    resume.set()
+
+    for thread in (thread_a, thread_b):
+        thread.join(JOIN_TIMEOUT)
+        assert not thread.is_alive()
+    assert errors == []
+    assert registry.get_entity_builder("core-entity").__class__ is StubBuilder
+    assert registry.get_entity_builder("runtime-entity").__class__ is RuntimeEntityStubBuilder
+    assert registry.get_runtime_builder("runtime-entity").__class__ is StubBuilder
+
+
+def test_concurrent_registration_runs_each_phase_once(monkeypatch) -> None:
+    calls: list[str] = []
+    registry = _install_fake_plugins(monkeypatch, calls)
+    paused, resume = _pause_first_registration(monkeypatch, registry)
+    errors: list[BaseException] = []
+
+    first, _ = _start(registry.get_shortcut_names, errors)
+    assert paused.wait(JOIN_TIMEOUT)
+
+    others = [_start(registry.get_shortcut_names, errors) for _ in range(7)]
+    for _, done in others:
+        done.wait(OVERTAKE_WINDOW / len(others))
+    resume.set()
+
+    for thread in [first, *(thread for thread, _ in others)]:
+        thread.join(JOIN_TIMEOUT)
+        assert not thread.is_alive()
+    assert errors == []
+    assert calls == ["digitalhub.entities.builders", "fake_runtime"]

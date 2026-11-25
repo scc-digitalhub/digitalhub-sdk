@@ -55,7 +55,7 @@ class DataitemTable(Dataitem):
         Any
             DataFrame.
         """
-        return get_store(self.spec.path).read_df(
+        return get_store(self.spec.path, self.project).read_df(
             self.spec.path,
             file_format,
             engine,
@@ -111,7 +111,7 @@ class DataitemTable(Dataitem):
         ... )
         's3://my-bucket/my-data.parquet'
         """
-        return get_store(self.spec.path).write_df(
+        return get_store(self.spec.path, self.project).write_df(
             df,
             self.spec.path,
             extension=extension,

@@ -4,43 +4,19 @@
 
 from __future__ import annotations
 
-from digitalhub.stores.client.client import Client
+import typing
 
+# Module import, resolved at call time: digitalhub.stores.session imports this
+# package, so it may still be initializing when this module loads.
+from digitalhub.stores import session as _session
 
-class ClientFactory:
-    """
-    Client factory class responsible for the default singleton instance.
-    """
-
-    def __init__(self) -> None:
-        self._client: Client | None = None
-
-    def reset(self) -> None:
-        client = self._client
-        self._client = None
-        if client is not None:
-            client.close()
-
-    def build(self) -> Client:
-        """
-        Create or return the default singleton client.
-
-        Returns
-        -------
-        Client
-            The shared client instance.
-        """
-        if self._client is None:
-            self._client = Client()
-        return self._client
-
-
-client_factory = ClientFactory()
+if typing.TYPE_CHECKING:
+    from digitalhub.stores.client.client import Client
 
 
 def get_client() -> Client:
     """
-    Get the default singleton client.
+    Get the user client of the session.
 
     Returns
     -------
@@ -49,8 +25,33 @@ def get_client() -> Client:
 
     Examples
     --------
-    Get default singleton client:
+    Get the client of the session:
     >>> client = get_client()
 
     """
-    return client_factory.build()
+    return _session.get_session().client()
+
+
+def resolve_client(project: str | None = None) -> Client:
+    """
+    Resolve the client for a backend operation at the time of the operation.
+
+    This is the single resolution point used by entities, contexts and
+    processors. Callers must not keep the result: resolving on every use is
+    what lets ``set_client_config()`` and future per-project credentials take
+    effect everywhere.
+
+    Parameters
+    ----------
+    project : str, optional
+        Name of the project the operation targets. ``None`` for operations
+        that are not scoped to a project's resources, such as listing or
+        creating projects. Every project currently shares the default client;
+        the parameter is the hook for per-project credentials.
+
+    Returns
+    -------
+    Client
+        The client to use for the operation.
+    """
+    return _session.get_session().client(project)

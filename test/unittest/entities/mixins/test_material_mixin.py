@@ -378,7 +378,7 @@ def test_material_file_download_uses_material_path_and_destination(
     result = entity.files[0].download(destination=destination, overwrite=True)
 
     assert result == "/downloaded/file.txt"
-    get_store.assert_called_once_with(material_path)
+    get_store.assert_called_once_with(material_path, entity.project)
     store.download.assert_called_once_with(
         expected_source,
         expected_destination,
@@ -416,7 +416,7 @@ def test_material_file_as_file_downloads_and_cleans_up(monkeypatch) -> None:
         assert download_dirs[0].is_dir()
 
     assert not download_dirs[0].exists()
-    get_store.assert_called_once_with("s3://bucket/material/")
+    get_store.assert_called_once_with("s3://bucket/material/", entity.project)
     store.download.assert_called_once_with(
         "s3://bucket/material/nested/file.txt",
         dst=download_dirs[0],

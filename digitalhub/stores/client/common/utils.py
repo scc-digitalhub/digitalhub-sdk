@@ -4,13 +4,16 @@
 
 from __future__ import annotations
 
+import typing
 from dataclasses import replace
 from typing import Any
 
-from digitalhub.stores.client.common.config import get_client_config
 from digitalhub.stores.client.http.request import BackendReq
 from digitalhub.utils.exceptions import ClientError
 from digitalhub.utils.uri_utils import has_remote_scheme
+
+if typing.TYPE_CHECKING:
+    from digitalhub.stores.client.common.config import ClientConfig
 
 
 def with_headers(request: BackendReq, **headers: str) -> BackendReq:
@@ -43,13 +46,20 @@ def with_urlencoded_content_type(request: BackendReq) -> BackendReq:
     return with_headers(request, **{"Content-Type": "application/x-www-form-urlencoded"})
 
 
-def with_pagination(request: BackendReq, partial: bool = False) -> BackendReq:
-    """Return a request with default pagination parameters filled in."""
+def with_default_timeout(request: BackendReq, timeout: float | tuple[float, float]) -> BackendReq:
+    """Return a request with ``timeout`` applied when it does not set its own."""
+    if request.timeout is not None:
+        return request
+    return replace(request, timeout=timeout)
+
+
+def with_pagination(request: BackendReq, config: ClientConfig, partial: bool = False) -> BackendReq:
+    """Return a request with the configured pagination parameters filled in."""
     params = dict(request.params)
-    params.setdefault("page", get_client_config().default_page_start)
+    params.setdefault("page", config.default_page_start)
     if not partial:
-        params.setdefault("size", get_client_config().default_page_size)
-        params.setdefault("sort", get_client_config().default_sort)
+        params.setdefault("size", config.default_page_size)
+        params.setdefault("sort", config.default_sort)
     return replace(request, params=params)
 
 

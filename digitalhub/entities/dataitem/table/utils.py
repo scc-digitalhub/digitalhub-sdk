@@ -25,6 +25,7 @@ def read_data_sample(
     file_format: str | None = None,
     read_df_params: dict | None = None,
     engine: str | None = None,
+    project: str | None = None,
 ) -> Dataframe:  # type: ignore
     """
     Evaluate and load data from source or return provided data.
@@ -37,6 +38,8 @@ def read_data_sample(
         The file format specification for reading the source (e.g., 'parquet', 'csv').
     engine : str
         The engine to use for reading the data (e.g., 'pandas', 'polars').
+    project : str, optional
+        Project the source belongs to, used to resolve its store.
 
     Returns
     -------
@@ -51,7 +54,7 @@ def read_data_sample(
     reader = get_reader_by_engine(engine)
     read_df_params[reader.get_limit_arg_name()] = 10
     store_source = source[0] if isinstance(source, list) else source
-    return get_store(store_source).read_df(
+    return get_store(store_source, project).read_df(
         source,
         file_format=file_format,
         engine=engine,
@@ -129,6 +132,7 @@ def process_sql_kwargs(
     name: str,
     sql: str,
     path: str | None = None,
+    project: str | None = None,
     **kwargs,
 ) -> dict:
     """
@@ -143,6 +147,8 @@ def process_sql_kwargs(
     path : str
         The destination path for the dataitem entity.
         If None, a path will be automatically generated.
+    project : str, optional
+        Project the dataitem belongs to, used to resolve the SQL store.
     **kwargs : dict
         Additional specification parameters to be processed
         and passed to the dataitem creation.
@@ -152,7 +158,7 @@ def process_sql_kwargs(
     dict
         The enhanced specification parameters for SQL-based dataitem creation.
     """
-    store: SqlStore = get_store(SqlSchemes.SQL.value + "://")
+    store: SqlStore = get_store(SqlSchemes.SQL.value + "://", project)
     engine = store.get_engine()
 
     if path is None:

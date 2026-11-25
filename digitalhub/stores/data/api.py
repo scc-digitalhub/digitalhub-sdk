@@ -8,7 +8,7 @@ import typing
 
 from digitalhub.stores.client.common.enums import ConfigurationVars
 from digitalhub.stores.client.factory import get_client
-from digitalhub.stores.data.builder import store_builder
+from digitalhub.stores.session import get_session
 
 if typing.TYPE_CHECKING:
     from digitalhub.stores.data._base.store import Store
@@ -47,18 +47,21 @@ def get_default_store_uri(project_config: dict | None = None) -> str:
     return store
 
 
-def get_store(uri: str) -> Store:
+def get_store(uri: str, project: str | None = None) -> Store:
     """
-    Returns a store instance for the given URI.
+    Returns the session's store for the given URI.
 
     Parameters
     ----------
     uri : str
         The URI to parse.
+    project : str, optional
+        Project the data belongs to. Pass it whenever it is known: stores
+        will use the project's credentials.
 
     Returns
     -------
     Store
         The store instance corresponding to the URI.
     """
-    return store_builder.get(uri)
+    return get_session().store(uri, project)

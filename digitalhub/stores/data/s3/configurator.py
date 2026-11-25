@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import typing
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -11,8 +12,10 @@ import boto3
 from botocore.config import Config
 
 from digitalhub.stores.client.common.enums import ConfigurationVars, CredentialsVars
-from digitalhub.stores.client.factory import get_client
 from digitalhub.utils.logger.logger import get_logger
+
+if typing.TYPE_CHECKING:
+    from digitalhub.stores.data._base.credentials import StoreCredentials
 
 logger = get_logger(__name__)
 
@@ -22,7 +25,8 @@ class S3StoreConfigurator:
     Configurator class for S3 store configuration and credentials management.
     """
 
-    def __init__(self):
+    def __init__(self, credentials: StoreCredentials) -> None:
+        self._credentials = credentials
         self._web_identity_credentials: dict | None = None
         self._web_identity_expiration: datetime | None = None
         self._validate()
@@ -81,7 +85,7 @@ class S3StoreConfigurator:
             ConfigurationVars.S3_REGION.value,
             ConfigurationVars.S3_SIGNATURE_VERSION.value,
         ]
-        creds = dict(get_client().get_credentials_and_config())
+        creds = dict(self._credentials.get())
         access_key = creds.get(CredentialsVars.S3_ACCESS_KEY_ID.value)
         secret_key = creds.get(CredentialsVars.S3_SECRET_ACCESS_KEY.value)
         if access_key and secret_key:
@@ -148,7 +152,7 @@ class S3StoreConfigurator:
         """
         Validate if all required keys are present in the configuration.
         """
-        current_keys = get_client().get_credentials_and_config()
+        current_keys = self._credentials.get()
         missing_keys = []
         endpoint = ConfigurationVars.S3_ENDPOINT_URL.value
         access_key = CredentialsVars.S3_ACCESS_KEY_ID.value
@@ -190,4 +194,4 @@ class S3StoreConfigurator:
         """
         Evaluate the status of retry lifecycle.
         """
-        return get_client().eval_retry(check_token_validity=True)
+        return self._credentials.refresh()

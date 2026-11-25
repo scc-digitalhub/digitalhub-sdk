@@ -37,11 +37,12 @@ def _get_config_file_path() -> Path:
 @dataclass
 class ClientConfig:
     """
-    Configuration for DHCore client behavior.
+    Tunable configuration for DHCore client behavior.
 
-    Centralizes all configurable values for HTTP requests, pagination,
-    and API interactions. All values have sensible defaults but can be
-    customized as needed.
+    Each client and credential provider receives its configuration
+    explicitly; ``set_client_config()`` only changes the configuration of
+    the default client built by ``get_client()``. Protocol constants shared
+    with the backend live in ``digitalhub.stores.client.common.constants``.
 
     Attributes
     ----------
@@ -52,7 +53,13 @@ class ClientConfig:
     default_page_size : int
         Default number of items per page. Default: 25
     default_sort : str
-        Default sorting for list operations. Default: "metadata.updated,DESC"
+        Default sorting for list operations. Default: "created,DESC"
+    config_ini_path : Path
+        Credentials file. Default: ``DH_CONFIG`` or ``~/.dhcore.ini``
+    config_env_path : str
+        Dotenv file next to the credentials file. Derived, not settable.
+    max_refresh_attempts : int
+        Maximum credential refresh attempts after an authentication failure. Default: 2
     """
 
     # HTTP request defaults
@@ -63,55 +70,17 @@ class ClientConfig:
     default_page_size: int = 25
     default_sort: str = "created,DESC"
 
-    # API level defaults
-    max_api_level: int = 20
-    min_api_level: int = 16
-    lib_version: int = 16
-
     # Configuration file path
     config_ini_path: Path = field(default_factory=_get_config_file_path)
     config_env_path: str = field(init=False)
 
-    # API structure
-    api_base: str = "/api/v1"
-    api_context: str = "/api/v1/-"
-    api_auth_check: str = "/api/auth"
-
-    ##################################
-    # AUTHENTICATION
-    ##################################
-
     # Authentication defaults
     max_refresh_attempts: int = 2
-    oauth2_grant_type: str = "refresh_token"
-    oauth2_scope: str = "credentials"
-
-    # PAT exchange defaults
-    pat_subject_token_type: str = "urn:ietf:params:oauth:token-type:pat"
-    pat_grant_type: str = "urn:ietf:params:oauth:grant-type:token-exchange"
-    pat_scope: str = "credentials"
 
     def __post_init__(self) -> None:
         if self.max_refresh_attempts < 1:
             raise ValueError("max_refresh_attempts must be at least 1")
         self.config_env_path = str(self.config_ini_path.parent / ".env")
-
-    # Prefixes vars
-    dhcore: str = "dhcore_"
-    oauth2: str = "oauth2_"
-
-    # Apis
-    well_known_openid_conf: str = "/.well-known/openid-configuration"
-
-    ###################################
-    # Configuration
-    ###################################
-
-    # Vars
-    k8s_resource_profiles: str = "k8s_resource_profiles"
-
-    # Apis
-    well_known_conf: str = "/.well-known/configuration"
 
 
 # Global default configuration instance
@@ -134,6 +103,9 @@ def set_client_config(config: ClientConfig) -> None:
     """
     Set the global client configuration.
 
+    The session builds its next client with it; clients already built keep
+    their own configuration.
+
     Parameters
     ----------
     config : ClientConfig
@@ -147,9 +119,9 @@ def set_client_config(config: ClientConfig) -> None:
     global _default_config
     _default_config = config
 
-    from digitalhub.stores.client.factory import client_factory
+    from digitalhub.stores.session import configure_session
 
-    client_factory.reset()
+    configure_session(config)
 
 
 def reset_client_config() -> None:

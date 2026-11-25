@@ -19,6 +19,7 @@ from boto3.exceptions import Boto3Error
 from boto3.s3.transfer import TransferConfig
 from botocore.exceptions import BotoCoreError, ClientError
 
+from digitalhub.stores.data._base.credentials import StoreCredentials
 from digitalhub.stores.data._base.store import Store
 from digitalhub.stores.data.s3.configurator import S3StoreConfigurator
 from digitalhub.stores.readers.data.api import get_reader_by_object
@@ -49,9 +50,9 @@ class S3Store(Store):
     artifacts on S3 based storage.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, credentials: StoreCredentials) -> None:
         super().__init__()
-        self._configurator: S3StoreConfigurator = S3StoreConfigurator()
+        self._configurator: S3StoreConfigurator = S3StoreConfigurator(credentials)
 
     ##############################
     # I/O methods

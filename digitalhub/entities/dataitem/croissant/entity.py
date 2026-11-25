@@ -65,7 +65,7 @@ class DataitemCroissant(Dataitem):
             Metadata file path.
         """
         if has_s3_scheme(self.spec.path):
-            store = get_store(self.spec.path)
+            store = get_store(self.spec.path, self.project)
             return store.download(
                 self.spec.path + "metadata.json",
                 self._context().root / self.ENTITY_TYPE,
@@ -96,7 +96,7 @@ class DataitemCroissant(Dataitem):
         if not has_s3_scheme(self.spec.path):
             return
         local_files = get_files_from_croissant(dataset, metadata_path)
-        store = get_store(self.spec.path)
+        store = get_store(self.spec.path, self.project)
         for file_path in local_files:
             relative_path = str(file_path).replace("\\", "/").lstrip("/")
             local_path = Path(relative_path)

@@ -106,7 +106,7 @@ class ContextEntityMaterialProcessor:
     @contextmanager
     def as_file(self, obj: MaterialProtocol) -> Generator[list[str], None, None]:
         """Temporarily download an entity's material into a local directory."""
-        store = get_store(obj.spec.path)
+        store = get_store(obj.spec.path, obj.project)
         with TemporaryDirectory() as temp_dir:
             yield store.download(obj.spec.path, dst=Path(temp_dir))
 
@@ -121,7 +121,7 @@ class ContextEntityMaterialProcessor:
             destination_path = get_context(obj.project).root / obj.ENTITY_TYPE
         else:
             destination_path = Path(destination)
-        return get_store(obj.spec.path).download(obj.spec.path, destination_path, overwrite=overwrite)
+        return get_store(obj.spec.path, obj.project).download(obj.spec.path, destination_path, overwrite=overwrite)
 
     def get_material_files(self, obj: MaterialProtocol) -> list[MaterialFile]:
         """Build file objects from backend metadata, falling back to entity status."""
@@ -157,6 +157,7 @@ class ContextEntityMaterialProcessor:
                 last_modified=file_info.get("last_modified"),
                 material_path=obj.spec.path,
                 context_root=context_root,
+                project=obj.project,
             )
             for file_info in (info or {} for info in files_info)
         ]
@@ -295,7 +296,7 @@ class ContextEntityMaterialProcessor:
         source: SourcesOrListOfSources,
         keep_dir_structure: bool,
     ) -> None:
-        store = get_store(obj.spec.path)
+        store = get_store(obj.spec.path, obj.project)
         paths = store.upload(
             source,
             obj.spec.path,

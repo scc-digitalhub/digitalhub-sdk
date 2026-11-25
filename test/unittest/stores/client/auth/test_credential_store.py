@@ -6,6 +6,7 @@ from unittest.mock import Mock
 
 import digitalhub.stores.client.auth.credential_store as credential_store_module
 from digitalhub.stores.client.auth.credential_store import CredentialStore
+from digitalhub.stores.client.common.config import ClientConfig
 from digitalhub.stores.client.common.enums import ConfigurationVars, CredentialsVars
 
 
@@ -29,7 +30,7 @@ def test_loads_configuration_and_credentials_with_file_precedence(monkeypatch) -
     monkeypatch.setattr(
         CredentialStore,
         "_read_file",
-        staticmethod(lambda variables, profile: {key: file_values.get(key) for key in variables}),
+        lambda self, variables: {key: file_values.get(key) for key in variables},
     )
 
     configuration = store.load_configuration()
@@ -52,7 +53,7 @@ def test_loads_credentials_from_environment_without_reading_file(monkeypatch) ->
     monkeypatch.setattr(
         CredentialStore,
         "_read_file",
-        staticmethod(lambda variables, profile: (_ for _ in ()).throw(AssertionError("file was read"))),
+        lambda self, variables: (_ for _ in ()).throw(AssertionError("file was read")),
     )
 
     credentials = store.load_credentials_from_env()
@@ -60,19 +61,20 @@ def test_loads_credentials_from_environment_without_reading_file(monkeypatch) ->
     assert credentials[CredentialsVars.DHCORE_ACCESS_TOKEN.value] == "env-access"
 
 
-def test_persists_credentials_to_the_active_profile(monkeypatch) -> None:
-    store = CredentialStore("default")
+def test_persists_credentials_to_the_active_profile(monkeypatch, tmp_path) -> None:
+    ini_file = tmp_path / "config.ini"
+    store = CredentialStore("default", ClientConfig(config_ini_path=ini_file))
     write_file = Mock()
     monkeypatch.setattr(credential_store_module, "write_file", write_file)
 
     credentials = {"dhcore_access_token": "new-access"}
     store.export_to_ini(credentials)
 
-    write_file.assert_called_once_with(credentials, "default")
+    write_file.assert_called_once_with(credentials, "default", ini_file)
 
 
-def test_delegates_dotenv_operations(monkeypatch) -> None:
-    store = CredentialStore("default")
+def test_delegates_dotenv_operations(monkeypatch, tmp_path) -> None:
+    store = CredentialStore("default", ClientConfig(config_ini_path=tmp_path / "config.ini"))
     write_dotenv = Mock()
     load_dotenv_file = Mock()
     monkeypatch.setattr(credential_store_module, "write_dotenv", write_dotenv)
@@ -82,5 +84,5 @@ def test_delegates_dotenv_operations(monkeypatch) -> None:
     store.export_to_env(credentials)
     store.load_to_env()
 
-    write_dotenv.assert_called_once_with(credentials)
-    load_dotenv_file.assert_called_once_with()
+    write_dotenv.assert_called_once_with(credentials, tmp_path / ".env")
+    load_dotenv_file.assert_called_once_with(tmp_path / ".env")

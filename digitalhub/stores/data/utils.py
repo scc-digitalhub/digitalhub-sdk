@@ -31,7 +31,7 @@ def get_store_by_entity(entity: MaterialProtocol) -> Store:
     Store
         The store associated with the given entity.
     """
-    return get_store(entity.spec.path)
+    return get_store(entity.spec.path, entity.project)
 
 
 def get_s3_client() -> S3Client:

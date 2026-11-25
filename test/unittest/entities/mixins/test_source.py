@@ -185,9 +185,12 @@ def test_source_entity_archives_directories_and_cleans_temporary_archive(tmp_pat
         "build_zip_path",
         lambda _entity, _name, **_kwargs: "store://project/entity/archive.zip",
     )
-    monkeypatch.setattr(source_entity_module, "get_store", lambda _destination: store)
+    get_store = Mock(return_value=store)
+    monkeypatch.setattr(source_entity_module, "get_store", get_store)
 
     entity._post_build_source_check()
+
+    get_store.assert_called_once_with("store://project/entity/archive.zip", "project")
 
     assert entity.spec.source.source == "store://project/entity/archive.zip"
     assert len(uploaded_paths) == 1

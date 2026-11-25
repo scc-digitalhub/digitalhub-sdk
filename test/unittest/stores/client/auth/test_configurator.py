@@ -5,6 +5,7 @@
 from unittest.mock import Mock
 
 from digitalhub.stores.client.auth.client_configurator import ClientConfigurator
+from digitalhub.stores.client.common.config import ClientConfig
 from digitalhub.stores.client.common.enums import AuthType
 from digitalhub.stores.client.http.request import BackendReq
 
@@ -68,3 +69,27 @@ def test_get_credentials_and_config_is_a_pure_getter() -> None:
 
     assert result == {"access_token": "current"}
     configurator._config_manager.get_credentials_and_config.assert_called_once_with()
+
+
+def test_configurator_passes_its_configuration_to_credentials_and_refresh(monkeypatch) -> None:
+    config = ClientConfig(max_refresh_attempts=1)
+    transport = Mock()
+    config_manager_factory = Mock()
+    refresh_service_factory = Mock()
+    module = "digitalhub.stores.client.auth.client_configurator"
+    monkeypatch.setattr(f"{module}.ConfigManager", config_manager_factory)
+    monkeypatch.setattr(f"{module}.AuthSession", Mock())
+    monkeypatch.setattr(f"{module}.TokenRefreshService", refresh_service_factory)
+
+    ClientConfigurator(transport, config)
+
+    config_manager_factory.assert_called_once_with(config)
+    assert refresh_service_factory.call_args.args[2:] == (transport, config)
+
+
+def test_invalidate_refreshes_credentials_and_reports_whether_to_retry() -> None:
+    configurator = ClientConfigurator.__new__(ClientConfigurator)
+    configurator.evaluate_refresh = Mock(return_value=False)
+
+    assert configurator.invalidate() is False
+    configurator.evaluate_refresh.assert_called_once_with()

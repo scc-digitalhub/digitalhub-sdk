@@ -6,7 +6,6 @@ from unittest.mock import Mock
 
 import pytest
 
-from digitalhub.stores.client.common.config import get_client_config
 from digitalhub.stores.client.common.enums import ApiType, BackendOp, HttpMethod, OpsType
 from digitalhub.stores.client.compiler.compiler import BackendOperationCompiler
 from digitalhub.stores.client.compiler.operation import ClientOp
@@ -74,7 +73,7 @@ def test_compile_resolves_operation_aliases(
     compiled = BackendOperationCompiler().compile(request)
 
     assert compiled.method == method.value
-    assert compiled.api == api.replace("/api/v1", get_client_config().api_base, 1)
+    assert compiled.api == api
     assert compiled.params == request_params
     assert compiled.operation == operation_type.value
 

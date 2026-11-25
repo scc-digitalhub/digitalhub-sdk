@@ -4,11 +4,14 @@
 
 from __future__ import annotations
 
+import itertools
 import os
 import typing
+from collections.abc import Mapping
 from contextvars import ContextVar
 from pathlib import Path
 from threading import Lock
+from types import MappingProxyType
 from typing import NamedTuple
 
 from digitalhub.entities._commons.enums import EntityTypes, Relationship
@@ -17,6 +20,7 @@ from digitalhub.runtimes.enums import RuntimeEnvVar
 from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
 from digitalhub.stores.client.compiler.targets import ContextEntityTarget
+from digitalhub.stores.client.factory import resolve_client
 from digitalhub.utils.exceptions import BackendError, ContextError
 from digitalhub.utils.logger.logger import get_logger
 
@@ -35,6 +39,18 @@ class _RunContextState(NamedTuple):
     logged: dict[str, str]
 
 
+# Run state local to the current execution context, for every Context, keyed by
+# Context._state_key. One module-level variable instead of one per Context:
+# contextvars.Context objects keep strong references to their variables, so
+# per-instance variables accumulated as contexts were rebuilt. The mapping is
+# replaced, never mutated, because copied execution contexts share it.
+_LOCAL_RUN_STATE: ContextVar[Mapping[int, _RunContextState]] = ContextVar(
+    "digitalhub_local_run_state",
+    default=MappingProxyType({}),
+)
+_STATE_KEYS = itertools.count()
+
+
 class Context:
     """
     Context class built from a Project instance.
@@ -46,8 +62,9 @@ class Context:
     ----------
     name : str
         The name of the project.
-    client : BaseClient
-        The client instance (local or remote) associated with the project.
+    client : Client
+        The client for the project's operations, resolved on every access
+        unless one was assigned explicitly.
     config : dict
         Project configuration profile.
     root : Path
@@ -58,18 +75,33 @@ class Context:
         Active Run in the current execution context, or the container run fallback.
     """
 
+    # Explicitly assigned client; None means resolve on every access.
+    _client_override: Client | None = None
+
     def __init__(self, project: Project) -> None:
         # Initialize context from project
         self.name: str = project.name
-        self.client: Client = project._client
         self.config: dict = project.spec.config
         self._root: Path = Path(project.spec.source)
 
         self._run_ctx_searched = False
         self._run_ctx_lock = Lock()
         self._fallback_state = _RunContextState(None, False, {})
-        context_name = f"digitalhub_run_context_{self.name}_{id(self)}"
-        self._run_context: ContextVar[_RunContextState | None] = ContextVar(context_name, default=None)
+        # Per instance, not per project: a rebuilt context starts without local
+        # state, and contexts with the same project name stay independent.
+        self._state_key = next(_STATE_KEYS)
+
+    @property
+    def client(self) -> Client:
+        """Return the assigned client, or resolve the project's client now."""
+        if self._client_override is not None:
+            return self._client_override
+        return resolve_client(self.name)
+
+    @client.setter
+    def client(self, value: Client | None) -> None:
+        """Pin a client to this context; ``None`` restores resolution on use."""
+        self._client_override = value
 
     @property
     def root(self) -> Path:
@@ -113,18 +145,29 @@ class Context:
     def logged(self, value: dict[str, str]) -> None:
         self._set_run_context_state(self._get_run_context_state()._replace(logged=value))
 
+    def _get_local_state(self) -> _RunContextState | None:
+        return _LOCAL_RUN_STATE.get().get(self._state_key)
+
+    def _set_local_state(self, state: _RunContextState | None) -> None:
+        states = dict(_LOCAL_RUN_STATE.get())
+        if state is None:
+            states.pop(self._state_key, None)
+        else:
+            states[self._state_key] = state
+        _LOCAL_RUN_STATE.set(MappingProxyType(states))
+
     def _get_run_context_state(self) -> _RunContextState:
-        state = self._run_context.get()
+        state = self._get_local_state()
         return state if state is not None else self._fallback_state
 
     def _set_run_context_state(self, state: _RunContextState) -> None:
-        if self._run_context.get() is None:
+        if self._get_local_state() is None:
             self._fallback_state = state
         else:
-            self._run_context.set(state)
+            self._set_local_state(state)
 
     def _resolve_run_ctx(self) -> None:
-        if self._run_context.get() is None and not self._run_ctx_searched:
+        if self._get_local_state() is None and not self._run_ctx_searched:
             self._search_run_ctx()
 
     def _mark_run_ctx_searched(self) -> None:
@@ -158,18 +201,17 @@ class Context:
         Set the current run.
         """
         self._mark_run_ctx_searched()
-        state = _RunContextState(run, True, {})
-        self._run_context.set(state)
+        self._set_local_state(_RunContextState(run, True, {}))
 
     def unset_run(self) -> None:
         """
         Clear the current run and reset running state and logged items.
         """
         self._mark_run_ctx_searched()
-        state = self._run_context.get()
+        state = self._get_local_state()
         if state is not None:
             state.logged.clear()
-        self._run_context.set(None)
+        self._set_local_state(None)
 
     def register_entity(self, obj: ContextEntity) -> ContextEntity:
         """

@@ -4,10 +4,14 @@
 
 from __future__ import annotations
 
+import typing
+
 from sqlalchemy.engine import URL
 
 from digitalhub.stores.client.common.enums import ConfigurationVars, CredentialsVars
-from digitalhub.stores.client.factory import get_client
+
+if typing.TYPE_CHECKING:
+    from digitalhub.stores.data._base.credentials import StoreCredentials
 
 
 class SqlStoreConfigurator:
@@ -15,7 +19,8 @@ class SqlStoreConfigurator:
     Configurator class for SQL store configuration and credentials management.
     """
 
-    def __init__(self):
+    def __init__(self, credentials: StoreCredentials) -> None:
+        self._credentials = credentials
         self._validate()
 
     def get_sql_conn_string(self) -> str:
@@ -66,7 +71,7 @@ class SqlStoreConfigurator:
             ConfigurationVars.DB_PORT.value,
             ConfigurationVars.DB_DATABASE.value,
         ]
-        creds = get_client().get_credentials_and_config()
+        creds = self._credentials.get()
         if lowercase_keys:
             return {key.lower(): creds.get(key) for key in keys}
         return {key: creds.get(key) for key in keys}
@@ -80,7 +85,7 @@ class SqlStoreConfigurator:
         bool
             True if a retry should be attempted, False otherwise.
         """
-        return get_client().eval_retry(check_token_validity=True)
+        return self._credentials.refresh()
 
     def _validate(self) -> None:
         """
@@ -93,7 +98,7 @@ class SqlStoreConfigurator:
             CredentialsVars.DB_USERNAME.value,
             CredentialsVars.DB_PASSWORD.value,
         ]
-        current_keys = get_client().get_credentials_and_config()
+        current_keys = self._credentials.get()
         missing_keys = []
         for key in required_keys:
             if key not in current_keys or current_keys[key] is None:

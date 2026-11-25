@@ -16,7 +16,6 @@ from digitalhub.utils.exceptions import ContextError
 def _context() -> Context:
     project = SimpleNamespace(
         name="project",
-        _client=Mock(),
         spec=SimpleNamespace(config={}, source="."),
     )
     return Context(project)
@@ -41,7 +40,7 @@ def test_project_context_io_is_lazy(monkeypatch, tmp_path) -> None:
     builder = ContextBuilder()
     run = SimpleNamespace(key="run-key", id="run-id")
 
-    monkeypatch.setattr("digitalhub.entities.project._base.entity.get_client", Mock(return_value=client))
+    monkeypatch.setattr("digitalhub.context.context.resolve_client", Mock(return_value=client))
     monkeypatch.setattr("digitalhub.entities.project._base.entity.build_context", builder.build)
     monkeypatch.setattr(
         "digitalhub.context.context.entity_factory.build_entity_from_dict",
@@ -189,3 +188,32 @@ def test_unset_before_fallback_read_disables_late_run_id_lookup(monkeypatch) -> 
     assert context.run is None
     assert not context.is_running
     get_run.assert_not_called()
+
+
+def test_run_state_uses_one_context_variable_for_all_contexts(monkeypatch) -> None:
+    # One ContextVar per Context accumulated in every execution context that
+    # set a run, since contextvars.Context keeps its variables alive.
+    monkeypatch.delenv(RuntimeEnvVar.RUN_ID.value, raising=False)
+    run = SimpleNamespace(key="run-key", id="run-id")
+
+    def exercise() -> int:
+        for _ in range(5):
+            context = _context()
+            context.set_run(run)
+            context.unset_run()
+        return len(contextvars.copy_context())
+
+    assert contextvars.Context().run(exercise) <= 1
+
+
+def test_rebuilt_context_does_not_inherit_local_run(monkeypatch) -> None:
+    monkeypatch.delenv(RuntimeEnvVar.RUN_ID.value, raising=False)
+    run = SimpleNamespace(key="run-key", id="run-id")
+
+    def exercise() -> tuple:
+        previous = _context()
+        previous.set_run(run)
+        rebuilt = _context()
+        return previous.run, rebuilt.run, rebuilt.is_running
+
+    assert contextvars.Context().run(exercise) == (run, None, False)

@@ -9,13 +9,17 @@ from dataclasses import dataclass, field
 from types import MappingProxyType
 from typing import Any
 
-from digitalhub.stores.client.common.config import get_client_config
 from digitalhub.stores.client.common.enums import OpsType
 
 
 @dataclass(frozen=True, slots=True)
 class BackendReq:
-    """Immutable description of one request sent to DigitalHub Core."""
+    """
+    Immutable description of one request sent to DigitalHub Core.
+
+    A ``timeout`` of ``None`` means the timeout configured on the client that
+    sends the request; it is filled in before the request reaches the transport.
+    """
 
     method: str
     api: str
@@ -23,7 +27,7 @@ class BackendReq:
     params: Mapping[str, Any] = field(default_factory=dict)
     headers: Mapping[str, str] = field(default_factory=dict)
     data: Any = None
-    timeout: float | tuple[float, float] | None = field(default_factory=lambda: get_client_config().http_timeout)
+    timeout: float | tuple[float, float] | None = None
     authenticate: bool = True
     options: Mapping[str, Any] = field(default_factory=dict)
 
@@ -45,7 +49,7 @@ class BackendReq:
             params=request_options.pop("params", {}),
             headers=request_options.pop("headers", {}),
             data=request_options.pop("data", None),
-            timeout=request_options.pop("timeout", get_client_config().http_timeout),
+            timeout=request_options.pop("timeout", None),
             authenticate=authenticate,
             options=request_options,
         )
