@@ -26,21 +26,22 @@ from digitalhub.entities.trigger.generic.builder import TriggerGenericBuilder
 from digitalhub.entities.trigger.lifecycle.builder import TriggerLifecycleBuilder
 from digitalhub.entities.trigger.scheduler.builder import TriggerSchedulerBuilder
 from digitalhub.entities.workflow.generic.builder import WorkflowGenericBuilder
+from digitalhub.factory.plugins import EntityPlugin
 
 crud_plugins = _crud_plugins
 
-entity_builders: tuple = (
-    (ArtifactArtifactBuilder.ENTITY_KIND, ArtifactArtifactBuilder),
-    (ContainerimageContainerimageBuilder.ENTITY_KIND, ContainerimageContainerimageBuilder),
-    (DataitemCroissantBuilder.ENTITY_KIND, DataitemCroissantBuilder),
-    (DataitemDataitemBuilder.ENTITY_KIND, DataitemDataitemBuilder),
-    (DataitemTableBuilder.ENTITY_KIND, DataitemTableBuilder),
-    (LogLogBuilder.ENTITY_KIND, LogLogBuilder),
-    (ModelModelBuilder.ENTITY_KIND, ModelModelBuilder),
-    (ProjectProjectBuilder.ENTITY_KIND, ProjectProjectBuilder),
-    (SecretSecretBuilder.ENTITY_KIND, SecretSecretBuilder),
-    (TriggerLifecycleBuilder.ENTITY_KIND, TriggerLifecycleBuilder),
-    (TriggerSchedulerBuilder.ENTITY_KIND, TriggerSchedulerBuilder),
+entity_plugins: tuple[EntityPlugin, ...] = (
+    EntityPlugin(builder=ArtifactArtifactBuilder),
+    EntityPlugin(builder=ContainerimageContainerimageBuilder),
+    EntityPlugin(builder=DataitemCroissantBuilder),
+    EntityPlugin(builder=DataitemDataitemBuilder),
+    EntityPlugin(builder=DataitemTableBuilder),
+    EntityPlugin(builder=LogLogBuilder),
+    EntityPlugin(builder=ModelModelBuilder),
+    EntityPlugin(builder=ProjectProjectBuilder),
+    EntityPlugin(builder=SecretSecretBuilder),
+    EntityPlugin(builder=TriggerLifecycleBuilder),
+    EntityPlugin(builder=TriggerSchedulerBuilder),
 )
 
 generic_entity_builders: tuple = (

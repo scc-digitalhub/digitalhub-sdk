@@ -3,6 +3,9 @@
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
+from collections.abc import Callable
+from typing import Any
+
 from digitalhub.entities.artifact._base.crud import new_artifact
 from digitalhub.entities.artifact.artifact.crud import log_artifact, register_artifact
 from digitalhub.entities.artifact.crud import (
@@ -112,153 +115,132 @@ from digitalhub.entities.workflow.crud import (
 )
 from digitalhub.factory.plugins import CrudPlugin
 
+# Each shortcut declares its project behaviour explicitly, so renaming a
+# function never changes it. ``CrudPlugin(f)`` is bound to the project and
+# refreshes it after the call.
 
-def _plugins(
-    functions: tuple[object, ...],
-) -> tuple[CrudPlugin, ...]:
-    return tuple(
-        CrudPlugin(
-            function,
-            project_bound="generic" not in function.__name__,
-            refresh_project=not function.__name__.startswith(("get_", "list_")),
-            validate_entity_project=function.__name__.startswith("update_"),
-            inject_context=function.__name__.startswith("import_"),
-        )
-        for function in functions
-    )
+
+def _read(function: Callable[..., Any]) -> CrudPlugin:
+    """Bound to the project; reading leaves the project as it is."""
+    return CrudPlugin(function, refresh_project=False)
+
+
+def _update(function: Callable[..., Any]) -> CrudPlugin:
+    """Bound to the project; the entity must belong to it."""
+    return CrudPlugin(function, validate_entity_project=True)
+
+
+def _import(function: Callable[..., Any]) -> CrudPlugin:
+    """Bound to the project; the project context replaces the target project."""
+    return CrudPlugin(function, inject_context=True)
+
+
+def _unbound(function: Callable[..., Any]) -> CrudPlugin:
+    """Not exposed as a project method."""
+    return CrudPlugin(function, project_bound=False)
 
 
 crud_plugins: tuple[CrudPlugin, ...] = (
-    *_plugins(
-        (
-            new_artifact,
-            log_artifact,
-            log_generic_artifact,
-            register_artifact,
-            register_generic_artifact,
-            get_artifact,
-            get_artifact_versions,
-            list_artifacts,
-            import_artifact,
-            load_artifact,
-            update_artifact,
-            delete_artifact,
-        ),
-    ),
-    *_plugins(
-        (
-            new_containerimage,
-            get_containerimage,
-            get_containerimage_versions,
-            list_containerimages,
-            import_containerimage,
-            load_containerimage,
-            update_containerimage,
-            delete_containerimage,
-        ),
-    ),
-    *_plugins(
-        (
-            new_dataitem,
-            log_generic_dataitem,
-            log_dataitem,
-            log_table,
-            log_croissant,
-            register_generic_dataitem,
-            register_dataitem,
-            register_table,
-            register_croissant,
-            get_dataitem,
-            get_dataitem_versions,
-            list_dataitems,
-            import_dataitem,
-            load_dataitem,
-            update_dataitem,
-            delete_dataitem,
-        ),
-    ),
-    *_plugins(
-        (
-            new_function,
-            get_function,
-            get_function_versions,
-            list_functions,
-            import_function,
-            load_function,
-            update_function,
-            delete_function,
-        ),
-    ),
-    *_plugins(
-        (
-            new_model,
-            log_generic_model,
-            log_model,
-            register_generic_model,
-            register_model,
-            get_model,
-            get_model_versions,
-            list_models,
-            import_model,
-            load_model,
-            update_model,
-            delete_model,
-        ),
-    ),
-    *_plugins(
-        (
-            new_run,
-            get_run,
-            list_runs,
-            import_run,
-            load_run,
-            update_run,
-            delete_run,
-        ),
-    ),
-    *_plugins(
-        (
-            new_secret,
-            get_secret,
-            list_secrets,
-            import_secret,
-            load_secret,
-            update_secret,
-            delete_secret,
-        ),
-    ),
-    *_plugins(
-        (
-            new_task,
-            get_task,
-            list_tasks,
-            import_task,
-            load_task,
-            update_task,
-            delete_task,
-        ),
-    ),
-    *_plugins(
-        (
-            new_trigger,
-            get_trigger,
-            list_triggers,
-            import_trigger,
-            load_trigger,
-            update_trigger,
-            delete_trigger,
-        ),
-    ),
-    *_plugins(
-        (
-            new_workflow,
-            get_workflow,
-            get_workflow_versions,
-            list_workflows,
-            import_workflow,
-            load_workflow,
-            update_workflow,
-            delete_workflow,
-        ),
-    ),
+    # Artifact
+    CrudPlugin(new_artifact),
+    CrudPlugin(log_artifact),
+    _unbound(log_generic_artifact),
+    CrudPlugin(register_artifact),
+    _unbound(register_generic_artifact),
+    _read(get_artifact),
+    _read(get_artifact_versions),
+    _read(list_artifacts),
+    _import(import_artifact),
+    CrudPlugin(load_artifact),
+    _update(update_artifact),
+    CrudPlugin(delete_artifact),
+    # Container image
+    CrudPlugin(new_containerimage),
+    _read(get_containerimage),
+    _read(get_containerimage_versions),
+    _read(list_containerimages),
+    _import(import_containerimage),
+    CrudPlugin(load_containerimage),
+    _update(update_containerimage),
+    CrudPlugin(delete_containerimage),
+    # Dataitem
+    CrudPlugin(new_dataitem),
+    _unbound(log_generic_dataitem),
+    CrudPlugin(log_dataitem),
+    CrudPlugin(log_table),
+    CrudPlugin(log_croissant),
+    _unbound(register_generic_dataitem),
+    CrudPlugin(register_dataitem),
+    CrudPlugin(register_table),
+    CrudPlugin(register_croissant),
+    _read(get_dataitem),
+    _read(get_dataitem_versions),
+    _read(list_dataitems),
+    _import(import_dataitem),
+    CrudPlugin(load_dataitem),
+    _update(update_dataitem),
+    CrudPlugin(delete_dataitem),
+    # Function
+    CrudPlugin(new_function),
+    _read(get_function),
+    _read(get_function_versions),
+    _read(list_functions),
+    _import(import_function),
+    CrudPlugin(load_function),
+    _update(update_function),
+    CrudPlugin(delete_function),
+    # Model
+    CrudPlugin(new_model),
+    _unbound(log_generic_model),
+    CrudPlugin(log_model),
+    _unbound(register_generic_model),
+    CrudPlugin(register_model),
+    _read(get_model),
+    _read(get_model_versions),
+    _read(list_models),
+    _import(import_model),
+    CrudPlugin(load_model),
+    _update(update_model),
+    CrudPlugin(delete_model),
+    # Run
+    CrudPlugin(new_run),
+    _read(get_run),
+    _read(list_runs),
+    _import(import_run),
+    CrudPlugin(load_run),
+    _update(update_run),
+    CrudPlugin(delete_run),
+    # Secret
+    CrudPlugin(new_secret),
+    _read(get_secret),
+    _read(list_secrets),
+    _import(import_secret),
+    CrudPlugin(load_secret),
+    _update(update_secret),
+    CrudPlugin(delete_secret),
+    # Task
+    CrudPlugin(new_task),
+    _read(get_task),
+    _read(list_tasks),
+    _import(import_task),
+    CrudPlugin(load_task),
+    _update(update_task),
+    CrudPlugin(delete_task),
+    # Trigger
+    CrudPlugin(new_trigger),
+    _read(get_trigger),
+    _read(list_triggers),
+    _import(import_trigger),
+    CrudPlugin(load_trigger),
+    _update(update_trigger),
+    CrudPlugin(delete_trigger),
+    # Workflow
+    CrudPlugin(new_workflow),
+    _read(get_workflow),
+    _read(get_workflow_versions),
+    _read(list_workflows),
+    _import(import_workflow),
+    CrudPlugin(load_workflow),
+    _update(update_workflow),
+    CrudPlugin(delete_workflow),
 )

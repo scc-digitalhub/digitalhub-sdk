@@ -32,11 +32,18 @@ class CrudPlugin:
 
 @dataclass(frozen=True)
 class EntityPlugin:
-    """Registration bundle for an entity kind and its optional runtime support."""
+    """
+    Registration bundle for an entity kind and its optional runtime support.
 
-    builder: EntityBuilder
+    ``runtime_builder`` is either the class or its ``"package.module:Class"``
+    path. Use the path when the runtime imports execution dependencies that may
+    be missing: the entity still registers, and the import error is reported,
+    with its cause, when the runtime is first used.
+    """
+
+    builder: type[EntityBuilder]
     shortcuts: tuple[CrudPlugin, ...] = ()
-    runtime_builder: type[RuntimeBuilder] | None = None
+    runtime_builder: type[RuntimeBuilder] | str | None = None
 
     @property
     def kind(self) -> str:

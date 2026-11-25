@@ -43,7 +43,7 @@ def test_entity_plugin_registers_builder_and_resolves_shortcut(monkeypatch) -> N
         registry_module,
         "import_module",
         lambda package: (
-            SimpleNamespace(entity_builders=(), generic_entity_builders=())
+            SimpleNamespace(entity_plugins=(), generic_entity_builders=())
             if package == "digitalhub.entities.builders"
             else SimpleNamespace(entity_plugins=(plugin,))
             if package == "stub_runtime"
@@ -81,7 +81,7 @@ def test_shortcut_collision_is_rejected(monkeypatch) -> None:
     registry_module = importlib.import_module(BuilderRegistry.__module__)
     monkeypatch.setattr(registry_module, "list_runtimes", lambda: ["one", "two"])
     modules = {
-        "digitalhub.entities.builders": SimpleNamespace(entity_builders=(), generic_entity_builders=()),
+        "digitalhub.entities.builders": SimpleNamespace(entity_plugins=(), generic_entity_builders=()),
         "one": SimpleNamespace(entity_plugins=(plugin,)),
         "two": SimpleNamespace(entity_plugins=(second_plugin,)),
     }
@@ -98,7 +98,7 @@ def test_core_shortcut_does_not_import_runtime_plugins(monkeypatch) -> None:
     registry = BuilderRegistry()
     registry_module = importlib.import_module(BuilderRegistry.__module__)
     core_module = SimpleNamespace(
-        entity_builders=(),
+        entity_plugins=(),
         generic_entity_builders=(),
         crud_plugins=(CrudPlugin(core_shortcut),),
     )
@@ -313,3 +313,22 @@ def test_core_read_shortcuts_do_not_refresh_project() -> None:
     assert all(not plugin.refresh_project for plugin in read_plugins)
     assert write_plugins
     assert all(plugin.refresh_project for plugin in write_plugins)
+
+
+def test_hasattr_on_the_package_survives_a_broken_runtime(monkeypatch) -> None:
+    import digitalhub
+
+    registry = BuilderRegistry()
+    registry_module = importlib.import_module(BuilderRegistry.__module__)
+
+    def import_module(package: str):
+        if package == "digitalhub_runtime_broken":
+            raise RuntimeError("broken runtime")
+        return importlib.import_module(package)
+
+    monkeypatch.setattr(registry_module, "list_runtimes", lambda: ["digitalhub_runtime_broken"])
+    monkeypatch.setattr(registry_module, "import_module", import_module)
+    monkeypatch.setattr(digitalhub, "_registry", registry)
+
+    assert not hasattr(digitalhub, "new_function_missing")
+    assert digitalhub.new_artifact is registry.get_shortcut("new_artifact")

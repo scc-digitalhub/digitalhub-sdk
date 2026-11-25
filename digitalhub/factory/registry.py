@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, TypeVar
 
 from digitalhub.factory.enums import FactoryEnum
 from digitalhub.factory.plugins import CrudPlugin, EntityPlugin
-from digitalhub.factory.utils import import_module, list_runtimes
+from digitalhub.factory.utils import import_module, import_object, list_runtimes
 from digitalhub.utils.exceptions import BuilderError
 
 if TYPE_CHECKING:
@@ -31,12 +31,17 @@ class BuilderRegistry:
     copies the current dictionaries, fills the copies and swaps them in before
     raising its flag, so published dictionaries are never mutated in place and
     lookups can read them without the lock.
+
+    A runtime builder declared as a ``"module:Class"`` path is imported on its
+    first lookup, so a runtime whose execution dependencies are missing still
+    registers its entities and reports the import error when it is used.
     """
 
     def __init__(self) -> None:
         self._entity_builders: dict[str, EntityBuilder | RuntimeEntityBuilder] = {}
         self._generic_entity_builders: dict[str, EntityBuilder | RuntimeEntityBuilder] = {}
-        self._runtime_builders: dict[str, RuntimeBuilder] = {}
+        # A str value is a runtime builder path that has not been imported yet.
+        self._runtime_builders: dict[str, RuntimeBuilder | str] = {}
         self._crud_plugins: dict[str, CrudPlugin] = {}
         self._entities_registered = False
         self._runtimes_registered = False
@@ -99,17 +104,46 @@ class BuilderRegistry:
         if kind not in self._runtime_builders and not self._runtimes_registered:
             self._ensure_runtimes_registered()
         try:
-            return self._runtime_builders[kind]
+            builder = self._runtime_builders[kind]
         except KeyError as e:
             raise BuilderError(f"Runtime builder for kind '{kind}' not found.") from e
+        if isinstance(builder, str):
+            return self._load_runtime_builder(kind)
+        return builder
+
+    def _load_runtime_builder(self, kind: str) -> RuntimeBuilder:
+        """Import a runtime builder declared by path and cache its instance."""
+        with self._lock:
+            builder = self._runtime_builders[kind]
+            if not isinstance(builder, str):
+                return builder
+            try:
+                instance = import_object(builder)()
+            except Exception as e:
+                raise BuilderError(f"Runtime builder for kind '{kind}' is not available: {e}") from e
+            runtime_builders = self._runtime_builders.copy()
+            runtime_builders[kind] = instance
+            self._runtime_builders = runtime_builders
+            return instance
 
     def get_shortcut(self, name: str) -> Callable[..., Any]:
         """Retrieve a registered shortcut."""
         return self.get_shortcut_spec(name).function
 
     def get_shortcut_spec(self, name: str) -> CrudPlugin:
-        """Retrieve the declaration for a registered shortcut."""
-        self._ensure_shortcut_registered(name)
+        """
+        Retrieve the declaration for a registered shortcut.
+
+        Shortcuts are looked up as attributes, so every failure is an
+        ``AttributeError``: a broken plugin is attached as the cause, and dunder
+        probes (``hasattr(obj, "__wrapped__")``) never start plugin discovery.
+        """
+        if name.startswith("__"):
+            raise AttributeError(f"Shortcut '{name}' not found.")
+        try:
+            self._ensure_shortcut_registered(name)
+        except BuilderError as e:
+            raise AttributeError(f"Shortcut '{name}' not available, plugin discovery failed: {e}") from e
         try:
             return self._crud_plugins[name]
         except KeyError as e:
@@ -160,16 +194,16 @@ class BuilderRegistry:
         runtime_builders = self._runtime_builders.copy()
         crud_plugins = self._crud_plugins.copy()
 
-        entity_plugins = getattr(module, FactoryEnum.REG_ENTITY_PLUGINS_VAR.value, ())
-        self._register_entity_plugins(entity_plugins, entity_builders, crud_plugins, runtime_builders)
+        self._register_entity_plugins(
+            getattr(module, FactoryEnum.REG_ENTITY_PLUGINS_VAR.value),
+            entity_builders,
+            crud_plugins,
+            runtime_builders,
+        )
         self._register_crud_plugins(
             getattr(module, FactoryEnum.REG_CRUD_PLUGINS_VAR.value, ()),
             crud_plugins,
         )
-
-        if not entity_plugins:
-            for name, builder in getattr(module, FactoryEnum.REG_ENTITIES_VAR.value, []):
-                self._add_builder(entity_builders, name, builder, f"Builder {name} already exists.")
 
         for entity_type, builder in getattr(module, FactoryEnum.REG_GENERIC_ENTITIES_VAR.value, []):
             self._add_builder(
@@ -225,7 +259,7 @@ class BuilderRegistry:
         entity_plugins: Iterable[EntityPlugin],
         entity_builders: dict[str, EntityBuilder | RuntimeEntityBuilder],
         crud_plugins: dict[str, CrudPlugin],
-        runtime_builders: dict[str, RuntimeBuilder],
+        runtime_builders: dict[str, RuntimeBuilder | str],
     ) -> None:
         for plugin in entity_plugins:
             self._add_builder(
@@ -234,12 +268,13 @@ class BuilderRegistry:
                 plugin.builder,
                 f"Builder {plugin.kind} already exists.",
             )
-            if plugin.runtime_builder is not None:
-                self._add_builder(
-                    runtime_builders,
-                    plugin.kind,
-                    plugin.runtime_builder,
-                    f"Runtime builder for {plugin.kind} already exists.",
+            runtime_builder = plugin.runtime_builder
+            if runtime_builder is not None:
+                if plugin.kind in runtime_builders:
+                    raise BuilderError(f"Runtime builder for {plugin.kind} already exists.")
+                # A path stays a str until its first lookup.
+                runtime_builders[plugin.kind] = (
+                    runtime_builder if isinstance(runtime_builder, str) else runtime_builder()
                 )
             for crud_plugin in plugin.shortcuts:
                 self._add_crud_plugins(crud_plugins, crud_plugin)

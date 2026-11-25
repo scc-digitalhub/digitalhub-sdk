@@ -18,6 +18,10 @@ class StubBuilder:
     pass
 
 
+class CoreEntityStubBuilder:
+    ENTITY_KIND = "core-entity"
+
+
 class RuntimeEntityStubBuilder:
     ENTITY_KIND = "runtime-entity"
 
@@ -30,11 +34,11 @@ class BrokenBuilder:
 def test_core_registration_rolls_back_partial_state_and_can_retry(monkeypatch) -> None:
     registry = BuilderRegistry()
     failing_module = SimpleNamespace(
-        entity_builders=(("entity", StubBuilder),),
+        entity_plugins=(EntityPlugin(builder=CoreEntityStubBuilder),),
         generic_entity_builders=(("generic", BrokenBuilder),),
     )
     successful_module = SimpleNamespace(
-        entity_builders=(("entity", StubBuilder),),
+        entity_plugins=(EntityPlugin(builder=CoreEntityStubBuilder),),
         generic_entity_builders=(("generic", StubBuilder),),
     )
     modules = iter((failing_module, successful_module))
@@ -49,7 +53,7 @@ def test_core_registration_rolls_back_partial_state_and_can_retry(monkeypatch) -
 
     registry._ensure_entities_registered()
 
-    assert set(registry._entity_builders) == {"entity"}
+    assert set(registry._entity_builders) == {"core-entity"}
     assert set(registry._generic_entity_builders) == {"generic"}
 
 
@@ -111,7 +115,7 @@ def _install_fake_plugins(monkeypatch, calls: list[str] | None = None) -> Builde
     registry_module = importlib.import_module(BuilderRegistry.__module__)
     modules = {
         "digitalhub.entities.builders": SimpleNamespace(
-            entity_builders=(("core-entity", StubBuilder),),
+            entity_plugins=(EntityPlugin(builder=CoreEntityStubBuilder),),
             generic_entity_builders=(),
         ),
         "fake_runtime": SimpleNamespace(
@@ -184,7 +188,7 @@ def test_concurrent_registration_does_not_lose_runtime_builders(monkeypatch) -> 
         thread.join(JOIN_TIMEOUT)
         assert not thread.is_alive()
     assert errors == []
-    assert registry.get_entity_builder("core-entity").__class__ is StubBuilder
+    assert registry.get_entity_builder("core-entity").__class__ is CoreEntityStubBuilder
     assert registry.get_entity_builder("runtime-entity").__class__ is RuntimeEntityStubBuilder
     assert registry.get_runtime_builder("runtime-entity").__class__ is StubBuilder
 
@@ -208,3 +212,88 @@ def test_concurrent_registration_runs_each_phase_once(monkeypatch) -> None:
         assert not thread.is_alive()
     assert errors == []
     assert calls == ["digitalhub.entities.builders", "fake_runtime"]
+
+
+def test_core_registration_requires_entity_plugins(monkeypatch) -> None:
+    registry = BuilderRegistry()
+    legacy_core = SimpleNamespace(entity_builders=(("core-entity", CoreEntityStubBuilder),), generic_entity_builders=())
+    registry_module = importlib.import_module(BuilderRegistry.__module__)
+    monkeypatch.setattr(registry_module, "import_module", lambda _: legacy_core)
+
+    with pytest.raises(BuilderError, match="Failed to register core entities"):
+        registry._ensure_entities_registered()
+
+
+def _registry_with_runtime_plugin(monkeypatch, plugin: EntityPlugin) -> BuilderRegistry:
+    registry = BuilderRegistry()
+    registry_module = importlib.import_module(BuilderRegistry.__module__)
+    modules = {
+        "digitalhub.entities.builders": SimpleNamespace(entity_plugins=(), generic_entity_builders=()),
+        "fake_runtime": SimpleNamespace(entity_plugins=(plugin,)),
+    }
+    monkeypatch.setattr(registry_module, "list_runtimes", lambda: ["fake_runtime"])
+    monkeypatch.setattr(registry_module, "import_module", lambda package: modules[package])
+    return registry
+
+
+def test_runtime_builder_path_is_imported_on_first_use(monkeypatch) -> None:
+    imported: list[str] = []
+    registry_module = importlib.import_module(BuilderRegistry.__module__)
+
+    def import_object(path: str):
+        imported.append(path)
+        return StubBuilder
+
+    monkeypatch.setattr(registry_module, "import_object", import_object)
+    registry = _registry_with_runtime_plugin(
+        monkeypatch,
+        EntityPlugin(builder=RuntimeEntityStubBuilder, runtime_builder="fake_runtime.runtimes:Builder"),
+    )
+
+    assert registry.get_entity_builder("runtime-entity").__class__ is RuntimeEntityStubBuilder
+    assert imported == []
+
+    first = registry.get_runtime_builder("runtime-entity")
+
+    assert first.__class__ is StubBuilder
+    assert registry.get_runtime_builder("runtime-entity") is first
+    assert imported == ["fake_runtime.runtimes:Builder"]
+
+
+def test_unavailable_runtime_builder_reports_its_cause(monkeypatch) -> None:
+    # Runtimes used to swallow this ImportError and register no runtime, so
+    # local execution failed with "not found" and no trace of the real cause.
+    registry = _registry_with_runtime_plugin(
+        monkeypatch,
+        EntityPlugin(builder=RuntimeEntityStubBuilder, runtime_builder="missing_runtime_module_xyz:Builder"),
+    )
+
+    assert registry.get_entity_builder("runtime-entity").__class__ is RuntimeEntityStubBuilder
+    with pytest.raises(BuilderError, match="'runtime-entity' is not available: No module named") as error:
+        registry.get_runtime_builder("runtime-entity")
+
+    assert isinstance(error.value.__cause__, ModuleNotFoundError)
+
+
+def test_shortcut_lookup_raises_only_attribute_errors(monkeypatch) -> None:
+    registry = BuilderRegistry()
+    registry_module = importlib.import_module(BuilderRegistry.__module__)
+    discovered: list[str] = []
+
+    def import_module(package: str):
+        discovered.append(package)
+        if package == "broken_runtime":
+            raise RuntimeError("broken runtime")
+        return SimpleNamespace(entity_plugins=(), generic_entity_builders=())
+
+    monkeypatch.setattr(registry_module, "list_runtimes", lambda: ["broken_runtime"])
+    monkeypatch.setattr(registry_module, "import_module", import_module)
+
+    with pytest.raises(AttributeError):
+        registry.get_shortcut_spec("__wrapped__")
+    assert discovered == []
+
+    with pytest.raises(AttributeError, match="plugin discovery failed") as error:
+        registry.get_shortcut_spec("new_function_python")
+
+    assert isinstance(error.value.__cause__, BuilderError)

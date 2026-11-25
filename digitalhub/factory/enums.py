@@ -14,7 +14,6 @@ class FactoryEnum(Enum):
 
     RGX_RUNTIMES = r"digitalhub_runtime_.*"
     REG_ENTITIES = "digitalhub.entities.builders"
-    REG_ENTITIES_VAR = "entity_builders"
     REG_ENTITY_PLUGINS_VAR = "entity_plugins"
     REG_CRUD_PLUGINS_VAR = "crud_plugins"
     REG_GENERIC_ENTITIES_VAR = "generic_entity_builders"
