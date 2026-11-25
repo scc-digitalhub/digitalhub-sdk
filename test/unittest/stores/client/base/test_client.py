@@ -10,7 +10,8 @@ import pytest
 import digitalhub.stores.client.client as client_module
 import digitalhub.stores.client.compiler.compiler as compiler_module
 from digitalhub.stores.client.client import Client
-from digitalhub.stores.client.common.config import get_client_config
+from digitalhub.stores.client.common.config import ClientConfig
+from digitalhub.stores.client.common.constants import K8S_RESOURCE_PROFILES_KEY, WELL_KNOWN_CONFIGURATION
 from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
 from digitalhub.stores.client.compiler.options import DeleteAllVersionsOptions, OpaqueOptions
@@ -27,15 +28,13 @@ def client_with_handler(monkeypatch):
     transport = Mock()
     http_handler = Mock()
 
-    configurator_factory = Mock(return_value=configurator)
+    config = ClientConfig()
     handler_factory = Mock(return_value=http_handler)
-    monkeypatch.setattr(client_module, "HttpTransport", Mock(return_value=transport))
-    monkeypatch.setattr(client_module, "ClientConfigurator", configurator_factory)
     monkeypatch.setattr(compiler_module, "ClientApiBuilder", lambda: api_builder)
     monkeypatch.setattr(compiler_module, "ClientParametersBuilder", lambda: params_builder)
     monkeypatch.setattr(client_module, "HttpRequestHandler", handler_factory)
 
-    client = Client()
+    client = Client(transport, configurator, config)
     return (
         client,
         configurator,
@@ -43,25 +42,15 @@ def client_with_handler(monkeypatch):
         params_builder,
         transport,
         http_handler,
-        configurator_factory,
+        config,
         handler_factory,
     )
 
 
-def test_client_builds_shared_transport(client_with_handler) -> None:
-    _, configurator, _, _, transport, _, configurator_factory, handler_factory = client_with_handler
+def test_client_wires_injected_transport_auth_and_config(client_with_handler) -> None:
+    _, configurator, _, _, transport, _, config, handler_factory = client_with_handler
 
-    client_module.HttpTransport.assert_called_once_with()
-    configurator_factory.assert_called_once_with(transport)
-    handler_factory.assert_called_once_with(configurator, transport)
-
-
-def test_client_close_closes_transport(client_with_handler) -> None:
-    client, _, _, _, transport, _, _, _ = client_with_handler
-
-    client.close()
-
-    transport.close.assert_called_once_with()
+    handler_factory.assert_called_once_with(configurator, transport, config)
 
 
 def test_client_operation_contains_only_semantic_request_data() -> None:
@@ -172,7 +161,7 @@ def test_execute_compiles_delete_all_versions(client_with_handler) -> None:
 def test_get_k8s_resource_profiles_uses_the_http_handler(client_with_handler) -> None:
     client, _, _, _, _, http_handler, _, _ = client_with_handler
     http_handler.execute_request.return_value = {
-        get_client_config().k8s_resource_profiles: ["gpu", "cpu"],
+        K8S_RESOURCE_PROFILES_KEY: ["gpu", "cpu"],
     }
 
     result = client.get_k8s_resource_profiles()
@@ -181,7 +170,7 @@ def test_get_k8s_resource_profiles_uses_the_http_handler(client_with_handler) ->
     http_handler.execute_request.assert_called_once_with(
         BackendReq(
             method="GET",
-            api=get_client_config().well_known_conf,
+            api=WELL_KNOWN_CONFIGURATION,
             operation="config.k8s_resource_profiles",
         )
     )

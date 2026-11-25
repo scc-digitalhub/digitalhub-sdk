@@ -154,6 +154,7 @@ def log_table(
                 file_format,
                 read_df_params,
                 engine,
+                project=project,
             )
             kwargs = process_data_kwargs(
                 project,
@@ -206,6 +207,7 @@ def log_table(
                 name,
                 sql=sql,
                 path=path,
+                project=project,
                 **kwargs,
             )
             return material_processor.log_dataitem_sql(

@@ -7,14 +7,27 @@ from __future__ import annotations
 import typing
 from dataclasses import replace
 
-from digitalhub.stores.client.common.config import get_client_config
+from digitalhub.stores.client.common.config import ClientConfig
+from digitalhub.stores.client.common.constants import (
+    API_AUTH_CHECK,
+    OAUTH2_GRANT_TYPE,
+    OAUTH2_SCOPE,
+    PAT_GRANT_TYPE,
+    PAT_SCOPE,
+    PAT_SUBJECT_TOKEN_TYPE,
+    WELL_KNOWN_OPENID_CONFIGURATION,
+)
 from digitalhub.stores.client.common.enums import (
     AuthType,
     ConfigurationVars,
     CredentialsVars,
     OpsType,
 )
-from digitalhub.stores.client.common.utils import sanitize_endpoint, with_urlencoded_content_type
+from digitalhub.stores.client.common.utils import (
+    sanitize_endpoint,
+    with_default_timeout,
+    with_urlencoded_content_type,
+)
 from digitalhub.stores.client.http.errors import raise_for_response_error
 from digitalhub.stores.client.http.request import BackendReq
 from digitalhub.stores.client.http.response import parse_response_json
@@ -41,10 +54,16 @@ class TokenRefreshService:
         config_manager: ConfigManager,
         auth_session: AuthSession,
         transport: HttpTransport,
+        config: ClientConfig | None = None,
     ) -> None:
         self._config_manager = config_manager
         self._auth_session = auth_session
         self._transport = transport
+        self._config = config if config is not None else ClientConfig()
+
+    def _send(self, backend_request: BackendReq) -> Response:
+        """Send an auth request with the configured timeout."""
+        return self._transport.execute(with_default_timeout(backend_request, self._config.http_timeout))
 
     def refresh_credentials(self) -> None:
         """
@@ -104,7 +123,7 @@ class TokenRefreshService:
                 return False
             logger.debug("Current token is invalid or expired, attempting refresh.")
 
-        max_attempts = get_client_config().max_refresh_attempts
+        max_attempts = self._config.max_refresh_attempts
 
         for attempt in range(1, max_attempts + 1):
             logger.debug(f"Starting creds refresh attempt {attempt}.")
@@ -157,7 +176,7 @@ class TokenRefreshService:
         url = self._config_manager.configuration.get(ConfigurationVars.DHCORE_ENDPOINT.value)
         if url is None:
             raise ClientError("API endpoint not set.")
-        url = sanitize_endpoint(url) + get_client_config().api_auth_check
+        url = sanitize_endpoint(url) + API_AUTH_CHECK
 
         backend_request = self._auth_session.authenticate(
             BackendReq.get(
@@ -165,7 +184,7 @@ class TokenRefreshService:
                 operation=OpsType.AUTH_VALIDATE,
             ),
         )
-        response = self._transport.execute(replace(backend_request, authenticate=False))
+        response = self._send(replace(backend_request, authenticate=False))
 
         return response.status_code == 200
 
@@ -182,16 +201,16 @@ class TokenRefreshService:
                 data = {
                     "client_id": client_id,
                     "refresh_token": creds.get(CredentialsVars.DHCORE_REFRESH_TOKEN.value),
-                    "grant_type": get_client_config().oauth2_grant_type,
-                    "scope": get_client_config().oauth2_scope,
+                    "grant_type": OAUTH2_GRANT_TYPE,
+                    "scope": OAUTH2_SCOPE,
                 }
             case AuthType.EXCHANGE.value:
                 data = {
                     "client_id": client_id,
                     "subject_token": creds.get(CredentialsVars.DHCORE_PERSONAL_ACCESS_TOKEN.value),
-                    "subject_token_type": get_client_config().pat_subject_token_type,
-                    "grant_type": get_client_config().pat_grant_type,
-                    "scope": get_client_config().pat_scope,
+                    "subject_token_type": PAT_SUBJECT_TOKEN_TYPE,
+                    "grant_type": PAT_GRANT_TYPE,
+                    "scope": PAT_SCOPE,
                 }
             case _:
                 raise ClientError(f"Unsupported authentication type: {self._auth_session.auth_type}")
@@ -202,7 +221,7 @@ class TokenRefreshService:
             data=data,
             authenticate=False,
         )
-        return self._transport.execute(with_urlencoded_content_type(request))
+        return self._send(with_urlencoded_content_type(request))
 
     def _get_refresh_endpoint(self) -> str:
         """
@@ -223,10 +242,10 @@ class TokenRefreshService:
             raise ClientError("Issuer endpoint not set.")
 
         # Standard issuer endpoint path
-        url = sanitize_endpoint(endpoint_issuer + get_client_config().well_known_openid_conf)
+        url = sanitize_endpoint(endpoint_issuer + WELL_KNOWN_OPENID_CONFIGURATION)
 
         # Call issuer to get refresh endpoint
-        response = self._transport.execute(
+        response = self._send(
             BackendReq.get(
                 api=url,
                 operation=OpsType.AUTH_DISCOVERY,

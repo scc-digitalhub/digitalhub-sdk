@@ -8,7 +8,7 @@ from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
 from digitalhub.stores.client.compiler.options import NoOptions, ShareOptions
 from digitalhub.stores.client.compiler.targets import BaseEntityTarget
-from digitalhub.stores.client.factory import get_client
+from digitalhub.stores.client.factory import resolve_client
 
 
 class BaseEntitySpecialOpsProcessor:
@@ -20,7 +20,7 @@ class BaseEntitySpecialOpsProcessor:
         unshare: bool = False,
         role: str | None = None,
     ) -> None:
-        client = get_client()
+        client = resolve_client()
         target = BaseEntityTarget(entity_type, entity_name)
         entity_id = None
 

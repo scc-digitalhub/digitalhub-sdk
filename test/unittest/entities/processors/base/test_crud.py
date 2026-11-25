@@ -15,7 +15,7 @@ def test_delete_project_preserves_context_when_backend_delete_fails(monkeypatch)
     processor._delete_base_entity = Mock(side_effect=RuntimeError("delete failed"))
     delete_context = Mock()
     monkeypatch.setattr(base_crud_module, "delete_context", delete_context)
-    monkeypatch.setattr(base_crud_module, "get_client", Mock(return_value=Mock()))
+    monkeypatch.setattr(base_crud_module, "resolve_client", Mock(return_value=Mock()))
 
     with pytest.raises(RuntimeError, match="delete failed"):
         processor.delete_project_entity("project", "example")

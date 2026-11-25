@@ -7,7 +7,7 @@ from unittest.mock import Mock
 import pytest
 
 import digitalhub.stores.client.executor.executor as executor_module
-from digitalhub.stores.client.common.config import get_client_config
+from digitalhub.stores.client.common.constants import K8S_RESOURCE_PROFILES_KEY, WELL_KNOWN_CONFIGURATION
 from digitalhub.stores.client.common.enums import ApiType, BackendOp, OpsType
 from digitalhub.stores.client.compiler.operation import ClientOp
 from digitalhub.stores.client.compiler.targets import ContextCollectionTarget
@@ -97,7 +97,7 @@ def test_execute_list_collects_all_pages(executor) -> None:
 def test_get_k8s_resource_profiles_uses_http_handler(executor) -> None:
     client_executor, _, http_handler = executor
     http_handler.execute_request.return_value = {
-        get_client_config().k8s_resource_profiles: ["gpu", "cpu"],
+        K8S_RESOURCE_PROFILES_KEY: ["gpu", "cpu"],
     }
 
     result = client_executor.get_k8s_resource_profiles()
@@ -106,7 +106,7 @@ def test_get_k8s_resource_profiles_uses_http_handler(executor) -> None:
     http_handler.execute_request.assert_called_once_with(
         BackendReq(
             method="GET",
-            api=get_client_config().well_known_conf,
+            api=WELL_KNOWN_CONFIGURATION,
             operation=OpsType.CONFIG_K8S_RESOURCE_PROFILES,
         )
     )

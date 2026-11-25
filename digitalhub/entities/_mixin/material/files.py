@@ -26,9 +26,11 @@ class MaterialFile:
         last_modified: str | None,
         material_path: str,
         context_root: Path,
+        project: str | None = None,
     ) -> None:
         self._material_path = material_path
         self._context_root = context_root
+        self._project = project
         self.path = path
         self.name = name
         self.content_type = content_type
@@ -56,7 +58,7 @@ class MaterialFile:
         Generator[str, None, None]
             Context manager yielding the downloaded file path.
         """
-        store = get_store(self._material_path)
+        store = get_store(self._material_path, self._project)
         with TemporaryDirectory() as temp_dir:
             yield store.download(self._get_download_path(), dst=Path(temp_dir))
 
@@ -80,7 +82,7 @@ class MaterialFile:
         str
             Destination path returned by the store.
         """
-        store = get_store(self._material_path)
+        store = get_store(self._material_path, self._project)
 
         if destination is None:
             dst = self._context_root

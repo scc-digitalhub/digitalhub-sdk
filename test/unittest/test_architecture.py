@@ -91,3 +91,76 @@ def test_processors_remain_explicit_without_provider_registry() -> None:
     processor_root = PACKAGE_ROOT / "entities" / "_processors"
     assert not (processor_root / "operations.py").exists()
     assert not (processor_root / "service_locator.py").exists()
+
+
+def test_entities_and_contexts_resolve_clients_at_use_time() -> None:
+    # The default client is reached only through resolve_client(), the single
+    # hook for per-project credentials. Holding get_client() or the factory
+    # here reintroduces clients that go stale after set_client_config().
+    roots = (PACKAGE_ROOT / "entities", PACKAGE_ROOT / "context")
+    forbidden = {"get_client", "client_factory"}
+    violations = []
+    for root in roots:
+        for path in sorted(root.rglob("*.py")):
+            for node in ast.walk(ast.parse(path.read_text())):
+                if not isinstance(node, ast.ImportFrom) or node.module != "digitalhub.stores.client.factory":
+                    continue
+                for alias in node.names:
+                    if alias.name in forbidden:
+                        violations.append(f"{path.relative_to(PACKAGE_ROOT.parent)}:{node.lineno}: {alias.name}")
+
+    assert violations == [], "\n".join(violations)
+
+
+def test_client_components_receive_configuration_explicitly() -> None:
+    # Clients with different configurations coexist only if no component
+    # reads the global one. The default client factory is the one reader.
+    client_root = PACKAGE_ROOT / "stores" / "client"
+    allowed = {client_root / "common" / "config.py", client_root / "factory.py"}
+    violations = []
+    for path in sorted(client_root.rglob("*.py")):
+        if path in allowed:
+            continue
+        for node in ast.walk(ast.parse(path.read_text())):
+            names = []
+            if isinstance(node, ast.ImportFrom):
+                names = [alias.name for alias in node.names]
+            elif isinstance(node, ast.Attribute):
+                names = [node.attr]
+            elif isinstance(node, ast.Name):
+                names = [node.id]
+            if "get_client_config" in names or "_default_config" in names:
+                violations.append(f"{path.relative_to(PACKAGE_ROOT.parent)}:{node.lineno}")
+
+    assert violations == [], "\n".join(violations)
+
+
+def test_stores_receive_credentials_instead_of_reaching_the_client() -> None:
+    # Stores get their credentials from the session that builds them, so the
+    # session can later give each project its own. Only the store API module
+    # reads the client, for the default store URI.
+    data_root = PACKAGE_ROOT / "stores" / "data"
+    allowed = {data_root / "api.py"}
+    violations = []
+    for path in sorted(data_root.rglob("*.py")):
+        if path in allowed:
+            continue
+        for node in ast.walk(ast.parse(path.read_text())):
+            if isinstance(node, ast.ImportFrom) and node.module == "digitalhub.stores.client.factory":
+                violations.append(f"{path.relative_to(PACKAGE_ROOT.parent)}:{node.lineno}")
+
+    assert violations == [], "\n".join(violations)
+
+
+def test_runtime_state_is_owned_by_sessions() -> None:
+    # Connection pools, identities, clients, contexts and stores belong to the
+    # session; a module-level instance would escape its configuration.
+    owners = {"Client", "ClientConfigurator", "ContextBuilder", "HttpTransport", "Session", "StoreBuilder"}
+    violations = []
+    for path in sorted(PACKAGE_ROOT.rglob("*.py")):
+        for node in ast.parse(path.read_text()).body:
+            value = node.value if isinstance(node, (ast.Assign, ast.AnnAssign)) else None
+            if isinstance(value, ast.Call) and isinstance(value.func, ast.Name) and value.func.id in owners:
+                violations.append(f"{path.relative_to(PACKAGE_ROOT.parent)}:{node.lineno}: {value.func.id}()")
+
+    assert violations == [], "\n".join(violations)

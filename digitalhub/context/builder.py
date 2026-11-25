@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import threading
 import typing
 
 from digitalhub.context.context import Context
@@ -16,10 +17,17 @@ if typing.TYPE_CHECKING:
 class ContextBuilder:
     """
     A builder class for managing project contexts.
+
+    The session owns one; see ``digitalhub.stores.session``.
+
+    Thread-safe: ``build``, ``get`` and ``remove`` run under one lock, so
+    concurrent builds of the same project return one fully initialized context.
     """
 
     def __init__(self) -> None:
         self._instances: dict[str, Context] = {}
+        # Reentrant, in case context initialization ever goes back to the builder.
+        self._lock = threading.RLock()
 
     def build(self, project: Project) -> Context:
         """
@@ -35,23 +43,23 @@ class ContextBuilder:
         Context
             The newly created or existing Context instance.
         """
-        context = self._instances.get(project.name)
-        if context is not None:
-            context.client = project._client
-            context.config = project.spec.config
-            context.root = project.spec.source
-            return context
+        with self._lock:
+            context = self._instances.get(project.name)
+            if context is not None:
+                context.config = project.spec.config
+                context.root = project.spec.source
+                return context
 
-        # Register before initialization so a failed init can be rolled back.
-        context = Context.__new__(Context)
-        self._instances[project.name] = context
-        try:
-            context.__init__(project)
-        except BaseException:
-            if self._instances.get(project.name) is context:
-                self._instances.pop(project.name)
-            raise
-        return context
+            # Register before initialization so a failed init can be rolled back.
+            context = Context.__new__(Context)
+            self._instances[project.name] = context
+            try:
+                context.__init__(project)
+            except BaseException:
+                if self._instances.get(project.name) is context:
+                    self._instances.pop(project.name)
+                raise
+            return context
 
     def get(self, project: str) -> Context:
         """
@@ -67,10 +75,11 @@ class ContextBuilder:
         Context
             The context instance associated with the project.
         """
-        try:
-            return self._instances[project]
-        except KeyError:
+        with self._lock:
+            context = self._instances.get(project)
+        if context is None:
             raise ContextError(f"Context '{project}' not found. Get or create a project named '{project}'.")
+        return context
 
     def remove(self, project: str) -> None:
         """
@@ -81,7 +90,5 @@ class ContextBuilder:
         project : str
             The name of the project whose context should be removed.
         """
-        self._instances.pop(project, None)
-
-
-context_builder = ContextBuilder()
+        with self._lock:
+            self._instances.pop(project, None)

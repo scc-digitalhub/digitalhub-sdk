@@ -74,7 +74,7 @@ class SourceEntityMixin:
                     archive_path.name,
                     default_store=get_default_store_uri(entity._context().config),
                 )
-                get_store(destination).upload(str(archive_path), destination)
+                get_store(destination, entity.project).upload(str(archive_path), destination)
             source.source = destination
         elif eval_zip_type(source_path):
             destination = build_zip_path(
@@ -82,7 +82,7 @@ class SourceEntityMixin:
                 path.name,
                 default_store=get_default_store_uri(entity._context().config),
             )
-            get_store(destination).upload(source_path, destination)
+            get_store(destination, entity.project).upload(source_path, destination)
             source.source = destination
         elif self._is_inlineable_source(source_path):
             source.base64 = self._read_inline_source(source_path)

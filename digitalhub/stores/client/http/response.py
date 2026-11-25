@@ -9,7 +9,7 @@ from warnings import warn
 
 from requests.exceptions import JSONDecodeError
 
-from digitalhub.stores.client.common.config import get_client_config
+from digitalhub.stores.client.common.constants import LIB_API_LEVEL, MAX_API_LEVEL, MIN_API_LEVEL
 from digitalhub.stores.client.http.errors import raise_for_response_error
 from digitalhub.utils.exceptions import BackendError, ClientError
 
@@ -50,10 +50,9 @@ class ResponseProcessor:
         if "X-Api-Level" not in response.headers:
             return
 
-        config = get_client_config()
         core_api_level = int(response.headers["X-Api-Level"])
-        if not (config.min_api_level <= core_api_level <= config.max_api_level):
+        if not (MIN_API_LEVEL <= core_api_level <= MAX_API_LEVEL):
             raise ClientError("Backend API level not supported.")
 
-        if config.lib_version < core_api_level:
+        if LIB_API_LEVEL < core_api_level:
             warn("Backend API level is higher than library version. Consider updating the package.")

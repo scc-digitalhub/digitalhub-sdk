@@ -18,10 +18,10 @@ def test_read_data_sample_dispatches_source_list_by_first_path(monkeypatch) -> N
     monkeypatch.setattr(reader_api, "get_reader_by_engine", Mock(return_value=reader))
     monkeypatch.setattr(table_utils, "get_store", get_store)
 
-    result = table_utils.read_data_sample(source, file_format="csv", engine="polars")
+    result = table_utils.read_data_sample(source, file_format="csv", engine="polars", project="demo")
 
     assert result == "dataframe"
-    get_store.assert_called_once_with("first.csv")
+    get_store.assert_called_once_with("first.csv", "demo")
     store.read_df.assert_called_once_with(
         source,
         file_format="csv",

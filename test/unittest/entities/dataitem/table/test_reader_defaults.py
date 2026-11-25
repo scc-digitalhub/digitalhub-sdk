@@ -14,10 +14,13 @@ def test_table_reader_apis_use_factory_default_engine() -> None:
 def test_as_df_uses_factory_default_engine_when_omitted(monkeypatch) -> None:
     entity = object.__new__(DataitemTable)
     entity.spec = SimpleNamespace(path="s3://bucket/table.csv")
+    entity.project = "demo"
     entity.refresh = Mock()
     store = Mock()
-    monkeypatch.setattr(table_entity_module, "get_store", Mock(return_value=store))
+    get_store = Mock(return_value=store)
+    monkeypatch.setattr(table_entity_module, "get_store", get_store)
 
     entity.as_df()
 
+    get_store.assert_called_once_with("s3://bucket/table.csv", "demo")
     store.read_df.assert_called_once_with("s3://bucket/table.csv", None, None)

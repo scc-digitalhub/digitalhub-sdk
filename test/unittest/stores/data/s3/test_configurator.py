@@ -12,21 +12,20 @@ from digitalhub.stores.client.common.enums import ConfigurationVars, Credentials
 from digitalhub.stores.data.s3.configurator import S3StoreConfigurator
 
 
+def _store_credentials(values: dict) -> Mock:
+    return Mock(get=Mock(return_value=values))
+
+
 def test_uses_static_credentials_without_calling_sts(monkeypatch) -> None:
     credentials = {
         ConfigurationVars.S3_ENDPOINT_URL.value: "https://s3.example.test",
         CredentialsVars.S3_ACCESS_KEY_ID.value: "static-access",
         CredentialsVars.S3_SECRET_ACCESS_KEY.value: "static-secret",
     }
-    monkeypatch.setattr(
-        configurator_module,
-        "get_client",
-        lambda: Mock(get_credentials_and_config=lambda: credentials),
-    )
     boto3_module = Mock()
     monkeypatch.setattr(configurator_module, "boto3", boto3_module, raising=False)
 
-    configurator = S3StoreConfigurator()
+    configurator = S3StoreConfigurator(_store_credentials(credentials))
     result = configurator.get_credentials(lowercase_keys=False)
 
     assert result[CredentialsVars.S3_ACCESS_KEY_ID.value] == "static-access"
@@ -45,11 +44,6 @@ def test_assumes_role_with_web_identity_and_caches_credentials(monkeypatch, tmp_
         CredentialsVars.S3_WEB_IDENTITY_TOKEN_FILE.value: str(token_file),
         CredentialsVars.S3_WEB_IDENTITY_TOKEN.value: "inline-token",
     }
-    monkeypatch.setattr(
-        configurator_module,
-        "get_client",
-        lambda: Mock(get_credentials_and_config=lambda: credentials),
-    )
     sts_client = Mock()
     sts_client.assume_role_with_web_identity.return_value = {
         "Credentials": {
@@ -63,7 +57,7 @@ def test_assumes_role_with_web_identity_and_caches_credentials(monkeypatch, tmp_
     boto3_module = Mock(client=sts_factory)
     monkeypatch.setattr(configurator_module, "boto3", boto3_module, raising=False)
 
-    configurator = S3StoreConfigurator()
+    configurator = S3StoreConfigurator(_store_credentials(credentials))
     first_result = configurator.get_credentials(lowercase_keys=False)
     second_result = configurator.get_credentials(lowercase_keys=False)
 
@@ -91,11 +85,6 @@ def test_uses_configured_token_when_token_file_is_unavailable(monkeypatch, tmp_p
         CredentialsVars.S3_WEB_IDENTITY_TOKEN_FILE.value: str(tmp_path / "missing-token"),
         CredentialsVars.S3_WEB_IDENTITY_TOKEN.value: "inline-token",
     }
-    monkeypatch.setattr(
-        configurator_module,
-        "get_client",
-        lambda: Mock(get_credentials_and_config=lambda: credentials),
-    )
     sts_client = Mock()
     sts_client.assume_role_with_web_identity.return_value = {
         "Credentials": {
@@ -108,7 +97,7 @@ def test_uses_configured_token_when_token_file_is_unavailable(monkeypatch, tmp_p
     sts_factory = Mock(return_value=sts_client)
     monkeypatch.setattr(configurator_module, "boto3", Mock(client=sts_factory), raising=False)
 
-    configurator = S3StoreConfigurator()
+    configurator = S3StoreConfigurator(_store_credentials(credentials))
     result = configurator.get_credentials(lowercase_keys=False)
 
     assert result[CredentialsVars.S3_ACCESS_KEY_ID.value] == "temporary-access"
@@ -128,11 +117,6 @@ def test_refreshes_web_identity_credentials_before_expiration(monkeypatch, tmp_p
         CredentialsVars.S3_ROLE_ARN.value: "arn:aws:iam::123456789012:role/test-role",
         CredentialsVars.S3_WEB_IDENTITY_TOKEN_FILE.value: str(token_file),
     }
-    monkeypatch.setattr(
-        configurator_module,
-        "get_client",
-        lambda: Mock(get_credentials_and_config=lambda: credentials),
-    )
     sts_client = Mock()
     sts_client.assume_role_with_web_identity.side_effect = [
         {
@@ -154,7 +138,7 @@ def test_refreshes_web_identity_credentials_before_expiration(monkeypatch, tmp_p
     ]
     monkeypatch.setattr(configurator_module, "boto3", Mock(client=Mock(return_value=sts_client)), raising=False)
 
-    configurator = S3StoreConfigurator()
+    configurator = S3StoreConfigurator(_store_credentials(credentials))
     first_result = configurator.get_credentials(lowercase_keys=False)
     second_result = configurator.get_credentials(lowercase_keys=False)
 
@@ -191,27 +175,17 @@ def test_refreshes_web_identity_credentials_before_expiration(monkeypatch, tmp_p
         },
     ],
 )
-def test_rejects_incomplete_credential_sets(monkeypatch, credentials) -> None:
-    monkeypatch.setattr(
-        configurator_module,
-        "get_client",
-        lambda: Mock(get_credentials_and_config=lambda: credentials),
-    )
+def test_rejects_incomplete_credential_sets(credentials) -> None:
 
     with pytest.raises(ValueError, match="Missing required variables for S3 store"):
-        S3StoreConfigurator()
+        S3StoreConfigurator(_store_credentials(credentials))
 
 
-def test_validation_error_lists_missing_keys_for_both_credential_bundles(monkeypatch) -> None:
+def test_validation_error_lists_missing_keys_for_both_credential_bundles() -> None:
     credentials = {ConfigurationVars.S3_ENDPOINT_URL.value: "https://s3.example.test"}
-    monkeypatch.setattr(
-        configurator_module,
-        "get_client",
-        lambda: Mock(get_credentials_and_config=lambda: credentials),
-    )
 
     with pytest.raises(ValueError) as error:
-        S3StoreConfigurator()
+        S3StoreConfigurator(_store_credentials(credentials))
 
     message = str(error.value)
     assert (
@@ -234,15 +208,10 @@ def test_validation_logging_includes_only_configured_key_names(monkeypatch) -> N
         CredentialsVars.DHCORE_REFRESH_TOKEN.value: "refresh-token",
         "UNSET_OPTION": None,
     }
-    monkeypatch.setattr(
-        configurator_module,
-        "get_client",
-        lambda: Mock(get_credentials_and_config=lambda: credentials),
-    )
     debug = Mock()
     monkeypatch.setattr(configurator_module.logger, "debug", debug)
 
-    S3StoreConfigurator()
+    S3StoreConfigurator(_store_credentials(credentials))
 
     expected_names = sorted(key for key, value in credentials.items() if value is not None)
     debug.assert_called_once_with("S3 credential validation inputs: %s", expected_names)

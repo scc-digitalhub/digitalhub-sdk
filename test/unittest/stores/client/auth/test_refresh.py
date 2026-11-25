@@ -7,9 +7,9 @@ from unittest.mock import Mock
 import pytest
 from requests import Response
 
-import digitalhub.stores.client.auth.refresh as refresh_module
 from digitalhub.stores.client.auth.refresh import TokenRefreshService
-from digitalhub.stores.client.common.config import get_client_config
+from digitalhub.stores.client.common.config import ClientConfig
+from digitalhub.stores.client.common.constants import OAUTH2_GRANT_TYPE
 from digitalhub.stores.client.common.enums import (
     AuthType,
     ConfigurationVars,
@@ -159,16 +159,14 @@ def test_evaluate_refresh_stops_after_maximum_attempts() -> None:
     with pytest.raises(ClientError, match="credentials expired"):
         service.evaluate_refresh()
 
-    assert service.refresh_credentials.call_count == get_client_config().max_refresh_attempts
+    assert service.refresh_credentials.call_count == ClientConfig().max_refresh_attempts
     config_manager.eval_retry.assert_called_once_with()
 
 
-def test_evaluate_refresh_uses_configured_maximum_attempts(monkeypatch) -> None:
+def test_evaluate_refresh_uses_configured_maximum_attempts() -> None:
     config_manager = Mock()
     config_manager.eval_retry.return_value = True
-    configured_client = Mock(max_refresh_attempts=1)
-    monkeypatch.setattr(refresh_module, "get_client_config", Mock(return_value=configured_client))
-    service = TokenRefreshService(config_manager, Mock(), Mock())
+    service = TokenRefreshService(config_manager, Mock(), Mock(), ClientConfig(max_refresh_attempts=1))
     service.refresh_credentials = Mock(side_effect=ClientError("credentials expired"))
 
     with pytest.raises(ClientError, match="credentials expired"):
@@ -193,7 +191,7 @@ def test_refresh_uses_request_transport(monkeypatch) -> None:
     transport = Mock()
     transport.execute.return_value = response
 
-    service = TokenRefreshService(config_manager, auth_session, transport)
+    service = TokenRefreshService(config_manager, auth_session, transport, ClientConfig(http_timeout=9))
 
     service.refresh_credentials()
 
@@ -203,7 +201,8 @@ def test_refresh_uses_request_transport(monkeypatch) -> None:
     assert request.method == "POST"
     assert request.api == "https://issuer.example/token"
     assert request.operation == OpsType.AUTH_REFRESH.value
-    assert request.data["grant_type"] == get_client_config().oauth2_grant_type
+    assert request.data["grant_type"] == OAUTH2_GRANT_TYPE
+    assert request.timeout == 9
     assert request.headers["Content-Type"] == "application/x-www-form-urlencoded"
     assert request.authenticate is False
     assert transport.execute.call_args.kwargs == {}

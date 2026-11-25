@@ -23,7 +23,7 @@ def test_unshare_finds_user_after_first_acl_entry(monkeypatch) -> None:
         ],
         None,
     ]
-    monkeypatch.setattr(special_ops_module, "get_client", Mock(return_value=client))
+    monkeypatch.setattr(special_ops_module, "resolve_client", Mock(return_value=client))
 
     BaseEntitySpecialOpsProcessor().share_project_entity(
         entity_type="project",
@@ -54,7 +54,7 @@ def test_unshare_finds_user_after_first_acl_entry(monkeypatch) -> None:
 
 def test_share_creates_access_with_built_parameters(monkeypatch) -> None:
     client = Mock()
-    monkeypatch.setattr(special_ops_module, "get_client", Mock(return_value=client))
+    monkeypatch.setattr(special_ops_module, "resolve_client", Mock(return_value=client))
 
     result = BaseEntitySpecialOpsProcessor().share_project_entity(
         entity_type="project",
@@ -78,7 +78,7 @@ def test_share_creates_access_with_built_parameters(monkeypatch) -> None:
 def test_unshare_raises_when_user_has_no_access(monkeypatch) -> None:
     client = Mock()
     client.execute.return_value = [{"id": "alice-id", "user": "alice"}]
-    monkeypatch.setattr(special_ops_module, "get_client", Mock(return_value=client))
+    monkeypatch.setattr(special_ops_module, "resolve_client", Mock(return_value=client))
 
     with pytest.raises(ValueError, match="User 'bob' does not have access to project"):
         BaseEntitySpecialOpsProcessor().share_project_entity(

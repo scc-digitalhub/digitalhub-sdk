@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import Any, ClassVar
 
 from digitalhub.stores.client.auth.credential_session import CredentialSession
@@ -14,7 +15,8 @@ from digitalhub.stores.client.auth.file_module import (
     load_profile,
     set_current_profile,
 )
-from digitalhub.stores.client.common.config import get_client_config
+from digitalhub.stores.client.common.config import ClientConfig
+from digitalhub.stores.client.common.constants import DHCORE_PREFIX, OAUTH2_PREFIX
 from digitalhub.stores.client.common.enums import ConfigurationVars, CredentialSource, CredentialsVars, SetCreds
 from digitalhub.stores.client.common.utils import sanitize_endpoint
 from digitalhub.utils.exceptions import ClientError
@@ -29,23 +31,24 @@ class ConfigManager:
 
     keys: ClassVar[list[str]] = [*list_enum(ConfigurationVars), *list_enum(CredentialsVars)]
 
-    def __init__(self) -> None:
-        self._current_profile = self._read_current_profile()
-        self._credential_store = CredentialStore(self._current_profile)
+    def __init__(self, config: ClientConfig | None = None) -> None:
+        self._config = config if config is not None else ClientConfig()
+        self._current_profile = self._read_current_profile(self._config.config_ini_path)
+        self._credential_store = CredentialStore(self._current_profile, self._config)
         self._configuration: dict[str, Any] = self.load_configuration()
         self._credential_session = CredentialSession(self.load_credentials())
         self._validate(self._configuration, self.credentials)
         self._in_memory: bool = False
 
     @staticmethod
-    def _read_current_profile() -> str:
+    def _read_current_profile(ini_file: Path) -> str:
         """Read the current credentials profile name."""
         profile = os.getenv(SetCreds.DH_PROFILE.value)
         if profile is not None:
             return profile
 
         try:
-            file = load_file()
+            file = load_file(ini_file)
             return load_profile(file)
         except ClientError:
             pass
@@ -57,12 +60,12 @@ class ConfigManager:
         if self._in_memory:
             raise ClientError("Cannot set profile when configuration is in-memory only.")
 
-        credential_store = CredentialStore(profile)
+        credential_store = CredentialStore(profile, self._config)
         configuration = self._apply_configuration_defaults(credential_store.load_configuration())
         credentials = credential_store.load_credentials()
         self._validate(configuration, credentials)
 
-        set_current_profile(profile)
+        set_current_profile(profile, self._config.config_ini_path)
         self._current_profile = profile
         self._credential_store = credential_store
         self._configuration = configuration
@@ -159,11 +162,7 @@ class ConfigManager:
             ConfigurationVars.DHCORE_ISSUER.value,
             ConfigurationVars.OAUTH2_TOKEN_ENDPOINT.value,
         ]:
-            prefix = (
-                get_client_config().oauth2
-                if key == ConfigurationVars.OAUTH2_TOKEN_ENDPOINT.value
-                else get_client_config().dhcore
-            )
+            prefix = OAUTH2_PREFIX if key == ConfigurationVars.OAUTH2_TOKEN_ENDPOINT.value else DHCORE_PREFIX
             storage_key = key.lower()
             response_key = storage_key.removeprefix(prefix)
             if response_key in normalized_credentials:

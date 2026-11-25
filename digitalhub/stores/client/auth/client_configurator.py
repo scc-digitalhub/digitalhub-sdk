@@ -7,6 +7,7 @@ from __future__ import annotations
 from digitalhub.stores.client.auth.auth_session import AuthSession
 from digitalhub.stores.client.auth.config_manager import ConfigManager
 from digitalhub.stores.client.auth.refresh import TokenRefreshService
+from digitalhub.stores.client.common.config import ClientConfig
 from digitalhub.stores.client.common.enums import AuthType
 from digitalhub.stores.client.http.request import BackendReq
 from digitalhub.stores.client.http.transport import HttpTransport
@@ -27,18 +28,23 @@ class ClientConfigurator:
     The configurator automatically determines the best authentication method and
     handles token exchange for personal access tokens by switching to file-based
     credential storage.
+
+    It is the user's identity and implements ``AuthProvider``. It uses the
+    transport only for auth requests and does not own it.
     """
 
-    def __init__(self, transport: HttpTransport) -> None:
+    def __init__(self, transport: HttpTransport, config: ClientConfig | None = None) -> None:
         """
         Initialize DHCore configurator without performing network authentication.
         """
-        self._config_manager = ConfigManager()
+        config = config if config is not None else ClientConfig()
+        self._config_manager = ConfigManager(config)
         self._auth_session = AuthSession(self._config_manager.credential_session)
         self._token_refresh_service = TokenRefreshService(
             self._config_manager,
             self._auth_session,
             transport,
+            config,
         )
         self._exchange_bootstrapped = False
 
@@ -70,6 +76,17 @@ class ClientConfigurator:
                 self.evaluate_refresh()
             self._exchange_bootstrapped = True
         return self._auth_session.authenticate(backend_request)
+
+    def invalidate(self) -> bool:
+        """
+        Refresh the credentials after the backend rejected them.
+
+        Returns
+        -------
+        bool
+            True if credentials were refreshed and a retry may succeed.
+        """
+        return self.evaluate_refresh()
 
     def evaluate_refresh(self, check_token_validity: bool = False) -> bool:
         """

@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from digitalhub.stores.client.common.config import get_client_config
+from digitalhub.stores.client.common.constants import API_BASE, API_CONTEXT
 from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.targets import (
     BaseCollectionTarget,
@@ -63,7 +63,7 @@ class ClientApiBuilder:
         str
             API formatted.
         """
-        api_base = get_client_config().api_base
+        api_base = API_BASE
         match operation, target:
             case BackendOp.CREATE | BackendOp.LIST, BaseCollectionTarget(entity_type):
                 return f"{api_base}/{entity_type}s"
@@ -91,7 +91,7 @@ class ClientApiBuilder:
         str
             The formatted context API endpoint.
         """
-        api_context = get_client_config().api_context
+        api_context = API_CONTEXT
         match operation, target:
             case BackendOp.SEARCH, ContextProjectTarget(project):
                 return f"{api_context}/{project}/solr/search/item"

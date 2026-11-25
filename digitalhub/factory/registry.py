@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import threading
 from collections.abc import Callable, Iterable
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -25,6 +26,11 @@ class BuilderRegistry:
     Registry for resolving entity, runtime, and CRUD plugins.
 
     Registrations are loaded lazily from the core SDK and installed runtime modules.
+
+    Thread safety: each registration phase runs once, under ``_lock``. A phase
+    copies the current dictionaries, fills the copies and swaps them in before
+    raising its flag, so published dictionaries are never mutated in place and
+    lookups can read them without the lock.
     """
 
     def __init__(self) -> None:
@@ -34,6 +40,8 @@ class BuilderRegistry:
         self._crud_plugins: dict[str, CrudPlugin] = {}
         self._entities_registered = False
         self._runtimes_registered = False
+        # Reentrant: a plugin imported during registration may query the registry.
+        self._lock = threading.RLock()
 
     @staticmethod
     def _add_builder(
@@ -124,7 +132,8 @@ class BuilderRegistry:
     def get_project_shortcut_names(self) -> tuple[str, ...]:
         """Return registered shortcuts that can be bound to a project."""
         self.get_shortcut_names()
-        return tuple(name for name, spec in sorted(self._crud_plugins.items()) if spec.project_bound)
+        crud_plugins = self._crud_plugins
+        return tuple(name for name, spec in sorted(crud_plugins.items()) if spec.project_bound)
 
     def _ensure_entities_registered(self) -> None:
         """
@@ -132,11 +141,14 @@ class BuilderRegistry:
         """
         if self._entities_registered:
             return
-        try:
-            self._register_entities()
-            self._entities_registered = True
-        except Exception as e:
-            raise BuilderError(f"Failed to register core entities: {e}") from e
+        with self._lock:
+            if self._entities_registered:
+                return
+            try:
+                self._register_entities()
+                self._entities_registered = True
+            except Exception as e:
+                raise BuilderError(f"Failed to register core entities: {e}") from e
 
     def _register_entities(self) -> None:
         """
@@ -178,13 +190,16 @@ class BuilderRegistry:
         """
         if self._runtimes_registered:
             return
-        try:
-            self._register_runtimes_entities()
-            self._runtimes_registered = True
-        except BuilderError:
-            raise
-        except Exception as e:
-            raise BuilderError(f"Failed to register runtime entities: {e}") from e
+        with self._lock:
+            if self._runtimes_registered:
+                return
+            try:
+                self._register_runtimes_entities()
+                self._runtimes_registered = True
+            except BuilderError:
+                raise
+            except Exception as e:
+                raise BuilderError(f"Failed to register runtime entities: {e}") from e
 
     def _register_runtimes_entities(self) -> None:
         """

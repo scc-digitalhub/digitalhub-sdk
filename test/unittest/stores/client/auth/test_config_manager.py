@@ -10,6 +10,7 @@ import digitalhub.stores.client.auth.config_manager as config_manager_module
 import digitalhub.stores.client.auth.credential_store as credential_store_module
 from digitalhub.stores.client.auth.config_manager import ConfigManager
 from digitalhub.stores.client.auth.credential_session import CredentialSession
+from digitalhub.stores.client.common.config import ClientConfig
 from digitalhub.stores.client.common.enums import (
     ConfigurationVars,
     CredentialSource,
@@ -20,6 +21,7 @@ from digitalhub.utils.exceptions import ClientError
 
 def _manager_for_profile_switch() -> ConfigManager:
     manager = ConfigManager.__new__(ConfigManager)
+    manager._config = ClientConfig()
     manager._current_profile = "current"
     manager._credential_store = Mock()
     manager._configuration = {ConfigurationVars.DHCORE_ENDPOINT.value: "https://current.example.test"}
@@ -52,7 +54,7 @@ def test_configuration_and_credentials_use_file_precedence(monkeypatch) -> None:
     monkeypatch.setattr(
         credential_store_module.CredentialStore,
         "_read_file",
-        staticmethod(lambda variables, profile: {key: file_values.get(key) for key in variables}),
+        lambda self, variables: {key: file_values.get(key) for key in variables},
     )
 
     configuration = manager.load_configuration()
@@ -81,7 +83,7 @@ def test_eval_retry_stops_reading_file_after_environment_fallback(monkeypatch) -
     monkeypatch.setattr(
         credential_store_module.CredentialStore,
         "_read_file",
-        staticmethod(Mock(side_effect=AssertionError("file must not be read after fallback"))),
+        Mock(side_effect=AssertionError("file must not be read after fallback")),
     )
 
     assert manager.eval_retry() is True
@@ -138,7 +140,7 @@ def test_set_current_profile_applies_validated_configuration_and_credentials(mon
 
     manager.set_current_profile("new")
 
-    save_current_profile.assert_called_once_with("new")
+    save_current_profile.assert_called_once_with("new", manager._config.config_ini_path)
     assert manager.current_profile == "new"
     assert manager.configuration == {
         ConfigurationVars.DHCORE_ENDPOINT.value: "https://new.example.test",

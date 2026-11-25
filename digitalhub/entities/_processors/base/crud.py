@@ -13,7 +13,7 @@ from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
 from digitalhub.stores.client.compiler.options import DeleteOptions
 from digitalhub.stores.client.compiler.targets import BaseCollectionTarget, BaseEntityTarget
-from digitalhub.stores.client.factory import get_client
+from digitalhub.stores.client.factory import resolve_client
 from digitalhub.utils.exceptions import EntityAlreadyExistsError, EntityError, EntityNotExistsError
 from digitalhub.utils.io_utils import read_yaml
 
@@ -38,7 +38,7 @@ class BaseEntityCRUDProcessor:
             client = _entity._client
             obj = _entity
         else:
-            client = get_client()
+            client = resolve_client()
             obj = entity_factory.build_entity_from_params(**kwargs)
         ent = self._create_base_entity(client, obj.ENTITY_TYPE, obj.to_dict())
         return entity_factory.build_entity_from_dict(ent)
@@ -58,7 +58,7 @@ class BaseEntityCRUDProcessor:
         )
 
     def read_project_entity(self, entity_type: str, entity_name: str) -> Project:
-        client = get_client()
+        client = resolve_client()
         obj = self._read_base_entity(client, entity_type, entity_name)
         return entity_factory.build_entity_from_dict(obj)
 
@@ -72,7 +72,7 @@ class BaseEntityCRUDProcessor:
         )
 
     def list_project_entities(self, entity_type: str) -> list[Project]:
-        client = get_client()
+        client = resolve_client()
         objs = self._list_base_entities(client, entity_type)
         entities = []
         for obj in objs:
@@ -136,7 +136,7 @@ class BaseEntityCRUDProcessor:
         entity_name: str,
         entity_dict: dict,
     ) -> Project:
-        client = get_client()
+        client = resolve_client()
         obj = self._update_base_entity(client, entity_type, entity_name, entity_dict)
         return entity_factory.build_entity_from_dict(obj)
 
@@ -163,7 +163,7 @@ class BaseEntityCRUDProcessor:
         cascade: bool = True,
         clean_context: bool = True,
     ) -> dict:
-        client = get_client()
+        client = resolve_client()
         response = self._delete_base_entity(client, entity_type, entity_name, cascade)
         if clean_context:
             delete_context(entity_name)

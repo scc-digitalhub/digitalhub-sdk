@@ -16,6 +16,7 @@ import pyarrow.parquet as pq
 from sqlalchemy import MetaData, Table, create_engine, inspect, select
 from sqlalchemy.engine import Engine
 
+from digitalhub.stores.data._base.credentials import StoreCredentials
 from digitalhub.stores.data._base.store import Store
 from digitalhub.stores.data.sql.configurator import SqlStoreConfigurator
 from digitalhub.stores.data.sql.utils import get_schema_from_columns
@@ -82,9 +83,9 @@ class SqlStore(Store):
         and connection parameters.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, credentials: StoreCredentials) -> None:
         super().__init__()
-        self._configurator: SqlStoreConfigurator = SqlStoreConfigurator()
+        self._configurator: SqlStoreConfigurator = SqlStoreConfigurator(credentials)
         self._engines: dict[tuple[str, str | None], Engine] = {}
         self._engine_lock = RLock()
 
@@ -100,27 +101,6 @@ class SqlStore(Store):
     ) -> str:
         """
         Download a SQL table as a Parquet file to local storage.
-
-        Retrieves data from a SQL table and saves it as a Parquet file
-        at the specified destination. The source path should be in the
-        format 'sql://database/schema/table', 'sql://database/table',
-        'postgresql://database/schema/table', or 'postgresql://database/table'.
-
-        Parameters
-        ----------
-        src : str
-            The SQL URI path of the table to download in the format
-            'sql://database/schema/table' or 'sql://database/table'.
-        dst : Path | None
-            The destination path on the local filesystem where the
-            Parquet file will be saved. If None, a temporary directory is used.
-        overwrite : bool
-            Whether to overwrite existing files at the destination path.
-
-        Returns
-        -------
-        str
-            The absolute path of the downloaded Parquet file.
         """
         parsed = self._parse_path(src)
         table_name = parsed["table"] + ".parquet"
@@ -151,11 +131,6 @@ class SqlStore(Store):
     ) -> list[dict]:
         """
         Get file metadata information from SQL storage.
-
-        Returns
-        -------
-        list[dict]
-            Empty list.
         """
         return []
 

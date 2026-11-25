@@ -6,14 +6,14 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.context.builder import context_builder
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.factory.entity import entity_factory
 from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
 from digitalhub.stores.client.compiler.targets import BaseEntityTarget
-from digitalhub.stores.client.factory import get_client
+from digitalhub.stores.client.factory import resolve_client
 from digitalhub.stores.data.api import get_default_store_uri
+from digitalhub.stores.session import get_session
 from digitalhub.utils.exceptions import ContextError, EntityNotExistsError
 
 if typing.TYPE_CHECKING:
@@ -26,7 +26,7 @@ def build_context(project: Project) -> Context:
     Build a new context for a project.
 
     Creates or updates a context instance for the given project
-    in the global context registry.
+    in the session.
 
     Parameters
     ----------
@@ -38,7 +38,7 @@ def build_context(project: Project) -> Context:
     Context
         The newly created or existing context instance.
     """
-    return context_builder.build(project)
+    return get_session().contexts.build(project)
 
 
 def get_context(project: str) -> Context:
@@ -56,7 +56,7 @@ def get_context(project: str) -> Context:
         The context for the given project name.
     """
     try:
-        return context_builder.get(project)
+        return get_session().contexts.get(project)
     except ContextError:
         try:
             return get_context_from_remote(project)
@@ -84,7 +84,7 @@ def get_context_from_remote(project: str) -> Context:
         The context instance created from the remote project data.
     """
     try:
-        obj = get_client().execute(
+        obj = resolve_client().execute(
             ClientOp(
                 category=ApiType.BASE,
                 operation=BackendOp.READ,
@@ -92,7 +92,7 @@ def get_context_from_remote(project: str) -> Context:
             )
         )
         entity_factory.build_entity_from_dict(obj)
-        return context_builder.get(project)
+        return get_session().contexts.get(project)
     except EntityNotExistsError:
         raise ContextError(f"Project '{project}' not found.")
 
@@ -106,4 +106,4 @@ def delete_context(project: str) -> None:
     project : str
         Project name.
     """
-    context_builder.remove(project)
+    get_session().contexts.remove(project)

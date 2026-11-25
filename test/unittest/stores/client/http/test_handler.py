@@ -15,6 +15,7 @@ from requests.exceptions import RequestException
 from requests.exceptions import Timeout as RequestsTimeout
 
 import digitalhub.stores.client.http.transport as transport_module
+from digitalhub.stores.client.common.config import ClientConfig
 from digitalhub.stores.client.common.enums import OpsType
 from digitalhub.stores.client.common.logger import MAX_LOG_BODY_LENGTH, log_request_response
 from digitalhub.stores.client.common.utils import (
@@ -55,16 +56,25 @@ def test_backend_request_is_immutable_and_preserves_http_details() -> None:
         backend_request.params["name"] = "other"
 
 
-def test_backend_request_uses_configured_timeout(monkeypatch) -> None:
-    monkeypatch.setattr(
-        "digitalhub.stores.client.http.request.get_client_config",
-        lambda: Mock(http_timeout=17),
-    )
-
+def test_backend_request_leaves_timeout_to_the_sending_client() -> None:
     backend_request = BackendReq(method="GET", api="/resource")
 
-    assert backend_request.timeout == 17
-    assert backend_request.to_transport_kwargs()["timeout"] == 17
+    assert backend_request.timeout is None
+    assert "timeout" not in backend_request.to_transport_kwargs()
+
+
+def test_handler_applies_its_configured_timeout_unless_the_request_sets_one() -> None:
+    auth = Mock()
+    auth.get_endpoint.return_value = "https://example.test"
+    auth.authenticate.side_effect = lambda backend_request: backend_request
+    transport = Mock()
+    handler = HttpRequestHandler(auth, transport, ClientConfig(http_timeout=17))
+    handler._response_processor = Mock()
+
+    handler.execute_request(BackendReq(method="GET", api="/default"))
+    handler.execute_request(BackendReq(method="GET", api="/explicit", timeout=3))
+
+    assert [call.args[0].timeout for call in transport.execute.call_args_list] == [17, 3]
 
 
 def test_with_data_replaces_payload_without_mutating_request() -> None:
@@ -87,11 +97,8 @@ def test_with_data_replaces_payload_without_mutating_request() -> None:
     assert transformed_request.options == backend_request.options
 
 
-def test_request_transformations_are_copy_on_write(monkeypatch) -> None:
-    monkeypatch.setattr(
-        "digitalhub.stores.client.common.utils.get_client_config",
-        lambda: Mock(default_page_start=0, default_page_size=10, default_sort="updated,DESC"),
-    )
+def test_request_transformations_are_copy_on_write() -> None:
+    config = ClientConfig(default_page_start=0, default_page_size=10, default_sort="updated,DESC")
     backend_request = BackendReq(
         method="GET",
         api="/resource",
@@ -106,7 +113,8 @@ def test_request_transformations_are_copy_on_write(monkeypatch) -> None:
                 with_basic_auth(backend_request, "user", "password"),
                 "token",
             )
-        )
+        ),
+        config,
     )
 
     assert backend_request.params == {"filter": "active"}
@@ -168,6 +176,7 @@ def test_handler_executes_structured_backend_request(monkeypatch) -> None:
         params={"name": "demo"},
         headers={"X-Test": "value"},
         data="payload",
+        timeout=ClientConfig().http_timeout,
         options={"json": {"trace": True}},
     )
 
@@ -201,7 +210,7 @@ def test_request_refreshes_credentials_only_once(monkeypatch) -> None:
     configurator = Mock()
     configurator.get_endpoint.return_value = "https://example.test"
     configurator.authenticate.side_effect = lambda backend_request: backend_request
-    configurator.evaluate_refresh.return_value = True
+    configurator.invalidate.return_value = True
 
     transport = Mock()
     transport.execute.side_effect = [object(), object()]
@@ -214,7 +223,7 @@ def test_request_refreshes_credentials_only_once(monkeypatch) -> None:
         handler.execute_request(BackendReq(method="GET", api="/resource"))
 
     assert transport.execute.call_count == 2
-    configurator.evaluate_refresh.assert_called_once_with()
+    configurator.invalidate.assert_called_once_with()
 
 
 def test_request_returns_replay_result_after_refresh(monkeypatch) -> None:
@@ -234,7 +243,7 @@ def test_request_returns_replay_result_after_refresh(monkeypatch) -> None:
         )
 
     configurator.authenticate.side_effect = authenticate
-    configurator.evaluate_refresh.return_value = True
+    configurator.invalidate.return_value = True
 
     transport = Mock()
     transport.execute.side_effect = [object(), object()]
@@ -265,7 +274,7 @@ def test_request_does_not_refresh_credentials_on_forbidden(monkeypatch) -> None:
     with pytest.raises(ForbiddenError):
         handler.execute_request(BackendReq(method="GET", api="/resource"))
 
-    configurator.evaluate_refresh.assert_not_called()
+    configurator.invalidate.assert_not_called()
     assert transport.execute.call_count == 1
 
 

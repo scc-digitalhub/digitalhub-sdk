@@ -4,14 +4,20 @@
 
 from __future__ import annotations
 
+import typing
 from collections.abc import Iterator
 from typing import Any
 
 from digitalhub.stores.client.auth.client_configurator import ClientConfigurator
-from digitalhub.stores.client.compiler.operation import ClientOp
+from digitalhub.stores.client.common.config import ClientConfig
 from digitalhub.stores.client.executor.executor import ClientOpExecutor
 from digitalhub.stores.client.http.handler import HttpRequestHandler
-from digitalhub.stores.client.http.transport import HttpTransport
+from digitalhub.utils.exceptions import ClientError
+
+if typing.TYPE_CHECKING:
+    from digitalhub.stores.client.auth.provider import AuthProvider
+    from digitalhub.stores.client.compiler.operation import ClientOp
+    from digitalhub.stores.client.http.transport import HttpTransport
 
 
 class Client:
@@ -23,18 +29,35 @@ class Client:
     with refresh), and Personal Access Token exchange. Automatically handles
     API version compatibility, pagination, token refresh, error parsing, and
     JSON serialization.
+
+    A client is cheap to build and holds no global state: the transport is
+    shared and owned by whoever builds the client, the auth provider decides
+    whose credentials the requests carry, and the configuration sets timeout
+    and pagination.
+
+    Parameters
+    ----------
+    transport : HttpTransport
+        Connection pool, shared between clients and not closed by them.
+    auth : AuthProvider
+        Authenticates requests and resolves the endpoint.
+    config : ClientConfig, optional
+        Tunable settings. Defaults to ``ClientConfig()``, not to the global
+        configuration.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        transport: HttpTransport,
+        auth: AuthProvider,
+        config: ClientConfig | None = None,
+    ) -> None:
         """Initialize the client and its internal components."""
-        self._transport = HttpTransport()
-        self._configurator = ClientConfigurator(self._transport)
-        self._http_handler = HttpRequestHandler(self._configurator, self._transport)
-        self._executor = ClientOpExecutor(self._http_handler)
-
-    def close(self) -> None:
-        """Close client resources."""
-        self._transport.close()
+        self._config = config if config is not None else ClientConfig()
+        self._transport = transport
+        self._auth = auth
+        self._http_handler = HttpRequestHandler(auth, transport, self._config)
+        self._executor = ClientOpExecutor(self._http_handler, self._config)
 
     ##############################
     # CRUD methods
@@ -60,29 +83,35 @@ class Client:
     # Facade methods
     ##############################
 
+    def _identity(self) -> ClientConfigurator:
+        """Return the user identity behind this client, for credential and profile operations."""
+        if isinstance(self._auth, ClientConfigurator):
+            return self._auth
+        raise ClientError("Credentials and profiles are available only on a client of the user identity.")
+
     def eval_retry(self, check_token_validity: bool = False) -> bool:
         """
         Evaluate the status of retry lifecycle.
         """
-        return self._configurator.evaluate_refresh(check_token_validity=check_token_validity)
+        return self._identity().evaluate_refresh(check_token_validity=check_token_validity)
 
     def get_credentials_and_config(self) -> dict:
         """
         Get current authentication credentials and configuration.
         """
-        return self._configurator.get_credentials_and_config()
+        return self._identity().get_credentials_and_config()
 
     def set_current_profile(self, profile: str) -> None:
         """
         Set the current credentials profile.
         """
-        self._configurator.set_current_profile(profile)
+        self._identity().set_current_profile(profile)
 
     def get_current_profile(self) -> str:
         """
         Get the name of the current credentials profile.
         """
-        return self._configurator.get_current_profile()
+        return self._identity().get_current_profile()
 
     def get_k8s_resource_profiles(self) -> list[str]:
         """

@@ -2,24 +2,21 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
 
-import digitalhub.stores.client.factory as factory_module
-from digitalhub.stores.client.auth import file_module
+import digitalhub.stores.session as session_module
 from digitalhub.stores.client.common.config import (
     ClientConfig,
     _get_config_file_path,
     get_client_config,
     set_client_config,
 )
-from digitalhub.stores.client.common.enums import ApiType, BackendOp, ConfigurationVars
+from digitalhub.stores.client.common.enums import ConfigurationVars
 from digitalhub.stores.client.common.utils import sanitize_endpoint
-from digitalhub.stores.client.compiler.apis.api import ClientApiBuilder
-from digitalhub.stores.client.compiler.targets import BaseCollectionTarget, ContextCollectionTarget
-from digitalhub.stores.client.http.response import ResponseProcessor
+from digitalhub.stores.client.factory import get_client
+from digitalhub.stores.session import Session
 
 
 @pytest.fixture(autouse=True)
@@ -29,54 +26,21 @@ def restore_client_config():
     set_client_config(original_config)
 
 
-def test_set_client_config_updates_imported_dependencies(monkeypatch, tmp_path) -> None:
-    old_directory = tmp_path / "old"
-    old_directory.mkdir()
-    monkeypatch.setattr(file_module, "DOTENV_FILE", old_directory / ".env", raising=False)
+def test_set_client_config_reconfigures_the_session(monkeypatch) -> None:
+    transport = Mock()
+    session = Session(transport=transport, identity=Mock())
+    monkeypatch.setattr(session_module, "_session", session)
+    original_client = get_client()
+    config = ClientConfig(http_timeout=120)
 
-    config_directory = tmp_path / "current"
-    config_directory.mkdir()
-    set_client_config(
-        ClientConfig(
-            config_ini_path=config_directory / "config.ini",
-            api_base="/custom/base",
-            api_context="/custom/context",
-            min_api_level=30,
-            max_api_level=31,
-            lib_version=30,
-        )
-    )
+    set_client_config(config)
+    client = get_client()
 
-    file_module.write_dotenv({"access_token": "token"})
-    api_builder = ClientApiBuilder()
-    base_api = api_builder.build_api(
-        ApiType.BASE,
-        BackendOp.LIST,
-        BaseCollectionTarget("project"),
-    )
-    context_api = api_builder.build_api(
-        ApiType.CONTEXT,
-        BackendOp.LIST,
-        ContextCollectionTarget("project", "function"),
-    )
-    ResponseProcessor()._check_api_version(SimpleNamespace(headers={"X-Api-Level": "30"}))
-
-    assert (config_directory / ".env").exists()
-    assert not (old_directory / ".env").exists()
-    assert base_api == "/custom/base/projects"
-    assert context_api == "/custom/context/project/functions"
-
-
-def test_set_client_config_invalidates_default_client(monkeypatch) -> None:
-    clients = [Mock(), Mock()]
-    monkeypatch.setattr(factory_module, "Client", Mock(side_effect=clients))
-    factory_module.client_factory.reset()
-    original_client = factory_module.get_client()
-
-    set_client_config(ClientConfig(http_timeout=120))
-
-    original_client.close.assert_called_once_with()
-    assert factory_module.get_client() is not original_client
+    assert get_client_config() is config
+    assert session.config is config
+    assert client is not original_client
+    assert client._config is config
+    assert client._transport is transport
 
 
 def test_client_config_rejects_non_positive_refresh_attempts() -> None:
