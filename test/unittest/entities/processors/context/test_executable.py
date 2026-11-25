@@ -10,6 +10,7 @@ import pytest
 
 import digitalhub.entities._processors.context.executable as executable_module
 from digitalhub.entities._commons.enums import Relationship, State
+from digitalhub.entities._mixin.source.entity import SourceEntityMixin
 from digitalhub.entities._mixin.versioned.mixin import VersionedMixin
 from digitalhub.entities._processors.context.executable import ContextEntityExecutableProcessor
 from digitalhub.entities.log._base.entity import Log
@@ -871,3 +872,66 @@ def test_load_executable_creates_missing_entity(monkeypatch) -> None:
     )
     assert build_entity.call_args_list[1] == call(backend_response, entity_type="function")
     processor.import_tasks.assert_called_once_with(imported, [])
+
+
+class SourceExecutable(SourceEntityMixin, VersionedExecutable):
+    """Executable with a source; records the project its source is checked in."""
+
+    def __init__(self, events: list) -> None:
+        super().__init__()
+        self.events = events
+
+    def _post_build_source_check(self):
+        self.events.append(("source checked", self.project))
+        return self
+
+
+def test_import_executable_checks_local_source_in_the_target_project_before_saving(monkeypatch) -> None:
+    # The check used to run inside from_dict(), before the identity update,
+    # so a local source was uploaded under the project of the file.
+    events: list = []
+    crud_processor = Mock()
+    processor = ContextEntityExecutableProcessor(crud_processor)
+    executable = SourceExecutable(events)
+    imported = VersionedExecutable(project="target-project")
+    processor.import_tasks = Mock()
+    crud_processor._create_context_entity.side_effect = lambda *args: events.append("saved") or imported.to_dict()
+    monkeypatch.setattr(
+        executable_module,
+        "read_yaml",
+        Mock(return_value={"project": "project", "key": "store://project/function/function/function:entity-id"}),
+    )
+    monkeypatch.setattr(executable_module, "get_context", Mock(return_value=_context("target-project")))
+    monkeypatch.setattr(
+        executable_module.entity_factory,
+        "build_entity_from_dict",
+        Mock(side_effect=[executable, imported]),
+    )
+
+    processor.import_executable_entity(file="entity.yaml", context="target-project")
+
+    assert events == [("source checked", "target-project"), "saved"]
+
+
+def test_load_executable_checks_local_source_before_saving(monkeypatch) -> None:
+    events: list = []
+    crud_processor = Mock()
+    processor = ContextEntityExecutableProcessor(crud_processor)
+    executable = SourceExecutable(events)
+    processor.import_tasks = Mock()
+    crud_processor._update_context_entity.side_effect = lambda *args: events.append("saved") or executable.to_dict()
+    monkeypatch.setattr(
+        executable_module,
+        "read_yaml",
+        Mock(return_value={"project": "project", "key": "store://project/function/function/function:entity-id"}),
+    )
+    monkeypatch.setattr(executable_module, "get_context", Mock(return_value=_context()))
+    monkeypatch.setattr(
+        executable_module.entity_factory,
+        "build_entity_from_dict",
+        Mock(side_effect=[executable, VersionedExecutable()]),
+    )
+
+    processor.load_executable_entity("entity.yaml")
+
+    assert events == [("source checked", "project"), "saved"]

@@ -7,7 +7,6 @@ from __future__ import annotations
 import typing
 from pathlib import Path
 
-from digitalhub.context.api import build_context
 from digitalhub.entities._base.entity.entity import PersistedEntity
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._commons.keys import build_project_key
@@ -89,9 +88,6 @@ class Project(PersistedEntity, ProjectListShortcuts, ExtensionsMixin):
         self.id = name  # Unique identifier for the project
         self.name = name
         self.key = build_project_key(self.name)
-
-        # Set context
-        build_context(self)
 
     # Explicitly assigned client; None means resolve on every access.
     _client_override: Client | None = None

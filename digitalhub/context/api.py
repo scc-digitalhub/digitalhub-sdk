@@ -91,8 +91,7 @@ def get_context_from_remote(project: str) -> Context:
                 target=BaseEntityTarget(EntityTypes.PROJECT.value, project),
             )
         )
-        entity_factory.build_entity_from_dict(obj)
-        return get_session().contexts.get(project)
+        return build_context(entity_factory.build_entity_from_dict(obj))
     except EntityNotExistsError:
         raise ContextError(f"Project '{project}' not found.")
 

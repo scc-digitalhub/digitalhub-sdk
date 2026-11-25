@@ -242,3 +242,21 @@ def test_source_export_rejects_paths_outside_context_root(tmp_path, monkeypatch,
 
     assert outside.read_text() == "original"
     assert source.base64 == encoded
+
+
+def test_from_dict_leaves_the_source_alone() -> None:
+    # Deserialization must not upload: from_dict() also reads backend state,
+    # and the upload belongs to the import that saves the entity.
+    entity = Mock()
+
+    class Base:
+        ENTITY_SPEC_CLASS = SourceSpec
+
+        def from_dict(self, obj):
+            return entity
+
+    class Builder(SourceBuilderMixin, Base):
+        pass
+
+    assert Builder().from_dict({"spec": {"source": {"source": "local-dir"}}}) is entity
+    entity._post_build_source_check.assert_not_called()

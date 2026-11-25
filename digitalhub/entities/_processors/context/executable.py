@@ -9,6 +9,7 @@ import typing
 
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes, Relationship, State
 from digitalhub.entities._constructors.uuid import build_uuid
+from digitalhub.entities._mixin.source.entity import SourceEntityMixin
 from digitalhub.entities._processors.utils import (
     get_context,
     get_context_from_identifier,
@@ -465,6 +466,7 @@ class ContextEntityExecutableProcessor:
         obj: ExecutableProtocol = entity_factory.build_entity_from_dict(exec_dict, entity_type=entity_type)
 
         update_entity_identity(obj, context, build_uuid() if reset_id else None)
+        self._upload_local_source(obj)
 
         try:
             bck_obj = self.crud_processor._create_context_entity(ctx, obj.ENTITY_TYPE, obj.to_dict())
@@ -474,6 +476,17 @@ class ContextEntityExecutableProcessor:
 
         self.import_tasks(new_obj, tsk_dicts)
         return new_obj
+
+    @staticmethod
+    def _upload_local_source(obj: ExecutableProtocol) -> None:
+        """
+        Upload or inline a local source read from a file, before saving.
+
+        Done here and not in ``from_dict()``: deserialization stays free of
+        I/O, and the upload goes to the project the entity is saved into.
+        """
+        if isinstance(obj, SourceEntityMixin):
+            obj._post_build_source_check()
 
     def load_executable_entity(
         self,
@@ -490,6 +503,7 @@ class ContextEntityExecutableProcessor:
         context = get_context(exec_dict["project"])
         _, entity_type, _, _, _ = parse_identifier(exec_dict["key"])
         obj: ExecutableProtocol = entity_factory.build_entity_from_dict(exec_dict, entity_type=entity_type)
+        self._upload_local_source(obj)
 
         try:
             backend_obj = self.crud_processor._update_context_entity(context, obj.ENTITY_TYPE, obj.id, obj.to_dict())

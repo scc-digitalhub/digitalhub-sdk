@@ -19,8 +19,6 @@ class _SourceBuilderBase(Protocol):
 
     def build(self, *args: Any, **kwargs: Any) -> Any: ...
 
-    def from_dict(self, obj: dict) -> Any: ...
-
 
 class _SourceBuildResult(Protocol):
     def _post_build_source_check(self) -> Any: ...
@@ -91,8 +89,4 @@ class SourceBuilderMixin:
         prepared = self._prepare_source_kwargs(kwargs)
         prepared = self._prepare_kwargs(prepared)
         entity = cast(_SourceBuilderBase, super()).build(*args, **prepared)
-        return cast(_SourceBuildResult, entity)._post_build_source_check()
-
-    def from_dict(self, obj: dict) -> Any:
-        entity = cast(_SourceBuilderBase, super()).from_dict(obj)
         return cast(_SourceBuildResult, entity)._post_build_source_check()

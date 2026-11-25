@@ -7,7 +7,7 @@ from __future__ import annotations
 import typing
 from warnings import warn
 
-from digitalhub.context.api import delete_context
+from digitalhub.context.api import build_context, delete_context
 from digitalhub.factory.entity import entity_factory
 from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
@@ -23,6 +23,18 @@ if typing.TYPE_CHECKING:
 
 
 class BaseEntityCRUDProcessor:
+    @staticmethod
+    def _registered(obj: dict) -> Project:
+        """
+        Build a project from backend state and register its context.
+
+        Contexts change only here, with what the backend returned: building a
+        project elsewhere, from a listing or a YAML file, leaves them alone.
+        """
+        project = typing.cast("Project", entity_factory.build_entity_from_dict(obj))
+        build_context(project)
+        return project
+
     def _create_base_entity(self, client: Client, entity_type: str, entity_dict: dict) -> dict:
         return client.execute(
             ClientOp(
@@ -41,7 +53,7 @@ class BaseEntityCRUDProcessor:
             client = resolve_client()
             obj = entity_factory.build_entity_from_params(**kwargs)
         ent = self._create_base_entity(client, obj.ENTITY_TYPE, obj.to_dict())
-        return entity_factory.build_entity_from_dict(ent)
+        return self._registered(ent)
 
     def _read_base_entity(
         self,
@@ -60,7 +72,7 @@ class BaseEntityCRUDProcessor:
     def read_project_entity(self, entity_type: str, entity_name: str) -> Project:
         client = resolve_client()
         obj = self._read_base_entity(client, entity_type, entity_name)
-        return entity_factory.build_entity_from_dict(obj)
+        return self._registered(obj)
 
     def _list_base_entities(self, client: Client, entity_type: str) -> list[dict]:
         return client.execute_list(
@@ -87,16 +99,18 @@ class BaseEntityCRUDProcessor:
         reset_id = kwargs.pop("reset_id", False)
 
         try:
-            self._create_base_entity(ent._client, ent.ENTITY_TYPE, ent.to_dict())
+            created = self._create_base_entity(ent._client, ent.ENTITY_TYPE, ent.to_dict())
         except EntityAlreadyExistsError:
             msg = f"Entity {ent.name} already exists."
             if reset_id:
+                self.read_project_entity(ent.ENTITY_TYPE, ent.name)
                 ent._import_entities(obj, reset_id=reset_id)
                 warn(f"{msg} Other entities ids have been imported.")
                 ent.refresh()
                 return ent
             raise EntityError(f"{msg} If you want to update it, use load instead.")
 
+        self._registered(created)
         ent._import_entities(obj, reset_id=reset_id)
         ent.refresh()
         return ent
@@ -106,10 +120,11 @@ class BaseEntityCRUDProcessor:
         ent: Project = entity_factory.build_entity_from_dict(obj)
 
         try:
-            self._update_base_entity(ent._client, ent.ENTITY_TYPE, ent.name, ent.to_dict())
+            stored = self._update_base_entity(ent._client, ent.ENTITY_TYPE, ent.name, ent.to_dict())
         except EntityNotExistsError:
-            self._create_base_entity(ent._client, ent.ENTITY_TYPE, ent.to_dict())
+            stored = self._create_base_entity(ent._client, ent.ENTITY_TYPE, ent.to_dict())
 
+        self._registered(stored)
         ent._load_entities(obj)
         ent.refresh()
         return ent
@@ -138,7 +153,7 @@ class BaseEntityCRUDProcessor:
     ) -> Project:
         client = resolve_client()
         obj = self._update_base_entity(client, entity_type, entity_name, entity_dict)
-        return entity_factory.build_entity_from_dict(obj)
+        return self._registered(obj)
 
     def _delete_base_entity(
         self,

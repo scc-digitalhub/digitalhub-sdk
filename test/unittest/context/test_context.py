@@ -41,7 +41,6 @@ def test_project_context_io_is_lazy(monkeypatch, tmp_path) -> None:
     run = SimpleNamespace(key="run-key", id="run-id")
 
     monkeypatch.setattr("digitalhub.context.context.resolve_client", Mock(return_value=client))
-    monkeypatch.setattr("digitalhub.entities.project._base.entity.build_context", builder.build)
     monkeypatch.setattr(
         "digitalhub.context.context.entity_factory.build_entity_from_dict",
         Mock(return_value=run),
@@ -55,7 +54,7 @@ def test_project_context_io_is_lazy(monkeypatch, tmp_path) -> None:
         spec=SimpleNamespace(source=str(root), config={}),
         status=SimpleNamespace(),
     )
-    context = builder.get(project.name)
+    context = builder.build(project)
 
     assert not root.exists()
     client.execute.assert_not_called()
