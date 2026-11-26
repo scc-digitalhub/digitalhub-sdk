@@ -10,7 +10,6 @@ import digitalhub.entities._mixin.material.utils as material_utils
 import digitalhub.entities.artifact._base.crud as artifact_base_crud
 import digitalhub.entities.artifact.artifact.crud as artifact_crud
 import digitalhub.entities.artifact.crud as context_crud
-import digitalhub.entities.artifact.generic.crud as generic_crud
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
 from digitalhub.entities._processors import crud_factory
 from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
@@ -253,72 +252,6 @@ def test_log_base_artifact_validates_source_and_builds_storage_kwargs(monkeypatc
         description="An artifact",
         labels=["production"],
         path="s3://bucket/artifact.bin",
-        format="bin",
-    )
-
-
-def test_log_generic_artifact_delegates_to_base(monkeypatch) -> None:
-    log_base_artifact = Mock(return_value="artifact")
-    monkeypatch.setattr(generic_crud, "log_base_artifact", log_base_artifact)
-
-    result = generic_crud.log_generic_artifact(
-        project="my-project",
-        kind="custom-artifact",
-        source="./artifact.bin",
-        name="artifact",
-        drop_existing=True,
-        path="s3://bucket/artifact.bin",
-        version="1",
-        description="An artifact",
-        labels=["production"],
-        format="bin",
-    )
-
-    assert result == "artifact"
-    log_base_artifact.assert_called_once_with(
-        project="my-project",
-        name="artifact",
-        kind="custom-artifact",
-        source="./artifact.bin",
-        drop_existing=True,
-        path="s3://bucket/artifact.bin",
-        version="1",
-        description="An artifact",
-        labels=["production"],
-        format="bin",
-    )
-
-
-def test_register_generic_artifact_delegates_to_base(monkeypatch) -> None:
-    register_base_artifact = Mock(return_value="artifact")
-    monkeypatch.setattr(generic_crud, "register_base_artifact", register_base_artifact)
-
-    result = generic_crud.register_generic_artifact(
-        project="my-project",
-        kind="custom-artifact",
-        source="s3://bucket/artifact.bin",
-        name="artifact",
-        uuid="artifact-id",
-        version="1",
-        description="An artifact",
-        labels=["production"],
-        embedded=True,
-        extensions=[{"key": "value"}],
-        format="bin",
-    )
-
-    assert result == "artifact"
-    register_base_artifact.assert_called_once_with(
-        project="my-project",
-        source="s3://bucket/artifact.bin",
-        entity_kind="custom-artifact",
-        name="artifact",
-        uuid="artifact-id",
-        version="1",
-        description="An artifact",
-        labels=["production"],
-        embedded=True,
-        extensions=[{"key": "value"}],
         format="bin",
     )
 

@@ -17,7 +17,6 @@ from digitalhub.entities.artifact.crud import (
     load_artifact,
     update_artifact,
 )
-from digitalhub.entities.artifact.generic.crud import log_generic_artifact, register_generic_artifact
 from digitalhub.entities.containerimage.crud import (
     delete_containerimage,
     get_containerimage,
@@ -40,7 +39,6 @@ from digitalhub.entities.dataitem.crud import (
     update_dataitem,
 )
 from digitalhub.entities.dataitem.dataitem.crud import log_dataitem, register_dataitem
-from digitalhub.entities.dataitem.generic.crud import log_generic_dataitem, register_generic_dataitem
 from digitalhub.entities.dataitem.table.crud import log_table, register_table
 from digitalhub.entities.function.crud import (
     delete_function,
@@ -62,7 +60,6 @@ from digitalhub.entities.model.crud import (
     load_model,
     update_model,
 )
-from digitalhub.entities.model.generic.crud import log_generic_model, register_generic_model
 from digitalhub.entities.model.model.crud import log_model, register_model
 from digitalhub.entities.project.crud import (
     delete_project,
@@ -135,18 +132,11 @@ def _import(function: Callable[..., Any]) -> CrudPlugin:
     return CrudPlugin(function, inject_context=True)
 
 
-def _unbound(function: Callable[..., Any]) -> CrudPlugin:
-    """Not exposed as a project method."""
-    return CrudPlugin(function, project_bound=False)
-
-
 crud_plugins: tuple[CrudPlugin, ...] = (
     # Artifact
     CrudPlugin(new_artifact),
     CrudPlugin(log_artifact),
-    _unbound(log_generic_artifact),
     CrudPlugin(register_artifact),
-    _unbound(register_generic_artifact),
     _read(get_artifact),
     _read(get_artifact_versions),
     _read(list_artifacts),
@@ -165,11 +155,9 @@ crud_plugins: tuple[CrudPlugin, ...] = (
     CrudPlugin(delete_containerimage),
     # Dataitem
     CrudPlugin(new_dataitem),
-    _unbound(log_generic_dataitem),
     CrudPlugin(log_dataitem),
     CrudPlugin(log_table),
     CrudPlugin(log_croissant),
-    _unbound(register_generic_dataitem),
     CrudPlugin(register_dataitem),
     CrudPlugin(register_table),
     CrudPlugin(register_croissant),
@@ -191,9 +179,7 @@ crud_plugins: tuple[CrudPlugin, ...] = (
     CrudPlugin(delete_function),
     # Model
     CrudPlugin(new_model),
-    _unbound(log_generic_model),
     CrudPlugin(log_model),
-    _unbound(register_generic_model),
     CrudPlugin(register_model),
     _read(get_model),
     _read(get_model_versions),

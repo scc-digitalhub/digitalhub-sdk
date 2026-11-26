@@ -19,7 +19,6 @@ class CrudPlugin:
     """Declaration for a public shortcut."""
 
     function: Callable[..., Any]
-    project_bound: bool = True
     refresh_project: bool = True
     validate_entity_project: bool = False
     inject_context: bool = False

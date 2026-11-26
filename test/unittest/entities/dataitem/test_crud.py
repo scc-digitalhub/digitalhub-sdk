@@ -11,7 +11,6 @@ import digitalhub.entities.dataitem._base.crud as base_crud
 import digitalhub.entities.dataitem.croissant.crud as croissant_crud
 import digitalhub.entities.dataitem.crud as context_crud
 import digitalhub.entities.dataitem.dataitem.crud as dataitem_crud
-import digitalhub.entities.dataitem.generic.crud as generic_crud
 import digitalhub.entities.dataitem.table.crud as table_crud
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
 from digitalhub.entities._processors import crud_factory
@@ -35,31 +34,6 @@ def test_register_dataitem_delegates_to_base_with_specific_kind(monkeypatch) -> 
         source="s3://my-bucket/data/data.csv",
         entity_kind=EntityKinds.DATAITEM_DATAITEM.value,
         name="data",
-        uuid=None,
-        version=None,
-        description=None,
-        labels=None,
-        embedded=False,
-        extensions=None,
-    )
-
-
-def test_register_generic_dataitem_passes_dynamic_kind(monkeypatch) -> None:
-    register_base_dataitem = Mock(return_value="dataitem")
-    monkeypatch.setattr(generic_crud, "register_base_dataitem", register_base_dataitem)
-
-    result = generic_crud.register_generic_dataitem(
-        project="my-project",
-        kind="custom-dataitem",
-        source="s3://my-bucket/data/data.csv",
-    )
-
-    assert result == "dataitem"
-    register_base_dataitem.assert_called_once_with(
-        project="my-project",
-        source="s3://my-bucket/data/data.csv",
-        entity_kind="custom-dataitem",
-        name=None,
         uuid=None,
         version=None,
         description=None,
@@ -211,38 +185,6 @@ def test_log_base_dataitem_validates_source_and_builds_storage_kwargs(monkeypatc
         description="A dataitem",
         labels=["raw"],
         path="s3://bucket/data.csv",
-        format="csv",
-    )
-
-
-def test_log_generic_dataitem_delegates_to_base(monkeypatch) -> None:
-    log_base_dataitem = Mock(return_value="dataitem")
-    monkeypatch.setattr(generic_crud, "log_base_dataitem", log_base_dataitem)
-
-    result = generic_crud.log_generic_dataitem(
-        project="my-project",
-        kind="custom-dataitem",
-        source="./data.csv",
-        name="data",
-        drop_existing=True,
-        path="s3://bucket/data.csv",
-        version="1",
-        description="A dataitem",
-        labels=["raw"],
-        format="csv",
-    )
-
-    assert result == "dataitem"
-    log_base_dataitem.assert_called_once_with(
-        project="my-project",
-        name="data",
-        kind="custom-dataitem",
-        source="./data.csv",
-        drop_existing=True,
-        path="s3://bucket/data.csv",
-        version="1",
-        description="A dataitem",
-        labels=["raw"],
         format="csv",
     )
 

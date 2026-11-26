@@ -86,7 +86,7 @@ class BuilderRegistry:
             return self._entity_builders[kind]
         if entity_type is not None and entity_type in self._generic_entity_builders:
             return self._generic_entity_builders[entity_type]
-        raise BuilderError(f"Entity builder for kind '{kind}' not found.")
+        raise BuilderError(f"Kind '{kind}' not found: is the runtime that provides it installed?")
 
     def get_runtime_builder(self, kind: str) -> RuntimeBuilder:
         """
@@ -107,7 +107,7 @@ class BuilderRegistry:
         try:
             builder = self._runtime_builders[kind]
         except KeyError as e:
-            raise BuilderError(f"Runtime builder for kind '{kind}' not found.") from e
+            raise BuilderError(f"No runtime for kind '{kind}': is the runtime that provides it installed?") from e
         if isinstance(builder, str):
             return self._load_runtime_builder(kind)
         return builder
@@ -163,12 +163,6 @@ class BuilderRegistry:
         if not self._runtimes_registered:
             self._ensure_runtimes_registered()
         return tuple(sorted(self._crud_plugins))
-
-    def get_project_shortcut_names(self) -> tuple[str, ...]:
-        """Return registered shortcuts that can be bound to a project."""
-        self.get_shortcut_names()
-        crud_plugins = self._crud_plugins
-        return tuple(name for name, spec in sorted(crud_plugins.items()) if spec.project_bound)
 
     def _ensure_entities_registered(self) -> None:
         """

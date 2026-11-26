@@ -87,8 +87,6 @@ class Project(PersistedEntity, ProjectListShortcuts, ExtensionsMixin):
             shortcut_spec = registry.get_shortcut_spec(name)
         except AttributeError as e:
             raise AttributeError(name) from e
-        if not shortcut_spec.project_bound:
-            raise AttributeError(name)
 
         shortcut = bind_project_shortcut(
             registry.get_shortcut(name),
@@ -102,7 +100,7 @@ class Project(PersistedEntity, ProjectListShortcuts, ExtensionsMixin):
 
     def __dir__(self) -> list[str]:
         """Include project-bound plugin shortcuts in completion."""
-        return sorted(set(super().__dir__()) | set(registry.get_project_shortcut_names()))
+        return sorted(set(super().__dir__()) | set(registry.get_shortcut_names()))
 
     ##############################
     #  Save / Refresh / Export

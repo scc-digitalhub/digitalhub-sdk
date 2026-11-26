@@ -13,7 +13,3 @@ class GenericSpec(Spec):
     """Spec that preserves arbitrary payload fields without filtering."""
 
     ALLOW_EXTRA_INPUTS: ClassVar[bool] = True
-
-    @classmethod
-    def from_dict(cls, obj: dict) -> GenericSpec:
-        return cls(**obj)

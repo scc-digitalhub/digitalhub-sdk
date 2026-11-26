@@ -11,13 +11,10 @@ from digitalhub.entities._mixin.extensions.mixin import ExtensionsMixin
 from digitalhub.entities._mixin.generic.spec import GenericSpec
 from digitalhub.entities._mixin.generic.status import GenericStatus
 from digitalhub.entities.artifact._base.entity import Artifact
-from digitalhub.entities.artifact.generic.entity import ArtifactGeneric
 from digitalhub.entities.dataitem._base.entity import Dataitem
 from digitalhub.entities.model._base.entity import Model
-from digitalhub.entities.model.generic.entity import ModelGeneric
 from digitalhub.entities.project._base.entity import Project
 from digitalhub.entities.run._base.entity import Run
-from digitalhub.entities.run.generic.entity import RunGeneric
 
 
 class StubEntity(PersistedEntity):
@@ -57,10 +54,7 @@ def test_serialization_attributes_are_immutable_class_contracts() -> None:
     assert ContextEntity._obj_attr == context_attributes
     assert Project._obj_attr == (*entity_attributes, "id", "name", *ExtensionsMixin._obj_attr)
 
-    for entity_class in (Artifact, ArtifactGeneric, Dataitem, Model, ModelGeneric):
-        assert entity_class._obj_attr == material_attributes
-
-    for entity_class in (Run, RunGeneric):
+    for entity_class in (Artifact, Dataitem, Model, Run):
         assert entity_class._obj_attr == material_attributes
 
 

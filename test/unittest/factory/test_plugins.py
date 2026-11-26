@@ -227,7 +227,7 @@ def test_project_resolves_shortcut_and_lists_project_shortcuts(monkeypatch) -> N
     fake_registry = SimpleNamespace(
         get_shortcut_spec=lambda name: spec,
         get_shortcut=lambda name: shortcut,
-        get_project_shortcut_names=lambda: ("new_function_stub",),
+        get_shortcut_names=lambda: ("new_function_stub",),
     )
     monkeypatch.setattr(project_module, "registry", fake_registry)
 
@@ -247,9 +247,7 @@ def test_core_artifact_crud_plugins_are_discovered(monkeypatch) -> None:
     assert {
         "new_artifact",
         "log_artifact",
-        "log_generic_artifact",
         "register_artifact",
-        "register_generic_artifact",
         "get_artifact",
         "get_artifact_versions",
         "list_artifacts",
@@ -259,26 +257,6 @@ def test_core_artifact_crud_plugins_are_discovered(monkeypatch) -> None:
         "delete_artifact",
     }.issubset(registry.get_shortcut_names())
     assert registry.get_shortcut("log_artifact") is artifact_kind_crud.log_artifact
-
-
-def test_generic_plugins_are_not_project_bound(monkeypatch) -> None:
-    registry = BuilderRegistry()
-    registry_module = importlib.import_module(BuilderRegistry.__module__)
-    monkeypatch.setattr(registry_module, "list_runtime_entry_points", list)
-
-    shortcut_names = registry.get_shortcut_names()
-    project_shortcut_names = registry.get_project_shortcut_names()
-
-    generic_shortcut_names = {
-        "log_generic_artifact",
-        "log_generic_dataitem",
-        "log_generic_model",
-        "register_generic_artifact",
-        "register_generic_dataitem",
-        "register_generic_model",
-    }
-    assert generic_shortcut_names.issubset(shortcut_names)
-    assert not generic_shortcut_names & set(project_shortcut_names)
 
 
 def test_core_entity_crud_plugins_are_discovered(monkeypatch) -> None:

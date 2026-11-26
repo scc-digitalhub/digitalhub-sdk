@@ -9,7 +9,6 @@ import pytest
 
 import digitalhub.entities.model._base.crud as base_crud
 import digitalhub.entities.model.crud as context_crud
-import digitalhub.entities.model.generic.crud as generic_crud
 import digitalhub.entities.model.model.crud as model_crud
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
 from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
@@ -71,31 +70,6 @@ def test_register_model_delegates_to_base_with_specific_kind(monkeypatch) -> Non
             "embedded": False,
             "extensions": None,
         },
-    )
-
-
-def test_register_generic_model_passes_dynamic_kind(monkeypatch) -> None:
-    register_base_model = Mock(return_value="model")
-    monkeypatch.setattr(generic_crud, "register_base_model", register_base_model)
-
-    result = generic_crud.register_generic_model(
-        project="my-project",
-        kind="custom-model",
-        source="s3://my-bucket/models/model.bin",
-    )
-
-    assert result == "model"
-    register_base_model.assert_called_once_with(
-        project="my-project",
-        source="s3://my-bucket/models/model.bin",
-        entity_kind="custom-model",
-        name=None,
-        uuid=None,
-        version=None,
-        description=None,
-        labels=None,
-        embedded=False,
-        extensions=None,
     )
 
 
@@ -199,38 +173,6 @@ def test_log_base_model_builds_payload_for_local_source(monkeypatch, tmp_path) -
         "format": "bin",
         "path": "s3://bucket/model.bin",
     }
-
-
-def test_log_generic_model_delegates_to_base(monkeypatch) -> None:
-    log_base_model = Mock(return_value="model")
-    monkeypatch.setattr(generic_crud, "log_base_model", log_base_model)
-
-    result = generic_crud.log_generic_model(
-        project="my-project",
-        kind="custom-model",
-        source="./model.bin",
-        name="model",
-        drop_existing=True,
-        path="s3://bucket/model.bin",
-        version="1",
-        description="A model",
-        labels=["production"],
-        format="bin",
-    )
-
-    assert result == "model"
-    log_base_model.assert_called_once_with(
-        project="my-project",
-        name="model",
-        kind="custom-model",
-        source="./model.bin",
-        drop_existing=True,
-        path="s3://bucket/model.bin",
-        version="1",
-        description="A model",
-        labels=["production"],
-        format="bin",
-    )
 
 
 @pytest.mark.parametrize(
