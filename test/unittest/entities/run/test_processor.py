@@ -128,10 +128,12 @@ def test_build_preserves_fields_from_runtime_merge(monkeypatch) -> None:
     processor = RunProcessor(Mock())
     processor._update = Mock()
     run = SimpleNamespace(
+        id="run-id",
         kind="python+run",
         project="project",
         spec=RunSpec(task="task://project/task-id"),
-        status=SimpleNamespace(state=State.READY.value),
+        status=SimpleNamespace(state=State.CREATED.value),
+        local_execution=Mock(return_value=True),
         to_dict=Mock(return_value={"spec": {"task": "task://project/task-id"}}),
     )
     processor.get_executable = Mock(return_value={"spec": {"function": "function-ref"}})
@@ -233,12 +235,34 @@ def test_wait_rejects_invalid_timing_values(timeout, poll_interval) -> None:
     run.refresh.assert_not_called()
 
 
-def test_run_ends_execution_when_setup_fails() -> None:
+def test_build_of_a_local_run_starts_only_from_created(monkeypatch) -> None:
+    processor = RunProcessor(Mock())
+    processor._update = Mock()
+    build_runtime = Mock()
+    monkeypatch.setattr(run_processor_module.runtime_factory, "build_runtime", build_runtime)
+    run = SimpleNamespace(
+        id="run-id",
+        status=SimpleNamespace(state=State.COMPLETED.value),
+        local_execution=Mock(return_value=True),
+    )
+
+    with pytest.raises(EntityError, match="cannot go from COMPLETED to BUILT"):
+        processor.build(run)
+
+    build_runtime.assert_not_called()
+    processor._update.assert_not_called()
+
+
+def test_run_marks_a_local_run_as_error_when_setup_fails() -> None:
     processor = RunProcessor(Mock())
     processor._refresh = Mock()
+    processor._update = Mock()
     processor.start_execution = Mock()
     processor.end_execution = Mock()
     run = SimpleNamespace(
+        id="run-id",
+        status=SimpleNamespace(state=State.RUNNING.value, message=None),
+        local_execution=Mock(return_value=True),
         _setup_execution=Mock(side_effect=RuntimeError("setup failed")),
     )
 
@@ -246,6 +270,9 @@ def test_run_ends_execution_when_setup_fails() -> None:
         processor.run(run)
 
     processor.end_execution.assert_called_once_with(run)
+    assert run.status.state == State.ERROR.value
+    assert run.status.message == "setup failed"
+    processor._update.assert_called_once_with(run)
 
 
 def test_run_ends_execution_when_runtime_fails(monkeypatch) -> None:
@@ -255,6 +282,7 @@ def test_run_ends_execution_when_runtime_fails(monkeypatch) -> None:
     processor.start_execution = Mock()
     processor.end_execution = Mock()
     run = SimpleNamespace(
+        id="run-id",
         kind="python+run",
         project="project",
         status=SimpleNamespace(state=State.RUNNING.value, message=None),
@@ -278,17 +306,19 @@ def test_run_ends_execution_when_runtime_fails(monkeypatch) -> None:
     assert run.status.message == "runtime failed"
 
 
-def test_start_execution_validates_state_before_registration() -> None:
+@pytest.mark.parametrize("state", [State.CREATED.value, State.STOPPED.value, State.COMPLETED.value])
+def test_start_execution_validates_state_before_registration(state: str) -> None:
     processor = RunProcessor(Mock())
     processor._update = Mock()
     context = Mock()
     run = SimpleNamespace(
-        status=SimpleNamespace(state=State.CREATED.value),
+        id="run-id",
+        status=SimpleNamespace(state=state),
         local_execution=Mock(return_value=True),
         _context=Mock(return_value=context),
     )
 
-    with pytest.raises(EntityError, match="not in a state to run"):
+    with pytest.raises(EntityError, match=f"cannot go from {state} to READY"):
         processor.start_execution(run)
 
     context.set_run.assert_not_called()
@@ -300,6 +330,7 @@ def test_start_execution_rolls_back_registration() -> None:
     processor._update = Mock(side_effect=RuntimeError("update failed"))
     context = Mock()
     run = SimpleNamespace(
+        id="run-id",
         status=SimpleNamespace(state=State.BUILT.value),
         local_execution=Mock(return_value=True),
         _context=Mock(return_value=context),
@@ -315,8 +346,8 @@ def test_start_execution_rolls_back_registration() -> None:
 @pytest.mark.parametrize(
     ("local_execution", "expected_state"),
     [
-        (False, "BACKEND"),
-        (True, "RUNTIME"),
+        (False, State.RUNNING.value),
+        (True, State.COMPLETED.value),
     ],
 )
 def test_run_state_precedence(monkeypatch, local_execution: bool, expected_state: str) -> None:
@@ -326,15 +357,19 @@ def test_run_state_precedence(monkeypatch, local_execution: bool, expected_state
     processor.start_execution = Mock()
     processor.end_execution = Mock()
     run = SimpleNamespace(
+        id="run-id",
         kind="python+run",
         project="project",
-        status=SimpleNamespace(to_dict=Mock(return_value={"state": "BACKEND"})),
+        status=SimpleNamespace(
+            state=State.RUNNING.value,
+            to_dict=Mock(return_value={"state": State.RUNNING.value}),
+        ),
         _setup_execution=Mock(),
         local_execution=Mock(return_value=local_execution),
         to_dict=Mock(return_value={}),
     )
     runtime = Mock()
-    runtime.run.return_value = {"state": "RUNTIME"}
+    runtime.run.return_value = {"state": State.COMPLETED.value}
     run.set_status = Mock(side_effect=lambda status: setattr(run, "status", SimpleNamespace(state=status["state"])))
     monkeypatch.setattr(
         run_processor_module.runtime_factory,

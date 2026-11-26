@@ -26,6 +26,16 @@ if typing.TYPE_CHECKING:
 
 logger = get_logger(__name__)
 
+# States a local run goes through. Core keeps the state machine of the runs it
+# executes, and takes the status of local runs as the SDK sends it: only the
+# transitions the SDK makes are listed.
+LOCAL_RUN_TRANSITIONS: dict[str, frozenset[str]] = {
+    State.CREATED.value: frozenset({State.BUILT.value}),
+    State.BUILT.value: frozenset({State.READY.value}),
+    State.READY.value: frozenset({State.RUNNING.value}),
+    State.RUNNING.value: frozenset({State.COMPLETED.value, State.ERROR.value}),
+}
+
 
 class RunProcessor:
     """Lifecycle of a run: build, execution, wait and logs."""
@@ -43,6 +53,8 @@ class RunProcessor:
 
     def build(self, run: Run) -> None:
         """Build a run specification with its executable, task, and runtime."""
+        if run.local_execution():
+            self._check_transition(run, State.BUILT.value)
         runtime = runtime_factory.build_runtime(run.kind, run.project)
         spec = runtime.build(
             self.get_executable(run),
@@ -50,47 +62,47 @@ class RunProcessor:
             run.to_dict(),
         )
         run.spec = run.spec.from_dict(spec)
-        run.status.state = State.BUILT.value
-        self._update(run)
+        self._transition(run, State.BUILT)
 
     def run(self, run: Run) -> Run:
         """Execute the run state machine and persist the resulting status."""
         self._refresh(run)
         self.start_execution(run)
         try:
-            run._setup_execution()
             try:
+                run._setup_execution()
                 status = runtime_factory.build_runtime(run.kind, run.project).run(run.to_dict())
             except Exception as error:
                 self._refresh(run)
-                if run.local_execution():
-                    run.status.state = State.ERROR.value
                 run.status.message = str(error)
-                self._update(run)
+                if run.local_execution():
+                    self._transition(run, State.ERROR)
+                else:
+                    self._update(run)
                 raise
         finally:
             self.end_execution(run)
 
         self._refresh(run)
-        if not run.local_execution():
+        if run.local_execution():
+            self._check_transition(run, status.get("state"))
+        else:
             status.pop("state", None)
         run.set_status({**run.status.to_dict(), **status})
         self._update(run)
         return run
 
     def start_execution(self, run: Run) -> None:
-        """Register an active run and persist initial local execution state."""
-        if run.local_execution() and run.status.state not in (State.BUILT.value, State.STOPPED.value):
-            raise EntityError("Run is not in a state to run.")
+        """Register the run as the active one and move a local run to READY, then RUNNING."""
+        if run.local_execution():
+            self._check_transition(run, State.READY.value)
 
         context = run._context()
         context.set_run(run)
         try:
             if run.local_execution():
-                run.status.state = State.READY.value
-                self._update(run)
-                run.status.state = State.RUNNING.value
-                self._update(run)
+                self._transition(run, State.READY)
+                self._transition(run, State.RUNNING)
         except BaseException:
             context.unset_run()
             raise
@@ -160,6 +172,19 @@ class RunProcessor:
         if as_entity:
             return logs
         return [log.text for log in logs]
+
+    def _transition(self, run: Run, state: State) -> None:
+        """Move ``run`` to ``state`` and save it; a local run must allow the transition."""
+        if run.local_execution():
+            self._check_transition(run, state.value)
+        run.status.state = state.value
+        self._update(run)
+
+    @staticmethod
+    def _check_transition(run: Run, state: str | None) -> None:
+        """Raise if a local run cannot go from its state to ``state``."""
+        if state not in LOCAL_RUN_TRANSITIONS.get(run.status.state, frozenset()):
+            raise EntityError(f"Local run {run.id} cannot go from {run.status.state} to {state}.")
 
     def _update(self, run: Run) -> None:
         """Persist ``run`` and take back the backend state."""
