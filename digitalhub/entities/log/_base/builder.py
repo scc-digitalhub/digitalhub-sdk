@@ -79,26 +79,10 @@ class LogLogBuilder(EntityBuilder):
             extensions=extensions,
         )
 
-    def from_dict(self, obj: dict) -> Log:
-        """
-        Create a new object from dictionary.
-
-        Parameters
-        ----------
-        obj : dict
-            Dictionary to create object from.
-
-        Returns
-        -------
-        Log
-            Object instance.
-        """
-        parsed_dict = self._parse_dict(obj)
-        return self.build_entity(**parsed_dict)
-
     def _parse_dict(self, obj: dict) -> dict:
         """
-        Get dictionary and parse it to a valid entity dictionary.
+        Add the project, the identifier, the run and the extensions to
+        the common fields.
 
         Parameters
         ----------
@@ -108,25 +92,12 @@ class LogLogBuilder(EntityBuilder):
         Returns
         -------
         dict
-            A dictionary containing the attributes of the entity instance.
+            Keyword arguments of the entity constructor.
         """
-        project = obj.get("project")
-        kind = obj.get("kind")
-        uuid = self.build_uuid(obj.get("id"))
-        run = obj.get("run")
-        metadata = self.build_metadata(**obj.get("metadata", {}))
-        spec = self.build_spec_from_dict(obj.get("spec", {}))
-        status = self.build_status(**obj.get("status", {}))
-        user = obj.get("user")
-        extensions = obj.get("extensions")
         return {
-            "project": project,
-            "uuid": uuid,
-            "kind": kind,
-            "run": run,
-            "metadata": metadata,
-            "spec": spec,
-            "status": status,
-            "user": user,
-            "extensions": extensions,
+            **super()._parse_dict(obj),
+            "project": obj.get("project"),
+            "uuid": self.build_uuid(obj.get("id")),
+            "run": obj.get("run"),
+            "extensions": obj.get("extensions"),
         }

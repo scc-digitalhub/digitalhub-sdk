@@ -96,11 +96,44 @@ class EntityBuilder(ABC):
         Build whole entity.
         """
 
-    @abstractmethod
     def from_dict(self, obj: dict) -> BaseEntity:
         """
         Build whole entity from dictionary.
+
+        Parameters
+        ----------
+        obj : dict
+            Dictionary to create object from.
+
+        Returns
+        -------
+        BaseEntity
+            Object instance.
         """
+        return self.build_entity(**self._parse_dict(obj))
+
+    def _parse_dict(self, obj: dict) -> dict:
+        """
+        Parse the fields every entity has. Subclasses add their own
+        fields to the result of ``super()._parse_dict(obj)``.
+
+        Parameters
+        ----------
+        obj : dict
+            Dictionary to parse.
+
+        Returns
+        -------
+        dict
+            Keyword arguments of the entity constructor.
+        """
+        return {
+            "kind": obj.get("kind"),
+            "metadata": self.build_metadata(**obj.get("metadata", {})),
+            "spec": self.build_spec_from_dict(obj.get("spec", {})),
+            "status": self.build_status(**obj.get("status", {})),
+            "user": obj.get("user"),
+        }
 
     def get_entity_type(self) -> str:
         """

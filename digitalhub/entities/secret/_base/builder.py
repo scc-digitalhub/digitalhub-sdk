@@ -20,65 +20,24 @@ class SecretBuilder(VersionedBuilder):
 
     ENTITY_TYPE = EntityTypes.SECRET.value
 
-    def build(
-        self,
-        kind: str,
-        project: str,
-        name: str,
-        uuid: str | None = None,
-        description: str | None = None,
-        labels: list[str] | None = None,
-        embedded: bool = False,
-        **kwargs,
-    ) -> Secret:
+    def build(self, kind: str, project: str, name: str, **kwargs) -> Secret:
         """
-        Create a new object.
+        Create a new secret, stored in Kubernetes under its name.
 
         Parameters
         ----------
+        kind : str
+            Kind the object.
         project : str
             Project name.
         name : str
             Object name.
-        kind : str
-            Kind the object.
-        uuid : str
-            ID of the object.
-        description : str
-            Description of the object (human readable).
-        labels : list[str]
-            List of labels.
-        embedded : bool
-            Flag to determine if object spec must be embedded in project spec.
         **kwargs : dict
-            Spec keyword arguments.
+            Other parameters of ``VersionedBuilder.build()``, then spec keyword arguments.
 
         Returns
         -------
         Secret
             Object instance.
         """
-        name = self.build_name(name)
-        uuid = self.build_uuid(uuid)
-        metadata = self.build_metadata(
-            project=project,
-            name=name,
-            description=description,
-            labels=labels,
-            embedded=embedded,
-        )
-        spec = self.build_spec(
-            path=f"secret://{name}",
-            provider="kubernetes",
-            **kwargs,
-        )
-        status = self.build_status()
-        return self.build_entity(
-            project=project,
-            name=name,
-            uuid=uuid,
-            kind=kind,
-            metadata=metadata,
-            spec=spec,
-            status=status,
-        )
+        return super().build(kind, project, name, path=f"secret://{name}", provider="kubernetes", **kwargs)

@@ -96,26 +96,10 @@ class RunBuilder(UnversionedBuilder, RuntimeEntityBuilder):
         if task_kind not in self.get_all_kinds():
             raise EntityError(f"Invalid run '{self.ENTITY_KIND}' for task kind '{task_kind}'")
 
-    def from_dict(self, obj: dict) -> Run:
-        """
-        Create a new object from dictionary.
-
-        Parameters
-        ----------
-        obj : dict
-            Dictionary to create object from.
-
-        Returns
-        -------
-        Run
-            Object instance.
-        """
-        parsed_dict = self._parse_dict(obj)
-        return self.build_entity(**parsed_dict)
-
     def _parse_dict(self, obj: dict) -> dict:
         """
-        Get dictionary and parse it to a valid entity dictionary.
+        Add the name, taken from the metadata when missing, and the
+        extensions to the unversioned fields.
 
         Parameters
         ----------
@@ -125,27 +109,9 @@ class RunBuilder(UnversionedBuilder, RuntimeEntityBuilder):
         Returns
         -------
         dict
-            A dictionary containing the attributes of the entity instance.
+            Keyword arguments of the entity constructor.
         """
-        project = obj.get("project")
-        kind = obj.get("kind")
         name = obj.get("name")
         if name is None:
             name = obj.get("metadata", {}).get("name")
-        uuid = self.build_uuid(obj.get("id"))
-        metadata = self.build_metadata(**obj.get("metadata", {}))
-        spec = self.build_spec_from_dict(obj.get("spec", {}))
-        status = self.build_status(**obj.get("status", {}))
-        user = obj.get("user")
-        extensions = obj.get("extensions", [])
-        return {
-            "project": project,
-            "name": name,
-            "uuid": uuid,
-            "kind": kind,
-            "metadata": metadata,
-            "spec": spec,
-            "status": status,
-            "user": user,
-            "extensions": extensions,
-        }
+        return {**super()._parse_dict(obj), "name": name, "extensions": obj.get("extensions", [])}

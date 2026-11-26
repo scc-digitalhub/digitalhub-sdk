@@ -37,7 +37,7 @@ class Artifact(ContextEntity, VersionedMixin, MaterialMixin):
         metadata,
         spec,
         status,
-        extensions: list[dict],
+        extensions: list[dict] | None = None,
         user: str | None = None,
     ) -> None:
         super().__init__(project, kind, metadata, spec, status, user)

@@ -33,16 +33,6 @@ def test_to_json_serializes_to_dict() -> None:
     assert json.loads(entity.to_json()) == {"value": "text"}
 
 
-def test_any_setter_does_not_overwrite_existing_attributes() -> None:
-    entity = Base()
-    entity.existing = "original"
-
-    entity._any_setter(existing="replacement", added="value")
-
-    assert entity.existing == "original"
-    assert entity.added == "value"
-
-
 def test_repr_returns_dictionary_representation() -> None:
     entity = Base()
     entity.value = "text"

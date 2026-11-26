@@ -4,87 +4,45 @@
 
 from __future__ import annotations
 
+import typing
+
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._mixin.versioned.builder import VersionedBuilder
-from digitalhub.entities.containerimage._base.entity import Containerimage
 from digitalhub.utils.exceptions import EntityError
+
+if typing.TYPE_CHECKING:
+    from digitalhub.entities.containerimage._base.entity import Containerimage
 
 
 class ContainerimageBuilder(VersionedBuilder):
     """
-    ContainerimageBuilder builder.
+    Containerimage builder.
     """
 
     ENTITY_TYPE = EntityTypes.CONTAINERIMAGE.value
 
-    def build(
-        self,
-        kind: str,
-        project: str,
-        name: str,
-        uuid: str | None = None,
-        version: str | None = None,
-        description: str | None = None,
-        labels: list[str] | None = None,
-        image: str | None = None,
-        embedded: bool = False,
-        **kwargs,
-    ) -> Containerimage:
+    def build(self, kind: str, project: str, name: str, *, image: str | None = None, **kwargs) -> Containerimage:
         """
-        Create a new object.
+        Create a new container image.
 
         Parameters
         ----------
+        kind : str
+            Kind the object.
         project : str
             Project name.
         name : str
             Object name.
-        kind : str
-            Kind the object.
-        uuid : str
-            ID of the object.
-        version : str
-            Version stored in entity metadata.
-        description : str
-            Description of the object (human readable).
-        labels : list[str]
-            List of labels.
         image : str
             Image URI.
-        embedded : bool
-            Flag to determine if object spec must be embedded in project spec.
         **kwargs : dict
-            Spec keyword arguments.
+            Other parameters of ``VersionedBuilder.build()``, then spec keyword arguments.
 
         Returns
         -------
-        Image
+        Containerimage
             Object instance.
         """
         if image is None:
             raise EntityError("Missing required 'image' argument.")
-
-        name = self.build_name(name)
-        uuid = self.build_uuid(uuid)
-        metadata = self.build_metadata(
-            project=project,
-            name=name,
-            version=version,
-            description=description,
-            labels=labels,
-            embedded=embedded,
-        )
-        spec = self.build_spec(
-            image=image,
-            **kwargs,
-        )
-        status = self.build_status()
-        return self.build_entity(
-            project=project,
-            name=name,
-            uuid=uuid,
-            kind=kind,
-            metadata=metadata,
-            spec=spec,
-            status=status,
-        )
+        return super().build(kind, project, name, image=image, **kwargs)

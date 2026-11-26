@@ -9,16 +9,7 @@ from digitalhub.entities._mixin.material.status import MaterialStatus
 
 class DataitemStatus(MaterialStatus):
     """
-    DataitemStatus status.
+    Dataitem status.
     """
 
-    def __init__(
-        self,
-        state: str,
-        message: str | None = None,
-        files: list[dict] | None = None,
-        preview: dict | None = None,
-        **kwargs,
-    ) -> None:
-        super().__init__(state, message, files)
-        self.preview = preview
+    preview: dict | None = None

@@ -4,12 +4,12 @@
 
 from __future__ import annotations
 
+from digitalhub.entities._base.entity.status import Status
 
-class MetricsStatus:
+
+class MetricsStatus(Status):
     """
-    MetricsStatus mixin for entities with metrics.
+    Status of entities with metrics.
     """
 
-    def __init__(self, metrics: dict | None = None, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.metrics = metrics
+    metrics: dict | None = None

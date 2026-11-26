@@ -10,9 +10,8 @@ from digitalhub.utils.generic_utils import dump_json
 class Base:
     """
     Base class for all entities.
-    It implements to_dict abd to_json method to represent
-    the object as a dictionary/json and an any_setter method to
-    set generic attributes coming from a constructor.
+    It implements to_dict and to_json method to represent
+    the object as a dictionary/json.
     """
 
     def to_dict(self) -> dict:
@@ -45,19 +44,6 @@ class Base:
             A json string containing the attributes of the entity instance.
         """
         return dump_json(self.to_dict())
-
-    def _any_setter(self, **kwargs) -> None:
-        """
-        Set any attribute of the object.
-
-        Parameters
-        ----------
-        **kwargs : dict
-            Keyword arguments to be set as attributes.
-        """
-        for k, v in kwargs.items():
-            if k not in self.__dict__:
-                setattr(self, k, v)
 
     def __repr__(self) -> str:
         """

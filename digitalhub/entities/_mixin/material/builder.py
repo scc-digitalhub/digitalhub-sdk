@@ -6,37 +6,62 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.entities._base.entity.builder import EntityBuilder
+from digitalhub.entities._mixin.versioned.builder import VersionedBuilder
+from digitalhub.utils.exceptions import EntityError
 
 if typing.TYPE_CHECKING:
+    from digitalhub.entities._base.context.entity import ContextEntity
     from digitalhub.entities._mixin.material.protocol import MaterialProtocol
 
 
-class MaterialBuilder(EntityBuilder):
+class MaterialBuilder(VersionedBuilder):
     """
-    Helper builder for material entities that share file-backed construction.
+    Builder of the material entities: artifact, dataitem and model.
     """
 
-    def from_dict(self, obj: dict) -> MaterialProtocol:
+    def build(
+        self,
+        kind: str,
+        project: str,
+        name: str,
+        *,
+        path: str | None = None,
+        extensions: list[dict] | None = None,
+        **kwargs,
+    ) -> ContextEntity:
         """
-        Create a new object from dictionary.
+        Create a new object.
 
         Parameters
         ----------
-        obj : dict
-            Dictionary to create object from.
+        kind : str
+            Kind the object.
+        project : str
+            Project name.
+        name : str
+            Object name.
+        path : str
+            Object path on local file system or remote storage. It is also the destination path of upload() method.
+        extensions : list[dict]
+            List of extension dictionaries.
+        **kwargs : dict
+            Other parameters of ``VersionedBuilder.build()``, then spec keyword arguments.
 
         Returns
         -------
-        MaterialProtocol
+        ContextEntity
             Object instance.
         """
-        parsed_dict = self._parse_dict(obj)
-        return self.build_entity(**parsed_dict)
+        if path is None:
+            raise EntityError("Path must be provided.")
+        entity = super().build(kind, project, name, path=path, **kwargs)
+        if extensions is not None:
+            typing.cast("MaterialProtocol", entity).extensions.extend(extensions)
+        return entity
 
     def _parse_dict(self, obj: dict) -> dict:
         """
-        Get dictionary and parse it to a valid entity dictionary.
+        Add the extensions to the versioned fields.
 
         Parameters
         ----------
@@ -46,25 +71,6 @@ class MaterialBuilder(EntityBuilder):
         Returns
         -------
         dict
-            A dictionary containing the attributes of the entity instance.
+            Keyword arguments of the entity constructor.
         """
-        project = obj.get("project")
-        kind = obj.get("kind")
-        name = self.build_name(obj.get("name"))
-        uuid = self.build_uuid(obj.get("id"))
-        metadata = self.build_metadata(**obj.get("metadata", {}))
-        spec = self.build_spec_from_dict(obj.get("spec", {}))
-        status = self.build_status(**obj.get("status", {}))
-        extensions = obj.get("extensions", [])
-        user = obj.get("user")
-        return {
-            "project": project,
-            "name": name,
-            "uuid": uuid,
-            "kind": kind,
-            "metadata": metadata,
-            "spec": spec,
-            "status": status,
-            "extensions": extensions,
-            "user": user,
-        }
+        return {**super()._parse_dict(obj), "extensions": obj.get("extensions", [])}

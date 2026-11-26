@@ -52,3 +52,9 @@ def test_build_metadata_accepts_valid_relationships() -> None:
     )
 
     assert metadata.relationships == [{"type": "part_of", "source": "source-key", "dest": "dest-key"}]
+
+
+def test_build_metadata_keeps_unknown_fields() -> None:
+    metadata = metadata_constructor.build_metadata(name="n", version="1", created="c", added_by_core={"value": 1})
+
+    assert metadata.to_dict()["added_by_core"] == {"value": 1}

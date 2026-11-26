@@ -6,6 +6,7 @@ import pytest
 
 from digitalhub.entities._constructors.status import build_status
 from digitalhub.entities._mixin.generic.status import GenericStatus
+from digitalhub.entities.dataitem._base.status import DataitemStatus
 from digitalhub.utils.exceptions import BuilderError
 
 
@@ -24,3 +25,16 @@ def test_build_status_preserves_valid_state_and_extra_fields() -> None:
 def test_build_status_rejects_unknown_state() -> None:
     with pytest.raises(BuilderError, match="Invalid state: ready"):
         build_status(GenericStatus, state="ready")
+
+
+def test_build_status_keeps_inherited_and_unknown_fields() -> None:
+    # DataitemStatus used to pass only state, message and files to its parent.
+    payload = {
+        "state": "READY",
+        "transitions": [{"status": "READY"}],
+        "files": [{"path": "data.csv"}],
+        "preview": {"cols": []},
+        "added_by_core": {"value": 1},
+    }
+
+    assert build_status(DataitemStatus, **payload).to_dict() == payload

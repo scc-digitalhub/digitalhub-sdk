@@ -81,26 +81,9 @@ class ProjectProjectBuilder(EntityBuilder):
             extensions=extensions,
         )
 
-    def from_dict(self, obj: dict) -> Project:
-        """
-        Create a new object from dictionary.
-
-        Parameters
-        ----------
-        obj : dict
-            Dictionary to create object from.
-
-        Returns
-        -------
-        Project
-            Object instance.
-        """
-        parsed_dict = self._parse_dict(obj)
-        return self.build_entity(**parsed_dict)
-
     def _parse_dict(self, obj: dict) -> dict:
         """
-        Get dictionary and parse it to a valid entity dictionary.
+        Add the name and the extensions to the common fields.
 
         Parameters
         ----------
@@ -110,21 +93,10 @@ class ProjectProjectBuilder(EntityBuilder):
         Returns
         -------
         dict
-            A dictionary containing the attributes of the entity instance.
+            Keyword arguments of the entity constructor.
         """
-        name = self.build_name(obj.get("name"))
-        kind = obj.get("kind")
-        metadata = self.build_metadata(**obj.get("metadata", {}))
-        spec = self.build_spec_from_dict(obj.get("spec", {}))
-        status = self.build_status(**obj.get("status", {}))
-        extensions = obj.get("extensions", [])
-        user = obj.get("user")
         return {
-            "name": name,
-            "kind": kind,
-            "metadata": metadata,
-            "spec": spec,
-            "status": status,
-            "extensions": extensions,
-            "user": user,
+            **super()._parse_dict(obj),
+            "name": self.build_name(obj.get("name")),
+            "extensions": obj.get("extensions", []),
         }

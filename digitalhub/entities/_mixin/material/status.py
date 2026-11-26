@@ -9,15 +9,7 @@ from digitalhub.entities._base.entity.status import Status
 
 class MaterialStatus(Status):
     """
-    Material Status class.
+    Status of material entities, with the files they hold.
     """
 
-    def __init__(
-        self,
-        state: str,
-        message: str | None = None,
-        files: list[dict] | None = None,
-        **kwargs,
-    ) -> None:
-        super().__init__(state=state, message=message, **kwargs)
-        self.files = files
+    files: list[dict] | None = None
