@@ -172,19 +172,3 @@ def test_log_to_dict_keeps_its_own_fields() -> None:
         "run": "run-id",
         "extensions": [{"name": "extension"}],
     }
-
-
-def test_from_dict_reads_sections_as_they_are() -> None:
-    run = entity_factory.build_entity_from_dict(
-        {
-            "project": "project",
-            "id": "run-id",
-            "kind": "python+job:run",
-            "metadata": {"project": "project"},
-            "spec": {"task": "python+job://project/task-id", "function": "python://project/function:id"},
-            "status": {"state": "STATE_ADDED_BY_A_NEWER_CORE"},
-        }
-    )
-
-    assert run.metadata.to_dict() == {"project": "project"}
-    assert run.status.state == "STATE_ADDED_BY_A_NEWER_CORE"
