@@ -38,7 +38,7 @@ class AmphibianReptileName(str, Enum):
 
     BUFO = "bufo"
     HIEROPHIS = "hierophis"
-    ICHTHYOSAURA = "ichthyosaura"
+    MESOTRITON = "mesotriton"
     LACERTA = "lacerta"
     NATRIX = "natrix"
     PODARCIS = "podarcis"
