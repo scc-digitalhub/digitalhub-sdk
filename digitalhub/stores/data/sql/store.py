@@ -22,10 +22,9 @@ from digitalhub.stores.data.sql.configurator import SqlStoreConfigurator
 from digitalhub.stores.data.sql.utils import get_schema_from_columns
 from digitalhub.stores.readers.data.api import get_reader_by_object
 from digitalhub.utils.exceptions import ConfigError, StoreError
-from digitalhub.utils.generic_utils import list_enum
 from digitalhub.utils.logger.logger import get_logger
 from digitalhub.utils.types import Dataframe, SourcesOrListOfSources
-from digitalhub.utils.uri_utils import SqlSchemes
+from digitalhub.utils.uri_utils import parse_sql_path
 
 logger = get_logger(__name__)
 
@@ -102,7 +101,7 @@ class SqlStore(Store):
         """
         Download a SQL table as a Parquet file to local storage.
         """
-        parsed = self._parse_path(src)
+        parsed = parse_sql_path(src)
         table_name = parsed["table"] + ".parquet"
         # Case where dst is not provided
         if dst is None:
@@ -152,7 +151,7 @@ class SqlStore(Store):
             raise StoreError("SQL store can only read a single DataFrame at a time.")
 
         reader = self._get_reader(engine)
-        parsed = self._parse_path(path)
+        parsed = parse_sql_path(path)
         schema = parsed["schema"]
         table = parsed["table"]
         sql_engine = self._check_factory(schema=schema, database=parsed["database"])
@@ -171,7 +170,7 @@ class SqlStore(Store):
         """
         Write a DataFrame to a SQL database table.
         """
-        parsed = self._parse_path(dst)
+        parsed = parse_sql_path(dst)
         return self._upload_table(
             df,
             parsed["schema"],
@@ -188,7 +187,7 @@ class SqlStore(Store):
         """
         Create a SQL table with vector extension.
         """
-        parsed = self._parse_path(path)
+        parsed = parse_sql_path(path)
         schema = parsed["schema"]
         table = parsed["table"]
         engine = self._check_factory(schema=schema, database=parsed["database"])
@@ -323,34 +322,14 @@ class SqlStore(Store):
                     raise
                 logger.debug("SQL connection setup failed, retrying with refreshed credentials.")
 
-    @staticmethod
-    def _parse_path(path: str) -> dict:
-        """
-        Parse a SQL URI path into its component parts.
-        """
-        # Parse path
-        err_msg = (
-            "Invalid SQL path. Must use sql:// or postgresql:// with <database>/<schema>/<table> or <database>/<table>"
-        )
-        protocol, pth = path.split("://")
-        components = pth.split("/")
-        if protocol not in list_enum(SqlSchemes) or not (2 <= len(components) <= 3):
-            raise ValueError(err_msg)
-
-        # Get components
-        database = components[0]
-        table = components[-1]
-        schema = components[1] if len(components) == 3 else "public"
-        return {"database": database, "schema": schema, "table": table}
-
     def _get_schema(self, uri: str) -> str:
         """
         Extract the schema name from a SQL URI.
         """
-        return str(self._parse_path(uri).get("schema"))
+        return str(parse_sql_path(uri).get("schema"))
 
     def _get_table_name(self, uri: str) -> str:
         """
         Extract the table name from a SQL URI.
         """
-        return str(self._parse_path(uri).get("table"))
+        return str(parse_sql_path(uri).get("table"))

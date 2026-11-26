@@ -101,15 +101,6 @@ def test_download_without_destination_uses_prefixed_temp_directory(monkeypatch, 
     )
 
 
-@pytest.mark.parametrize("scheme", ["sql", "postgresql"])
-def test_parse_path_accepts_registered_sql_schemes(scheme: str) -> None:
-    assert SqlStore._parse_path(f"{scheme}://database/schema/items") == {
-        "database": "database",
-        "schema": "schema",
-        "table": "items",
-    }
-
-
 def test_check_factory_rejects_uri_database_mismatch() -> None:
     store = object.__new__(SqlStore)
     store._configurator = Mock()

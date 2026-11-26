@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import re
 import typing
 from collections.abc import Callable
 from functools import wraps
@@ -12,12 +11,11 @@ from pathlib import Path
 from typing import Concatenate, ParamSpec, Protocol, TypeVar
 from urllib.parse import unquote, urlparse
 
-from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.utils.exceptions import EntityNotExistsError
 from digitalhub.utils.file_utils import eval_zip_sources
 from digitalhub.utils.generic_utils import slugify_string
 from digitalhub.utils.logger.logger import get_logger
-from digitalhub.utils.uri_utils import SchemeCategory, map_uri_scheme
+from digitalhub.utils.uri_utils import SchemeCategory, map_uri_scheme, parse_sql_path
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._mixin.versioned.protocol import VersionedEntityProtocol
@@ -32,136 +30,6 @@ class _Refreshable(Protocol):
 _RefreshableT = TypeVar("_RefreshableT", bound=_Refreshable)
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
-
-
-KEY_PATTERN_WITH_ID = "store://([^/]+)/([^/]+)/([^/]+)/([^:]+):(.+)"
-KEY_PATTERN_NO_ID = "store://([^/]+)/([^/]+)/([^/]+)/([^:]+)"
-
-
-def is_valid_key(key: str) -> bool:
-    """
-    Check if an entity key is valid.
-
-    Parameters
-    ----------
-    key : str
-        The entity key to validate.
-
-    Returns
-    -------
-    bool
-        True if the key is valid, False otherwise.
-    """
-    return bool(re.fullmatch(KEY_PATTERN_WITH_ID, key) or re.fullmatch(KEY_PATTERN_NO_ID, key))
-
-
-def sanitize_unversioned_key(key: str) -> str:
-    """
-    Sanitize an unversioned entity key (from name:id to id).
-
-    Parameters
-    ----------
-    key : str
-        The unversioned entity key.
-
-    Returns
-    -------
-    str
-        The sanitized entity key with version.
-    """
-    splt = key.split("/")[2:]
-    ent_id = splt[-1].split(":")[0]
-    return "store://" + "/".join(splt[:-1] + [ent_id])
-
-
-def parse_entity_key(key: str) -> tuple[str, str, str, str | None, str | None]:
-    """
-    Parse an entity key into its constituent components.
-
-    Extracts project name, entity type, kind, name, and UUID from a
-    standardized entity key format. Handles special cases for tasks
-    and runs which don't have name components.
-
-    Parameters
-    ----------
-    key : str
-        The entity key in format "store://project/type/kind/name:uuid"
-        or "store://project/type/kind/uuid" for tasks and runs.
-
-    Returns
-    -------
-    tuple[str, str, str, str | None, str | None]
-        A tuple containing (project, entity_type, kind, name, uuid).
-        The name component is None for unversioned entities, and the UUID
-        component is None when the key does not include an ID.
-    """
-    if not is_valid_key(key):
-        raise ValueError("Invalid entity key format.")
-
-    parts = key.removeprefix("store://").split("/")
-
-    # The project is the first part
-    project = parts[0]
-
-    # The entity type is the second part
-    entity_type = parts[1]
-
-    # The kind is the third part
-    kind = parts[2]
-
-    # Unversioned entities use the final path component as their UUID.
-    if entity_type in (EntityTypes.TASK.value, EntityTypes.RUN.value, EntityTypes.LOG.value):
-        name = None
-        uuid = parts[3]
-    else:
-        if ":" in parts[3]:
-            name, uuid = parts[3].split(":", 1)
-        else:
-            name, uuid = parts[3], None
-
-    return project, entity_type, kind, name, uuid
-
-
-def get_entity_type_from_key(key: str) -> str:
-    """
-    Extract the entity type from an entity key.
-
-    Parses the entity key and returns only the entity type component,
-    which indicates the kind of entity (artifact, function, run, etc.).
-
-    Parameters
-    ----------
-    key : str
-        The entity key in standardized format.
-
-    Returns
-    -------
-    str
-        The entity type extracted from the key.
-    """
-    _, entity_type, _, _, _ = parse_entity_key(key)
-    return entity_type
-
-
-def get_project_from_key(key: str) -> str:
-    """
-    Extract the project name from an entity key.
-
-    Parses the entity key and returns only the project component,
-    which identifies the project context the entity belongs to.
-
-    Parameters
-    ----------
-    key : str
-        The entity key in standardized format.
-
-    Returns
-    -------
-    str
-        The project name extracted from the key.
-    """
-    project, _, _, _, _ = parse_entity_key(key)
-    return project
 
 
 def build_log_path_from_source(
@@ -233,9 +101,7 @@ def build_log_name_from_source(source: str | list[str]) -> str:
 
     source_category = map_uri_scheme(source)
     if source_category == SchemeCategory.SQL.value:
-        from digitalhub.stores.data.sql.store import SqlStore
-
-        source_name = SqlStore._parse_path(source)["table"]
+        source_name = parse_sql_path(source)["table"]
     elif source_category == SchemeCategory.LOCAL.value:
         source_path = Path(source)
         source_name = source_path.stem if source_path.is_file() else source_path.name

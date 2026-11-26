@@ -7,13 +7,13 @@ from __future__ import annotations
 import typing
 
 from digitalhub.entities._commons.enums import EntityTypes, Relationship
+from digitalhub.entities._commons.keys import EntityKey
 from digitalhub.entities._constructors.uuid import build_uuid
 from digitalhub.entities._mixin.source.entity import SourceEntityMixin
 from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
 from digitalhub.entities._processors.utils import (
     get_context,
     get_context_from_identifier,
-    parse_identifier,
     update_entity_identity,
 )
 from digitalhub.entities.run._base.processor import RunProcessor
@@ -283,7 +283,7 @@ class ContextEntityExecutableProcessor:
             context = exec_dict["project"]
 
         ctx = get_context(context)
-        _, entity_type, _, _, _ = parse_identifier(exec_dict["key"])
+        entity_type = EntityKey.parse(exec_dict["key"]).entity_type
         obj: ExecutableProtocol = entity_factory.build_entity_from_dict(exec_dict, entity_type=entity_type)
 
         update_entity_identity(obj, context, build_uuid() if reset_id else None)
@@ -322,7 +322,7 @@ class ContextEntityExecutableProcessor:
             tsk_dicts = []
 
         context = get_context(exec_dict["project"])
-        _, entity_type, _, _, _ = parse_identifier(exec_dict["key"])
+        entity_type = EntityKey.parse(exec_dict["key"]).entity_type
         obj: ExecutableProtocol = entity_factory.build_entity_from_dict(exec_dict, entity_type=entity_type)
         self._upload_local_source(obj)
 

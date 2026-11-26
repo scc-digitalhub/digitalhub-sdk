@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import typing
 
+from digitalhub.entities._commons.keys import EntityRef
 from digitalhub.utils.exceptions import BuilderError
 
 if typing.TYPE_CHECKING:
@@ -61,5 +62,5 @@ class RuntimeBuilder:
         dict
             Status of the executed run.
         """
-        task_kind = run["spec"]["task"].split(":")[0]
+        task_kind = EntityRef.parse(run["spec"]["task"]).kind
         raise NotImplementedError(f"Local execution not implemented for task kind: {task_kind}")

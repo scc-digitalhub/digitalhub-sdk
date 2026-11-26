@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import ClassVar
 
-from digitalhub.entities._commons.keys import build_context_entity_key
+from digitalhub.entities._commons.keys import EntityKey
 
 
 class VersionedMixin:
@@ -22,10 +22,4 @@ class VersionedMixin:
     def _init_versioned_identity(self, project: str, name: str, uuid: str, kind: str) -> None:
         self.name = name
         self.id = uuid
-        self.key = build_context_entity_key(
-            project,
-            self.ENTITY_TYPE,
-            kind,
-            name,
-            uuid,
-        )
+        self.key = str(EntityKey(project, self.ENTITY_TYPE, kind, name, uuid))

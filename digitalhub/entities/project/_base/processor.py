@@ -12,10 +12,11 @@ from warnings import warn
 
 from digitalhub.context.api import build_context, delete_context
 from digitalhub.entities._commons.enums import EntityTypes
+from digitalhub.entities._commons.keys import EntityKey
 from digitalhub.entities._constructors.uuid import build_uuid
 from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
 from digitalhub.entities._processors.context.executable import ContextEntityExecutableProcessor
-from digitalhub.entities._processors.utils import get_context, parse_identifier
+from digitalhub.entities._processors.utils import get_context
 from digitalhub.factory.entity import entity_factory
 from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
@@ -382,7 +383,7 @@ class ProjectProcessor:
         dead_entities = []
         for entity in entities:
             try:
-                _, entity_type, _, _, _ = parse_identifier(entity["key"])
+                entity_type = EntityKey.parse(entity["key"]).entity_type
                 if self._has_full_entity_data(entity):
                     living_entity = entity_factory.build_entity_from_dict(entity, entity_type=entity_type)
                 else:

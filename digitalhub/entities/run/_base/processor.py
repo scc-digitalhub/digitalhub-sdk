@@ -8,6 +8,7 @@ import time
 import typing
 
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes, State
+from digitalhub.entities._commons.keys import EntityRef
 from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
 from digitalhub.entities._processors.utils import get_context
 from digitalhub.factory.entity import entity_factory
@@ -18,7 +19,6 @@ from digitalhub.stores.client.compiler.options import LogsOptions
 from digitalhub.stores.client.compiler.targets import ContextEntityTarget
 from digitalhub.utils.exceptions import EntityError
 from digitalhub.utils.logger.logger import get_logger
-from digitalhub.utils.uri_utils import parse_entity_reference
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.log._base.entity import Log
@@ -175,21 +175,20 @@ class RunProcessor:
         """Read the executable related to a run."""
         exec_kind = entity_factory.get_executable_kind(run.kind)
         entity_type = entity_factory.get_entity_type_from_kind(exec_kind)
-        entity_name, entity_id = parse_entity_reference(getattr(run.spec, entity_type))
-        if entity_name is None:
+        ref = EntityRef.parse(getattr(run.spec, entity_type))
+        if ref.name is None:
             raise ValueError(f"Run executable reference for '{entity_type}' must contain a name and id.")
         return self.crud_processor.read_context_entity(
-            entity_name,
+            ref.name,
             entity_type=entity_type,
             project=run.project,
-            entity_id=entity_id,
+            entity_id=ref.id,
         ).to_dict()
 
     def get_task(self, run: Run) -> dict:
         """Read the task related to a run."""
-        _, task_id = parse_entity_reference(run.spec.task)
         return self.crud_processor.read_unversioned_entity(
-            task_id,
+            EntityRef.parse(run.spec.task).id,
             entity_type=EntityTypes.TASK.value,
             project=run.project,
         ).to_dict()

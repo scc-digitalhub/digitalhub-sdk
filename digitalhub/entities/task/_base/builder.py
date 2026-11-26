@@ -7,6 +7,7 @@ from __future__ import annotations
 import typing
 
 from digitalhub.entities._commons.enums import EntityTypes
+from digitalhub.entities._commons.keys import EntityRef
 from digitalhub.entities._mixin.runtime_entity.builder import EntityError, RuntimeEntityBuilder
 from digitalhub.entities._mixin.unversioned.builder import UnversionedBuilder
 
@@ -89,6 +90,6 @@ class TaskBuilder(UnversionedBuilder, RuntimeEntityBuilder):
         executable : str
             Executable string.
         """
-        exec_kind = executable.split("://")[0]
+        exec_kind = EntityRef.parse(executable).kind
         if self.EXECUTABLE_KIND != exec_kind:
             raise EntityError(f"Invalid task '{self.ENTITY_KIND}' for executable kind '{exec_kind}'")

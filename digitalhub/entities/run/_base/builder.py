@@ -7,6 +7,7 @@ from __future__ import annotations
 import typing
 
 from digitalhub.entities._commons.enums import EntityTypes
+from digitalhub.entities._commons.keys import EntityRef
 from digitalhub.entities._mixin.runtime_entity.builder import EntityError, RuntimeEntityBuilder
 from digitalhub.entities._mixin.unversioned.builder import UnversionedBuilder
 
@@ -92,7 +93,7 @@ class RunBuilder(UnversionedBuilder, RuntimeEntityBuilder):
         task : str
             Task string.
         """
-        task_kind = task.split("://")[0]
+        task_kind = EntityRef.parse(task).kind
         if task_kind not in self.get_all_kinds():
             raise EntityError(f"Invalid run '{self.ENTITY_KIND}' for task kind '{task_kind}'")
 

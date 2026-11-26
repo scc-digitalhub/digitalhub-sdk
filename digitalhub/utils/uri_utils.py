@@ -127,20 +127,32 @@ def map_uri_scheme(uri: str) -> str:
     raise ValueError(f"Unknown scheme '{scheme}'!")
 
 
-def parse_entity_reference(identifier: str) -> tuple[str | None, str]:
-    """Parse the final name and id from an entity reference URI."""
-    parsed = urlparse(identifier)
-    path = parsed.path if parsed.scheme else identifier
-    component = path.rstrip("/").rsplit("/", 1)[-1]
-    if not component:
-        raise ValueError(f"Invalid entity reference '{identifier}'.")
+def parse_sql_path(path: str) -> dict:
+    """
+    Parse a SQL URI into database, schema and table.
 
-    name, separator, entity_id = component.rpartition(":")
-    if separator:
-        if not name or not entity_id:
-            raise ValueError(f"Invalid entity reference '{identifier}'.")
-        return name, entity_id
-    return None, component
+    Parameters
+    ----------
+    path : str
+        SQL URI, ``sql://<database>/<schema>/<table>`` or
+        ``sql://<database>/<table>`` (schema ``public``).
+
+    Returns
+    -------
+    dict
+        The ``database``, ``schema`` and ``table`` names.
+    """
+    err_msg = (
+        "Invalid SQL path. Must use sql:// or postgresql:// with <database>/<schema>/<table> or <database>/<table>"
+    )
+    protocol, pth = path.split("://")
+    components = pth.split("/")
+    if protocol not in list_enum(SqlSchemes) or not (2 <= len(components) <= 3):
+        raise ValueError(err_msg)
+    database = components[0]
+    table = components[-1]
+    schema = components[1] if len(components) == 3 else "public"
+    return {"database": database, "schema": schema, "table": table}
 
 
 def has_local_scheme(uri: str) -> bool:

@@ -7,7 +7,7 @@ from __future__ import annotations
 import typing
 
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
-from digitalhub.entities._commons.utils import is_valid_key
+from digitalhub.entities._commons.keys import is_valid_key
 from digitalhub.entities._processors.crud_factory import ContextEntityCRUD
 from digitalhub.utils.exceptions import EntityNotExistsError
 

@@ -21,7 +21,7 @@ from digitalhub.entities._base.context.entity import ContextEntity
 from digitalhub.entities._base.entity.spec import Spec
 from digitalhub.entities._base.entity.status import Status
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes, Relationship, State
-from digitalhub.entities._commons.utils import get_entity_type_from_key
+from digitalhub.entities._commons.keys import EntityKey, EntityRef
 from digitalhub.entities._constructors.spec import build_spec
 from digitalhub.entities._constructors.uuid import build_uuid
 from digitalhub.entities._frameworks.k8s.models import CorePort, CorePullPolicy, CoreServiceType
@@ -65,8 +65,10 @@ __all__ = [
     "CoreServiceType",
     "CrudPlugin",
     "Dataitem",
+    "EntityKey",
     "EntityKinds",
     "EntityPlugin",
+    "EntityRef",
     "EntityTypes",
     "ExecFamily",
     "Function",
@@ -102,7 +104,6 @@ __all__ = [
     "WorkflowBuilder",
     "build_spec",
     "build_uuid",
-    "get_entity_type_from_key",
     "log_base_model",
     "new_dataitem",
     "register_base_model",

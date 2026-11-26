@@ -8,6 +8,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import Any
 
+from digitalhub.entities._commons.keys import EntityRef
 from digitalhub.factory.entity import entity_factory
 from digitalhub.utils.exceptions import EntityError
 from digitalhub.utils.logger.logger import get_logger
@@ -81,8 +82,8 @@ class Runtime(ABC):
             The validated action name to execute.
         """
         try:
-            task_kind = run["spec"]["task"].split(":")[0]
-        except (KeyError, IndexError):
+            task_kind = EntityRef.parse(run["spec"]["task"]).kind
+        except (KeyError, ValueError):
             msg = "Malformed run spec."
             logger.exception(msg)
             raise RuntimeError(msg)

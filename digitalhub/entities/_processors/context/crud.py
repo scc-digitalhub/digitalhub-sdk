@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import typing
 
-from digitalhub.entities._commons.utils import is_valid_key, sanitize_unversioned_key
+from digitalhub.entities._commons.keys import EntityKey, is_valid_key
 from digitalhub.entities._constructors.uuid import build_uuid
 from digitalhub.entities._processors.utils import (
     get_context,
@@ -144,8 +144,6 @@ class ContextEntityCRUDProcessor:
     ) -> UnversionedEntityProtocol:
         if not is_valid_key(identifier):
             entity_id = identifier
-        else:
-            identifier = sanitize_unversioned_key(identifier)
         return self.read_context_entity(
             identifier,
             entity_type=entity_type,
@@ -194,7 +192,7 @@ class ContextEntityCRUDProcessor:
         )
         objects = []
         for o in objs:
-            _, entity_type, _, _, _ = parse_identifier(o["key"])
+            entity_type = EntityKey.parse(o["key"]).entity_type
             entity: ContextEntity = entity_factory.build_entity_from_dict(o, entity_type=entity_type)
             objects.append(entity)
         return objects
@@ -220,7 +218,7 @@ class ContextEntityCRUDProcessor:
         if context is None:
             context = dict_obj["project"]
 
-        _, entity_type, _, _, _ = parse_identifier(dict_obj["key"])
+        entity_type = EntityKey.parse(dict_obj["key"]).entity_type
 
         ctx = get_context(context)
         obj = entity_factory.build_entity_from_dict(dict_obj, entity_type=entity_type)
@@ -238,7 +236,7 @@ class ContextEntityCRUDProcessor:
     ) -> ContextEntity:
         dict_obj: dict = read_yaml(file)
         context = get_context(dict_obj["project"])
-        _, entity_type, _, _, _ = parse_identifier(dict_obj["key"])
+        entity_type = EntityKey.parse(dict_obj["key"]).entity_type
         obj: ContextEntity = entity_factory.build_entity_from_dict(dict_obj, entity_type=entity_type)
         try:
             backend_obj = self._update_context_entity(context, obj.ENTITY_TYPE, obj.id, obj.to_dict())

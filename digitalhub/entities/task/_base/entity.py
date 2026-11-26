@@ -8,6 +8,7 @@ import typing
 
 from digitalhub.entities._base.context.entity import ContextEntity
 from digitalhub.entities._commons.enums import EntityTypes
+from digitalhub.entities._commons.keys import EntityRef
 from digitalhub.entities._mixin.unversioned.mixin import UnversionedMixin
 from digitalhub.entities.task._base.processor import TaskProcessor
 
@@ -75,4 +76,4 @@ class Task(ContextEntity, UnversionedMixin):
         str
             Task string.
         """
-        return f"{self.kind}://{self.project}/{self.id}"
+        return str(EntityRef(self.kind, self.project, id=self.id))

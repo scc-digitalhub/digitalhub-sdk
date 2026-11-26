@@ -4,7 +4,7 @@ from digitalhub.utils.uri_utils import (
     SchemeCategory,
     get_filename_from_uri,
     map_uri_scheme,
-    parse_entity_reference,
+    parse_sql_path,
 )
 
 
@@ -33,20 +33,14 @@ def test_get_filename_from_uri_normalizes_path_separators(uri: str, filename: st
     assert get_filename_from_uri(uri) == filename
 
 
-@pytest.mark.parametrize(
-    ("reference", "expected"),
-    [
-        ("python-function://project/model:version", ("model", "version")),
-        ("task://project/task-id", (None, "task-id")),
-        ("store://project/task/python-task/task-id", (None, "task-id")),
-        ("task-id", (None, "task-id")),
-    ],
-)
-def test_parse_entity_reference(reference: str, expected: tuple[str | None, str]) -> None:
-    assert parse_entity_reference(reference) == expected
+@pytest.mark.parametrize("scheme", ["sql", "postgresql"])
+def test_parse_sql_path_accepts_registered_sql_schemes(scheme: str) -> None:
+    assert parse_sql_path(f"{scheme}://database/schema/items") == {
+        "database": "database",
+        "schema": "schema",
+        "table": "items",
+    }
 
 
-@pytest.mark.parametrize("reference", ["", "task://project/", "function://project/:id", "function://project/name:"])
-def test_parse_entity_reference_rejects_empty_components(reference: str) -> None:
-    with pytest.raises(ValueError, match="Invalid entity reference"):
-        parse_entity_reference(reference)
+def test_parse_sql_path_defaults_to_the_public_schema() -> None:
+    assert parse_sql_path("sql://database/items")["schema"] == "public"

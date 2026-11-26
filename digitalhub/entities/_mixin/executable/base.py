@@ -4,6 +4,8 @@
 
 from typing import ClassVar
 
+from digitalhub.entities._commons.keys import EntityRef
+
 
 class ExecutableBaseMixin:
     ENTITY_TYPE: ClassVar[str]
@@ -14,4 +16,4 @@ class ExecutableBaseMixin:
     key: str
 
     def _get_executable_string(self) -> str:
-        return f"{self.kind}://{self.project}/{self.name}:{self.id}"
+        return str(EntityRef(self.kind, self.project, id=self.id, name=self.name))

@@ -7,7 +7,7 @@ from __future__ import annotations
 import typing
 
 from digitalhub.context.api import get_context
-from digitalhub.entities._commons.utils import get_project_from_key, is_valid_key, parse_entity_key
+from digitalhub.entities._commons.keys import EntityKey, is_valid_key
 from digitalhub.utils.exceptions import EntityError
 
 if typing.TYPE_CHECKING:
@@ -27,7 +27,8 @@ def parse_identifier(
         if project is None or entity_type is None:
             raise ValueError("Project and entity type must be specified.")
         return project, entity_type, entity_kind, identifier, entity_id
-    return parse_entity_key(identifier)
+    key = EntityKey.parse(identifier)
+    return key.project, key.entity_type, key.kind, key.name, key.id
 
 
 def get_context_from_identifier(
@@ -38,7 +39,7 @@ def get_context_from_identifier(
         if project is None:
             raise EntityError("Specify project if you do not specify entity key.")
     else:
-        project = get_project_from_key(identifier)
+        project = EntityKey.parse(identifier).project
 
     return get_context(project)
 
