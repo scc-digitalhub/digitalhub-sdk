@@ -8,6 +8,7 @@ import typing
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 
+from digitalhub.entities._base.metadata.entity import Metadata
 from digitalhub.entities._constructors.metadata import build_metadata
 from digitalhub.entities._constructors.name import build_name
 from digitalhub.entities._constructors.spec import build_spec
@@ -19,7 +20,6 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities._base.entity.entity import BaseEntity
     from digitalhub.entities._base.entity.spec import Spec
     from digitalhub.entities._base.entity.status import Status
-    from digitalhub.entities._base.metadata.entity import Metadata
 
 
 class EntityBuilder(ABC):
@@ -74,10 +74,6 @@ class EntityBuilder(ABC):
         """
         return build_spec(self.ENTITY_SPEC_CLASS, **kwargs)
 
-    def build_spec_from_dict(self, obj: dict) -> Spec:
-        """Build entity spec from persisted data, preserving forward-compatible fields."""
-        return self.ENTITY_SPEC_CLASS.from_dict(obj)
-
     def build_status(self, **kwargs) -> Status:
         """
         Build entity status object.
@@ -108,14 +104,21 @@ class EntityBuilder(ABC):
         Returns
         -------
         BaseEntity
-            Object instance.
+            Object instance. Top-level fields the entity does not know are
+            kept and sent back by ``to_dict()``.
         """
-        return self.build_entity(**self._parse_dict(obj))
+        entity = self.build_entity(**self._parse_dict(obj))
+        entity._extra = {key: value for key, value in obj.items() if key not in entity._obj_attr}
+        return entity
 
     def _parse_dict(self, obj: dict) -> dict:
         """
         Parse the fields every entity has. Subclasses add their own
         fields to the result of ``super()._parse_dict(obj)``.
+
+        The sections are read as they are: unlike ``build()``, reading adds
+        no default and checks no value, so data written by a newer Core
+        (a new state, for example) can still be read.
 
         Parameters
         ----------
@@ -129,9 +132,9 @@ class EntityBuilder(ABC):
         """
         return {
             "kind": obj.get("kind"),
-            "metadata": self.build_metadata(**obj.get("metadata", {})),
-            "spec": self.build_spec_from_dict(obj.get("spec", {})),
-            "status": self.build_status(**obj.get("status", {})),
+            "metadata": Metadata.from_dict(obj.get("metadata", {})),
+            "spec": self.ENTITY_SPEC_CLASS.from_dict(obj.get("spec", {})),
+            "status": self.ENTITY_STATUS_CLASS.from_dict(obj.get("status", {})),
             "user": obj.get("user"),
         }
 

@@ -26,6 +26,7 @@ def _build_entity(name: str = "entity") -> StubContextEntity:
         user="user",
     )
     entity.id = "entity-id"
+    entity.name = name
     entity.key = f"store://project/stub/stub-kind/{name}:entity-id"
     return entity
 
@@ -81,12 +82,13 @@ def test_refresh_delegates_to_processor_and_updates_attributes(monkeypatch) -> N
     refreshed = _build_entity("refreshed")
     read_entity = Mock(return_value=refreshed)
     monkeypatch.setattr(ContextEntityCRUDProcessor, "read_context_entity", read_entity)
+    key = entity.key
 
     result = entity.refresh()
 
     assert result is entity
     read_entity.assert_called_once_with(
-        entity.key,
+        key,
         entity_type=entity.ENTITY_TYPE,
     )
     assert entity.metadata is refreshed.metadata

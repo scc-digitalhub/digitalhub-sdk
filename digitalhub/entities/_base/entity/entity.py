@@ -45,22 +45,26 @@ class BaseEntity(Base):
         self.status = status
         self.user = user
 
+        # Top-level fields read from the backend that the SDK does not know.
+        # They are sent back, so saving an entity read from a newer Core
+        # does not drop them.
+        self._extra: dict = {}
+
         # Need to be set in subclasses
         self.key: str
 
     def _update_attributes(self, obj: BaseEntity) -> None:
         """
-        Update attributes.
+        Take every serialized field of ``obj``, the unknown ones included.
 
         Parameters
         ----------
         obj : BaseEntity
             The entity object to update attributes from.
         """
-        self.metadata = obj.metadata
-        self.spec = obj.spec
-        self.status = obj.status
-        self.user = obj.user
+        for name in self._obj_attr:
+            setattr(self, name, getattr(obj, name))
+        self._extra = obj._extra
 
     def set_name(self, value: str) -> None:
         """
@@ -151,16 +155,16 @@ class BaseEntity(Base):
 
     def to_dict(self) -> dict:
         """
-        Override default to_dict method to add the possibility to exclude
-        some attributes. This requires setting the _obj_attr tuple
-        attributes in the subclass.
+        Return the attributes listed in ``_obj_attr``, then the unknown
+        top-level fields read from the backend.
 
         Returns
         -------
         dict
             A dictionary containing the attributes of the entity instance.
         """
-        return {k: v for k, v in super().to_dict().items() if k in self._obj_attr}
+        known = {k: v for k, v in super().to_dict().items() if k in self._obj_attr}
+        return {**known, **self._extra}
 
     def _post_create_hook_before_save(self) -> None:
         """

@@ -15,6 +15,7 @@ from digitalhub.entities.dataitem._base.entity import Dataitem
 from digitalhub.entities.model._base.entity import Model
 from digitalhub.entities.project._base.entity import Project
 from digitalhub.entities.run._base.entity import Run
+from digitalhub.factory.entity import entity_factory
 
 
 class StubEntity(PersistedEntity):
@@ -113,3 +114,77 @@ def test_entity_updates_attributes_and_filters_extra_serialized_fields() -> None
     assert entity.status is updated.status
     assert entity.user == updated.user
     assert "extra" not in entity.to_dict()
+
+
+def _artifact_dict(**fields) -> dict:
+    return {
+        "project": "project",
+        "kind": "artifact",
+        "name": "artifact",
+        "id": "artifact-id",
+        "metadata": {"project": "project", "name": "artifact", "version": "artifact-id"},
+        "spec": {"path": "s3://bucket/artifact"},
+        "status": {"state": "READY"},
+        **fields,
+    }
+
+
+def test_from_dict_keeps_unknown_top_level_fields() -> None:
+    obj = _artifact_dict(extensions=[{"name": "extension"}], added_by_core={"enabled": True})
+
+    artifact = entity_factory.build_entity_from_dict(obj)
+
+    assert artifact.to_dict()["added_by_core"] == {"enabled": True}
+    assert entity_factory.build_entity_from_dict(artifact.to_dict()).to_dict() == artifact.to_dict()
+
+
+def test_update_attributes_takes_every_serialized_field() -> None:
+    artifact = entity_factory.build_entity_from_dict(_artifact_dict(extensions=[{"name": "old"}]))
+    backend = entity_factory.build_entity_from_dict(
+        _artifact_dict(extensions=[{"name": "added-elsewhere"}], added_by_core=1)
+    )
+
+    artifact._update_attributes(backend)
+
+    assert artifact.extensions == [{"name": "added-elsewhere"}]
+    assert artifact.to_dict() == backend.to_dict()
+
+
+def test_log_to_dict_keeps_its_own_fields() -> None:
+    log = entity_factory.build_entity_from_dict(
+        {
+            "project": "project",
+            "id": "log-id",
+            "kind": "log",
+            "run": "run-id",
+            "metadata": {"project": "project", "name": "log-id", "version": "log-id"},
+            "spec": {},
+            "status": {},
+            "extensions": [{"name": "extension"}],
+        }
+    )
+
+    data = log.to_dict()
+
+    assert {key: data[key] for key in ("project", "id", "run", "extensions")} == {
+        "project": "project",
+        "id": "log-id",
+        "run": "run-id",
+        "extensions": [{"name": "extension"}],
+    }
+
+
+def test_from_dict_reads_sections_as_they_are() -> None:
+    run = entity_factory.build_entity_from_dict(
+        {
+            "project": "project",
+            "id": "run-id",
+            "kind": "python+job:run",
+            "metadata": {"project": "project"},
+            "spec": {"task": "python+job://project/task-id", "function": "python://project/function:id"},
+            "status": {"state": "STATE_ADDED_BY_A_NEWER_CORE"},
+        }
+    )
+
+    assert run.metadata.to_dict() == {"project": "project"}
+    assert run.status.state == "STATE_ADDED_BY_A_NEWER_CORE"

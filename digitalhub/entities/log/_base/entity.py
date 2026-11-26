@@ -21,6 +21,7 @@ class Log(BaseEntity):
     """
 
     ENTITY_TYPE = EntityTypes.LOG.value
+    _obj_attr = ("kind", "metadata", "spec", "status", "user", "project", "id", "run", "extensions")
 
     def __init__(
         self,
@@ -40,7 +41,7 @@ class Log(BaseEntity):
         self.status: Status
 
         self.project = project
-        self.uuid = uuid
+        self.id = uuid
         self.extensions = extensions
         self.run = run
 

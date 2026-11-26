@@ -34,7 +34,8 @@ def test_project_builder_preserves_extensions(monkeypatch) -> None:
 
 def test_project_builder_parses_extensions_from_dict(monkeypatch) -> None:
     builder = ProjectProjectBuilder()
-    build_entity = Mock(return_value="project")
+    project = Mock(_obj_attr=())
+    build_entity = Mock(return_value=project)
     monkeypatch.setattr(builder, "build_entity", build_entity)
     extensions = [{"key": "value"}]
 
@@ -49,7 +50,7 @@ def test_project_builder_parses_extensions_from_dict(monkeypatch) -> None:
         }
     )
 
-    assert result == "project"
+    assert result is project
     assert build_entity.call_args.kwargs["extensions"] == extensions
 
 
@@ -66,7 +67,8 @@ def test_project_builder_rejects_unknown_spec_fields() -> None:
 
 def test_project_builder_from_dict_preserves_forward_compatible_spec_fields(monkeypatch) -> None:
     builder = ProjectProjectBuilder()
-    build_entity = Mock(return_value="project")
+    project = Mock(_obj_attr=())
+    build_entity = Mock(return_value=project)
     monkeypatch.setattr(builder, "build_entity", build_entity)
 
     result = builder.from_dict(
@@ -79,5 +81,5 @@ def test_project_builder_from_dict_preserves_forward_compatible_spec_fields(monk
         }
     )
 
-    assert result == "project"
+    assert result is project
     assert build_entity.call_args.kwargs["spec"].future_backend_field == "value"

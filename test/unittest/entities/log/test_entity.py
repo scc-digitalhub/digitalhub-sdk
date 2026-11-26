@@ -70,7 +70,7 @@ def test_log_builder_builds_entity() -> None:
     assert log.ENTITY_TYPE == EntityTypes.LOG.value
     assert log.project == "my-project"
     assert log.metadata.name is not None
-    assert log.uuid == "log-id"
+    assert log.id == "log-id"
     assert log.kind == EntityKinds.LOG_LOG.value
     assert log.metadata.description == "Run output"
     assert log.metadata.labels == ["job"]
