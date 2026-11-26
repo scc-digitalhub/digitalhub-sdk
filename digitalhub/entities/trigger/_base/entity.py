@@ -9,7 +9,7 @@ import typing
 from digitalhub.entities._base.context.entity import ContextEntity
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._mixin.versioned.mixin import VersionedMixin
-from digitalhub.entities._processors.processors import control_processor
+from digitalhub.entities._processors.context.control import ContextEntityControlProcessor
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.entity.status import Status
@@ -43,4 +43,4 @@ class Trigger(ContextEntity, VersionedMixin):
         """
         Stop trigger.
         """
-        return control_processor.stop_entity(self.project, self.ENTITY_TYPE, self.id)
+        return ContextEntityControlProcessor().stop_entity(self.project, self.ENTITY_TYPE, self.id)

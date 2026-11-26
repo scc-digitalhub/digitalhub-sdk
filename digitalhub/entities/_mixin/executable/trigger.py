@@ -7,7 +7,7 @@ from __future__ import annotations
 import typing
 
 from digitalhub.entities._mixin.executable.base import ExecutableBaseMixin
-from digitalhub.entities._processors.processors import executable_processor
+from digitalhub.entities._processors.context.executable import ContextEntityExecutableProcessor
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.trigger._base.entity import Trigger
@@ -47,7 +47,7 @@ class ExecutableTriggerMixin(ExecutableBaseMixin):
         EntityError
             If the template is invalid or the action is not supported.
         """
-        return executable_processor.create_trigger(
+        return ContextEntityExecutableProcessor().create_trigger(
             self,
             action,
             kind,
@@ -74,7 +74,7 @@ class ExecutableTriggerMixin(ExecutableBaseMixin):
         EntityError
             If the trigger does not exist or belongs to another executable.
         """
-        return executable_processor.get_executable_trigger(self, identifier)
+        return ContextEntityExecutableProcessor().get_executable_trigger(self, identifier)
 
     def list_triggers(
         self,
@@ -113,7 +113,7 @@ class ExecutableTriggerMixin(ExecutableBaseMixin):
         list[Trigger]
             Triggers matching the filters.
         """
-        return executable_processor.list_executable_triggers(
+        return ContextEntityExecutableProcessor().list_executable_triggers(
             self,
             q=q,
             name=name,

@@ -7,7 +7,7 @@ from __future__ import annotations
 import typing
 
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
-from digitalhub.entities._processors.processors import base_crud_processor, search_processor
+from digitalhub.entities.project._base.processor import ProjectProcessor
 from digitalhub.entities.project.utils import setup_project
 from digitalhub.utils.exceptions import BackendError
 
@@ -65,7 +65,7 @@ def new_project(
     """
     if source is None:
         source = "./"
-    obj = base_crud_processor.create_project_entity(
+    obj = ProjectProcessor().create_project_entity_from_params(
         name=name,
         kind=EntityKinds.PROJECT_PROJECT.value,
         description=description,
@@ -106,7 +106,7 @@ def get_project(
     project = dh.get_project("my-project")
     ```
     """
-    obj = base_crud_processor.read_project_entity(
+    obj = ProjectProcessor().read_project_entity(
         entity_type=ENTITY_TYPE,
         entity_name=name,
     )
@@ -146,7 +146,7 @@ def import_project(
     project = dh.import_project("my-project.yaml")
     ```
     """
-    obj = base_crud_processor.import_project_entity(
+    obj = ProjectProcessor().import_project_entity(
         file=file,
         reset_id=reset_id,
     )
@@ -182,7 +182,7 @@ def load_project(
     project = dh.load_project("my-project.yaml")
     ```
     """
-    obj = base_crud_processor.load_project_entity(file=file)
+    obj = ProjectProcessor().load_project_entity(file=file)
     return setup_project(obj, setup_kwargs)
 
 
@@ -195,7 +195,7 @@ def list_projects() -> list[Project]:
     list[Project]
         Project entities in the backend.
     """
-    return base_crud_processor.list_project_entities(ENTITY_TYPE)
+    return ProjectProcessor().list_project_entities(ENTITY_TYPE)
 
 
 def get_or_create_project(
@@ -285,11 +285,7 @@ def update_project(entity: Project) -> Project:
     project = dh.update_project(project)
     ```
     """
-    return base_crud_processor.update_project_entity(
-        entity_type=entity.ENTITY_TYPE,
-        entity_name=entity.name,
-        entity_dict=entity.to_dict(),
-    )
+    return ProjectProcessor().update_project_entity(entity)
 
 
 def delete_project(
@@ -324,7 +320,7 @@ def delete_project(
     dh.delete_project("my-project")
     ```
     """
-    return base_crud_processor.delete_project_entity(
+    return ProjectProcessor().delete_project_entity(
         entity_type=ENTITY_TYPE,
         entity_name=name,
         cascade=cascade,
@@ -374,7 +370,7 @@ def search_entity(
     tuple[list[ContextEntity], list[dict]]
         A tuple containing existing entities and deleted entity records.
     """
-    return search_processor.search_entity(
+    return ProjectProcessor().search_entity(
         project_name,
         query=query,
         entity_types=entity_types,

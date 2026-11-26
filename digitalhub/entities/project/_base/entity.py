@@ -5,27 +5,15 @@
 from __future__ import annotations
 
 import typing
-from pathlib import Path
 
 from digitalhub.entities._base.entity.entity import PersistedEntity
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._commons.keys import build_project_key
-from digitalhub.entities._constructors.uuid import build_uuid
 from digitalhub.entities._mixin.extensions.mixin import ExtensionsMixin
-from digitalhub.entities._processors.processors import (
-    base_crud_processor,
-    base_special_ops_processor,
-    crud_processor,
-    executable_processor,
-    search_processor,
-)
+from digitalhub.entities.project._base.processor import ProjectProcessor
 from digitalhub.factory.crud import bind_project_shortcut
-from digitalhub.factory.entity import entity_factory
 from digitalhub.factory.registry import registry
 from digitalhub.stores.client.factory import resolve_client
-from digitalhub.utils.exceptions import BackendError, EntityAlreadyExistsError, EntityError
-from digitalhub.utils.io_utils import write_yaml
-from digitalhub.utils.uri_utils import has_local_scheme
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.context.entity import ContextEntity
@@ -53,22 +41,6 @@ class Project(PersistedEntity, ProjectListShortcuts, ExtensionsMixin):
 
     ENTITY_TYPE = EntityTypes.PROJECT.value
     _obj_attr = (*PersistedEntity._obj_attr, "id", "name", *ExtensionsMixin._obj_attr)
-    _CONTEXT_ENTITY_SECTIONS = (
-        f"{EntityTypes.ARTIFACT.value}s",
-        f"{EntityTypes.DATAITEM.value}s",
-        f"{EntityTypes.MODEL.value}s",
-    )
-    _EXECUTABLE_ENTITY_SECTIONS = (
-        f"{EntityTypes.FUNCTION.value}s",
-        f"{EntityTypes.WORKFLOW.value}s",
-    )
-    _ENTITY_SECTION_TO_TYPE: typing.ClassVar[dict[str, str]] = {
-        "artifacts": EntityTypes.ARTIFACT.value,
-        "dataitems": EntityTypes.DATAITEM.value,
-        "models": EntityTypes.MODEL.value,
-        "functions": EntityTypes.FUNCTION.value,
-        "workflows": EntityTypes.WORKFLOW.value,
-    }
 
     def __init__(
         self,
@@ -147,9 +119,7 @@ class Project(PersistedEntity, ProjectListShortcuts, ExtensionsMixin):
         """
         if update:
             return self.update()
-        new_obj = base_crud_processor.create_project_entity(_entity=self)
-        self._update_attributes(new_obj)
-        return self
+        return ProjectProcessor().create_project_entity(self)
 
     def update(self) -> Project:
         """
@@ -160,13 +130,7 @@ class Project(PersistedEntity, ProjectListShortcuts, ExtensionsMixin):
         Project
             Entity updated.
         """
-        new_obj = base_crud_processor.update_project_entity(
-            entity_type=self.ENTITY_TYPE,
-            entity_name=self.name,
-            entity_dict=self.to_dict(),
-        )
-        self._update_attributes(new_obj)
-        return self
+        return ProjectProcessor().update_project_entity(self)
 
     def refresh(self) -> Project:
         """
@@ -177,12 +141,7 @@ class Project(PersistedEntity, ProjectListShortcuts, ExtensionsMixin):
         Project
             Project object.
         """
-        new_obj = base_crud_processor.read_project_entity(
-            entity_type=self.ENTITY_TYPE,
-            entity_name=self.name,
-        )
-        self._update_attributes(new_obj)
-        return self
+        return ProjectProcessor().refresh_project_entity(self)
 
     def search_entity(
         self,
@@ -203,7 +162,7 @@ class Project(PersistedEntity, ProjectListShortcuts, ExtensionsMixin):
         --------
         digitalhub.search_entity
         """
-        return search_processor.search_entity(
+        return ProjectProcessor().search_entity(
             self.name,
             query=query,
             entity_types=entity_types,
@@ -226,170 +185,7 @@ class Project(PersistedEntity, ProjectListShortcuts, ExtensionsMixin):
         str
             Exported filepath.
         """
-        obj = self._refresh_to_dict()
-        obj = self._export_not_embedded(obj)
-        root = Path(self.spec.source)
-        root.mkdir(parents=True, exist_ok=True)
-        pth = root / f"{self.ENTITY_TYPE}s-{self.name}.yaml"
-        write_yaml(pth, obj)
-        return str(pth)
-
-    def _refresh_to_dict(self) -> dict:
-        """
-        Try to refresh object to collect entities related to project.
-
-        Returns
-        -------
-        dict
-            Entity object in dictionary format.
-        """
-        try:
-            return self.refresh().to_dict()
-        except BackendError:
-            return self.to_dict()
-
-    def _export_not_embedded(self, obj: dict) -> dict:
-        """
-        Export project objects if not embedded.
-
-        Parameters
-        ----------
-        obj : dict
-            Project object in dictionary format.
-
-        Returns
-        -------
-        dict
-            Updatated project object in dictionary format with referenced entities.
-        """
-        # Cycle over entity types
-        for entity_type in self._get_entity_types():
-            # Entity types are stored as a list of entities
-            for idx, entity in enumerate(obj.get("spec", {}).get(entity_type, [])):
-                # Export entity if not embedded is in metadata, else do nothing
-                if not self._is_embedded(entity):
-                    # Get entity object from backend
-                    ent = crud_processor.read_context_entity(entity["key"])
-
-                    # Export and store ref in object metadata inside project
-                    pth = ent.export()
-                    obj["spec"][entity_type][idx]["metadata"]["ref"] = pth
-
-        # Return updated object
-        return obj
-
-    def _import_entities(self, obj: dict, reset_id: bool = False) -> None:
-        """
-        Import project entities.
-
-        Parameters
-        ----------
-        obj : dict
-            Project object in dictionary format.
-        """
-        entity_types = self._get_entity_types()
-
-        # Cycle over entity types
-        for entity_type in entity_types:
-            # Entity types are stored as a list of entities
-            for entity in obj.get("spec", {}).get(entity_type, []):
-                embedded = self._is_embedded(entity)
-                ref = entity["metadata"].get("ref")
-
-                # Import entity if not embedded and there is a ref
-                if not embedded and ref is not None:
-                    # Import entity from local ref
-                    if has_local_scheme(ref):
-                        try:
-                            if entity_type in self._CONTEXT_ENTITY_SECTIONS:
-                                crud_processor.import_context_entity(file=ref, reset_id=reset_id, context=self.name)
-
-                            elif entity_type in self._EXECUTABLE_ENTITY_SECTIONS:
-                                executable_processor.import_executable_entity(
-                                    file=ref, reset_id=reset_id, context=self.name
-                                )
-
-                        except FileNotFoundError:
-                            msg = f"File not found: {ref}."
-                            raise EntityError(msg)
-
-                # If entity is embedded, create it and try to save
-                elif embedded:
-                    # It's possible that embedded field in metadata is not shown
-                    if entity["metadata"].get("embedded") is None:
-                        entity["metadata"]["embedded"] = True
-
-                    if reset_id:
-                        new_id = build_uuid()
-                        entity["id"] = new_id
-                        entity["metadata"]["version"] = new_id
-
-                    try:
-                        singular_entity_type = self._ENTITY_SECTION_TO_TYPE[entity_type]
-                        entity_factory.build_entity_from_dict(entity, entity_type=singular_entity_type).save()
-                    except EntityAlreadyExistsError:
-                        pass
-
-    def _load_entities(self, obj: dict) -> None:
-        """
-        Load project entities.
-
-        Parameters
-        ----------
-        obj : dict
-            Project object in dictionary format.
-        """
-        entity_types = self._get_entity_types()
-
-        # Cycle over entity types
-        for entity_type in entity_types:
-            # Entity types are stored as a list of entities
-            for entity in obj.get("spec", {}).get(entity_type, []):
-                embedded = self._is_embedded(entity)
-                ref = entity["metadata"].get("ref")
-
-                # Load entity if not embedded and there is a ref
-                if not embedded and ref is not None and has_local_scheme(ref):
-                    try:
-                        if entity_type in self._CONTEXT_ENTITY_SECTIONS:
-                            crud_processor.load_context_entity(ref)
-
-                        elif entity_type in self._EXECUTABLE_ENTITY_SECTIONS:
-                            executable_processor.load_executable_entity(ref)
-
-                    except FileNotFoundError:
-                        msg = f"File not found: {ref}."
-                        raise EntityError(msg)
-
-    def _is_embedded(self, entity: dict) -> bool:
-        """
-        Check if entity is embedded.
-
-        Parameters
-        ----------
-        entity : dict
-            Entity in dictionary format.
-
-        Returns
-        -------
-        bool
-            True if entity is embedded.
-        """
-        metadata_embedded = entity["metadata"].get("embedded", False)
-        no_status = entity.get("status", None) is None
-        no_spec = entity.get("spec", None) is None
-        return metadata_embedded or not (no_status and no_spec)
-
-    def _get_entity_types(self) -> list[str]:
-        """
-        Get entity types.
-
-        Returns
-        -------
-        list
-            Entity types.
-        """
-        return [*self._CONTEXT_ENTITY_SECTIONS, *self._EXECUTABLE_ENTITY_SECTIONS]
+        return ProjectProcessor().export_project_entity(self)
 
     ##############################
     #  Properties
@@ -475,19 +271,9 @@ class Project(PersistedEntity, ProjectListShortcuts, ExtensionsMixin):
         Run
             Run instance.
         """
-        self.refresh()
-
-        workflow = workflow if workflow is not None else "main"
-
-        for i in self.spec.workflows:
-            if workflow in [i["name"], i["key"]]:
-                entity = self.get_workflow(i["key"])
-                break
-        else:
-            msg = f"Workflow {workflow} not found."
-            raise EntityError(msg)
-
-        return entity.run(**kwargs)
+        # run() of the workflow entity, not of a processor: runtimes override it
+        # (hera builds the workflow first when auto_build is set).
+        return ProjectProcessor().get_project_workflow(self, workflow).run(**kwargs)
 
     def share(self, user: str) -> None:
         """
@@ -501,7 +287,7 @@ class Project(PersistedEntity, ProjectListShortcuts, ExtensionsMixin):
         -------
         None
         """
-        return base_special_ops_processor.share_project_entity(
+        return ProjectProcessor().share_project_entity(
             entity_type=self.ENTITY_TYPE,
             entity_name=self.name,
             user=user,
@@ -520,7 +306,7 @@ class Project(PersistedEntity, ProjectListShortcuts, ExtensionsMixin):
         -------
         None
         """
-        return base_special_ops_processor.share_project_entity(
+        return ProjectProcessor().share_project_entity(
             entity_type=self.ENTITY_TYPE,
             entity_name=self.name,
             user=user,

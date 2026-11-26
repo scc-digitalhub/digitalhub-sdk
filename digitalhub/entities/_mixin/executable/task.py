@@ -7,7 +7,7 @@ from __future__ import annotations
 import typing
 
 from digitalhub.entities._mixin.executable.base import ExecutableBaseMixin
-from digitalhub.entities._processors.processors import executable_processor
+from digitalhub.entities._processors.context.executable import ContextEntityExecutableProcessor
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.task._base.entity import Task
@@ -15,7 +15,7 @@ if typing.TYPE_CHECKING:
 
 class ExecutableTaskMixin(ExecutableBaseMixin):
     def _get_or_create_task(self, action: str) -> Task:
-        return executable_processor.get_or_create_task(self, action)
+        return ContextEntityExecutableProcessor().get_or_create_task(self, action)
 
     def import_tasks(self, tasks: list[dict]) -> None:
         """Import tasks and associate matching ones with the executable.
@@ -25,7 +25,7 @@ class ExecutableTaskMixin(ExecutableBaseMixin):
         tasks : list[dict]
             Serialized tasks to import.
         """
-        executable_processor.import_tasks(self, tasks)
+        ContextEntityExecutableProcessor().import_tasks(self, tasks)
 
     def new_task(self, action: str, **kwargs) -> Task:
         """Create and persist a task for an executable action.
@@ -47,7 +47,7 @@ class ExecutableTaskMixin(ExecutableBaseMixin):
         EntityError
             If a task already exists for the action or the action is not supported.
         """
-        return executable_processor.create_task(self, action, **kwargs)
+        return ContextEntityExecutableProcessor().create_task(self, action, **kwargs)
 
     def get_task(self, action: str) -> Task:
         """Get the task associated with an executable action.
@@ -67,9 +67,9 @@ class ExecutableTaskMixin(ExecutableBaseMixin):
         EntityError
             If no task exists for the action or the action is not supported.
         """
-        return executable_processor.get_task(self, action)
+        return ContextEntityExecutableProcessor().get_task(self, action)
 
-    def list_task(
+    def list_tasks(
         self,
         q: str | None = None,
         name: str | None = None,
@@ -103,7 +103,7 @@ class ExecutableTaskMixin(ExecutableBaseMixin):
         list[Task]
             Tasks matching the filters.
         """
-        return executable_processor.list_tasks(
+        return ContextEntityExecutableProcessor().list_tasks(
             self,
             q=q,
             name=name,
@@ -134,7 +134,7 @@ class ExecutableTaskMixin(ExecutableBaseMixin):
         EntityError
             If no task exists for the action or the action is not supported.
         """
-        return executable_processor.update_task(self, action, **kwargs)
+        return ContextEntityExecutableProcessor().update_task(self, action, **kwargs)
 
     def delete_task(self, action: str, cascade: bool = True) -> dict:
         """Delete the task associated with an executable action.
@@ -151,7 +151,7 @@ class ExecutableTaskMixin(ExecutableBaseMixin):
         dict
             Backend deletion response.
         """
-        return executable_processor.delete_task(self, action, cascade=cascade)
+        return ContextEntityExecutableProcessor().delete_task(self, action, cascade=cascade)
 
     def set_task(self, action: str, **kwargs) -> Task:
         """Create or replace the task associated with an executable action.
@@ -173,4 +173,4 @@ class ExecutableTaskMixin(ExecutableBaseMixin):
         EntityError
             If the action is not supported.
         """
-        return executable_processor.set_task(self, action, **kwargs)
+        return ContextEntityExecutableProcessor().set_task(self, action, **kwargs)

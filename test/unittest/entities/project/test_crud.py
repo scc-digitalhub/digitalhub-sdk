@@ -7,13 +7,14 @@ from unittest.mock import Mock
 
 import digitalhub.entities.project.crud as project_crud
 from digitalhub.entities._commons.enums import EntityKinds
+from digitalhub.entities.project._base.processor import ProjectProcessor
 from digitalhub.utils.exceptions import BackendError
 
 
 def test_new_project_passes_extensions_to_processor(monkeypatch) -> None:
     create_project = Mock(return_value="project")
     setup_project = Mock(return_value="configured-project")
-    monkeypatch.setattr(project_crud.base_crud_processor, "create_project_entity", create_project)
+    monkeypatch.setattr(ProjectProcessor, "create_project_entity_from_params", create_project)
     monkeypatch.setattr(project_crud, "setup_project", setup_project)
     extensions = [{"key": "value"}]
 
@@ -35,7 +36,7 @@ def test_new_project_passes_extensions_to_processor(monkeypatch) -> None:
 def test_get_project_reads_and_configures_project(monkeypatch) -> None:
     read_project = Mock(return_value="project")
     setup_project = Mock(return_value="configured-project")
-    monkeypatch.setattr(project_crud.base_crud_processor, "read_project_entity", read_project)
+    monkeypatch.setattr(ProjectProcessor, "read_project_entity", read_project)
     monkeypatch.setattr(project_crud, "setup_project", setup_project)
 
     result = project_crud.get_project("my-project", setup_kwargs={"context": "./context"})
@@ -51,7 +52,7 @@ def test_get_project_reads_and_configures_project(monkeypatch) -> None:
 def test_import_project_passes_reset_id_and_setup_kwargs(monkeypatch) -> None:
     import_project = Mock(return_value="project")
     setup_project = Mock(return_value="configured-project")
-    monkeypatch.setattr(project_crud.base_crud_processor, "import_project_entity", import_project)
+    monkeypatch.setattr(ProjectProcessor, "import_project_entity", import_project)
     monkeypatch.setattr(project_crud, "setup_project", setup_project)
 
     result = project_crud.import_project(
@@ -68,7 +69,7 @@ def test_import_project_passes_reset_id_and_setup_kwargs(monkeypatch) -> None:
 def test_load_project_passes_file_to_processor(monkeypatch) -> None:
     load_project = Mock(return_value="project")
     setup_project = Mock(return_value="configured-project")
-    monkeypatch.setattr(project_crud.base_crud_processor, "load_project_entity", load_project)
+    monkeypatch.setattr(ProjectProcessor, "load_project_entity", load_project)
     monkeypatch.setattr(project_crud, "setup_project", setup_project)
 
     result = project_crud.load_project("my-project.yaml")
@@ -81,7 +82,7 @@ def test_load_project_passes_file_to_processor(monkeypatch) -> None:
 def test_list_projects_returns_processor_result(monkeypatch) -> None:
     projects = ["project"]
     list_projects = Mock(return_value=projects)
-    monkeypatch.setattr(project_crud.base_crud_processor, "list_project_entities", list_projects)
+    monkeypatch.setattr(ProjectProcessor, "list_project_entities", list_projects)
 
     result = project_crud.list_projects()
 
@@ -137,21 +138,17 @@ def test_update_project_passes_entity_payload(monkeypatch) -> None:
         to_dict=Mock(return_value={"metadata": {"name": "my-project"}}),
     )
     update_project = Mock(return_value="updated-project")
-    monkeypatch.setattr(project_crud.base_crud_processor, "update_project_entity", update_project)
+    monkeypatch.setattr(ProjectProcessor, "update_project_entity", update_project)
 
     result = project_crud.update_project(entity)
 
     assert result == "updated-project"
-    update_project.assert_called_once_with(
-        entity_type=project_crud.ENTITY_TYPE,
-        entity_name="my-project",
-        entity_dict={"metadata": {"name": "my-project"}},
-    )
+    update_project.assert_called_once_with(entity)
 
 
 def test_delete_project_passes_cascade_and_context_options(monkeypatch) -> None:
     delete_project = Mock(return_value={"deleted": True})
-    monkeypatch.setattr(project_crud.base_crud_processor, "delete_project_entity", delete_project)
+    monkeypatch.setattr(ProjectProcessor, "delete_project_entity", delete_project)
 
     result = project_crud.delete_project("my-project", cascade=False, clean_context=False)
 
@@ -166,7 +163,7 @@ def test_delete_project_passes_cascade_and_context_options(monkeypatch) -> None:
 
 def test_search_entity_forwards_filters(monkeypatch) -> None:
     search = Mock(return_value=([], []))
-    monkeypatch.setattr(project_crud.search_processor, "search_entity", search)
+    monkeypatch.setattr(ProjectProcessor, "search_entity", search)
 
     result = project_crud.search_entity(
         "my-project",

@@ -4,15 +4,15 @@
 
 from unittest.mock import Mock
 
-import digitalhub.entities.task._base.entity as task_entity
 from digitalhub.entities.task._base.entity import Task
+from digitalhub.entities.task._base.processor import TaskProcessor
 
 
 def test_task_run_delegates_to_executable_processor(monkeypatch) -> None:
     task = object.__new__(Task)
     run = Mock()
     build_task_run = Mock(return_value=run)
-    monkeypatch.setattr(task_entity.executable_processor, "build_task_run", build_task_run)
+    monkeypatch.setattr(TaskProcessor, "build_run", build_task_run)
 
     assert task.run("python+run", save=False, labels=["run"]) is run
     build_task_run.assert_called_once_with(task, "python+run", save=False, labels=["run"])

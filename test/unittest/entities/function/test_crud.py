@@ -8,11 +8,13 @@ import pytest
 
 import digitalhub.entities.function.crud as function_crud
 from digitalhub.entities._commons.enums import EntityTypes
+from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
+from digitalhub.entities._processors.context.executable import ContextEntityExecutableProcessor
 
 
 def test_new_function_delegates_to_context_processor(monkeypatch) -> None:
     create_entity = Mock(return_value="function")
-    monkeypatch.setattr(function_crud._crud.crud_processor, "create_context_entity", create_entity)
+    monkeypatch.setattr(ContextEntityCRUDProcessor, "create_context_entity_from_params", create_entity)
 
     result = function_crud.new_function(
         project="my-project",
@@ -121,7 +123,7 @@ def test_function_operations_delegate_to_processor(
     monkeypatch,
 ) -> None:
     processor = Mock(return_value="result")
-    monkeypatch.setattr(function_crud._crud.crud_processor, processor_name, processor)
+    monkeypatch.setattr(ContextEntityCRUDProcessor, processor_name, processor)
 
     result = getattr(function_crud, function_name)(**kwargs)
 
@@ -149,7 +151,7 @@ def test_function_import_and_load_delegate_to_executable_processor(
     monkeypatch,
 ) -> None:
     processor = Mock(return_value="function")
-    monkeypatch.setattr(function_crud._crud.executable_processor, processor_name, processor)
+    monkeypatch.setattr(ContextEntityExecutableProcessor, processor_name, processor)
 
     result = getattr(function_crud, function_name)(**kwargs)
 
@@ -164,7 +166,7 @@ def test_update_function_delegates_entity_fields(monkeypatch) -> None:
     entity.id = "function-id"
     entity.to_dict.return_value = {"metadata": {"name": "handler"}}
     update_entity = Mock(return_value="function")
-    monkeypatch.setattr(function_crud._crud.crud_processor, "update_context_entity", update_entity)
+    monkeypatch.setattr(ContextEntityCRUDProcessor, "update_context_entity", update_entity)
 
     result = function_crud.update_function(entity)
 

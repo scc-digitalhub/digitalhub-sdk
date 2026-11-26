@@ -9,9 +9,9 @@ from unittest.mock import Mock
 import pytest
 
 import digitalhub.entities._mixin.material.files as material_files
-import digitalhub.entities._mixin.material.mixin as material_mixin
 import digitalhub.entities._processors.context.material as context_material
 from digitalhub.entities._mixin.material.mixin import MaterialMixin
+from digitalhub.entities._processors.context.material import ContextEntityMaterialProcessor
 from digitalhub.utils.exceptions import BackendError, EntityError, EntityErrorFileNotFound
 
 
@@ -34,9 +34,9 @@ def _configure_material_upload(monkeypatch, store) -> None:
         return entity
 
     monkeypatch.setattr(
-        material_mixin.material_processor,
+        ContextEntityMaterialProcessor,
         "_update_material_entity",
-        update_material_entity,
+        staticmethod(update_material_entity),
     )
 
 
@@ -131,7 +131,7 @@ def test_upload_stores_large_file_metadata_in_backend(monkeypatch) -> None:
     store.get_file_info.return_value = files_info
     update_files_info = Mock()
     _configure_material_upload(monkeypatch, store)
-    monkeypatch.setattr(material_mixin.material_processor, "update_files_info", update_files_info)
+    monkeypatch.setattr(ContextEntityMaterialProcessor, "update_files_info", update_files_info)
 
     entity.upload("/source")
 
@@ -205,9 +205,9 @@ def test_upload_surfaces_error_status_persistence_failure(monkeypatch) -> None:
         return upload_entity
 
     monkeypatch.setattr(
-        material_mixin.material_processor,
+        ContextEntityMaterialProcessor,
         "_update_material_entity",
-        fail_error_status_update,
+        staticmethod(fail_error_status_update),
     )
 
     with pytest.raises(EntityError, match="failed to persist ERROR status: status update failed") as error:
@@ -223,7 +223,7 @@ def test_upload_delegates_to_material_processor(monkeypatch) -> None:
     entity = MaterialEntityForTest()
     upload_material = Mock()
     monkeypatch.setattr(
-        material_mixin.material_processor,
+        ContextEntityMaterialProcessor,
         "upload_material",
         upload_material,
     )
@@ -251,7 +251,7 @@ def test_log_material_entity_uses_shared_upload_transaction(monkeypatch) -> None
     store.upload.return_value = ["file.txt"]
     store.get_file_info.return_value = [{"path": "file.txt"}]
     monkeypatch.setattr(context_material, "get_store", Mock(return_value=store))
-    monkeypatch.setattr(processor, "_create_material_entity", Mock(return_value=entity))
+    monkeypatch.setattr(processor, "create_material_entity", Mock(return_value=entity))
     uploaded_states = []
 
     def update_material_entity(upload_entity):
@@ -266,7 +266,7 @@ def test_log_material_entity_uses_shared_upload_transaction(monkeypatch) -> None
     )
 
     assert result is entity
-    processor._create_material_entity.assert_called_once_with()
+    processor.create_material_entity.assert_called_once_with()
     assert uploaded_states == ["UPLOADING", "READY"]
     store.upload.assert_called_once_with(
         "/source",
@@ -304,7 +304,7 @@ def test_files_reads_backend_info_and_falls_back_to_status(monkeypatch) -> None:
     entity.spec = SimpleNamespace(path="store://material")
     entity.status.files = [{"path": "status.txt"}]
     read_files_info = Mock(return_value=[{"path": "backend.txt"}])
-    monkeypatch.setattr(material_mixin.material_processor, "read_files_info", read_files_info)
+    monkeypatch.setattr(ContextEntityMaterialProcessor, "read_files_info", read_files_info)
     monkeypatch.setattr(
         context_material,
         "get_context",
@@ -361,7 +361,7 @@ def test_material_file_download_uses_material_path_and_destination(
     entity.spec = SimpleNamespace(path=material_path)
     entity.status.files = [{"path": "status.txt"}]
     monkeypatch.setattr(
-        material_mixin.material_processor,
+        ContextEntityMaterialProcessor,
         "read_files_info",
         Mock(return_value=[{"path": file_path}]),
     )
@@ -391,7 +391,7 @@ def test_material_file_as_file_downloads_and_cleans_up(monkeypatch) -> None:
     entity.spec = SimpleNamespace(path="s3://bucket/material/")
     entity.status.files = [{"path": "status.txt"}]
     monkeypatch.setattr(
-        material_mixin.material_processor,
+        ContextEntityMaterialProcessor,
         "read_files_info",
         Mock(return_value=[{"path": "nested/file.txt"}]),
     )

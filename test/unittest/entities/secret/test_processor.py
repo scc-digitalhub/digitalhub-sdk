@@ -5,8 +5,8 @@
 from types import SimpleNamespace
 from unittest.mock import Mock
 
-import digitalhub.entities._processors.context.secret as secret_module
-from digitalhub.entities._processors.context.secret import ContextEntitySecretProcessor
+import digitalhub.entities.secret._base.processor as secret_module
+from digitalhub.entities.secret._base.processor import SecretProcessor
 from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
 from digitalhub.stores.client.compiler.options import NoOptions, OpaqueOptions
@@ -29,7 +29,7 @@ def test_read_secret_data_uses_backend_operation_request(monkeypatch) -> None:
         name="token",
     )
 
-    result = ContextEntitySecretProcessor().read_secret_value(entity)
+    result = SecretProcessor().read_secret_value(entity)
 
     assert result == "secret"
     client.execute.assert_called_once_with(
@@ -51,7 +51,7 @@ def test_update_secret_data_uses_backend_operation_request(monkeypatch) -> None:
         name="token",
     )
 
-    result = ContextEntitySecretProcessor().set_secret_value(entity, "secret")
+    result = SecretProcessor().set_secret_value(entity, "secret")
 
     assert result is None
     client.execute.assert_called_once_with(

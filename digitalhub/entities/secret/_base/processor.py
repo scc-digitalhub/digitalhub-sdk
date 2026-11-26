@@ -16,7 +16,7 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities.secret._base.entity import Secret
 
 
-class ContextEntitySecretProcessor:
+class SecretProcessor:
     def read_secret_value(self, obj: Secret) -> str:
         data = get_context(obj.project).client.execute(
             ClientOp(

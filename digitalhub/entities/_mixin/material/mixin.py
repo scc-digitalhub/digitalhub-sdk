@@ -11,7 +11,7 @@ from typing import ClassVar
 
 from digitalhub.entities._commons.utils import refresh_decorator
 from digitalhub.entities._mixin.extensions.mixin import ExtensionsMixin
-from digitalhub.entities._processors.processors import material_processor
+from digitalhub.entities._processors.context.material import ContextEntityMaterialProcessor
 from digitalhub.utils.types import SourcesOrListOfSources
 
 if typing.TYPE_CHECKING:
@@ -40,7 +40,7 @@ class MaterialMixin(ExtensionsMixin):
         Generator[list[str], None, None]
             Context manager yielding paths to downloaded files.
         """
-        with material_processor.as_file(self) as files:
+        with ContextEntityMaterialProcessor().as_file(self) as files:
             yield files
 
     @refresh_decorator
@@ -64,7 +64,7 @@ class MaterialMixin(ExtensionsMixin):
         str
             Destination path returned by the store.
         """
-        return material_processor.download_material(
+        return ContextEntityMaterialProcessor().download_material(
             self,
             destination=destination,
             overwrite=overwrite,
@@ -93,7 +93,7 @@ class MaterialMixin(ExtensionsMixin):
             If the upload fails for another supported storage or filesystem
             error.
         """
-        material_processor.upload_material(
+        ContextEntityMaterialProcessor().upload_material(
             self,
             source,
             keep_dir_structure=keep_dir_structure,
@@ -108,4 +108,4 @@ class MaterialMixin(ExtensionsMixin):
         list[MaterialFile]
             Objects built from the files API or the entity status.
         """
-        return material_processor.get_material_files(self)
+        return ContextEntityMaterialProcessor().get_material_files(self)

@@ -11,7 +11,7 @@ from digitalhub.entities.secret._base.entity import Secret
 
 def test_set_secret_value_delegates_to_processor(monkeypatch) -> None:
     processor = Mock()
-    monkeypatch.setattr(entity_module, "secret_processor", processor)
+    monkeypatch.setattr(entity_module, "SecretProcessor", Mock(return_value=processor))
     entity = SimpleNamespace()
 
     Secret.set_secret_value(entity, "secret")
@@ -22,7 +22,7 @@ def test_set_secret_value_delegates_to_processor(monkeypatch) -> None:
 def test_read_secret_value_delegates_to_processor(monkeypatch) -> None:
     processor = Mock()
     processor.read_secret_value.return_value = "secret"
-    monkeypatch.setattr(entity_module, "secret_processor", processor)
+    monkeypatch.setattr(entity_module, "SecretProcessor", Mock(return_value=processor))
     entity = SimpleNamespace()
 
     result = Secret.read_secret_value(entity)

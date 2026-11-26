@@ -8,12 +8,12 @@ from unittest.mock import Mock
 import pytest
 
 import digitalhub.context.api as context_api
-import digitalhub.entities._processors.base.crud as base_crud_module
 import digitalhub.entities.project._base.entity as project_entity_module
+import digitalhub.entities.project._base.processor as base_crud_module
 import digitalhub.stores.session as session_module
 from digitalhub.context.api import get_context
-from digitalhub.entities._processors.processors import base_crud_processor
 from digitalhub.entities.project._base.entity import Project
+from digitalhub.entities.project._base.processor import ProjectProcessor
 from digitalhub.factory.entity import entity_factory
 from digitalhub.stores.session import Session
 from digitalhub.utils.exceptions import ContextError
@@ -53,12 +53,14 @@ def test_building_a_project_neither_builds_a_client_nor_registers_a_context(sess
 
 @pytest.mark.parametrize("operation", ["read", "update"])
 def test_project_state_from_the_backend_registers_the_context(session, monkeypatch, tmp_path, operation) -> None:
-    _backend(monkeypatch, base_crud_module, _project_dict(tmp_path / "backend"))
+    client = _backend(monkeypatch, base_crud_module, _project_dict(tmp_path / "backend"))
 
     if operation == "read":
-        base_crud_processor.read_project_entity("project", "demo")
+        ProjectProcessor().read_project_entity("project", "demo")
     else:
-        base_crud_processor.update_project_entity("project", "demo", {})
+        project: Project = entity_factory.build_entity_from_dict(_project_dict(tmp_path / "local"))
+        project._client = client
+        ProjectProcessor().update_project_entity(project)
 
     assert session.contexts.get("demo").root == tmp_path / "backend"
 
@@ -68,7 +70,7 @@ def test_creating_a_project_registers_the_context_the_backend_returns(session, t
     project._client = Mock()
     project._client.execute.return_value = _project_dict(tmp_path / "backend")
 
-    base_crud_processor.create_project_entity(_entity=project)
+    ProjectProcessor().create_project_entity(project)
 
     assert session.contexts.get("demo").root == tmp_path / "backend"
 
@@ -76,7 +78,7 @@ def test_creating_a_project_registers_the_context_the_backend_returns(session, t
 def test_listing_projects_registers_no_context(session, monkeypatch, tmp_path) -> None:
     _backend(monkeypatch, base_crud_module, [_project_dict(tmp_path)])
 
-    assert [project.name for project in base_crud_processor.list_project_entities("project")] == ["demo"]
+    assert [project.name for project in ProjectProcessor().list_project_entities("project")] == ["demo"]
     with pytest.raises(ContextError):
         session.contexts.get("demo")
 
@@ -85,7 +87,7 @@ def test_a_project_built_from_a_file_does_not_move_the_registered_root(session, 
     # Building a project registered its context, so a listing or a YAML file
     # with another source changed where every entity of the project exported.
     _backend(monkeypatch, base_crud_module, _project_dict(tmp_path / "backend"))
-    base_crud_processor.read_project_entity("project", "demo")
+    ProjectProcessor().read_project_entity("project", "demo")
 
     entity_factory.build_entity_from_dict(_project_dict(tmp_path / "elsewhere"))
 
@@ -106,12 +108,12 @@ def test_import_registers_the_created_project_before_importing_its_entities(sess
     monkeypatch.setattr(base_crud_module, "read_yaml", Mock(return_value=_project_dict(tmp_path / "file")))
     roots_seen_by_import: list[Path] = []
     monkeypatch.setattr(
-        Project,
+        ProjectProcessor,
         "_import_entities",
-        lambda self, obj, reset_id=False: roots_seen_by_import.append(session.contexts.get("demo").root),
+        lambda self, project, obj, reset_id=False: roots_seen_by_import.append(session.contexts.get("demo").root),
     )
-    monkeypatch.setattr(Project, "refresh", lambda self: self)
+    monkeypatch.setattr(ProjectProcessor, "refresh_project_entity", lambda self, project: project)
 
-    base_crud_processor.import_project_entity("project.yaml")
+    ProjectProcessor().import_project_entity("project.yaml")
 
     assert roots_seen_by_import == [tmp_path / "backend"]

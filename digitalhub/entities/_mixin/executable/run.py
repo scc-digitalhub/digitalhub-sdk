@@ -7,7 +7,7 @@ from __future__ import annotations
 import typing
 
 from digitalhub.entities._mixin.executable.base import ExecutableBaseMixin
-from digitalhub.entities._processors.processors import executable_processor
+from digitalhub.entities._processors.context.executable import ContextEntityExecutableProcessor
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.run._base.entity import Run
@@ -36,7 +36,7 @@ class ExecutableRunMixin(ExecutableBaseMixin):
         Run
             Created run.
         """
-        return executable_processor.create_run(
+        return ContextEntityExecutableProcessor().create_run(
             self,
             action,
             extensions=extensions,
@@ -61,7 +61,7 @@ class ExecutableRunMixin(ExecutableBaseMixin):
         EntityError
             If the run does not exist or belongs to another executable.
         """
-        return executable_processor.get_executable_run(self, identifier)
+        return ContextEntityExecutableProcessor().get_executable_run(self, identifier)
 
     def list_runs(
         self,
@@ -103,7 +103,7 @@ class ExecutableRunMixin(ExecutableBaseMixin):
         list[Run]
             Runs matching the filters.
         """
-        return executable_processor.list_executable_runs(
+        return ContextEntityExecutableProcessor().list_executable_runs(
             self,
             q=q,
             name=name,
@@ -129,4 +129,4 @@ class ExecutableRunMixin(ExecutableBaseMixin):
         dict
             Backend deletion response.
         """
-        return executable_processor.delete_executable_run(self, identifier)
+        return ContextEntityExecutableProcessor().delete_executable_run(self, identifier)

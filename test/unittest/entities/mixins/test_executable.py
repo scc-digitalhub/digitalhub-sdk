@@ -5,6 +5,7 @@
 from unittest.mock import Mock
 
 from digitalhub.entities._mixin.executable.mixin import ExecutableMixin
+from digitalhub.entities._processors.context.executable import ContextEntityExecutableProcessor
 
 
 class StubExecutable(ExecutableMixin):
@@ -23,11 +24,12 @@ def test_list_task_delegates_without_forwarding_project_twice(monkeypatch) -> No
     executable = StubExecutable()
     list_tasks = Mock(return_value=[])
     monkeypatch.setattr(
-        "digitalhub.entities._mixin.executable.task.executable_processor.list_tasks",
+        ContextEntityExecutableProcessor,
+        "list_tasks",
         list_tasks,
     )
 
-    result = executable.list_task(q="query")
+    result = executable.list_tasks(q="query")
 
     assert result == []
     list_tasks.assert_called_once_with(

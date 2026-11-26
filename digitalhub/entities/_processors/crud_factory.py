@@ -5,26 +5,15 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Generic, Protocol, TypeVar, cast
+from typing import Any, Generic, Protocol, TypeVar, cast
 
 from digitalhub.entities._commons.utils import build_log_name_from_source
 from digitalhub.entities._mixin.material.utils import build_register_name, kind_warning
-from digitalhub.entities._processors.processors import (
-    crud_processor as default_crud_processor,
-)
-from digitalhub.entities._processors.processors import (
-    executable_processor as default_executable_processor,
-)
-from digitalhub.entities._processors.processors import (
-    material_processor as default_material_processor,
-)
+from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
+from digitalhub.entities._processors.context.executable import ContextEntityExecutableProcessor
+from digitalhub.entities._processors.context.material import ContextEntityMaterialProcessor
 from digitalhub.utils.file_utils import eval_local_source
 from digitalhub.utils.types import SourcesOrListOfSources
-
-if TYPE_CHECKING:
-    from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
-    from digitalhub.entities._processors.context.executable import ContextEntityExecutableProcessor
-    from digitalhub.entities._processors.context.material import ContextEntityMaterialProcessor
 
 
 class CRUDContextEntity(Protocol):
@@ -49,19 +38,15 @@ class ContextEntityCRUD(Generic[EntityT]):
         *,
         unversioned: bool = False,
         executable: bool = False,
-        crud_processor: ContextEntityCRUDProcessor = default_crud_processor,
-        executable_processor: ContextEntityExecutableProcessor = default_executable_processor,
     ) -> None:
         self.entity_type = entity_type
         self.unversioned = unversioned
         self.executable = executable
-        self.crud_processor = crud_processor
-        self.executable_processor = executable_processor
 
     def create(self, **kwargs: Any) -> EntityT:
         return cast(
             EntityT,
-            self.crud_processor.create_context_entity(entity_type=self.entity_type, **kwargs),
+            ContextEntityCRUDProcessor().create_context_entity_from_params(entity_type=self.entity_type, **kwargs),
         )
 
     def get(
@@ -70,9 +55,8 @@ class ContextEntityCRUD(Generic[EntityT]):
         project: str | None = None,
         entity_id: str | None = None,
     ) -> EntityT:
-        reader = (
-            self.crud_processor.read_unversioned_entity if self.unversioned else self.crud_processor.read_context_entity
-        )
+        processor = ContextEntityCRUDProcessor()
+        reader = processor.read_unversioned_entity if self.unversioned else processor.read_context_entity
         read_kwargs = {
             "identifier": identifier,
             "entity_type": self.entity_type,
@@ -88,7 +72,7 @@ class ContextEntityCRUD(Generic[EntityT]):
     def get_versions(self, identifier: str, project: str | None = None) -> list[EntityT]:
         return cast(
             list[EntityT],
-            self.crud_processor.read_context_entity_versions(
+            ContextEntityCRUDProcessor().read_context_entity_versions(
                 identifier=identifier,
                 entity_type=self.entity_type,
                 project=project,
@@ -98,7 +82,9 @@ class ContextEntityCRUD(Generic[EntityT]):
     def list(self, project: str, **filters: Any) -> list[EntityT]:
         return cast(
             list[EntityT],
-            self.crud_processor.list_context_entities(project=project, entity_type=self.entity_type, **filters),
+            ContextEntityCRUDProcessor().list_context_entities(
+                project=project, entity_type=self.entity_type, **filters
+            ),
         )
 
     def import_entity(
@@ -111,19 +97,19 @@ class ContextEntityCRUD(Generic[EntityT]):
         if self.executable:
             return cast(
                 EntityT,
-                self.executable_processor.import_executable_entity(file, key, reset_id, context),
+                ContextEntityExecutableProcessor().import_executable_entity(file, key, reset_id, context),
             )
-        return cast(EntityT, self.crud_processor.import_context_entity(file, key, reset_id, context))
+        return cast(EntityT, ContextEntityCRUDProcessor().import_context_entity(file, key, reset_id, context))
 
     def load(self, file: str) -> EntityT:
         if self.executable:
-            return cast(EntityT, self.executable_processor.load_executable_entity(file))
-        return cast(EntityT, self.crud_processor.load_context_entity(file))
+            return cast(EntityT, ContextEntityExecutableProcessor().load_executable_entity(file))
+        return cast(EntityT, ContextEntityCRUDProcessor().load_context_entity(file))
 
     def update(self, entity: EntityT) -> EntityT:
         return cast(
             EntityT,
-            self.crud_processor.update_context_entity(
+            ContextEntityCRUDProcessor().update_context_entity(
                 project=entity.project,
                 entity_type=entity.ENTITY_TYPE,
                 entity_id=entity.id,
@@ -140,7 +126,7 @@ class ContextEntityCRUD(Generic[EntityT]):
     ) -> dict:
         if self.unversioned:
             options["unversioned"] = True
-        return self.crud_processor.delete_context_entity(
+        return ContextEntityCRUDProcessor().delete_context_entity(
             identifier=identifier,
             entity_type=self.entity_type,
             project=project,
@@ -151,16 +137,6 @@ class ContextEntityCRUD(Generic[EntityT]):
 
 class MaterialEntityCRUD(ContextEntityCRUD[EntityT]):
     """Shared create, log, and register operations for material entities."""
-
-    def __init__(
-        self,
-        entity_type: str,
-        *,
-        material_processor: ContextEntityMaterialProcessor = default_material_processor,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(entity_type, **kwargs)
-        self.material_processor = material_processor
 
     def log(
         self,
@@ -180,7 +156,7 @@ class MaterialEntityCRUD(ContextEntityCRUD[EntityT]):
         eval_local_source(source)
         if name is None:
             name = build_log_name_from_source(source)
-        kwargs = self.material_processor.build_log_kwargs(
+        kwargs = ContextEntityMaterialProcessor().build_log_kwargs(
             project,
             name,
             entity_type=self.entity_type,
@@ -190,7 +166,7 @@ class MaterialEntityCRUD(ContextEntityCRUD[EntityT]):
         )
         return cast(
             EntityT,
-            self.material_processor.log_material_entity(
+            ContextEntityMaterialProcessor().log_material_entity(
                 source=source,
                 project=project,
                 name=name,

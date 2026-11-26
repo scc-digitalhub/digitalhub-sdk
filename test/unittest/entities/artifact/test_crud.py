@@ -13,6 +13,8 @@ import digitalhub.entities.artifact.crud as context_crud
 import digitalhub.entities.artifact.generic.crud as generic_crud
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
 from digitalhub.entities._processors import crud_factory
+from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
+from digitalhub.entities._processors.context.material import ContextEntityMaterialProcessor
 
 
 def test_register_artifact_delegates_to_base_with_specific_kind(monkeypatch) -> None:
@@ -173,7 +175,7 @@ def test_name_warning_logs_inferred_name(monkeypatch) -> None:
 
 def test_new_artifact_delegates_to_context_processor(monkeypatch) -> None:
     create_entity = Mock(return_value="artifact")
-    monkeypatch.setattr(artifact_base_crud._crud.crud_processor, "create_context_entity", create_entity)
+    monkeypatch.setattr(ContextEntityCRUDProcessor, "create_context_entity_from_params", create_entity)
 
     result = artifact_base_crud.new_artifact(
         project="my-project",
@@ -213,8 +215,8 @@ def test_log_base_artifact_validates_source_and_builds_storage_kwargs(monkeypatc
     log_entity = Mock(return_value="artifact")
     monkeypatch.setattr(crud_factory, "eval_local_source", eval_source)
     monkeypatch.setattr(crud_factory, "build_log_name_from_source", build_name)
-    monkeypatch.setattr(artifact_base_crud._crud.material_processor, "build_log_kwargs", build_kwargs)
-    monkeypatch.setattr(artifact_base_crud._crud.material_processor, "log_material_entity", log_entity)
+    monkeypatch.setattr(ContextEntityMaterialProcessor, "build_log_kwargs", build_kwargs)
+    monkeypatch.setattr(ContextEntityMaterialProcessor, "log_material_entity", log_entity)
 
     source = ["./artifact.bin"]
     result = artifact_base_crud.log_base_artifact(
@@ -446,7 +448,7 @@ def test_artifact_operations_delegate_to_processor(
     monkeypatch,
 ) -> None:
     processor = Mock(return_value="result")
-    monkeypatch.setattr(context_crud._crud.crud_processor, processor_name, processor)
+    monkeypatch.setattr(ContextEntityCRUDProcessor, processor_name, processor)
 
     result = getattr(context_crud, function_name)(**kwargs)
 
@@ -466,7 +468,7 @@ def test_update_artifact_delegates_entity_fields(monkeypatch) -> None:
     entity.id = "artifact-id"
     entity.to_dict.return_value = {"metadata": {"name": "artifact"}}
     update_entity = Mock(return_value="artifact")
-    monkeypatch.setattr(context_crud._crud.crud_processor, "update_context_entity", update_entity)
+    monkeypatch.setattr(ContextEntityCRUDProcessor, "update_context_entity", update_entity)
 
     result = context_crud.update_artifact(entity)
 

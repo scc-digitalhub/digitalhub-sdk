@@ -9,7 +9,7 @@ import typing
 from digitalhub.entities._base.context.entity import ContextEntity
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._mixin.versioned.mixin import VersionedMixin
-from digitalhub.entities._processors.processors import secret_processor
+from digitalhub.entities.secret._base.processor import SecretProcessor
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.entity.status import Status
@@ -52,7 +52,7 @@ class Secret(ContextEntity, VersionedMixin):
         value : str
             Value of the secret.
         """
-        secret_processor.set_secret_value(self, value)
+        SecretProcessor().set_secret_value(self, value)
 
     def read_secret_value(self) -> str:
         """
@@ -63,4 +63,4 @@ class Secret(ContextEntity, VersionedMixin):
         str
             Value of the secret.
         """
-        return secret_processor.read_secret_value(self)
+        return SecretProcessor().read_secret_value(self)

@@ -6,8 +6,8 @@ from unittest.mock import Mock, call
 
 import pytest
 
-import digitalhub.entities._processors.base.special_ops as special_ops_module
-from digitalhub.entities._processors.base.special_ops import BaseEntitySpecialOpsProcessor
+import digitalhub.entities.project._base.processor as special_ops_module
+from digitalhub.entities.project._base.processor import ProjectProcessor
 from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
 from digitalhub.stores.client.compiler.options import NoOptions, ShareOptions
@@ -25,7 +25,7 @@ def test_unshare_finds_user_after_first_acl_entry(monkeypatch) -> None:
     ]
     monkeypatch.setattr(special_ops_module, "resolve_client", Mock(return_value=client))
 
-    BaseEntitySpecialOpsProcessor().share_project_entity(
+    ProjectProcessor().share_project_entity(
         entity_type="project",
         entity_name="example",
         user="bob",
@@ -56,7 +56,7 @@ def test_share_creates_access_with_built_parameters(monkeypatch) -> None:
     client = Mock()
     monkeypatch.setattr(special_ops_module, "resolve_client", Mock(return_value=client))
 
-    result = BaseEntitySpecialOpsProcessor().share_project_entity(
+    result = ProjectProcessor().share_project_entity(
         entity_type="project",
         entity_name="example",
         user="alice",
@@ -81,7 +81,7 @@ def test_unshare_raises_when_user_has_no_access(monkeypatch) -> None:
     monkeypatch.setattr(special_ops_module, "resolve_client", Mock(return_value=client))
 
     with pytest.raises(ValueError, match="User 'bob' does not have access to project"):
-        BaseEntitySpecialOpsProcessor().share_project_entity(
+        ProjectProcessor().share_project_entity(
             entity_type="project",
             entity_name="example",
             user="bob",

@@ -8,6 +8,7 @@ import typing
 from typing import Any
 
 from digitalhub.entities._commons.metrics import MetricType, update_metrics, validate_metric_value
+from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
 from digitalhub.entities._processors.utils import get_context
 from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
@@ -19,6 +20,9 @@ if typing.TYPE_CHECKING:
 
 
 class ContextEntityMetricsProcessor:
+    def __init__(self, crud_processor: ContextEntityCRUDProcessor | None = None) -> None:
+        self.crud_processor = ContextEntityCRUDProcessor() if crud_processor is None else crud_processor
+
     def get_metrics(self, obj: MetricsEntityProtocol) -> dict[str, MetricType]:
         """Return backend metrics when available, otherwise status metrics."""
         if obj._entity_has_metrics is True and obj.status.metrics:
@@ -52,7 +56,9 @@ class ContextEntityMetricsProcessor:
         metrics = self.read_metrics_for_entity(obj)
         if not metrics and not obj.status.metrics and not obj._entity_has_metrics:
             obj.status.metrics = {}
-            obj.update()
+            obj._update_attributes(
+                self.crud_processor.update_context_entity(obj.project, obj.ENTITY_TYPE, obj.id, obj.to_dict())
+            )
         metrics = update_metrics(metrics, key, value, overwrite, single_value)
         self.update_metric(
             obj.project,

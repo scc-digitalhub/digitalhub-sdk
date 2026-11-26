@@ -9,6 +9,7 @@ from digitalhub.entities._base.context.entity import ContextEntity
 from digitalhub.entities._base.metadata.entity import Metadata
 from digitalhub.entities._mixin.generic.spec import GenericSpec
 from digitalhub.entities._mixin.generic.status import GenericStatus
+from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
 
 
 class StubContextEntity(ContextEntity):
@@ -33,12 +34,12 @@ def test_save_creates_entity_and_updates_attributes(monkeypatch) -> None:
     entity = _build_entity()
     saved = _build_entity("saved")
     create_entity = Mock(return_value=saved)
-    monkeypatch.setattr(context_entity_module.crud_processor, "create_context_entity", create_entity)
+    monkeypatch.setattr(ContextEntityCRUDProcessor, "create_context_entity", create_entity)
 
     result = entity.save()
 
     assert result is entity
-    create_entity.assert_called_once_with(_entity=entity)
+    create_entity.assert_called_once_with(entity)
     assert entity.metadata is saved.metadata
     assert entity.spec is saved.spec
     assert entity.status is saved.status
@@ -48,7 +49,7 @@ def test_save_creates_entity_and_updates_attributes(monkeypatch) -> None:
 def test_export_delegates_to_processor(monkeypatch) -> None:
     entity = _build_entity()
     export_entity = Mock(return_value="entity.yaml")
-    monkeypatch.setattr(context_entity_module.crud_processor, "export_context_entity", export_entity)
+    monkeypatch.setattr(ContextEntityCRUDProcessor, "export_context_entity", export_entity)
 
     assert entity.export() == "entity.yaml"
     export_entity.assert_called_once_with(entity)
@@ -59,7 +60,7 @@ def test_update_delegates_to_processor_and_updates_attributes(monkeypatch) -> No
     updated = _build_entity("updated")
     payload = entity.to_dict()
     update_entity = Mock(return_value=updated)
-    monkeypatch.setattr(context_entity_module.crud_processor, "update_context_entity", update_entity)
+    monkeypatch.setattr(ContextEntityCRUDProcessor, "update_context_entity", update_entity)
 
     result = entity.update()
 
@@ -79,7 +80,7 @@ def test_refresh_delegates_to_processor_and_updates_attributes(monkeypatch) -> N
     entity = _build_entity()
     refreshed = _build_entity("refreshed")
     read_entity = Mock(return_value=refreshed)
-    monkeypatch.setattr(context_entity_module.crud_processor, "read_context_entity", read_entity)
+    monkeypatch.setattr(ContextEntityCRUDProcessor, "read_context_entity", read_entity)
 
     result = entity.refresh()
 

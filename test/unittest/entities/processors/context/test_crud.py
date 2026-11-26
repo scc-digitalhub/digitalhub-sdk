@@ -115,3 +115,45 @@ def test_update_entity_identity_rebuilds_unversioned_task_key() -> None:
     assert task.metadata.project == "target-project"
     assert task.metadata.version == "new-id"
     assert task.key == "store://target-project/task/python+run/new-id"
+
+
+def test_create_context_entity_posts_the_entity_and_returns_the_stored_one(monkeypatch) -> None:
+    processor = ContextEntityCRUDProcessor()
+    processor._create_context_entity = Mock(return_value={"id": "stored"})
+    monkeypatch.setattr(crud_module, "get_context", Mock(return_value="context"))
+    build_from_dict = Mock(return_value="stored-entity")
+    monkeypatch.setattr(crud_module.entity_factory, "build_entity_from_dict", build_from_dict)
+    entity = SimpleNamespace(project="project", ENTITY_TYPE="artifact", to_dict=Mock(return_value={"id": "local"}))
+
+    assert processor.create_context_entity(entity) == "stored-entity"
+
+    crud_module.get_context.assert_called_once_with("project")
+    processor._create_context_entity.assert_called_once_with("context", "artifact", {"id": "local"})
+    build_from_dict.assert_called_once_with({"id": "stored"}, entity_type="artifact")
+
+
+def test_create_context_entity_from_params_builds_runs_the_hook_and_creates(monkeypatch) -> None:
+    processor = ContextEntityCRUDProcessor()
+    processor.create_context_entity = Mock(return_value="stored-entity")
+    entity = Mock()
+    build_from_params = Mock(return_value=entity)
+    monkeypatch.setattr(crud_module.entity_factory, "get_entity_type_from_kind", Mock(return_value="artifact"))
+    monkeypatch.setattr(crud_module.entity_factory, "build_entity_from_params", build_from_params)
+
+    result = processor.create_context_entity_from_params("artifact", project="project", kind="artifact", name="data")
+
+    assert result == "stored-entity"
+    build_from_params.assert_called_once_with(entity_type="artifact", project="project", kind="artifact", name="data")
+    entity._post_create_hook_before_save.assert_called_once_with()
+    processor.create_context_entity.assert_called_once_with(entity)
+
+
+def test_create_context_entity_from_params_rejects_a_kind_of_another_type(monkeypatch) -> None:
+    processor = ContextEntityCRUDProcessor()
+    processor.create_context_entity = Mock()
+    monkeypatch.setattr(crud_module.entity_factory, "get_entity_type_from_kind", Mock(return_value="model"))
+
+    with pytest.raises(ValueError, match="does not match expected type 'model'"):
+        processor.create_context_entity_from_params("artifact", project="project", kind="model")
+
+    processor.create_context_entity.assert_not_called()

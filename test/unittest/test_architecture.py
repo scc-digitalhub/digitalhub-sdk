@@ -93,6 +93,55 @@ def test_processors_remain_explicit_without_provider_registry() -> None:
     assert not (processor_root / "service_locator.py").exists()
 
 
+def test_processors_are_created_where_they_are_used() -> None:
+    # A module-level processor is a singleton: every user imports the module
+    # that builds it, which turns that module into an import hub.
+    violations = []
+    for path in sorted(PACKAGE_ROOT.rglob("*.py")):
+        for node in ast.parse(path.read_text()).body:
+            value = node.value if isinstance(node, (ast.Assign, ast.AnnAssign)) else None
+            if isinstance(value, ast.Call) and isinstance(value.func, ast.Name) and value.func.id.endswith("Processor"):
+                violations.append(f"{path.relative_to(PACKAGE_ROOT.parent)}:{node.lineno}: {value.func.id}()")
+
+    assert violations == [], "\n".join(violations)
+
+
+def _active_record_calls(source: str) -> list[tuple[int, str]]:
+    calls = []
+    for cls in ast.parse(source).body:
+        if not (isinstance(cls, ast.ClassDef) and cls.name.endswith("Processor")):
+            continue
+        for node in ast.walk(cls):
+            if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)):
+                continue
+            method, receiver = node.func.attr, node.func.value
+            # Calls on the processor itself, on its attributes, or on a processor
+            # or runtime built on the spot are not entity calls.
+            built_on_the_spot = isinstance(receiver, ast.Call) and ast.unparse(receiver.func).endswith(
+                ("Processor", "build_runtime")
+            )
+            if built_on_the_spot or ast.unparse(receiver).split(".")[0] == "self":
+                continue
+            # dict.update(other) takes an argument; the entity methods take none.
+            no_arguments = not node.args and not node.keywords
+            if method in ("save", "run") or (method in ("update", "refresh") and no_arguments):
+                calls.append((node.lineno, ast.unparse(node.func)))
+    return calls
+
+
+def test_processors_do_not_call_active_record_methods() -> None:
+    # save(), update(), refresh() and run() of an entity call the processors
+    # back. Processors use the CRUD processor, then _update_attributes() when
+    # the caller keeps the same object.
+    violations = [
+        f"{path.relative_to(PACKAGE_ROOT.parent)}:{line}: {call}()"
+        for path in sorted(PACKAGE_ROOT.rglob("*.py"))
+        for line, call in _active_record_calls(path.read_text())
+    ]
+
+    assert violations == [], "\n".join(violations)
+
+
 def test_entities_and_contexts_resolve_clients_at_use_time() -> None:
     # The default client is reached only through resolve_client(), the single
     # hook for per-project credentials. Holding get_client() or the factory

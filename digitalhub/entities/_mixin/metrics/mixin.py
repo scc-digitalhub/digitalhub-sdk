@@ -8,7 +8,7 @@ import typing
 from typing import ClassVar
 
 from digitalhub.entities._commons.metrics import MetricType
-from digitalhub.entities._processors.processors import metrics_processor
+from digitalhub.entities._processors.context.metrics import ContextEntityMetricsProcessor
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._mixin.metrics.status import MetricsStatus
@@ -38,7 +38,7 @@ class MetricsMixin:
         dict[str, MetricType]
             Metrics dictionary.
         """
-        return metrics_processor.get_metrics(self)
+        return ContextEntityMetricsProcessor().get_metrics(self)
 
     def log_metric(
         self,
@@ -95,7 +95,7 @@ class MetricsMixin:
         ...     overwrite=True,
         ... )
         """
-        metrics_processor.log_metric(self, key, value, overwrite, single_value)
+        ContextEntityMetricsProcessor().log_metric(self, key, value, overwrite, single_value)
 
     def log_metrics(
         self,
@@ -155,4 +155,4 @@ class MetricsMixin:
         --------
         log_metric
         """
-        metrics_processor.log_metrics(self, metrics, overwrite)
+        ContextEntityMetricsProcessor().log_metrics(self, metrics, overwrite)

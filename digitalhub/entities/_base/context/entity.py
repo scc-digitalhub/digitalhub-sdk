@@ -8,7 +8,7 @@ import typing
 
 from digitalhub.context.api import get_context
 from digitalhub.entities._base.entity.entity import PersistedEntity
-from digitalhub.entities._processors.processors import crud_processor
+from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
 
 if typing.TYPE_CHECKING:
     from digitalhub.context.context import Context
@@ -55,7 +55,7 @@ class ContextEntity(PersistedEntity):
         """
         if update:
             return self.update()
-        new_obj = crud_processor.create_context_entity(_entity=self)
+        new_obj = ContextEntityCRUDProcessor().create_context_entity(self)
         self._update_attributes(new_obj)
         return self
 
@@ -68,7 +68,7 @@ class ContextEntity(PersistedEntity):
         ContextEntity
             Entity updated.
         """
-        new_obj = crud_processor.update_context_entity(
+        new_obj = ContextEntityCRUDProcessor().update_context_entity(
             self.project,
             self.ENTITY_TYPE,
             self.id,
@@ -86,7 +86,7 @@ class ContextEntity(PersistedEntity):
         str
             Exported filepath.
         """
-        return crud_processor.export_context_entity(self)
+        return ContextEntityCRUDProcessor().export_context_entity(self)
 
     def refresh(self) -> ContextEntity:
         """
@@ -97,7 +97,7 @@ class ContextEntity(PersistedEntity):
         ContextEntity
             Entity refreshed.
         """
-        new_obj = crud_processor.read_context_entity(
+        new_obj = ContextEntityCRUDProcessor().read_context_entity(
             self.key,
             entity_type=self.ENTITY_TYPE,
         )

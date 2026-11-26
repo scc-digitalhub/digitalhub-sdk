@@ -9,6 +9,7 @@ import pytest
 
 import digitalhub.entities._mixin.executable.mixin as executable_mixin_module
 from digitalhub.entities._mixin.executable.run import ExecutableRunMixin
+from digitalhub.entities._processors.context.executable import ContextEntityExecutableProcessor
 from digitalhub.entities.function._base.entity import Function
 from digitalhub.entities.workflow._base.entity import Workflow
 from digitalhub.utils.exceptions import EntityError
@@ -36,7 +37,8 @@ def test_new_run_delegates_to_executable_processor(monkeypatch) -> None:
     run = Mock()
     create_run = Mock(return_value=run)
     monkeypatch.setattr(
-        "digitalhub.entities._mixin.executable.run.executable_processor.create_run",
+        ContextEntityExecutableProcessor,
+        "create_run",
         create_run,
     )
 
@@ -59,7 +61,8 @@ def test_get_run_matches_id_or_key_and_rejects_other_executables(monkeypatch) ->
         ]
     )
     monkeypatch.setattr(
-        "digitalhub.entities._mixin.executable.run.executable_processor.get_executable_run",
+        ContextEntityExecutableProcessor,
+        "get_executable_run",
         get_run,
     )
 
@@ -74,7 +77,8 @@ def test_list_runs_forwards_filters(monkeypatch) -> None:
     executable = StubExecutable()
     list_runs = Mock(return_value=[])
     monkeypatch.setattr(
-        "digitalhub.entities._mixin.executable.run.executable_processor.list_executable_runs",
+        ContextEntityExecutableProcessor,
+        "list_executable_runs",
         list_runs,
     )
 
@@ -97,7 +101,8 @@ def test_delete_run_delegates_to_executable_processor(monkeypatch) -> None:
     executable = StubExecutable()
     delete_run = Mock(return_value={"deleted": True})
     monkeypatch.setattr(
-        "digitalhub.entities._mixin.executable.run.executable_processor.delete_executable_run",
+        ContextEntityExecutableProcessor,
+        "delete_executable_run",
         delete_run,
     )
 
@@ -121,7 +126,7 @@ def test_function_and_workflow_runs_append_extensions_consistently(
     execute_executable = Mock(return_value=run)
     processor = Mock()
     processor.execute_executable = execute_executable
-    monkeypatch.setattr(executable_mixin_module, "executable_processor", processor)
+    monkeypatch.setattr(executable_mixin_module, "ContextEntityExecutableProcessor", Mock(return_value=processor))
 
     assert executable.run("execute", extensions=additional_extensions) is run
 

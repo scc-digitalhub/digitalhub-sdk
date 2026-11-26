@@ -8,11 +8,13 @@ import pytest
 
 import digitalhub.entities.workflow.crud as workflow_crud
 from digitalhub.entities._commons.enums import EntityTypes
+from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
+from digitalhub.entities._processors.context.executable import ContextEntityExecutableProcessor
 
 
 def test_new_workflow_delegates_to_context_processor(monkeypatch) -> None:
     create_entity = Mock(return_value="workflow")
-    monkeypatch.setattr(workflow_crud._crud.crud_processor, "create_context_entity", create_entity)
+    monkeypatch.setattr(ContextEntityCRUDProcessor, "create_context_entity_from_params", create_entity)
 
     result = workflow_crud.new_workflow(
         project="my-project",
@@ -121,7 +123,7 @@ def test_workflow_operations_delegate_to_processor(
     monkeypatch,
 ) -> None:
     processor = Mock(return_value="result")
-    monkeypatch.setattr(workflow_crud._crud.crud_processor, processor_name, processor)
+    monkeypatch.setattr(ContextEntityCRUDProcessor, processor_name, processor)
 
     result = getattr(workflow_crud, function_name)(**kwargs)
 
@@ -149,7 +151,7 @@ def test_workflow_import_and_load_delegate_to_executable_processor(
     monkeypatch,
 ) -> None:
     processor = Mock(return_value="workflow")
-    monkeypatch.setattr(workflow_crud._crud.executable_processor, processor_name, processor)
+    monkeypatch.setattr(ContextEntityExecutableProcessor, processor_name, processor)
 
     result = getattr(workflow_crud, function_name)(**kwargs)
 
@@ -164,7 +166,7 @@ def test_update_workflow_delegates_entity_fields(monkeypatch) -> None:
     entity.id = "workflow-id"
     entity.to_dict.return_value = {"metadata": {"name": "pipeline"}}
     update_entity = Mock(return_value="workflow")
-    monkeypatch.setattr(workflow_crud._crud.crud_processor, "update_context_entity", update_entity)
+    monkeypatch.setattr(ContextEntityCRUDProcessor, "update_context_entity", update_entity)
 
     result = workflow_crud.update_workflow(entity)
 

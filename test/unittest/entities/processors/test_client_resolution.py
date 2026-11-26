@@ -12,8 +12,9 @@ import digitalhub.context.context as context_module
 import digitalhub.stores.session as session_module
 from digitalhub.context.api import build_context
 from digitalhub.context.context import Context
-from digitalhub.entities._processors.processors import base_crud_processor, control_processor
+from digitalhub.entities._processors.context.control import ContextEntityControlProcessor
 from digitalhub.entities.project._base.entity import Project
+from digitalhub.entities.project._base.processor import ProjectProcessor
 from digitalhub.stores.client.common.config import ClientConfig
 from digitalhub.stores.session import Session
 
@@ -80,13 +81,13 @@ def test_operations_use_the_client_built_after_a_config_change(session, tmp_path
     # while context entity operations kept using the old one.
     project = _registered_project(tmp_path)
 
-    base_crud_processor.delete_project_entity("project", "demo", clean_context=False)
-    control_processor.stop_entity("demo", "run", "run-id")
+    ProjectProcessor().delete_project_entity("project", "demo", clean_context=False)
+    ContextEntityControlProcessor().stop_entity("demo", "run", "run-id")
 
     session.configure(ClientConfig(http_timeout=1))
 
-    base_crud_processor.delete_project_entity("project", "demo", clean_context=False)
-    control_processor.stop_entity("demo", "run", "run-id")
+    ProjectProcessor().delete_project_entity("project", "demo", clean_context=False)
+    ContextEntityControlProcessor().stop_entity("demo", "run", "run-id")
 
     assert _sent_timeouts(session) == [60, 60, 1, 1]
     assert project._client is session.client()

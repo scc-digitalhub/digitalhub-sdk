@@ -9,7 +9,7 @@ from typing import Any
 
 from digitalhub.entities._commons.utils import refresh_decorator
 from digitalhub.entities.dataitem._base.entity import Dataitem
-from digitalhub.stores.data.api import get_store
+from digitalhub.entities.dataitem.table.processor import DataitemTableProcessor
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.dataitem._base.status import DataitemStatus
@@ -55,12 +55,7 @@ class DataitemTable(Dataitem):
         Any
             DataFrame.
         """
-        return get_store(self.spec.path, self.project).read_df(
-            self.spec.path,
-            file_format,
-            engine,
-            **kwargs,
-        )
+        return DataitemTableProcessor().read_df(self, file_format, engine, **kwargs)
 
     @refresh_decorator
     def write_df(
@@ -111,9 +106,4 @@ class DataitemTable(Dataitem):
         ... )
         's3://my-bucket/my-data.parquet'
         """
-        return get_store(self.spec.path, self.project).write_df(
-            df,
-            self.spec.path,
-            extension=extension,
-            **kwargs,
-        )
+        return DataitemTableProcessor().write_df(self, df, extension=extension, **kwargs)

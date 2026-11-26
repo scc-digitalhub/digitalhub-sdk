@@ -10,8 +10,9 @@ from enum import Enum
 from digitalhub.context.api import get_default_store
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
 from digitalhub.entities._commons.utils import build_log_name_from_source
-from digitalhub.entities._processors.processors import material_processor
+from digitalhub.entities._processors.context.material import ContextEntityMaterialProcessor
 from digitalhub.entities.dataitem._base.crud import register_base_dataitem
+from digitalhub.entities.dataitem.table.processor import DataitemTableProcessor
 from digitalhub.entities.dataitem.table.utils import (
     post_process,
     process_data_kwargs,
@@ -166,7 +167,7 @@ def log_table(
                 filename=filename,
                 **kwargs,
             )
-            obj = material_processor.log_material_entity(
+            obj = ContextEntityMaterialProcessor().log_material_entity(
                 source=source,
                 project=project,
                 name=name,
@@ -190,8 +191,12 @@ def log_table(
                 filename=filename,
                 **kwargs,
             )
-            obj = material_processor.log_dataitem_table(
-                data=data,
+            obj = ContextEntityMaterialProcessor().log_entity_with_upload(
+                lambda entity: DataitemTableProcessor().write_df(
+                    entity,
+                    data,
+                    extension=FileExtensions.PARQUET.value,
+                ),
                 project=project,
                 name=name,
                 kind=EntityKinds.DATAITEM_TABLE.value,
@@ -210,7 +215,7 @@ def log_table(
                 project=project,
                 **kwargs,
             )
-            return material_processor.log_dataitem_sql(
+            return ContextEntityMaterialProcessor().create_material_entity(
                 sql=sql,
                 project=project,
                 name=name,

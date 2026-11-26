@@ -9,6 +9,7 @@ from digitalhub.context.builder import ContextBuilder
 from digitalhub.context.context import Context
 from digitalhub.entities._commons.enums import Relationship
 from digitalhub.entities.project._base.entity import Project
+from digitalhub.entities.project._base.processor import ProjectProcessor
 from digitalhub.runtimes.enums import RuntimeEnvVar
 from digitalhub.utils.exceptions import ContextError
 
@@ -64,8 +65,8 @@ def test_project_context_io_is_lazy(monkeypatch, tmp_path) -> None:
     assert context.run is run
     client.execute.assert_called_once()
 
-    monkeypatch.setattr(project, "_refresh_to_dict", Mock(return_value={"spec": {}}))
-    monkeypatch.setattr(project, "_get_entity_types", Mock(return_value=[]))
+    monkeypatch.setattr(ProjectProcessor, "_refresh_to_dict", Mock(return_value={"spec": {}}))
+    monkeypatch.setattr(ProjectProcessor, "_get_entity_types", Mock(return_value=[]))
     project.export()
 
     assert root.is_dir()

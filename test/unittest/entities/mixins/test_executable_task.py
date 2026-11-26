@@ -7,6 +7,7 @@ from unittest.mock import Mock
 import pytest
 
 from digitalhub.entities._mixin.executable.task import ExecutableTaskMixin
+from digitalhub.entities._processors.context.executable import ContextEntityExecutableProcessor
 
 
 @pytest.fixture
@@ -27,7 +28,8 @@ def executable() -> ExecutableTaskMixin:
 def test_task_methods_delegate_to_executable_processor(executable, monkeypatch, method, processor_method) -> None:
     operation = Mock(return_value="result")
     monkeypatch.setattr(
-        "digitalhub.entities._mixin.executable.task.executable_processor." + processor_method,
+        ContextEntityExecutableProcessor,
+        processor_method,
         operation,
     )
 
@@ -46,11 +48,12 @@ def test_list_task_delegates_filters(monkeypatch) -> None:
     executable = ExecutableTaskMixin()
     list_tasks = Mock(return_value=[])
     monkeypatch.setattr(
-        "digitalhub.entities._mixin.executable.task.executable_processor.list_tasks",
+        ContextEntityExecutableProcessor,
+        "list_tasks",
         list_tasks,
     )
 
-    assert executable.list_task(q="query", state="RUNNING") == []
+    assert executable.list_tasks(q="query", state="RUNNING") == []
     list_tasks.assert_called_once_with(
         executable,
         q="query",
@@ -67,7 +70,8 @@ def test_import_tasks_delegates_to_processor(monkeypatch) -> None:
     executable = ExecutableTaskMixin()
     import_tasks = Mock()
     monkeypatch.setattr(
-        "digitalhub.entities._mixin.executable.task.executable_processor.import_tasks",
+        ContextEntityExecutableProcessor,
+        "import_tasks",
         import_tasks,
     )
     tasks = [{"kind": "task-kind"}]

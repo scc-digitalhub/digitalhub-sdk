@@ -123,9 +123,8 @@ def log_croissant(
             f"One or more files specified in the Croissant {METADATA_DEFAULT_NAME} were not found. "
             f"Please verify that all content URLs in the {METADATA_DEFAULT_NAME} are correct and that the corresponding files are present."
         ) from e
-
-    # Change back to the original working dir
-    os.chdir(current_dir)
+    finally:
+        os.chdir(current_dir)
 
     # Update metadata fields from Croissant
     metadata = get_metadata_fields_from_croissant(dataset)

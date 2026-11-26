@@ -2,7 +2,7 @@ from inspect import signature
 from types import SimpleNamespace
 from unittest.mock import Mock
 
-import digitalhub.entities.dataitem.table.entity as table_entity_module
+import digitalhub.entities.dataitem.table.processor as table_processor_module
 from digitalhub.entities.dataitem.table.crud import log_table
 from digitalhub.entities.dataitem.table.entity import DataitemTable
 
@@ -18,7 +18,7 @@ def test_as_df_uses_factory_default_engine_when_omitted(monkeypatch) -> None:
     entity.refresh = Mock()
     store = Mock()
     get_store = Mock(return_value=store)
-    monkeypatch.setattr(table_entity_module, "get_store", get_store)
+    monkeypatch.setattr(table_processor_module, "get_store", get_store)
 
     entity.as_df()
 

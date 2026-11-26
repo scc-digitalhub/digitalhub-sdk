@@ -16,29 +16,27 @@ from digitalhub.entities._commons.enums import State
 from digitalhub.entities._commons.utils import build_log_path_from_source
 from digitalhub.entities._constructors.uuid import build_uuid
 from digitalhub.entities._mixin.material.files import MaterialFile
+from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
 from digitalhub.entities._processors.utils import get_context
 from digitalhub.factory.entity import entity_factory
 from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
 from digitalhub.stores.client.compiler.targets import ContextEntityTarget
 from digitalhub.stores.data.api import get_store
-from digitalhub.utils.enums import FileExtensions
 from digitalhub.utils.exceptions import BackendError, BuilderError, EntityError, EntityErrorFileNotFound
 from digitalhub.utils.logger.logger import get_logger
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._mixin.material.protocol import MaterialProtocol
-    from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
-    from digitalhub.entities.dataitem.table.entity import DataitemTable
-    from digitalhub.utils.types import Dataframe, SourcesOrListOfSources
+    from digitalhub.utils.types import SourcesOrListOfSources
 
 logger = get_logger(__name__)
 MAX_FILES_IN_STATUS = 100
 
 
 class ContextEntityMaterialProcessor:
-    def __init__(self, crud_processor: ContextEntityCRUDProcessor):
-        self.crud_processor = crud_processor
+    def __init__(self, crud_processor: ContextEntityCRUDProcessor | None = None) -> None:
+        self.crud_processor = ContextEntityCRUDProcessor() if crud_processor is None else crud_processor
 
     def build_log_kwargs(
         self,
@@ -69,7 +67,7 @@ class ContextEntityMaterialProcessor:
     def log_material_entity(self, **kwargs) -> MaterialProtocol:
         source: SourcesOrListOfSources = kwargs.pop("source")
         keep_dir_structure = kwargs.pop("keep_dir_structure", False)
-        return self._log_entity_with_upload(
+        return self.log_entity_with_upload(
             **kwargs,
             upload_fn=lambda obj: self._upload_material_files(
                 obj,
@@ -77,16 +75,6 @@ class ContextEntityMaterialProcessor:
                 keep_dir_structure,
             ),
         )
-
-    def log_dataitem_table(self, **kwargs) -> DataitemTable:
-        data: Dataframe = kwargs.pop("data")  # type: ignore
-        return self._log_entity_with_upload(
-            **kwargs,
-            upload_fn=lambda obj: obj.write_df(data, extension=FileExtensions.PARQUET.value),
-        )
-
-    def log_dataitem_sql(self, **kwargs) -> DataitemTable:
-        return self._create_material_entity(**kwargs)
 
     def upload_material(
         self,
@@ -175,7 +163,7 @@ class ContextEntityMaterialProcessor:
             return
 
         obj.status.files = []
-        obj.update()
+        self._update_material_entity(obj)
         self.update_files_info(
             obj.project,
             obj.ENTITY_TYPE,
@@ -217,18 +205,20 @@ class ContextEntityMaterialProcessor:
             )
         )
 
-    def _log_entity_with_upload(
+    def log_entity_with_upload(
         self,
         upload_fn: typing.Callable[[MaterialProtocol], object],
         **kwargs,
     ) -> MaterialProtocol:
-        new_obj: MaterialProtocol = self._create_material_entity(**kwargs)
+        """Create a material entity, then fill its path with ``upload_fn`` while tracking the upload state."""
+        new_obj: MaterialProtocol = self.create_material_entity(**kwargs)
         return self._upload_material_entity(new_obj, upload_fn)
 
-    def _create_material_entity(
+    def create_material_entity(
         self,
         **kwargs,
     ) -> MaterialProtocol:
+        """Create a material entity in the backend, without uploading anything."""
         drop_existing = kwargs.pop("drop_existing", False)
         entity_kind = kwargs["kind"]
         entity_type = kwargs.pop("entity_type")

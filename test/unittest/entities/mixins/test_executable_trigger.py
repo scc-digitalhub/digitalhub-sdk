@@ -5,6 +5,7 @@
 from unittest.mock import Mock
 
 from digitalhub.entities._mixin.executable.trigger import ExecutableTriggerMixin
+from digitalhub.entities._processors.context.executable import ContextEntityExecutableProcessor
 
 
 class StubExecutable(ExecutableTriggerMixin):
@@ -15,7 +16,8 @@ def test_trigger_delegates_to_executable_processor(monkeypatch) -> None:
     executable = StubExecutable()
     create_trigger = Mock(return_value="trigger")
     monkeypatch.setattr(
-        "digitalhub.entities._mixin.executable.trigger.executable_processor.create_trigger",
+        ContextEntityExecutableProcessor,
+        "create_trigger",
         create_trigger,
     )
 
@@ -42,7 +44,8 @@ def test_get_trigger_delegates_to_executable_processor(monkeypatch) -> None:
     executable = StubExecutable()
     get_trigger = Mock(return_value="trigger")
     monkeypatch.setattr(
-        "digitalhub.entities._mixin.executable.trigger.executable_processor.get_executable_trigger",
+        ContextEntityExecutableProcessor,
+        "get_executable_trigger",
         get_trigger,
     )
 
@@ -54,7 +57,8 @@ def test_list_triggers_delegates_filters(monkeypatch) -> None:
     executable = StubExecutable()
     list_triggers = Mock(return_value=[])
     monkeypatch.setattr(
-        "digitalhub.entities._mixin.executable.trigger.executable_processor.list_executable_triggers",
+        ContextEntityExecutableProcessor,
+        "list_executable_triggers",
         list_triggers,
     )
 

@@ -8,8 +8,9 @@ from unittest.mock import Mock
 import pytest
 
 import digitalhub.entities._commons.metrics as metrics_utils
-import digitalhub.entities._mixin.metrics.mixin as metrics_mixin
 from digitalhub.entities._mixin.metrics.mixin import MetricsMixin
+from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
+from digitalhub.entities._processors.context.metrics import ContextEntityMetricsProcessor
 
 
 def test_metrics_rechecks_backend_after_negative_lookup(monkeypatch) -> None:
@@ -20,7 +21,7 @@ def test_metrics_rechecks_backend_after_negative_lookup(monkeypatch) -> None:
     entity.status = SimpleNamespace(metrics=None)
     entity._init_metrics_state()
     read_metrics = Mock(return_value={})
-    monkeypatch.setattr(metrics_mixin.metrics_processor, "read_metrics", read_metrics)
+    monkeypatch.setattr(ContextEntityMetricsProcessor, "read_metrics", read_metrics)
 
     assert entity.metrics == {}
 
@@ -72,6 +73,10 @@ def test_log_metric_initializes_status_and_updates_backend(monkeypatch) -> None:
     entity.id = "entity-id"
     entity.status = SimpleNamespace(metrics=None)
     entity.update = Mock()
+    entity.to_dict = Mock(return_value={"id": "entity-id"})
+    entity._update_attributes = Mock()
+    update_entity = Mock()
+    monkeypatch.setattr(ContextEntityCRUDProcessor, "update_context_entity", update_entity)
     entity._init_metrics_state()
     backend_metrics = {}
 
@@ -81,14 +86,16 @@ def test_log_metric_initializes_status_and_updates_backend(monkeypatch) -> None:
     def update_metric(project, entity_type, entity_id, key, value):
         backend_metrics[key] = value
 
-    monkeypatch.setattr(metrics_mixin.metrics_processor, "read_metrics", read_metrics)
-    monkeypatch.setattr(metrics_mixin.metrics_processor, "update_metric", update_metric)
+    monkeypatch.setattr(ContextEntityMetricsProcessor, "read_metrics", staticmethod(read_metrics))
+    monkeypatch.setattr(ContextEntityMetricsProcessor, "update_metric", staticmethod(update_metric))
 
     entity.log_metric("accuracy", 0.9)
 
     assert entity.status.metrics == {}
     assert entity.metrics == {"accuracy": [0.9]}
-    entity.update.assert_called_once_with()
+    update_entity.assert_called_once_with("project", "artifact", "entity-id", {"id": "entity-id"})
+    entity._update_attributes.assert_called_once_with(update_entity.return_value)
+    entity.update.assert_not_called()
 
 
 def test_log_metric_appends_to_existing_backend_metric(monkeypatch) -> None:
@@ -106,8 +113,8 @@ def test_log_metric_appends_to_existing_backend_metric(monkeypatch) -> None:
     def update_metric(project, entity_type, entity_id, key, value):
         backend_metrics[key] = value
 
-    monkeypatch.setattr(metrics_mixin.metrics_processor, "read_metrics", read_metrics)
-    monkeypatch.setattr(metrics_mixin.metrics_processor, "update_metric", update_metric)
+    monkeypatch.setattr(ContextEntityMetricsProcessor, "read_metrics", staticmethod(read_metrics))
+    monkeypatch.setattr(ContextEntityMetricsProcessor, "update_metric", staticmethod(update_metric))
 
     entity.log_metric("accuracy", 0.9)
 

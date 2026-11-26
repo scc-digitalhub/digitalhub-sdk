@@ -11,7 +11,8 @@ from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._mixin.extensions.mixin import ExtensionsMixin
 from digitalhub.entities._mixin.metrics.mixin import MetricsMixin
 from digitalhub.entities._mixin.unversioned.mixin import UnversionedMixin
-from digitalhub.entities._processors.processors import control_processor, executable_processor
+from digitalhub.entities._processors.context.control import ContextEntityControlProcessor
+from digitalhub.entities.run._base.processor import RunProcessor
 from digitalhub.factory.entity import entity_factory
 
 if typing.TYPE_CHECKING:
@@ -70,7 +71,7 @@ class Run(ContextEntity, UnversionedMixin, MetricsMixin, ExtensionsMixin):
         """
         Build run.
         """
-        executable_processor.build_run(self)
+        RunProcessor().build(self)
 
     def run(self) -> Run:
         """
@@ -81,7 +82,7 @@ class Run(ContextEntity, UnversionedMixin, MetricsMixin, ExtensionsMixin):
         Run
             Run object.
         """
-        return executable_processor.run_run(self)
+        return RunProcessor().run(self)
 
     def wait(
         self,
@@ -106,7 +107,7 @@ class Run(ContextEntity, UnversionedMixin, MetricsMixin, ExtensionsMixin):
         Run
             Run object.
         """
-        return executable_processor.wait_run(
+        return RunProcessor().wait(
             self,
             log_info=log_info,
             timeout=timeout,
@@ -123,19 +124,19 @@ class Run(ContextEntity, UnversionedMixin, MetricsMixin, ExtensionsMixin):
         list[Log] | list[str]
             List of run logs. If `as_entity` is True, returns a list of `Log` objects, otherwise returns a list of log texts.
         """
-        return executable_processor.read_run_logs(self, as_entity=as_entity)
+        return RunProcessor().read_logs(self, as_entity=as_entity)
 
     def stop(self) -> None:
         """
         Stop run.
         """
-        return control_processor.stop_entity(self.project, self.ENTITY_TYPE, self.id)
+        return ContextEntityControlProcessor().stop_entity(self.project, self.ENTITY_TYPE, self.id)
 
     def resume(self) -> None:
         """
         Resume run.
         """
-        return control_processor.resume_entity(self.project, self.ENTITY_TYPE, self.id)
+        return ContextEntityControlProcessor().resume_entity(self.project, self.ENTITY_TYPE, self.id)
 
     ##############################
     #  Helpers
@@ -162,13 +163,13 @@ class Run(ContextEntity, UnversionedMixin, MetricsMixin, ExtensionsMixin):
         """
         Start run execution.
         """
-        executable_processor.start_run_execution(self)
+        RunProcessor().start_execution(self)
 
     def end_execution(self) -> None:
         """
         End run execution.
         """
-        executable_processor.end_run_execution(self)
+        RunProcessor().end_execution(self)
 
     def set_status(self, status: dict) -> None:
         """

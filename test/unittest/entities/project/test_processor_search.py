@@ -5,8 +5,8 @@
 from types import SimpleNamespace
 from unittest.mock import Mock
 
-import digitalhub.entities._processors.context.search as search_module
-from digitalhub.entities._processors.context.search import ContextEntitySearchProcessor
+import digitalhub.entities.project._base.processor as search_module
+from digitalhub.entities.project._base.processor import ProjectProcessor
 from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
 from digitalhub.stores.client.compiler.options import SearchOptions
@@ -29,12 +29,12 @@ def _entity(*, include_spec: bool = True) -> dict:
     return entity
 
 
-def _processor(monkeypatch, entity: dict) -> tuple[ContextEntitySearchProcessor, Mock, Mock]:
+def _processor(monkeypatch, entity: dict) -> tuple[ProjectProcessor, Mock, Mock]:
     context = SimpleNamespace(name="demo", client=Mock())
     context.client.execute_list.return_value = [entity]
     monkeypatch.setattr(search_module, "get_context", Mock(return_value=context))
     crud_processor = Mock()
-    return ContextEntitySearchProcessor(crud_processor), context.client, crud_processor
+    return ProjectProcessor(crud_processor), context.client, crud_processor
 
 
 def test_search_builds_complete_entities_from_paginated_results(monkeypatch) -> None:

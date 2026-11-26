@@ -2,9 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-import importlib
 import inspect
-from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
@@ -12,80 +10,7 @@ import pytest
 from digitalhub.entities.artifact import crud as artifact_crud
 from digitalhub.entities.artifact.artifact import crud as artifact_kind_crud
 from digitalhub.entities.project._base.entity import Project
-from digitalhub.utils.exceptions import EntityError
-
-
-def _project_with_reordered_entity_types() -> Project:
-    project = object.__new__(Project)
-    project.name = "project"
-    project._get_entity_types = Mock(return_value=["functions", "artifacts"])
-    project._is_embedded = Mock(return_value=False)
-    return project
-
-
-def _project_entities() -> dict:
-    return {
-        "spec": {
-            "functions": [{"metadata": {"ref": "local://function.yaml"}}],
-            "artifacts": [{"metadata": {"ref": "local://artifact.yaml"}}],
-        }
-    }
-
-
-def test_import_entities_selects_processor_independently_of_entity_type_order(monkeypatch) -> None:
-    project = _project_with_reordered_entity_types()
-    method_module = importlib.import_module(Project._import_entities.__module__)
-    monkeypatch.setattr(method_module, "has_local_scheme", Mock(return_value=True))
-    context_import = Mock()
-    executable_import = Mock()
-    monkeypatch.setattr(method_module.crud_processor, "import_context_entity", context_import)
-    monkeypatch.setattr(method_module.executable_processor, "import_executable_entity", executable_import)
-
-    project._import_entities(_project_entities(), reset_id=True)
-
-    context_import.assert_called_once_with(file="local://artifact.yaml", reset_id=True, context="project")
-    executable_import.assert_called_once_with(file="local://function.yaml", reset_id=True, context="project")
-
-
-def test_import_embedded_entities_uses_singular_entity_types(monkeypatch) -> None:
-    project = object.__new__(Project)
-    project.name = "project"
-    project._is_embedded = Mock(return_value=True)
-    entities = {
-        "artifacts": [{"metadata": {}}],
-        "dataitems": [{"metadata": {}}],
-        "models": [{"metadata": {}}],
-        "functions": [{"metadata": {}}],
-        "workflows": [{"metadata": {}}],
-    }
-    method_module = importlib.import_module(Project._import_entities.__module__)
-    build_entity = Mock(return_value=Mock())
-    monkeypatch.setattr(method_module.entity_factory, "build_entity_from_dict", build_entity)
-
-    project._import_entities({"spec": entities})
-
-    assert [call.kwargs["entity_type"] for call in build_entity.call_args_list] == [
-        "artifact",
-        "dataitem",
-        "model",
-        "function",
-        "workflow",
-    ]
-
-
-def test_load_entities_selects_processor_independently_of_entity_type_order(monkeypatch) -> None:
-    project = _project_with_reordered_entity_types()
-    method_module = importlib.import_module(Project._load_entities.__module__)
-    monkeypatch.setattr(method_module, "has_local_scheme", Mock(return_value=True))
-    context_load = Mock()
-    executable_load = Mock()
-    monkeypatch.setattr(method_module.crud_processor, "load_context_entity", context_load)
-    monkeypatch.setattr(method_module.executable_processor, "load_executable_entity", executable_load)
-
-    project._load_entities(_project_entities())
-
-    context_load.assert_called_once_with("local://artifact.yaml")
-    executable_load.assert_called_once_with("local://function.yaml")
+from digitalhub.entities.project._base.processor import ProjectProcessor
 
 
 def _project_for_shortcuts() -> Project:
@@ -133,145 +58,30 @@ def test_project_entity_properties_use_dynamic_list_shortcuts(property_name: str
     shortcut.assert_called_once_with()
 
 
-def test_save_creates_project_and_updates_attributes(monkeypatch) -> None:
+@pytest.mark.parametrize(
+    ("call", "processor_method"),
+    [
+        (lambda project: project.save(), "create_project_entity"),
+        (lambda project: project.save(update=True), "update_project_entity"),
+        (lambda project: project.update(), "update_project_entity"),
+        (lambda project: project.refresh(), "refresh_project_entity"),
+    ],
+)
+def test_persistence_delegates_to_the_project_processor(monkeypatch, call, processor_method) -> None:
     project = object.__new__(Project)
-    project.name = "project"
-    created = object()
-    create_project = Mock(return_value=created)
-    monkeypatch.setattr(
-        "digitalhub.entities.project._base.entity.base_crud_processor.create_project_entity",
-        create_project,
-    )
-    project._update_attributes = Mock()
+    method = Mock(side_effect=lambda project: project)
+    monkeypatch.setattr(ProjectProcessor, processor_method, method)
 
-    result = project.save()
+    assert call(project) is project
 
-    assert result is project
-    create_project.assert_called_once_with(_entity=project)
-    project._update_attributes.assert_called_once_with(created)
-
-
-def test_save_updates_project(monkeypatch) -> None:
-    project = object.__new__(Project)
-    project.name = "project"
-    project.ENTITY_TYPE = "project"
-    project.to_dict = Mock(return_value={"name": "project"})
-    updated = object()
-    update_project = Mock(return_value=updated)
-    monkeypatch.setattr(
-        "digitalhub.entities.project._base.entity.base_crud_processor.update_project_entity",
-        update_project,
-    )
-    project._update_attributes = Mock()
-
-    result = project.update()
-
-    assert result is project
-    update_project.assert_called_once_with(
-        entity_type=project.ENTITY_TYPE,
-        entity_name="project",
-        entity_dict={"name": "project"},
-    )
-    project._update_attributes.assert_called_once_with(updated)
-
-
-def test_refresh_reads_project_and_updates_attributes(monkeypatch) -> None:
-    project = object.__new__(Project)
-    project.name = "project"
-    project.ENTITY_TYPE = "project"
-    refreshed = object()
-    read_project = Mock(return_value=refreshed)
-    monkeypatch.setattr(
-        "digitalhub.entities.project._base.entity.base_crud_processor.read_project_entity",
-        read_project,
-    )
-    project._update_attributes = Mock()
-
-    result = project.refresh()
-
-    assert result is project
-    read_project.assert_called_once_with(entity_type=project.ENTITY_TYPE, entity_name="project")
-    project._update_attributes.assert_called_once_with(refreshed)
-
-
-def test_export_writes_references_for_non_embedded_entities(monkeypatch, tmp_path) -> None:
-    project = object.__new__(Project)
-    project.name = "project"
-    project.ENTITY_TYPE = "project"
-    project.spec = SimpleNamespace(source=str(tmp_path))
-    project._refresh_to_dict = Mock(return_value={"spec": {"artifacts": [{"key": "artifact-key", "metadata": {}}]}})
-    artifact = SimpleNamespace(export=Mock(return_value="artifact.yaml"))
-    read_entity = Mock(return_value=artifact)
-    monkeypatch.setattr(
-        "digitalhub.entities.project._base.entity.crud_processor.read_context_entity",
-        read_entity,
-    )
-    write_yaml = Mock()
-    monkeypatch.setattr("digitalhub.entities.project._base.entity.write_yaml", write_yaml)
-
-    result = project.export()
-
-    expected_path = tmp_path / "projects-project.yaml"
-    assert result == str(expected_path)
-    project._refresh_to_dict.assert_called_once_with()
-    read_entity.assert_called_once_with("artifact-key")
-    artifact.export.assert_called_once_with()
-    write_yaml.assert_called_once_with(
-        expected_path,
-        {"spec": {"artifacts": [{"key": "artifact-key", "metadata": {"ref": "artifact.yaml"}}]}},
-    )
-
-
-def test_export_skips_embedded_entities(monkeypatch, tmp_path) -> None:
-    project = object.__new__(Project)
-    project.name = "project"
-    project.ENTITY_TYPE = "project"
-    project.spec = SimpleNamespace(source=str(tmp_path))
-    project._refresh_to_dict = Mock(
-        return_value={
-            "spec": {
-                "artifacts": [
-                    {
-                        "key": "artifact-key",
-                        "metadata": {"embedded": True},
-                        "spec": {"path": "artifact.bin"},
-                    }
-                ]
-            }
-        }
-    )
-    read_entity = Mock()
-    monkeypatch.setattr(
-        "digitalhub.entities.project._base.entity.crud_processor.read_context_entity",
-        read_entity,
-    )
-    write_yaml = Mock()
-    monkeypatch.setattr("digitalhub.entities.project._base.entity.write_yaml", write_yaml)
-
-    project.export()
-
-    read_entity.assert_not_called()
-    write_yaml.assert_called_once_with(
-        tmp_path / "projects-project.yaml",
-        {
-            "spec": {
-                "artifacts": [
-                    {
-                        "key": "artifact-key",
-                        "metadata": {"embedded": True},
-                        "spec": {"path": "artifact.bin"},
-                    }
-                ]
-            }
-        },
-    )
+    method.assert_called_once_with(project)
 
 
 def test_search_entity_delegates_to_search_processor(monkeypatch) -> None:
     project = object.__new__(Project)
     project.name = "project"
     search = Mock(return_value=([], []))
-    monkeypatch.setattr("digitalhub.entities.project._base.entity.search_processor.search_entity", search)
+    monkeypatch.setattr(ProjectProcessor, "search_entity", search)
 
     result = project.search_entity(
         query="query",
@@ -300,41 +110,24 @@ def test_search_entity_delegates_to_search_processor(monkeypatch) -> None:
     )
 
 
-def test_run_refreshes_selects_workflow_and_forwards_kwargs() -> None:
+def test_run_runs_the_workflow_the_processor_finds(monkeypatch) -> None:
     project = object.__new__(Project)
-    project.spec = SimpleNamespace(workflows=[{"name": "main", "key": "workflow-key"}])
-    project.refresh = Mock()
     workflow = Mock()
     workflow.run.return_value = "run"
-    project.get_workflow = Mock(return_value=workflow)
+    get_workflow = Mock(return_value=workflow)
+    monkeypatch.setattr(ProjectProcessor, "get_project_workflow", get_workflow)
 
-    result = project.run(workflow="main", parameter="value")
+    assert project.run(workflow="main", action="pipeline", parameter="value") == "run"
 
-    assert result == "run"
-    project.refresh.assert_called_once_with()
-    project.get_workflow.assert_called_once_with("workflow-key")
-    workflow.run.assert_called_once_with(parameter="value")
+    get_workflow.assert_called_once_with(project, "main")
+    workflow.run.assert_called_once_with(action="pipeline", parameter="value")
 
 
-def test_run_uses_main_workflow_by_default() -> None:
+def test_export_delegates_to_the_project_processor(monkeypatch) -> None:
     project = object.__new__(Project)
-    project.spec = SimpleNamespace(workflows=[{"name": "main", "key": "workflow-key"}])
-    project.refresh = Mock()
-    workflow = Mock()
-    project.get_workflow = Mock(return_value=workflow)
+    export = Mock(return_value="projects-project.yaml")
+    monkeypatch.setattr(ProjectProcessor, "export_project_entity", export)
 
-    project.run()
+    assert project.export() == "projects-project.yaml"
 
-    project.get_workflow.assert_called_once_with("workflow-key")
-    workflow.run.assert_called_once_with()
-
-
-def test_run_raises_when_workflow_is_not_found() -> None:
-    project = object.__new__(Project)
-    project.spec = SimpleNamespace(workflows=[])
-    project.refresh = Mock()
-
-    with pytest.raises(EntityError, match="Workflow missing not found"):
-        project.run(workflow="missing")
-
-    project.refresh.assert_called_once_with()
+    export.assert_called_once_with(project)

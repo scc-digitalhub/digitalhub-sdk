@@ -9,7 +9,7 @@ import typing
 from digitalhub.entities._base.context.entity import ContextEntity
 from digitalhub.entities._commons.enums import EntityTypes
 from digitalhub.entities._mixin.unversioned.mixin import UnversionedMixin
-from digitalhub.entities._processors.processors import executable_processor
+from digitalhub.entities.task._base.processor import TaskProcessor
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.entity.spec import Spec
@@ -64,7 +64,7 @@ class Task(ContextEntity, UnversionedMixin):
         Run
             Run object.
         """
-        return executable_processor.build_task_run(self, run_kind, save=save, **kwargs)
+        return TaskProcessor().build_run(self, run_kind, save=save, **kwargs)
 
     def _get_task_string(self) -> str:
         """

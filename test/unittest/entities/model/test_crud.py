@@ -12,6 +12,8 @@ import digitalhub.entities.model.crud as context_crud
 import digitalhub.entities.model.generic.crud as generic_crud
 import digitalhub.entities.model.model.crud as model_crud
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
+from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
+from digitalhub.entities._processors.context.material import ContextEntityMaterialProcessor
 
 MODEL_SPEC_FIELDS = {
     "framework",
@@ -128,7 +130,7 @@ def test_register_base_model_passes_source_as_path(monkeypatch) -> None:
 
 def test_new_model_delegates_to_context_processor(monkeypatch) -> None:
     create_entity = Mock(return_value="model")
-    monkeypatch.setattr(base_crud._crud.crud_processor, "create_context_entity", create_entity)
+    monkeypatch.setattr(ContextEntityCRUDProcessor, "create_context_entity_from_params", create_entity)
 
     result = base_crud.new_model(
         project="my-project",
@@ -170,7 +172,7 @@ def test_log_base_model_builds_payload_for_local_source(monkeypatch, tmp_path) -
         captured.update(kwargs)
         return "logged-model"
 
-    monkeypatch.setattr(base_crud._crud.material_processor, "log_material_entity", log_material_entity)
+    monkeypatch.setattr(ContextEntityMaterialProcessor, "log_material_entity", staticmethod(log_material_entity))
 
     result = base_crud.log_base_model(
         project="my-project",
@@ -342,7 +344,7 @@ def test_model_read_operations_delegate_to_processor(
     monkeypatch,
 ) -> None:
     processor = Mock(return_value="model")
-    monkeypatch.setattr(context_crud._crud.crud_processor, processor_name, processor)
+    monkeypatch.setattr(ContextEntityCRUDProcessor, processor_name, processor)
 
     result = getattr(context_crud, function_name)(**kwargs)
 
@@ -368,7 +370,7 @@ def test_update_model_delegates_entity_fields(monkeypatch) -> None:
         to_dict=Mock(return_value={"metadata": {"name": "model"}}),
     )
     update_entity = Mock(return_value="model")
-    monkeypatch.setattr(context_crud._crud.crud_processor, "update_context_entity", update_entity)
+    monkeypatch.setattr(ContextEntityCRUDProcessor, "update_context_entity", update_entity)
 
     result = context_crud.update_model(entity)
 

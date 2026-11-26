@@ -9,7 +9,7 @@ import typing
 from digitalhub.entities._mixin.executable.run import ExecutableRunMixin
 from digitalhub.entities._mixin.executable.task import ExecutableTaskMixin
 from digitalhub.entities._mixin.executable.trigger import ExecutableTriggerMixin
-from digitalhub.entities._processors.processors import executable_processor
+from digitalhub.entities._processors.context.executable import ContextEntityExecutableProcessor
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.run._base.entity import Run
@@ -44,7 +44,7 @@ class ExecutableMixin(ExecutableTaskMixin, ExecutableRunMixin, ExecutableTrigger
         Run
             Executed run.
         """
-        return executable_processor.execute_executable(
+        return ContextEntityExecutableProcessor().execute_executable(
             self,
             action,
             wait=wait,

@@ -9,13 +9,14 @@ import pytest
 
 import digitalhub.entities.secret.crud as secret_crud
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
+from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
 from digitalhub.utils.exceptions import EntityNotExistsError
 
 
 def test_new_secret_creates_entity_and_sets_secret_value(monkeypatch) -> None:
     entity = Mock()
     create_entity = Mock(return_value=entity)
-    monkeypatch.setattr(secret_crud._crud.crud_processor, "create_context_entity", create_entity)
+    monkeypatch.setattr(ContextEntityCRUDProcessor, "create_context_entity_from_params", create_entity)
 
     result = secret_crud.new_secret(
         project="my-project",
@@ -45,7 +46,7 @@ def test_new_secret_creates_entity_and_sets_secret_value(monkeypatch) -> None:
 
 def test_new_secret_requires_secret_value(monkeypatch) -> None:
     create_entity = Mock()
-    monkeypatch.setattr(secret_crud._crud.crud_processor, "create_context_entity", create_entity)
+    monkeypatch.setattr(ContextEntityCRUDProcessor, "create_context_entity_from_params", create_entity)
 
     with pytest.raises(ValueError, match="secret_value must be provided"):
         secret_crud.new_secret(project="my-project", name="api-key")
@@ -57,7 +58,7 @@ def test_get_secret_by_key_delegates_to_processor(monkeypatch) -> None:
     entity = object()
     read_entity = Mock(return_value=entity)
     monkeypatch.setattr(secret_crud, "is_valid_key", Mock(return_value=True))
-    monkeypatch.setattr(secret_crud._crud.crud_processor, "read_context_entity", read_entity)
+    monkeypatch.setattr(ContextEntityCRUDProcessor, "read_context_entity", read_entity)
 
     result = secret_crud.get_secret(
         identifier="store://secret-key",
@@ -144,7 +145,7 @@ def test_secret_operations_delegate_to_processor(
     monkeypatch,
 ) -> None:
     processor = Mock(return_value="result")
-    monkeypatch.setattr(secret_crud._crud.crud_processor, processor_name, processor)
+    monkeypatch.setattr(ContextEntityCRUDProcessor, processor_name, processor)
 
     result = getattr(secret_crud, function_name)(**kwargs)
 
@@ -170,7 +171,7 @@ def test_update_secret_delegates_entity_fields(monkeypatch) -> None:
         to_dict=Mock(return_value={"metadata": {"name": "api-key"}}),
     )
     update_entity = Mock(return_value="secret")
-    monkeypatch.setattr(secret_crud._crud.crud_processor, "update_context_entity", update_entity)
+    monkeypatch.setattr(ContextEntityCRUDProcessor, "update_context_entity", update_entity)
 
     result = secret_crud.update_secret(entity)
 

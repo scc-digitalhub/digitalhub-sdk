@@ -50,30 +50,25 @@ class ContextEntityCRUDProcessor:
             )
         )
 
-    def create_context_entity(
-        self,
-        _entity: ContextEntity | None = None,
-        **kwargs,
-    ) -> ContextEntity:
-        if _entity is not None:
-            context = _entity._context()
-            obj = _entity
-        else:
-            context = get_context(kwargs["project"])
-            entity_kind = kwargs.get("kind")
-            entity_type = kwargs.pop("entity_type")
-            try:
-                expected_type = entity_factory.get_entity_type_from_kind(entity_kind)
-            except BuilderError:
-                expected_type = entity_type
-            if entity_type != expected_type:
-                raise ValueError(
-                    f"Entity kind '{entity_kind}' does not match expected type '{expected_type}'.",
-                )
-            obj: ContextEntity = entity_factory.build_entity_from_params(entity_type=entity_type, **kwargs)
-            obj._post_create_hook_before_save()
-        new_obj = self._create_context_entity(context, obj.ENTITY_TYPE, obj.to_dict())
+    def create_context_entity(self, obj: ContextEntity) -> ContextEntity:
+        """Create ``obj`` in the backend and return the entity the backend stored."""
+        new_obj = self._create_context_entity(get_context(obj.project), obj.ENTITY_TYPE, obj.to_dict())
         return entity_factory.build_entity_from_dict(new_obj, entity_type=obj.ENTITY_TYPE)
+
+    def create_context_entity_from_params(self, entity_type: str, **kwargs) -> ContextEntity:
+        """Build an entity of ``entity_type`` from parameters, then create it."""
+        entity_kind = kwargs.get("kind")
+        try:
+            expected_type = entity_factory.get_entity_type_from_kind(entity_kind)
+        except BuilderError:
+            expected_type = entity_type
+        if entity_type != expected_type:
+            raise ValueError(
+                f"Entity kind '{entity_kind}' does not match expected type '{expected_type}'.",
+            )
+        obj: ContextEntity = entity_factory.build_entity_from_params(entity_type=entity_type, **kwargs)
+        obj._post_create_hook_before_save()
+        return self.create_context_entity(obj)
 
     def export_context_entity(self, _entity: ContextEntity) -> str:
         obj = _entity.to_dict()
