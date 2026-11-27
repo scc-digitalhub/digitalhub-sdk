@@ -18,7 +18,7 @@ class ExecutableTaskMixin(ExecutableBaseMixin):
         return ContextEntityExecutableProcessor().get_or_create_task(self, action)
 
     def import_tasks(self, tasks: list[dict]) -> None:
-        """Import tasks and associate matching ones with the executable.
+        """Create serialized tasks for the executable, in its project and pointing to it.
 
         Parameters
         ----------

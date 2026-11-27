@@ -25,6 +25,7 @@ from digitalhub.utils.io_utils import read_yaml
 if typing.TYPE_CHECKING:
     from digitalhub.entities._mixin.executable.protocol import ExecutableProtocol
     from digitalhub.entities.run._base.entity import Run
+    from digitalhub.entities.task._base.entity import Task
     from digitalhub.entities.trigger._base.entity import Trigger
 
 
@@ -105,18 +106,42 @@ class ContextEntityExecutableProcessor:
             return self.create_task(executable, action, **kwargs)
         return self.update_task(executable, action, **kwargs)
 
-    def import_tasks(self, executable: ExecutableProtocol, tasks: list[dict]) -> None:
-        """Persist serialized tasks belonging to an executable."""
+    def import_tasks(self, executable: ExecutableProtocol, tasks: list[dict], reset_id: bool = False) -> None:
+        """Create serialized tasks for an executable; tasks that already exist are left as they are."""
+        for task in self._attach_tasks(executable, tasks, reset_id):
+            try:
+                self.crud_processor._create_context_entity(get_context(task.project), task.ENTITY_TYPE, task.to_dict())
+            except EntityAlreadyExistsError:
+                pass
+
+    def load_tasks(self, executable: ExecutableProtocol, tasks: list[dict]) -> None:
+        """Update serialized tasks of an executable, or create the missing ones."""
+        for task in self._attach_tasks(executable, tasks):
+            context = get_context(task.project)
+            try:
+                self.crud_processor._update_context_entity(context, task.ENTITY_TYPE, task.id, task.to_dict())
+            except EntityNotExistsError:
+                self.crud_processor._create_context_entity(context, task.ENTITY_TYPE, task.to_dict())
+
+    @staticmethod
+    def _attach_tasks(executable: ExecutableProtocol, tasks: list[dict], reset_id: bool = False) -> list[Task]:
+        """
+        Build tasks read with an executable, in its project and pointing to it.
+
+        The file may come from another project, or the executable may have a
+        new id: the tasks follow it, with new ids when the executable has one.
+        """
+        attached = []
         for task in tasks:
             if not isinstance(task, dict):
                 continue
-            task_obj = entity_factory.build_entity_from_dict(task, entity_type=EntityTypes.TASK.value)
-            try:
-                self.crud_processor._create_context_entity(
-                    get_context(task_obj.project), task_obj.ENTITY_TYPE, task_obj.to_dict()
-                )
-            except EntityAlreadyExistsError:
-                pass
+            task_obj = typing.cast(
+                "Task", entity_factory.build_entity_from_dict(task, entity_type=EntityTypes.TASK.value)
+            )
+            update_entity_identity(task_obj, executable.project, build_uuid() if reset_id else None)
+            setattr(task_obj.spec, executable.ENTITY_TYPE, executable._get_executable_string())
+            attached.append(task_obj)
+        return attached
 
     def list_executable_runs(
         self,
@@ -295,7 +320,7 @@ class ContextEntityExecutableProcessor:
         except EntityAlreadyExistsError:
             raise EntityError(f"Entity {obj.name} already exists. If you want to update it, use load instead.")
 
-        self.import_tasks(new_obj, tsk_dicts)
+        self.import_tasks(new_obj, tsk_dicts, reset_id=reset_id)
         return new_obj
 
     @staticmethod
@@ -332,5 +357,5 @@ class ContextEntityExecutableProcessor:
             backend_obj = self.crud_processor._create_context_entity(context, obj.ENTITY_TYPE, obj.to_dict())
 
         new_obj: ExecutableProtocol = entity_factory.build_entity_from_dict(backend_obj, entity_type=entity_type)
-        self.import_tasks(new_obj, tsk_dicts)
+        self.load_tasks(new_obj, tsk_dicts)
         return new_obj
