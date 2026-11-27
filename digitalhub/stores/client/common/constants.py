@@ -37,6 +37,9 @@ PAT_SUBJECT_TOKEN_TYPE = "urn:ietf:params:oauth:token-type:pat"
 PAT_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:token-exchange"
 PAT_SCOPE = "credentials"
 
+# Header that tells the proxy in front of the cluster (DHCORE_PROXY) which service to reach.
+PROXY_HOST_HEADER = "X-Proxy-Host"
+
 # Prefixes stripped from credential keys returned by the auth server
 DHCORE_PREFIX = "dhcore_"
 OAUTH2_PREFIX = "oauth2_"

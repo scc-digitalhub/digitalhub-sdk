@@ -4,13 +4,14 @@
 
 from __future__ import annotations
 
-import time
 import typing
 
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes, State
 from digitalhub.entities._commons.keys import EntityRef
 from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
 from digitalhub.entities._processors.utils import get_context
+from digitalhub.entities.run._base.polling import finished, wait_until
+from digitalhub.entities.run._base.serve_processor import RunServeProcessor
 from digitalhub.factory.entity import entity_factory
 from digitalhub.factory.runtime import runtime_factory
 from digitalhub.stores.client.common.enums import ApiType, BackendOp
@@ -18,13 +19,10 @@ from digitalhub.stores.client.compiler.operation import ClientOp
 from digitalhub.stores.client.compiler.options import LogsOptions
 from digitalhub.stores.client.compiler.targets import ContextEntityTarget
 from digitalhub.utils.exceptions import EntityError
-from digitalhub.utils.logger.logger import get_logger
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities.log._base.entity import Log
     from digitalhub.entities.run._base.entity import Run
-
-logger = get_logger(__name__)
 
 # States a local run goes through. Core keeps the state machine of the runs it
 # executes, and takes the status of local runs as the SDK sends it: only the
@@ -46,7 +44,7 @@ class RunProcessor:
     def execute(self, run: Run, wait: bool = False, log_info: bool = True) -> Run:
         """Build and execute local runs, or wait for backend execution when requested."""
         if not run.local_execution():
-            return run.wait(log_info=log_info) if wait else run
+            return self.wait(run, log_info=log_info) if wait else run
 
         self.build(run)
         return self.run(run)
@@ -118,34 +116,27 @@ class RunProcessor:
         timeout: float | None = None,
         poll_interval: float = 5.0,
     ) -> Run:
-        """Wait until a run reaches a terminal state."""
-        if timeout is not None and timeout < 0:
-            raise ValueError("timeout must be non-negative.")
-        if poll_interval <= 0:
-            raise ValueError("poll_interval must be positive.")
+        """
+        Wait until a run reaches a terminal state.
 
-        start = time.monotonic()
-        terminal_states = {
-            State.STOPPED.value,
-            State.ERROR.value,
-            State.COMPLETED.value,
-        }
-        while True:
-            if log_info:
-                logger.info(f"Waiting for run {run.id} to finish...")
-            self.crud_processor.refresh_context_entity(run)
-            elapsed = time.monotonic() - start
-            if run.status.state in terminal_states:
-                if log_info:
-                    logger.info(f"Run {run.id} finished in {elapsed:.2f} seconds.")
-                return run
-            if timeout is not None:
-                remaining = timeout - elapsed
-                if remaining <= 0:
-                    raise TimeoutError(f"Run {run.id} did not finish within {timeout}s")
-                time.sleep(min(poll_interval, remaining))
-            else:
-                time.sleep(poll_interval)
+        A serve run waits for its service instead (``RunServeProcessor``).
+        """
+        if RunServeProcessor.is_serve(run):
+            return RunServeProcessor(self.crud_processor).wait(
+                run,
+                log_info=log_info,
+                timeout=timeout,
+                poll_interval=poll_interval,
+            )
+        return wait_until(
+            self.crud_processor,
+            run,
+            finished,
+            "finish",
+            log_info=log_info,
+            timeout=timeout,
+            poll_interval=poll_interval,
+        )
 
     def read_logs(
         self,

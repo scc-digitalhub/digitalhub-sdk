@@ -8,10 +8,12 @@ from unittest.mock import Mock, call
 
 import pytest
 
+import digitalhub.entities.run._base.polling as polling_module
 import digitalhub.entities.run._base.processor as run_processor_module
 from digitalhub.entities._commons.enums import State
 from digitalhub.entities.log._base.entity import Log
 from digitalhub.entities.run._base.processor import RunProcessor
+from digitalhub.entities.run._base.serve_processor import RunServeProcessor
 from digitalhub.entities.run._base.spec import RunSpec
 from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
@@ -32,6 +34,21 @@ def _executable() -> Mock:
     executable.project = "project"
     executable.to_dict.return_value = {"kind": "function"}
     return executable
+
+
+def _waiting_run(monkeypatch, action: str = "job", **status) -> SimpleNamespace:
+    """Run of the given action, still running unless ``status`` says otherwise."""
+    monkeypatch.setattr(
+        run_processor_module.entity_factory,
+        "get_action_from_task_kind",
+        Mock(return_value=action),
+    )
+    return SimpleNamespace(
+        id="run-id",
+        kind=f"function+{action}:run",
+        spec=SimpleNamespace(task=f"function+{action}://project/function:function-id"),
+        status=SimpleNamespace(**{"state": State.RUNNING.value, **status}),
+    )
 
 
 def test_execute_builds_and_runs_local_run_in_caller_thread() -> None:
@@ -70,11 +87,11 @@ def test_execute_waits_for_backend_run_when_requested() -> None:
     run = Mock()
     run.local_execution.return_value = False
     waited_run = Mock()
-    run.wait.return_value = waited_run
+    processor.wait = Mock(return_value=waited_run)
 
     assert processor.execute(run, wait=True, log_info=False) is waited_run
 
-    run.wait.assert_called_once_with(log_info=False)
+    processor.wait.assert_called_once_with(run, log_info=False)
 
 
 def test_get_executable_reads_reference_through_crud(monkeypatch) -> None:
@@ -162,14 +179,11 @@ def test_wait_returns_without_sleep_for_terminal_state(monkeypatch) -> None:
     processor.crud_processor.refresh_context_entity = Mock(
         side_effect=lambda run: setattr(run.status, "state", State.COMPLETED.value)
     )
-    run = SimpleNamespace(
-        id="run-id",
-        status=SimpleNamespace(state=State.RUNNING.value),
-    )
+    run = _waiting_run(monkeypatch)
     sleep = Mock()
     clock_values = iter([10.0, 10.25])
     monkeypatch.setattr(
-        run_processor_module,
+        polling_module,
         "time",
         SimpleNamespace(monotonic=lambda: next(clock_values), sleep=sleep),
     )
@@ -183,14 +197,11 @@ def test_wait_returns_without_sleep_for_terminal_state(monkeypatch) -> None:
 def test_wait_sleeps_only_between_polls_and_times_out(monkeypatch) -> None:
     processor = RunProcessor(Mock())
     processor.crud_processor.refresh_context_entity = Mock()
-    run = SimpleNamespace(
-        id="run-id",
-        status=SimpleNamespace(state=State.RUNNING.value),
-    )
+    run = _waiting_run(monkeypatch)
     sleep = Mock()
     clock_values = iter([0.0, 0.0, 1.0, 2.0])
     monkeypatch.setattr(
-        run_processor_module,
+        polling_module,
         "time",
         SimpleNamespace(monotonic=lambda: next(clock_values), sleep=sleep),
     )
@@ -205,14 +216,11 @@ def test_wait_sleeps_only_between_polls_and_times_out(monkeypatch) -> None:
 def test_wait_limits_sleep_to_remaining_timeout(monkeypatch) -> None:
     processor = RunProcessor(Mock())
     processor.crud_processor.refresh_context_entity = Mock()
-    run = SimpleNamespace(
-        id="run-id",
-        status=SimpleNamespace(state=State.RUNNING.value),
-    )
+    run = _waiting_run(monkeypatch)
     sleep = Mock()
     clock_values = iter([0.0, 0.0, 1.0, 1.5])
     monkeypatch.setattr(
-        run_processor_module,
+        polling_module,
         "time",
         SimpleNamespace(monotonic=lambda: next(clock_values), sleep=sleep),
     )
@@ -227,14 +235,26 @@ def test_wait_limits_sleep_to_remaining_timeout(monkeypatch) -> None:
     ("timeout", "poll_interval"),
     [(-1, 1), (None, 0)],
 )
-def test_wait_rejects_invalid_timing_values(timeout, poll_interval) -> None:
+def test_wait_rejects_invalid_timing_values(monkeypatch, timeout, poll_interval) -> None:
     processor = RunProcessor(Mock())
-    run = SimpleNamespace(refresh=Mock())
+    run = _waiting_run(monkeypatch)
 
     with pytest.raises(ValueError):
         processor.wait(run, timeout=timeout, poll_interval=poll_interval)
 
-    run.refresh.assert_not_called()
+    processor.crud_processor.refresh_context_entity.assert_not_called()
+
+
+def test_wait_hands_a_serve_run_to_the_serve_processor(monkeypatch) -> None:
+    processor = RunProcessor(Mock())
+    run = _waiting_run(monkeypatch, action="serve")
+    serve_wait = Mock(return_value=run)
+    monkeypatch.setattr(RunServeProcessor, "wait", serve_wait)
+
+    assert processor.wait(run, log_info=False, timeout=3, poll_interval=1) is run
+
+    serve_wait.assert_called_once_with(run, log_info=False, timeout=3, poll_interval=1)
+    processor.crud_processor.refresh_context_entity.assert_not_called()
 
 
 def test_build_of_a_local_run_starts_only_from_created(monkeypatch) -> None:

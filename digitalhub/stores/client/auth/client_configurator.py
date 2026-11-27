@@ -70,6 +70,17 @@ class ClientConfigurator:
         """
         return self._config_manager.get_endpoint()
 
+    def get_proxy(self) -> str | None:
+        """
+        Get the proxy in front of the cluster, from ``DHCORE_PROXY``.
+
+        Returns
+        -------
+        str | None
+            Proxy URL, or None if not configured.
+        """
+        return self._config_manager.get_proxy()
+
     ##############################
     # Auth methods
     ##############################

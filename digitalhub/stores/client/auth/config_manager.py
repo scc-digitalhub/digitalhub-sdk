@@ -86,6 +86,10 @@ class ConfigManager:
         endpoint = self._configuration[ConfigurationVars.DHCORE_ENDPOINT.value]
         return sanitize_endpoint(endpoint)
 
+    def get_proxy(self) -> str | None:
+        """Get the proxy in front of the cluster, published by Core as ``dhcore_proxy``."""
+        return sanitize_endpoint(self._configuration.get(ConfigurationVars.DHCORE_PROXY.value))
+
     def load_credentials(self) -> dict[str, Any]:
         """Load credentials with file > env precedence."""
         return self._credential_store.load_credentials()

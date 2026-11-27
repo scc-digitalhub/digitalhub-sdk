@@ -23,6 +23,9 @@ class AuthProvider(Protocol):
     def get_endpoint(self) -> str:
         """Return the DHCore endpoint that relative request paths are sent to."""
 
+    def get_proxy(self) -> str | None:
+        """Return the proxy in front of the cluster, if one is configured."""
+
     def authenticate(self, backend_request: BackendReq) -> BackendReq:
         """Return an authenticated copy of a backend request."""
 

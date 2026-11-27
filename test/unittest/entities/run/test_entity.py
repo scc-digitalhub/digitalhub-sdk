@@ -4,8 +4,9 @@
 
 from unittest.mock import Mock
 
-from digitalhub.entities.run._base.entity import Run
+from digitalhub.entities.run._base.entity import Run, ServeRunMixin
 from digitalhub.entities.run._base.processor import RunProcessor
+from digitalhub.entities.run._base.serve_processor import RunServeProcessor
 
 
 def test_build_delegates_to_executable_processor(monkeypatch) -> None:
@@ -40,6 +41,16 @@ def test_wait_delegates_to_executable_processor(monkeypatch) -> None:
         timeout=10,
         poll_interval=2,
     )
+
+
+def test_invoke_of_a_serve_run_delegates_to_serve_processor(monkeypatch) -> None:
+    run = object.__new__(type("ServeRun", (ServeRunMixin, Run), {}))
+    response = Mock()
+    invoke = Mock(return_value=response)
+    monkeypatch.setattr(RunServeProcessor, "invoke", invoke)
+
+    assert run.invoke(path="/v2/infer", json={"inputs": []}) is response
+    invoke.assert_called_once_with(run, None, "/v2/infer", json={"inputs": []})
 
 
 def test_logs_delegates_and_returns_selected_representation(monkeypatch) -> None:

@@ -15,6 +15,8 @@ from digitalhub.utils.exceptions import UnauthorizedError
 from digitalhub.utils.uri_utils import has_remote_scheme
 
 if typing.TYPE_CHECKING:
+    from requests import Response
+
     from digitalhub.stores.client.auth.provider import AuthProvider
     from digitalhub.stores.client.http.request import BackendReq
     from digitalhub.stores.client.http.transport import HttpTransport
@@ -43,12 +45,32 @@ class HttpRequestHandler:
 
     def execute_request(self, backend_request: BackendReq) -> Any:
         """Execute API call with full URL construction and authentication."""
+        return self._execute_request(self._prepare(backend_request))
+
+    def send(self, backend_request: BackendReq) -> Response:
+        """
+        Send a request and return the response without processing it.
+
+        Like the other requests, a 401 refreshes the credentials and the
+        request is retried once.
+        """
+        backend_request = self._prepare(backend_request)
+        response = self._transport.execute(backend_request)
+        if response.status_code == 401 and self._auth.invalidate(backend_request):
+            response = self._transport.execute(
+                self._auth.authenticate(backend_request),
+                attempt=2,
+                retry_reason="unauthorized",
+            )
+        return response
+
+    def _prepare(self, backend_request: BackendReq) -> BackendReq:
+        """Authenticate the request, prefix the endpoint to its path and set the default timeout."""
         if backend_request.authenticate:
             backend_request = self._auth.authenticate(backend_request)
         api = backend_request.api
         api = api if has_remote_scheme(api) else f"{self._auth.get_endpoint()}{api}"
-        backend_request = with_default_timeout(replace(backend_request, api=api), self._config.http_timeout)
-        return self._execute_request(backend_request)
+        return with_default_timeout(replace(backend_request, api=api), self._config.http_timeout)
 
     def _execute_request(
         self,

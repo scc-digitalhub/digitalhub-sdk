@@ -7,9 +7,10 @@ from unittest.mock import Mock
 
 from digitalhub.stores.client.auth.client_configurator import ClientConfigurator
 from digitalhub.stores.client.common.config import ClientConfig
-from digitalhub.stores.client.common.enums import AuthType
+from digitalhub.stores.client.common.enums import AuthType, ConfigurationVars, CredentialsVars
 from digitalhub.stores.client.common.utils import with_bearer_token
 from digitalhub.stores.client.http.request import BackendReq
+from digitalhub.utils.generic_utils import list_enum
 
 
 def test_constructor_defers_exchange_bootstrap(monkeypatch) -> None:
@@ -115,3 +116,28 @@ def test_invalidate_does_not_refresh_credentials_replaced_after_the_request() ->
 
     assert configurator.invalidate(rejected) is True
     configurator._token_refresh_service.evaluate_refresh.assert_not_called()
+
+
+def _profile(tmp_path, monkeypatch, extra: str = "") -> ClientConfig:
+    for variable in [*list_enum(ConfigurationVars), *list_enum(CredentialsVars)]:
+        monkeypatch.delenv(variable, raising=False)
+    ini = tmp_path / ".dhcore.ini"
+    ini.write_text(
+        "[DEFAULT]\ncurrent_environment = test\n\n[test]\n"
+        f"dhcore_endpoint = http://core.test\ndhcore_access_token = A0\n{extra}"
+    )
+    return ClientConfig(config_ini_path=ini)
+
+
+def test_proxy_comes_from_dhcore_proxy(monkeypatch, tmp_path) -> None:
+    config = _profile(tmp_path, monkeypatch)
+    assert ClientConfigurator(Mock(), config).get_proxy() is None
+
+    monkeypatch.setenv("DHCORE_PROXY", "https://proxy.test/")
+    assert ClientConfigurator(Mock(), config).get_proxy() == "https://proxy.test"
+
+
+def test_proxy_published_by_core_is_read_from_the_profile(monkeypatch, tmp_path) -> None:
+    config = _profile(tmp_path, monkeypatch, "dhcore_proxy = https://proxy.test\n")
+
+    assert ClientConfigurator(Mock(), config).get_proxy() == "https://proxy.test"

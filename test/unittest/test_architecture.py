@@ -124,13 +124,13 @@ def _active_record_calls(source: str) -> list[tuple[int, str]]:
                 continue
             # dict.update(other) takes an argument; the entity methods take none.
             no_arguments = not node.args and not node.keywords
-            if method in ("save", "run") or (method in ("update", "refresh") and no_arguments):
+            if method in ("save", "run", "wait") or (method in ("update", "refresh") and no_arguments):
                 calls.append((node.lineno, ast.unparse(node.func)))
     return calls
 
 
 def test_processors_do_not_call_active_record_methods() -> None:
-    # save(), update(), refresh() and run() of an entity call the processors
+    # save(), update(), refresh(), run() and wait() of an entity call the processors
     # back. Processors use the CRUD processor, then _update_attributes() when
     # the caller keeps the same object.
     violations = [

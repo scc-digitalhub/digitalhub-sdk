@@ -10,11 +10,16 @@ from typing import Any
 
 from digitalhub.stores.client.auth.client_configurator import ClientConfigurator
 from digitalhub.stores.client.common.config import ClientConfig
+from digitalhub.stores.client.common.constants import PROXY_HOST_HEADER
+from digitalhub.stores.client.common.enums import ConfigurationVars
 from digitalhub.stores.client.executor.executor import ClientOpExecutor
 from digitalhub.stores.client.http.handler import HttpRequestHandler
+from digitalhub.stores.client.http.request import BackendReq
 from digitalhub.utils.exceptions import ClientError
 
 if typing.TYPE_CHECKING:
+    from requests import Response
+
     from digitalhub.stores.client.auth.provider import AuthProvider
     from digitalhub.stores.client.compiler.operation import ClientOp
     from digitalhub.stores.client.http.transport import HttpTransport
@@ -78,6 +83,45 @@ class Client:
     def execute_first(self, request: ClientOp) -> dict[str, Any]:
         """Compile and execute a list request, returning its first object."""
         return self._executor.execute_first(request)
+
+    def proxy_request(self, host: str, method: str, path: str, **kwargs) -> Response:
+        """
+        Send a request to a cluster service through the proxy in front of Core.
+
+        The request goes to ``path`` on the proxy configured with
+        ``DHCORE_PROXY``, with the client's credentials and the service in the
+        ``X-Proxy-Host`` header, and the response is returned without
+        processing.
+
+        Parameters
+        ----------
+        host : str
+            Service to reach, as ``host:port``.
+        method : str
+            HTTP method.
+        path : str
+            Path of the request on the service.
+        **kwargs : dict
+            Keyword arguments of ``requests.request()``.
+
+        Returns
+        -------
+        Response
+            Response of the service.
+
+        Raises
+        ------
+        ClientError
+            If no proxy is configured.
+        """
+        proxy = self._auth.get_proxy()
+        if proxy is None:
+            raise ClientError(
+                f"Service {host} cannot be reached from here and no proxy is configured: "
+                f"set {ConfigurationVars.DHCORE_PROXY.value}."
+            )
+        headers = {**(kwargs.pop("headers", None) or {}), PROXY_HOST_HEADER: host}
+        return self._http_handler.send(BackendReq.from_http(method, f"{proxy}{path}", headers=headers, **kwargs))
 
     ##############################
     # Facade methods
