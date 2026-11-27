@@ -7,6 +7,7 @@ import sys
 import threading
 from collections.abc import Callable
 from types import SimpleNamespace
+from unittest.mock import Mock
 
 import pytest
 
@@ -67,48 +68,64 @@ def test_runtime_registration_rolls_back_partial_state_and_can_retry(monkeypatch
     registry = BuilderRegistry()
     plugins = (EntityPlugin(builder=RuntimeEntityStubBuilder, runtime_builder=StubBuilder),)
     registry_module = importlib.import_module(BuilderRegistry.__module__)
-    fail_second_load = True
+    entry_points = [_runtime("runtime-one", lambda: plugins), _runtime("runtime-two", lambda: plugins)]
+    monkeypatch.setattr(registry_module, "list_runtime_entry_points", lambda: entry_points)
 
-    def load_second() -> tuple:
-        if fail_second_load:
-            raise RuntimeError("broken runtime")
-        return ()
-
-    monkeypatch.setattr(
-        registry_module,
-        "list_runtime_entry_points",
-        lambda: [_runtime("runtime-one", lambda: plugins), _runtime("runtime-two", load_second)],
-    )
-
-    with pytest.raises(BuilderError, match="'runtime-two' .* cannot be loaded: broken runtime"):
+    with pytest.raises(BuilderError, match="Builder runtime-entity already exists"):
         registry._ensure_runtimes_registered()
 
     assert registry._entity_builders == {}
     assert registry._runtime_builders == {}
 
-    fail_second_load = False
+    entry_points.pop()
     registry._ensure_runtimes_registered()
 
     assert set(registry._entity_builders) == {"runtime-entity"}
     assert set(registry._runtime_builders) == {"runtime-entity"}
 
 
-def test_runtime_entry_point_must_point_to_entity_plugins(monkeypatch) -> None:
+def test_a_runtime_that_cannot_be_loaded_is_skipped(monkeypatch) -> None:
+    # It used to make every runtime kind, and the generic fallback, fail.
+    registry = BuilderRegistry()
+    plugins = (EntityPlugin(builder=RuntimeEntityStubBuilder, runtime_builder=StubBuilder),)
+    registry_module = importlib.import_module(BuilderRegistry.__module__)
+    logger = Mock()
+    monkeypatch.setattr(registry_module, "logger", logger)
+
+    def load_broken() -> tuple:
+        raise RuntimeError("broken runtime")
+
+    monkeypatch.setattr(
+        registry_module,
+        "list_runtime_entry_points",
+        lambda: [_runtime("runtime-broken", load_broken), _runtime("runtime-one", lambda: plugins)],
+    )
+
+    assert registry.get_entity_builder("runtime-entity").__class__ is RuntimeEntityStubBuilder
+    assert registry.get_entity_builder("unknown-kind", entity_type="run") is registry._generic_entity_builders["run"]
+    message = logger.debug.call_args.args[0]
+    assert "'runtime-broken'" in message
+    assert "broken runtime" in message
+
+
+def test_a_runtime_that_does_not_export_entity_plugins_is_skipped(monkeypatch) -> None:
     registry = BuilderRegistry()
     legacy_module = SimpleNamespace(
         entity_builders=(("runtime-entity", RuntimeEntityStubBuilder),),
         runtime_builders=(("runtime-entity", StubBuilder),),
     )
     registry_module = importlib.import_module(BuilderRegistry.__module__)
+    logger = Mock()
+    monkeypatch.setattr(registry_module, "logger", logger)
     monkeypatch.setattr(
         registry_module, "list_runtime_entry_points", lambda: [_runtime("legacy", lambda: legacy_module)]
     )
 
-    with pytest.raises(BuilderError, match="'legacy' .* must be a tuple of EntityPlugin"):
-        registry._ensure_runtimes_registered()
+    registry._ensure_runtimes_registered()
 
     assert registry._entity_builders == {}
     assert registry._runtime_builders == {}
+    assert "'legacy'" in logger.debug.call_args.args[0]
 
 
 # Time a competing thread is given to overtake a paused registration. With the
@@ -292,12 +309,15 @@ def test_shortcut_lookup_raises_only_attribute_errors(monkeypatch) -> None:
         discovered.append(package)
         return SimpleNamespace(entity_plugins=(), generic_entity_builders=())
 
-    def load_broken_runtime() -> tuple:
-        discovered.append("broken_runtime")
-        raise RuntimeError("broken runtime")
+    def load_runtime() -> tuple:
+        discovered.append("runtime")
+        return (EntityPlugin(builder=RuntimeEntityStubBuilder),)
 
+    # Two runtimes declaring the same kind make the registration fail.
     monkeypatch.setattr(
-        registry_module, "list_runtime_entry_points", lambda: [_runtime("broken_runtime", load_broken_runtime)]
+        registry_module,
+        "list_runtime_entry_points",
+        lambda: [_runtime("runtime-one", load_runtime), _runtime("runtime-two", load_runtime)],
     )
     monkeypatch.setattr(registry_module, "import_module", import_module)
 

@@ -12,6 +12,7 @@ from digitalhub.factory.enums import FactoryEnum
 from digitalhub.factory.plugins import CrudPlugin, EntityPlugin
 from digitalhub.factory.utils import import_module, import_object, list_runtime_entry_points
 from digitalhub.utils.exceptions import BuilderError
+from digitalhub.utils.logger.logger import get_logger
 
 if TYPE_CHECKING:
     from digitalhub.entities._base.entity.builder import EntityBuilder
@@ -19,6 +20,8 @@ if TYPE_CHECKING:
     from digitalhub.runtimes.builder import RuntimeBuilder
 
 BuilderT = TypeVar("BuilderT")
+
+logger = get_logger(__name__)
 
 
 class BuilderRegistry:
@@ -238,19 +241,24 @@ class BuilderRegistry:
         runtime_builders = self._runtime_builders.copy()
         crud_plugins = self._crud_plugins.copy()
 
+        # A runtime that cannot be loaded is skipped, so it does not hide the
+        # others: its kinds are reported as not found, like a missing runtime.
         for entry_point in list_runtime_entry_points():
             try:
                 entity_plugins = entry_point.load()
             except Exception as e:
-                raise BuilderError(
-                    f"Runtime plugin '{entry_point.name}' ({entry_point.value}) cannot be loaded: {e}"
-                ) from e
+                logger.debug(
+                    f"Runtime plugin '{entry_point.name}' ({entry_point.value}) cannot be loaded, skipped: {e}",
+                    exc_info=True,
+                )
+                continue
             if not isinstance(entity_plugins, (tuple, list)) or not all(
                 isinstance(plugin, EntityPlugin) for plugin in entity_plugins
             ):
-                raise BuilderError(
-                    f"Runtime plugin '{entry_point.name}' ({entry_point.value}) must be a tuple of EntityPlugin."
+                logger.debug(
+                    f"Runtime plugin '{entry_point.name}' ({entry_point.value}) is not a tuple of EntityPlugin, skipped."
                 )
+                continue
             self._register_entity_plugins(entity_plugins, entity_builders, crud_plugins, runtime_builders)
 
         self._entity_builders = entity_builders
