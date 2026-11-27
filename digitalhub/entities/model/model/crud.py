@@ -12,7 +12,7 @@ from digitalhub.entities.model._base.crud import log_base_model, register_base_m
 from digitalhub.utils.types import SourcesOrListOfSources
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities.model.model.entity import ModelModel
+    from digitalhub.entities.model._base.entity import Model
 
 
 def log_model(
@@ -28,7 +28,7 @@ def log_model(
     algorithm: str | None = None,
     parameters: dict | None = None,
     **kwargs,
-) -> ModelModel:
+) -> Model:
     """
     Create and upload a model entity.
 
@@ -61,7 +61,7 @@ def log_model(
 
     Returns
     -------
-    ModelModel
+    Model
         Created model entity with uploaded files.
 
     Examples
@@ -116,7 +116,7 @@ def register_model(
     algorithm: str | None = None,
     parameters: dict | None = None,
     **kwargs,
-) -> ModelModel:
+) -> Model:
     """
     Register a model entity for an existing source.
 
@@ -151,7 +151,7 @@ def register_model(
 
     Returns
     -------
-    ModelModel
+    Model
         Registered model entity.
 
     Examples

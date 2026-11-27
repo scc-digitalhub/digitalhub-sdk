@@ -12,7 +12,7 @@ from digitalhub.entities.artifact._base.crud import log_base_artifact, register_
 from digitalhub.utils.types import SourcesOrListOfSources
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities.artifact.artifact.entity import ArtifactArtifact
+    from digitalhub.entities.artifact._base.entity import Artifact
 
 
 def register_artifact(
@@ -27,7 +27,7 @@ def register_artifact(
     extensions: list[dict] | None = None,
     src_path: str | None = None,
     **kwargs,
-) -> ArtifactArtifact:
+) -> Artifact:
     """
     Register an artifact entity for an existing source.
 
@@ -58,7 +58,7 @@ def register_artifact(
 
     Returns
     -------
-    ArtifactArtifact
+    Artifact
         Registered artifact entity.
 
     Examples
@@ -103,7 +103,7 @@ def log_artifact(
     labels: list[str] | None = None,
     src_path: str | None = None,
     **kwargs,
-) -> ArtifactArtifact:
+) -> Artifact:
     """
     Create an artifact entity and upload a local source.
 
@@ -132,7 +132,7 @@ def log_artifact(
 
     Returns
     -------
-    ArtifactArtifact
+    Artifact
         Created artifact entity with uploaded files.
 
     Examples

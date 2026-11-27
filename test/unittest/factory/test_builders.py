@@ -8,9 +8,9 @@ from typing import ClassVar
 from digitalhub.entities._commons.enums import EntityKinds
 from digitalhub.entities._mixin.runtime_entity.builder import KindAction, RuntimeEntityBuilder
 from digitalhub.entities.containerimage._base.builder import ContainerimageBuilder
+from digitalhub.entities.containerimage._base.entity import Containerimage
 from digitalhub.entities.containerimage._base.spec import ContainerimageSpec
 from digitalhub.entities.containerimage._base.status import ContainerimageStatus
-from digitalhub.entities.containerimage.containerimage.entity import ContainerimageContainerimage
 from digitalhub.entities.dataitem._base.builder import DataitemBuilder
 from digitalhub.entities.dataitem._base.status import DataitemStatus
 from digitalhub.entities.dataitem.table.entity import DataitemTable
@@ -101,7 +101,7 @@ def test_builder_def_generates_a_builder_with_its_classes() -> None:
 def test_builder_name_comes_from_entity_type_and_kind() -> None:
     definition = BuilderDef(
         EntityKinds.CONTAINERIMAGE_CONTAINERIMAGE,
-        ContainerimageContainerimage,
+        Containerimage,
         ContainerimageSpec,
         ContainerimageStatus,
         base=ContainerimageBuilder,

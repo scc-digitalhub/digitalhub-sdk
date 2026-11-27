@@ -12,7 +12,7 @@ from digitalhub.entities.dataitem._base.crud import log_base_dataitem, register_
 from digitalhub.utils.types import SourcesOrListOfSources
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities.dataitem.dataitem.entity import DataitemDataitem
+    from digitalhub.entities.dataitem._base.entity import Dataitem
 
 
 def log_dataitem(
@@ -25,7 +25,7 @@ def log_dataitem(
     description: str | None = None,
     labels: list[str] | None = None,
     **kwargs,
-) -> DataitemDataitem:
+) -> Dataitem:
     """
     Create and upload a dataitem entity.
 
@@ -52,7 +52,7 @@ def log_dataitem(
 
     Returns
     -------
-    DataitemDataitem
+    Dataitem
         Created dataitem entity with uploaded files.
 
     Examples
@@ -100,7 +100,7 @@ def register_dataitem(
     embedded: bool = False,
     extensions: list[dict] | None = None,
     **kwargs,
-) -> DataitemDataitem:
+) -> Dataitem:
     """
     Register a dataitem entity for an existing source.
 
@@ -129,7 +129,7 @@ def register_dataitem(
 
     Returns
     -------
-    DataitemDataitem
+    Dataitem
         Registered dataitem entity.
 
     Examples
