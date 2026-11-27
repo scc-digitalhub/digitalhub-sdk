@@ -27,7 +27,6 @@ dependencies = [
     "GitPython",
     "numpy",
     "pg8000",
-    "pip",
     "pyarrow",
     "pydantic",
     "python-dotenv",

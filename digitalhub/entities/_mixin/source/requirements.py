@@ -4,6 +4,10 @@
 
 from __future__ import annotations
 
+import importlib.metadata
+import os
+import re
+import shlex
 import sys
 from pathlib import Path
 
@@ -15,6 +19,11 @@ logger = get_logger(__file__)
 
 # Version specifiers, in the order they are looked for.
 SEPARATORS = ("==", ">=", "<=", ">", "<", "~=", "!=")
+
+# As pip reads a requirements file.
+_COMMENT = re.compile(r"(^|\s+)#.*$")
+_ENV_VAR = re.compile(r"\$\{([A-Z0-9_]+)\}")
+_FILE_OPTIONS = (("-r", "--requirement"), ("-c", "--constraint"), ("-e", "--editable"))
 
 
 def parse_requirements(requirements: list[str] | str | None) -> list[str] | None:
@@ -56,11 +65,58 @@ def _read_requirements_file(path: str) -> list[str]:
 
 
 def _read_pip(path: str) -> list[str]:
-    """Read a requirements file with the parser of pip."""
-    from pip._internal.network.session import PipSession
-    from pip._internal.req import parse_requirements as pip_parse
+    """
+    Read a requirements.txt as pip does.
 
-    return [str(req.requirement) for req in pip_parse(path, session=PipSession()) if req.requirement]
+    The files given with ``-r`` and ``-c`` are read too, relative to the
+    file, and ``-e`` gives its target; the other options are skipped.
+    """
+    requirements = []
+    for line in _logical_lines(Path(path).read_text()):
+        # Options start at the first token with a dash, as in pip.
+        tokens = line.split(" ")
+        start = next((i for i, token in enumerate(tokens) if token.startswith("-")), len(tokens))
+        if requirement := " ".join(tokens[:start]):
+            requirements.append(requirement)
+            continue
+        option, value = _file_option(" ".join(tokens[start:]))
+        if option == "-e":
+            requirements.append(value)
+        elif option is not None:
+            requirements.extend(_read_pip(os.path.join(os.path.dirname(path), value)))
+    return requirements
+
+
+def _logical_lines(content: str) -> list[str]:
+    """Lines of a requirements file: continuations joined, comments removed, ``${VAR}`` expanded."""
+    joined: list[str] = []
+    lines = []
+    for line in content.splitlines():
+        if line.endswith("\\") and not _COMMENT.match(line):
+            joined.append(line.strip("\\"))
+            continue
+        if _COMMENT.match(line):
+            line = " " + line
+        lines.append("".join([*joined, line]))
+        joined = []
+    if joined:
+        lines.append("".join(joined))
+    stripped = (_COMMENT.sub("", line).strip() for line in lines)
+    return [_ENV_VAR.sub(lambda m: os.getenv(m[1]) or m[0], line) for line in stripped if line]
+
+
+def _file_option(options: str) -> tuple[str | None, str]:
+    """The first ``-r``, ``-c`` or ``-e`` of a line of options, with its value."""
+    tokens = shlex.split(options)
+    for i, token in enumerate(tokens):
+        for short, long in _FILE_OPTIONS:
+            if token in (short, long) and i + 1 < len(tokens):
+                return short, tokens[i + 1]
+            if token.startswith(f"{long}="):
+                return short, token.removeprefix(f"{long}=")
+            if token.startswith(short) and not token.startswith("--") and len(token) > len(short):
+                return short, token.removeprefix(short)
+    return None, ""
 
 
 def _read_pyproject(path: str) -> list[str]:
@@ -97,10 +153,23 @@ _READERS = {
 
 
 def _installed_packages() -> list[str]:
-    """Packages installed in the local environment, as pip freeze lists them."""
-    from pip._internal.operations import freeze
+    """
+    Packages installed in the local environment, as ``name==version``.
 
-    return list(freeze.freeze())
+    As pip freeze: the first installation of a package along ``sys.path``,
+    and none of those installed from a URL or editable.
+    """
+    seen = set()
+    packages = []
+    for entry in sys.path:
+        for dist in importlib.metadata.distributions(path=[entry]):
+            name = dist.metadata["Name"]
+            if not name or name.lower() in seen:
+                continue
+            seen.add(name.lower())
+            if dist.read_text("direct_url.json") is None:
+                packages.append(f"{name}=={dist.version}")
+    return packages
 
 
 def _pin_to_installed(requirements: list[str]) -> list[str]:

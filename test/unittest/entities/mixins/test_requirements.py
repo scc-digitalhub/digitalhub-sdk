@@ -71,15 +71,51 @@ def test_other_paths_are_refused(tmp_path, name, error, message) -> None:
         parse_requirements(str(tmp_path / name))
 
 
-def test_importing_the_plugins_defers_pip() -> None:
+def test_a_requirements_txt_is_read_as_pip_does(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(requirements_module, "_installed_packages", list)
+    monkeypatch.setenv("TORCH_VERSION", "2.5")
+    (tmp_path / "sub").mkdir()
+    (tmp_path / "sub" / "base.txt").write_text("base-pkg\n-r nested.txt\n")
+    (tmp_path / "sub" / "nested.txt").write_text("nested-pkg\n")
+    path = tmp_path / "requirements.txt"
+    path.write_text(
+        "# comment\n"
+        "numpy>=1  # comment\n"
+        "-r sub/base.txt\n"
+        "--index-url https://example.org/simple\n"
+        "hashed==1.0 --hash=sha256:abc\n"
+        "long \\\n"
+        "    >=2\n"
+        "torch==${TORCH_VERSION}\n"
+        "-e ./local\n"
+        "pkg @ git+https://github.com/org/repo.git\n"
+    )
+
+    assert parse_requirements(str(path)) == [
+        "numpy>=1",
+        "base-pkg",
+        "nested-pkg",
+        "hashed==1.0",
+        "long     >=2",
+        "torch==2.5",
+        "./local",
+        "pkg @ git+https://github.com/org/repo.git",
+    ]
+
+
+def test_requirements_are_parsed_without_pip(tmp_path) -> None:
+    # pip has no public API: its internals changed under the SDK.
+    path = tmp_path / "requirements.txt"
+    path.write_text("pandas\n")
     script = textwrap.dedent(
-        """
+        f"""
         import sys
 
-        import digitalhub.plugins
+        from digitalhub.plugins import parse_requirements
 
+        parse_requirements({str(path)!r})
         loaded = [name for name in sys.modules if name == "pip" or name.startswith("pip.")]
-        assert not loaded, f"Unexpected pip modules: {loaded}"
+        assert not loaded, f"Unexpected pip modules: {{loaded}}"
         """
     )
     result = subprocess.run([sys.executable, "-c", script], capture_output=True, check=False, text=True)
