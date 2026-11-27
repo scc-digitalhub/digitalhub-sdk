@@ -33,7 +33,8 @@ class ExecutableTriggerMixin(ExecutableBaseMixin):
         name : str
             Trigger name.
         template : dict, optional
-            Run template associated with the trigger.
+            Template of the runs the trigger creates. It is checked against
+            the run spec of ``action``, like the parameters of ``run()``.
         **kwargs : dict
             Trigger construction parameters.
 
@@ -45,7 +46,11 @@ class ExecutableTriggerMixin(ExecutableBaseMixin):
         Raises
         ------
         EntityError
-            If the template is invalid or the action is not supported.
+            If the action is not supported or the template is not a dictionary.
+        TypeError
+            If the template has parameters the run spec does not accept.
+        ValueError
+            If a template value has the wrong type.
         """
         return ContextEntityExecutableProcessor().create_trigger(
             self,

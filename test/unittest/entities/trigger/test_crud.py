@@ -54,7 +54,6 @@ def test_new_trigger_builds_executable_template(
         **({"custom": "value"} if template else {}),
         "task": "store://task",
         **expected_executable,
-        "local_execution": False,
     }
     create_entity.assert_called_once_with(
         project="my-project",

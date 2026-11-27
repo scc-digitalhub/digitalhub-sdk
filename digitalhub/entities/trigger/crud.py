@@ -57,8 +57,10 @@ def new_trigger(
     embedded : bool, default=False
         Whether to embed the entity specification in the project specification.
     template : dict, optional
-        Trigger template. If omitted, a template is built from ``task`` and the
-        selected executable reference.
+        Template of the runs the trigger creates, with ``task`` and the
+        executable reference added. It is saved without validation;
+        ``Function.trigger()`` and ``Workflow.trigger()`` check it against
+        the run spec.
     **kwargs : dict
         Additional entity specification parameters.
 
@@ -87,7 +89,6 @@ def new_trigger(
         **(template or {}),
         "task": task,
         executable_type: executable,
-        "local_execution": False,
     }
     kwargs["template"] = template
 
