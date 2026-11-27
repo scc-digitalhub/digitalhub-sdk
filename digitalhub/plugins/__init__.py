@@ -43,7 +43,13 @@ from digitalhub.entities.model._base.spec import ModelSpec
 from digitalhub.entities.model._base.status import ModelStatus
 from digitalhub.entities.project._base.entity import Project
 from digitalhub.entities.run._base.builder import RunBuilder
-from digitalhub.entities.run._base.entity import LocalExecutionRunMixin, Run, ServeRunMixin
+from digitalhub.entities.run._base.entity import (
+    EntityIORunMixin,
+    LocalExecutionRunMixin,
+    ResultsRunMixin,
+    Run,
+    ServeRunMixin,
+)
 from digitalhub.entities.run._base.spec import LocalExecutionSpecMixin, RunSpecFunction, RunSpecWorkflow
 from digitalhub.entities.run._base.status import RunStatus
 from digitalhub.entities.task._base.builder import TaskBuilder
@@ -67,6 +73,7 @@ __all__ = [
     "CoreServiceType",
     "CrudPlugin",
     "Dataitem",
+    "EntityIORunMixin",
     "EntityKey",
     "EntityKinds",
     "EntityPlugin",
@@ -86,6 +93,7 @@ __all__ = [
     "ModelStatus",
     "Project",
     "Relationship",
+    "ResultsRunMixin",
     "Run",
     "RunBuilder",
     "RunSpecFunction",

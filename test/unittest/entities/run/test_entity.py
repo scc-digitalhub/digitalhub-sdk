@@ -4,7 +4,8 @@
 
 from unittest.mock import Mock
 
-from digitalhub.entities.run._base.entity import Run, ServeRunMixin
+from digitalhub.entities.run._base.entity import EntityIORunMixin, ResultsRunMixin, Run, ServeRunMixin
+from digitalhub.entities.run._base.io_processor import RunIOProcessor
 from digitalhub.entities.run._base.processor import RunProcessor
 from digitalhub.entities.run._base.serve_processor import RunServeProcessor
 
@@ -51,6 +52,34 @@ def test_invoke_of_a_serve_run_delegates_to_serve_processor(monkeypatch) -> None
 
     assert run.invoke(path="/v2/infer", json={"inputs": []}) is response
     invoke.assert_called_once_with(run, None, "/v2/infer", json={"inputs": []})
+
+
+def test_inputs_and_outputs_delegate_to_io_processor(monkeypatch) -> None:
+    run = object.__new__(type("IORun", (EntityIORunMixin, Run), {}))
+    for method in ("inputs", "outputs", "output", "prepare_inputs"):
+        monkeypatch.setattr(RunIOProcessor, method, Mock(return_value=method))
+
+    assert run.inputs(as_dict=True) == "inputs"
+    assert run.outputs(as_key=True) == "outputs"
+    assert run.output("model", as_dict=True) == "output"
+    run._setup_execution()
+
+    RunIOProcessor.inputs.assert_called_once_with(run, as_dict=True)
+    RunIOProcessor.outputs.assert_called_once_with(run, as_key=True, as_dict=False)
+    RunIOProcessor.output.assert_called_once_with(run, "model", as_key=False, as_dict=True)
+    RunIOProcessor.prepare_inputs.assert_called_once_with(run)
+
+
+def test_results_come_from_the_status() -> None:
+    run = object.__new__(type("ResultsRun", (ResultsRunMixin, Run), {}))
+    run.status = Mock(results={"accuracy": 0.9})
+
+    assert run.results() == {"accuracy": 0.9}
+    assert run.result("accuracy") == 0.9
+    assert run.result("missing") is None
+
+    run.status = Mock(results=None)
+    assert run.results() == {}
 
 
 def test_logs_delegates_and_returns_selected_representation(monkeypatch) -> None:

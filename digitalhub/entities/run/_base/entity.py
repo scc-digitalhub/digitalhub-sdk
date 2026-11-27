@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import typing
+from typing import Any
 
 from digitalhub.entities._base.context.entity import ContextEntity
 from digitalhub.entities._commons.enums import EntityTypes
@@ -12,6 +13,7 @@ from digitalhub.entities._mixin.extensions.mixin import ExtensionsMixin
 from digitalhub.entities._mixin.metrics.mixin import MetricsMixin
 from digitalhub.entities._mixin.unversioned.mixin import UnversionedMixin
 from digitalhub.entities._processors.context.control import ContextEntityControlProcessor
+from digitalhub.entities.run._base.io_processor import RunIOProcessor
 from digitalhub.entities.run._base.processor import RunProcessor
 from digitalhub.entities.run._base.serve_processor import RunServeProcessor
 from digitalhub.factory.entity import entity_factory
@@ -68,6 +70,108 @@ class ServeRunMixin:
             Response of the service.
         """
         return RunServeProcessor().invoke(typing.cast("ServeRun", self), method, path, **kwargs)
+
+
+class EntityIORunMixin:
+    """Entity mixin for runs whose inputs and outputs are entities, referenced by key."""
+
+    def inputs(self, as_dict: bool = False) -> dict:
+        """
+        Get the run inputs, by parameter.
+
+        Parameters
+        ----------
+        as_dict : bool
+            If True, return inputs as dictionaries.
+
+        Returns
+        -------
+        dict
+            Input entities, or their dictionaries.
+        """
+        return RunIOProcessor().inputs(typing.cast("Run", self), as_dict=as_dict)
+
+    def output(
+        self,
+        output_name: str,
+        as_key: bool = False,
+        as_dict: bool = False,
+    ) -> ContextEntity | dict | str | None:
+        """
+        Get a run output by name.
+
+        Parameters
+        ----------
+        output_name : str
+            Name of the output.
+        as_key : bool
+            If True, return the key of the output.
+        as_dict : bool
+            If True, return the output as a dictionary.
+
+        Returns
+        -------
+        ContextEntity | dict | str | None
+            Output entity, its dictionary or its key; None if the run has no
+            output with that name.
+        """
+        return RunIOProcessor().output(typing.cast("Run", self), output_name, as_key=as_key, as_dict=as_dict)
+
+    def outputs(self, as_key: bool = False, as_dict: bool = False) -> dict:
+        """
+        Get the run outputs, by name.
+
+        Parameters
+        ----------
+        as_key : bool
+            If True, return the keys of the outputs.
+        as_dict : bool
+            If True, return outputs as dictionaries.
+
+        Returns
+        -------
+        dict
+            Output entities, their dictionaries or their keys.
+        """
+        return RunIOProcessor().outputs(typing.cast("Run", self), as_key=as_key, as_dict=as_dict)
+
+    def _setup_execution(self) -> None:
+        """
+        Prepare the inputs before the execution.
+        """
+        RunIOProcessor().prepare_inputs(typing.cast("Run", self))
+
+
+class ResultsRunMixin:
+    """Entity mixin for runs whose status holds result values."""
+
+    def result(self, result_name: str) -> Any:
+        """
+        Get a result by name.
+
+        Parameters
+        ----------
+        result_name : str
+            Name of the result.
+
+        Returns
+        -------
+        Any
+            The result, or None.
+        """
+        return self.results().get(result_name)
+
+    def results(self) -> dict:
+        """
+        Get the results.
+
+        Returns
+        -------
+        dict
+            The results, by name.
+        """
+        # Declared by the status of the runs that publish results.
+        return getattr(typing.cast("Run", self).status, "results", None) or {}
 
 
 class Run(ContextEntity, UnversionedMixin, MetricsMixin, ExtensionsMixin):
