@@ -8,7 +8,6 @@ from unittest.mock import Mock
 import pytest
 
 import digitalhub.context.api as context_api
-import digitalhub.entities.project._base.entity as project_entity_module
 import digitalhub.entities.project._base.processor as base_crud_module
 import digitalhub.stores.session as session_module
 from digitalhub.context.api import get_context
@@ -53,22 +52,20 @@ def test_building_a_project_neither_builds_a_client_nor_registers_a_context(sess
 
 @pytest.mark.parametrize("operation", ["read", "update"])
 def test_project_state_from_the_backend_registers_the_context(session, monkeypatch, tmp_path, operation) -> None:
-    client = _backend(monkeypatch, base_crud_module, _project_dict(tmp_path / "backend"))
+    _backend(monkeypatch, base_crud_module, _project_dict(tmp_path / "backend"))
 
     if operation == "read":
         ProjectProcessor().read_project_entity("project", "demo")
     else:
         project: Project = entity_factory.build_entity_from_dict(_project_dict(tmp_path / "local"))
-        project._client = client
         ProjectProcessor().update_project_entity(project)
 
     assert session.contexts.get("demo").root == tmp_path / "backend"
 
 
-def test_creating_a_project_registers_the_context_the_backend_returns(session, tmp_path) -> None:
+def test_creating_a_project_registers_the_context_the_backend_returns(session, monkeypatch, tmp_path) -> None:
+    _backend(monkeypatch, base_crud_module, _project_dict(tmp_path / "backend"))
     project: Project = entity_factory.build_entity_from_dict(_project_dict(tmp_path / "local"))
-    project._client = Mock()
-    project._client.execute.return_value = _project_dict(tmp_path / "backend")
 
     ProjectProcessor().create_project_entity(project)
 
@@ -104,7 +101,7 @@ def test_unknown_project_context_is_registered_from_the_backend(session, monkeyp
 
 
 def test_import_registers_the_created_project_before_importing_its_entities(session, monkeypatch, tmp_path) -> None:
-    _backend(monkeypatch, project_entity_module, _project_dict(tmp_path / "backend"))
+    _backend(monkeypatch, base_crud_module, _project_dict(tmp_path / "backend"))
     monkeypatch.setattr(base_crud_module, "read_yaml", Mock(return_value=_project_dict(tmp_path / "file")))
     roots_seen_by_import: list[Path] = []
     monkeypatch.setattr(

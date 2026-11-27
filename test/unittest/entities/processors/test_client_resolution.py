@@ -79,7 +79,7 @@ def test_operations_use_the_client_built_after_a_config_change(session, tmp_path
     # Before the fix contexts kept the client copied in Project.__init__, so
     # after a configuration change project operations used the new client
     # while context entity operations kept using the old one.
-    project = _registered_project(tmp_path)
+    _registered_project(tmp_path)
 
     ProjectProcessor().delete_project_entity("project", "demo", clean_context=False)
     ContextEntityControlProcessor().stop_entity("demo", "run", "run-id")
@@ -90,7 +90,6 @@ def test_operations_use_the_client_built_after_a_config_change(session, tmp_path
     ContextEntityControlProcessor().stop_entity("demo", "run", "run-id")
 
     assert _sent_timeouts(session) == [60, 60, 1, 1]
-    assert project._client is session.client()
 
 
 def test_context_resolves_the_client_for_its_project(monkeypatch, tmp_path) -> None:
@@ -100,22 +99,3 @@ def test_context_resolves_the_client_for_its_project(monkeypatch, tmp_path) -> N
 
     assert _context(tmp_path).client is client
     resolve_client.assert_called_once_with("demo")
-
-
-def test_explicit_client_takes_precedence_until_cleared(session, tmp_path) -> None:
-    project = _project(tmp_path)
-    context = _context(tmp_path)
-    pinned = Mock()
-
-    project._client = pinned
-    context.client = pinned
-    session.configure(ClientConfig(http_timeout=1))
-
-    assert project._client is pinned
-    assert context.client is pinned
-
-    project._client = None
-    context.client = None
-
-    assert project._client is session.client()
-    assert context.client is session.client()

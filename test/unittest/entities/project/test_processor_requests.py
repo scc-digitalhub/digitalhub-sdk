@@ -12,10 +12,9 @@ from digitalhub.stores.client.compiler.options import DeleteOptions, NoOptions
 from digitalhub.stores.client.compiler.targets import BaseCollectionTarget, BaseEntityTarget
 
 
-def _project(client: Mock, payload: dict) -> Mock:
+def _project(payload: dict) -> Mock:
     project = Mock(ENTITY_TYPE="project")
     project.name = "demo"
-    project._client = client
     project.to_dict.return_value = payload
     return project
 
@@ -26,10 +25,11 @@ def _processor() -> ProjectProcessor:
     return processor
 
 
-def test_create_project_entity_uses_backend_operation_request() -> None:
+def test_create_project_entity_uses_backend_operation_request(monkeypatch) -> None:
     client = Mock()
     client.execute.return_value = {"id": "project-id"}
-    project = _project(client, {"name": "demo"})
+    monkeypatch.setattr(processor_module, "resolve_client", Mock(return_value=client))
+    project = _project({"name": "demo"})
     processor = _processor()
 
     assert processor.create_project_entity(project) is project
@@ -86,10 +86,11 @@ def test_list_project_entities_uses_paginated_execution(monkeypatch) -> None:
     build_entity.assert_called_once_with({"name": "demo"})
 
 
-def test_update_project_entity_uses_backend_operation_request() -> None:
+def test_update_project_entity_uses_backend_operation_request(monkeypatch) -> None:
     client = Mock()
     client.execute.return_value = {"name": "updated"}
-    project = _project(client, {"name": "updated"})
+    monkeypatch.setattr(processor_module, "resolve_client", Mock(return_value=client))
+    project = _project({"name": "updated"})
     processor = _processor()
 
     assert processor.update_project_entity(project) is project

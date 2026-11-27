@@ -74,7 +74,7 @@ class ProjectProcessor:
 
     def create_project_entity(self, project: Project) -> Project:
         """Create ``project`` in the backend, register its context and update it with the stored state."""
-        stored = project._client.execute(
+        stored = resolve_client().execute(
             ClientOp(
                 category=ApiType.BASE,
                 operation=BackendOp.CREATE,
@@ -246,7 +246,7 @@ class ProjectProcessor:
 
     def update_project_entity(self, project: Project) -> Project:
         """Update ``project`` in the backend, register its context and update it with the stored state."""
-        stored = project._client.execute(
+        stored = resolve_client().execute(
             ClientOp(
                 category=ApiType.BASE,
                 operation=BackendOp.UPDATE,

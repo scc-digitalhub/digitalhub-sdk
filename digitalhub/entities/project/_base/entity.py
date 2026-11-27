@@ -13,7 +13,6 @@ from digitalhub.entities._mixin.extensions.mixin import ExtensionsMixin
 from digitalhub.entities.project._base.processor import ProjectProcessor
 from digitalhub.factory.crud import bind_project_shortcut
 from digitalhub.factory.registry import registry
-from digitalhub.stores.client.factory import resolve_client
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.context.entity import ContextEntity
@@ -27,7 +26,6 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities.project._base.spec import ProjectSpec
     from digitalhub.entities.run._base.entity import Run
     from digitalhub.entities.workflow._base.entity import Workflow
-    from digitalhub.stores.client.client import Client
 else:
 
     class ProjectListShortcuts:
@@ -60,26 +58,6 @@ class Project(PersistedEntity, ProjectListShortcuts, ExtensionsMixin):
         self.id = name  # Unique identifier for the project
         self.name = name
         self.key = build_project_key(self.name)
-
-    # Explicitly assigned client; None means resolve on every access.
-    _client_override: Client | None = None
-
-    @property
-    def _client(self) -> Client:
-        """
-        Return the client for operations on the project entity itself.
-
-        Resolved on every access unless one was assigned explicitly. These are
-        not project-scoped operations, so no project is passed: which
-        credentials they need under per-project credentials is still open.
-        """
-        if self._client_override is not None:
-            return self._client_override
-        return resolve_client()
-
-    @_client.setter
-    def _client(self, value: Client | None) -> None:
-        self._client_override = value
 
     def __getattr__(self, name: str):
         """Resolve project-bound plugin shortcuts on first access."""

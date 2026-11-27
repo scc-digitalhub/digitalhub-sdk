@@ -63,8 +63,7 @@ class Context:
     name : str
         The name of the project.
     client : Client
-        The client for the project's operations, resolved on every access
-        unless one was assigned explicitly.
+        The client for the project's operations, resolved on every access.
     config : dict
         Project configuration profile.
     root : Path
@@ -74,9 +73,6 @@ class Context:
     run : Run | None
         Active Run in the current execution context, or the container run fallback.
     """
-
-    # Explicitly assigned client; None means resolve on every access.
-    _client_override: Client | None = None
 
     def __init__(self, project: Project) -> None:
         # Initialize context from project
@@ -93,15 +89,8 @@ class Context:
 
     @property
     def client(self) -> Client:
-        """Return the assigned client, or resolve the project's client now."""
-        if self._client_override is not None:
-            return self._client_override
+        """Resolve the project's client now."""
         return resolve_client(self.name)
-
-    @client.setter
-    def client(self, value: Client | None) -> None:
-        """Pin a client to this context; ``None`` restores resolution on use."""
-        self._client_override = value
 
     @property
     def root(self) -> Path:
