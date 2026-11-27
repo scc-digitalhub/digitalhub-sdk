@@ -9,6 +9,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
 from sqlalchemy import create_engine, text
+from sqlalchemy.exc import OperationalError
 
 from digitalhub.stores.data._base import store as base_store_module
 from digitalhub.stores.data.sql import store as store_module
@@ -16,7 +17,17 @@ from digitalhub.stores.data.sql.store import MAX_SQL_CONNECTION_RETRIES, SqlStor
 from digitalhub.utils.exceptions import ConfigError, StoreError
 
 
-def test_get_engine_reuses_connections_by_url_and_schema(monkeypatch) -> None:
+def _engine_args(schema: str) -> dict:
+    return {
+        "connect_args": {
+            "timeout": store_module.ENGINE_CONNECTION_TIMEOUT,
+            "startup_params": {"search_path": schema},
+        },
+        "pool_pre_ping": True,
+    }
+
+
+def test_get_engine_keeps_one_engine_per_schema(monkeypatch) -> None:
     store = object.__new__(SqlStore)
     store._engines = {}
     store._engine_lock = RLock()
@@ -29,41 +40,23 @@ def test_get_engine_reuses_connections_by_url_and_schema(monkeypatch) -> None:
     assert store._get_engine("connection-one", "schema-one") is first_engine
     assert store._get_engine("connection-one", "schema-one") is first_engine
     assert store._get_engine("connection-one", "schema-two") is second_engine
+    # New credentials: the engine is replaced and the old one closes its connections.
     assert store._get_engine("connection-two", "schema-one") is third_engine
 
+    first_engine.dispose.assert_called_once_with()
+    second_engine.dispose.assert_not_called()
     assert create_engine.call_args_list == [
-        call(
-            "connection-one",
-            connect_args={
-                "timeout": store_module.ENGINE_CONNECTION_TIMEOUT,
-                "startup_params": {"search_path": "schema-one"},
-            },
-            pool_pre_ping=True,
-        ),
-        call(
-            "connection-one",
-            connect_args={
-                "timeout": store_module.ENGINE_CONNECTION_TIMEOUT,
-                "startup_params": {"search_path": "schema-two"},
-            },
-            pool_pre_ping=True,
-        ),
-        call(
-            "connection-two",
-            connect_args={
-                "timeout": store_module.ENGINE_CONNECTION_TIMEOUT,
-                "startup_params": {"search_path": "schema-one"},
-            },
-            pool_pre_ping=True,
-        ),
+        call("connection-one", **_engine_args("schema-one")),
+        call("connection-one", **_engine_args("schema-two")),
+        call("connection-two", **_engine_args("schema-one")),
     ]
 
 
 def test_close_disposes_and_clears_cached_engines() -> None:
     store = object.__new__(SqlStore)
-    store._engines = {("connection", None): Mock(), ("connection", "schema"): Mock()}
+    store._engines = {None: ("connection", Mock()), "schema": ("connection", Mock())}
     store._engine_lock = RLock()
-    engines = list(store._engines.values())
+    engines = [engine for _, engine in store._engines.values()]
 
     store.close()
 
@@ -120,28 +113,68 @@ def test_check_factory_accepts_matching_uri_database() -> None:
     store = object.__new__(SqlStore)
     store._configurator = Mock()
     store._configurator.get_sql_conn_string.return_value = "connection-string"
-    engine = Mock()
+    engine = MagicMock()
     engine.url.database = "configured"
     store._get_engine = Mock(return_value=engine)
 
     assert store._check_factory(database="configured") is engine
 
-    engine.connect.assert_not_called()
+    engine.connect.assert_called_once_with()
 
 
-def test_check_factory_retries_configuration_errors_with_a_bounded_loop() -> None:
+def _rejecting_engine() -> Mock:
+    engine = Mock()
+    engine.url.database = "database"
+    engine.connect.side_effect = OperationalError("connect", {}, Exception("password authentication failed"))
+    return engine
+
+
+def test_check_factory_refreshes_rejected_credentials_and_retries(monkeypatch) -> None:
+    # Since the engines were cached, the access was no longer checked: a
+    # rejected password surfaced in the operation, and was never refreshed.
+    store = object.__new__(SqlStore)
+    store._engines = {}
+    store._engine_lock = RLock()
+    store._configurator = Mock()
+    store._configurator.get_sql_conn_string.side_effect = ["old-credentials", "new-credentials"]
+    store._configurator.eval_retry.return_value = True
+    rejected = _rejecting_engine()
+    accepted = MagicMock()
+    accepted.url.database = "database"
+    monkeypatch.setattr(store_module, "create_engine", Mock(side_effect=[rejected, accepted]))
+
+    assert store._check_factory(schema="schema", database="database") is accepted
+
+    store._configurator.eval_retry.assert_called_once_with()
+    rejected.dispose.assert_called_once_with()
+    assert store._engines == {"schema": ("new-credentials", accepted)}
+
+
+def test_check_factory_retries_rejected_credentials_with_a_bounded_loop() -> None:
     store = object.__new__(SqlStore)
     store._configurator = Mock()
-    store._configurator.get_sql_conn_string.side_effect = ConfigError("credentials unavailable")
+    store._configurator.get_sql_conn_string.return_value = "connection-string"
     store._configurator.eval_retry.return_value = True
-    store._get_engine = Mock()
+    store._get_engine = Mock(return_value=_rejecting_engine())
 
-    with pytest.raises(ConfigError, match="credentials unavailable"):
+    with pytest.raises(ConfigError, match="password authentication failed"):
         store._check_factory()
 
-    assert store._configurator.get_sql_conn_string.call_count == MAX_SQL_CONNECTION_RETRIES
+    assert store._get_engine.call_count == MAX_SQL_CONNECTION_RETRIES
     assert store._configurator.eval_retry.call_count == MAX_SQL_CONNECTION_RETRIES - 1
-    store._get_engine.assert_not_called()
+
+
+def test_check_factory_stops_when_credentials_cannot_be_refreshed() -> None:
+    store = object.__new__(SqlStore)
+    store._configurator = Mock()
+    store._configurator.get_sql_conn_string.return_value = "connection-string"
+    store._configurator.eval_retry.return_value = False
+    store._get_engine = Mock(return_value=_rejecting_engine())
+
+    with pytest.raises(ConfigError, match="No access to database"):
+        store._check_factory()
+
+    store._get_engine.assert_called_once()
 
 
 def test_write_df_passes_uri_database_to_upload_table() -> None:

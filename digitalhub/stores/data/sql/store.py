@@ -15,6 +15,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 from sqlalchemy import MetaData, Table, create_engine, inspect, select
 from sqlalchemy.engine import Engine
+from sqlalchemy.exc import SQLAlchemyError
 
 from digitalhub.stores.data._base.credentials import StoreCredentials
 from digitalhub.stores.data._base.store import Store
@@ -85,7 +86,8 @@ class SqlStore(Store):
     def __init__(self, credentials: StoreCredentials) -> None:
         super().__init__()
         self._configurator: SqlStoreConfigurator = SqlStoreConfigurator(credentials)
-        self._engines: dict[tuple[str, str | None], Engine] = {}
+        # One engine per schema, with the connection string it was built from.
+        self._engines: dict[str | None, tuple[str, Engine]] = {}
         self._engine_lock = RLock()
 
     ##############################
@@ -278,34 +280,42 @@ class SqlStore(Store):
 
     def _get_engine(self, connection_string: str, schema: str | None = None) -> Engine:
         """
-        Get or create a cached SQLAlchemy engine from the connection string.
+        Get the cached SQLAlchemy engine of a schema.
+
+        The connection string holds the credentials: when they change, the
+        engine is replaced and the old one disposed, so its connections close.
         """
         connect_args = {"timeout": ENGINE_CONNECTION_TIMEOUT}
         if schema is not None:
             connect_args["startup_params"] = {"search_path": schema}
-        key = (connection_string, schema)
         with self._engine_lock:
-            engine = self._engines.get(key)
-            if engine is None:
-                engine = create_engine(
-                    connection_string,
-                    connect_args=connect_args,
-                    pool_pre_ping=True,
-                )
-                self._engines[key] = engine
-            return engine
+            cached = self._engines.get(schema)
+            if cached is not None and cached[0] == connection_string:
+                return cached[1]
+            engine = create_engine(
+                connection_string,
+                connect_args=connect_args,
+                pool_pre_ping=True,
+            )
+            self._engines[schema] = (connection_string, engine)
+        if cached is not None:
+            cached[1].dispose()
+        return engine
 
     def close(self) -> None:
         """Dispose all cached SQL engines and clear the engine cache."""
         with self._engine_lock:
-            engines = list(self._engines.values())
+            engines = [engine for _, engine in self._engines.values()]
             self._engines.clear()
         for engine in engines:
             engine.dispose()
 
     def _check_factory(self, schema: str | None = None, database: str | None = None) -> Engine:
         """
-        Return a cached engine and validate the database requested by the SQL URI.
+        Return a cached engine that can connect to the database requested by the SQL URI.
+
+        Rejected credentials are refreshed and the connection retried, before
+        the operation starts: an operation failing halfway is not repeated.
         """
         for attempt in range(MAX_SQL_CONNECTION_RETRIES):
             try:
@@ -316,11 +326,23 @@ class SqlStore(Store):
                     raise StoreError(
                         f"SQL URI database '{database}' does not match configured database '{configured_database}'."
                     )
+                self._check_access(engine)
                 return engine
             except ConfigError:
                 if attempt + 1 == MAX_SQL_CONNECTION_RETRIES or not self._configurator.eval_retry():
                     raise
                 logger.debug("SQL connection setup failed, retrying with refreshed credentials.")
+
+    @staticmethod
+    def _check_access(engine: Engine) -> None:
+        """
+        Open a connection to the database, raising ConfigError if it fails.
+        """
+        try:
+            with engine.connect():
+                pass
+        except SQLAlchemyError as e:
+            raise ConfigError(f"No access to database {engine.url}: {e}") from e
 
     def _get_table_name(self, uri: str) -> str:
         """
