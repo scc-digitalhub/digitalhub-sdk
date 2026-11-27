@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+import threading
+
 from digitalhub.stores.client.auth.auth_session import AuthSession
 from digitalhub.stores.client.auth.config_manager import ConfigManager
 from digitalhub.stores.client.auth.refresh import TokenRefreshService
@@ -47,6 +49,9 @@ class ClientConfigurator:
             config,
         )
         self._exchange_bootstrapped = False
+        # One refresh at a time: Core's refresh tokens work once, so threads
+        # refreshing together with the same token failed all but the first.
+        self._refresh_lock = threading.Lock()
 
     ##############################
     # Credentials methods
@@ -77,22 +82,32 @@ class ClientConfigurator:
             self._exchange_bootstrapped = True
         return self._auth_session.authenticate(backend_request)
 
-    def invalidate(self) -> bool:
+    def invalidate(self, rejected: BackendReq) -> bool:
         """
         Refresh the credentials after the backend rejected them.
+
+        Parameters
+        ----------
+        rejected : BackendReq
+            The request the backend rejected, as it was sent.
 
         Returns
         -------
         bool
-            True if credentials were refreshed and a retry may succeed.
+            True if credentials were refreshed, by this call or by another
+            thread after ``rejected`` was sent, and a retry may succeed.
         """
-        return self.evaluate_refresh()
+        with self._refresh_lock:
+            if self._auth_session.authenticate(rejected).headers != rejected.headers:
+                return True
+            return self._token_refresh_service.evaluate_refresh()
 
     def evaluate_refresh(self, check_token_validity: bool = False) -> bool:
         """
         Check if token refresh should be attempted.
         """
-        return self._token_refresh_service.evaluate_refresh(check_token_validity=check_token_validity)
+        with self._refresh_lock:
+            return self._token_refresh_service.evaluate_refresh(check_token_validity=check_token_validity)
 
     ###############################
     # Utility methods

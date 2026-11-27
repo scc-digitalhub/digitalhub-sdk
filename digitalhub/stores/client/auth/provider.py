@@ -26,9 +26,16 @@ class AuthProvider(Protocol):
     def authenticate(self, backend_request: BackendReq) -> BackendReq:
         """Return an authenticated copy of a backend request."""
 
-    def invalidate(self) -> bool:
+    def invalidate(self, rejected: BackendReq) -> bool:
         """
         Drop or refresh credentials the backend rejected.
+
+        Parameters
+        ----------
+        rejected : BackendReq
+            The request the backend rejected, as it was sent. A provider
+            shared by threads uses it to tell whether another thread already
+            replaced the credentials.
 
         Returns
         -------

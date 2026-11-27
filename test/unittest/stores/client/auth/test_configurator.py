@@ -2,11 +2,13 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import threading
 from unittest.mock import Mock
 
 from digitalhub.stores.client.auth.client_configurator import ClientConfigurator
 from digitalhub.stores.client.common.config import ClientConfig
 from digitalhub.stores.client.common.enums import AuthType
+from digitalhub.stores.client.common.utils import with_bearer_token
 from digitalhub.stores.client.http.request import BackendReq
 
 
@@ -87,9 +89,29 @@ def test_configurator_passes_its_configuration_to_credentials_and_refresh(monkey
     assert refresh_service_factory.call_args.args[2:] == (transport, config)
 
 
-def test_invalidate_refreshes_credentials_and_reports_whether_to_retry() -> None:
+def _configurator_with_token(token: str) -> ClientConfigurator:
     configurator = ClientConfigurator.__new__(ClientConfigurator)
-    configurator.evaluate_refresh = Mock(return_value=False)
+    configurator._refresh_lock = threading.Lock()
+    configurator._auth_session = Mock()
+    configurator._auth_session.authenticate.side_effect = lambda request: with_bearer_token(request, token)
+    configurator._token_refresh_service = Mock()
+    return configurator
 
-    assert configurator.invalidate() is False
-    configurator.evaluate_refresh.assert_called_once_with()
+
+def test_invalidate_refreshes_credentials_and_reports_whether_to_retry() -> None:
+    configurator = _configurator_with_token("old")
+    configurator._token_refresh_service.evaluate_refresh.return_value = False
+    rejected = with_bearer_token(BackendReq(method="GET", api="/resource"), "old")
+
+    assert configurator.invalidate(rejected) is False
+    configurator._token_refresh_service.evaluate_refresh.assert_called_once_with()
+
+
+def test_invalidate_does_not_refresh_credentials_replaced_after_the_request() -> None:
+    # Another thread refreshed while the request was in flight: refreshing
+    # again would send a refresh token Core has already consumed.
+    configurator = _configurator_with_token("new")
+    rejected = with_bearer_token(BackendReq(method="GET", api="/resource"), "old")
+
+    assert configurator.invalidate(rejected) is True
+    configurator._token_refresh_service.evaluate_refresh.assert_not_called()

@@ -70,7 +70,7 @@ class HttpRequestHandler:
         try:
             return self._response_processor.process(response)
         except UnauthorizedError:
-            if retry_on_unauthorized and self._auth.invalidate():
+            if retry_on_unauthorized and self._auth.invalidate(backend_request):
                 retry_request = self._auth.authenticate(backend_request)
                 return self._execute_request(
                     retry_request,

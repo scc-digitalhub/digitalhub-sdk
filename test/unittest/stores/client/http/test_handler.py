@@ -223,7 +223,8 @@ def test_request_refreshes_credentials_only_once(monkeypatch) -> None:
         handler.execute_request(BackendReq(method="GET", api="/resource"))
 
     assert transport.execute.call_count == 2
-    configurator.invalidate.assert_called_once_with()
+    configurator.invalidate.assert_called_once()
+    assert configurator.invalidate.call_args.args[0].api == "https://example.test/resource"
 
 
 def test_request_returns_replay_result_after_refresh(monkeypatch) -> None:

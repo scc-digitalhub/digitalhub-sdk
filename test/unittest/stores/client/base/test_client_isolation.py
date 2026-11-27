@@ -86,7 +86,7 @@ def test_unauthorized_response_invalidates_only_the_client_that_received_it() ->
         first.execute(READ_PROJECT)
     second.execute(READ_PROJECT)
 
-    first_auth.invalidate.assert_called_once_with()
+    first_auth.invalidate.assert_called_once()
     second_auth.invalidate.assert_not_called()
     assert transport.execute.call_count == 3
 
