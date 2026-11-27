@@ -116,7 +116,7 @@ class Runtime(ABC):
         """
         try:
             return func(*args, **kwargs)
-        except Exception:
-            msg = "Something got wrong during function execution."
+        except Exception as e:
+            msg = f"Function execution failed: {type(e).__name__}: {e}"
             logger.exception(msg)
-            raise RuntimeError(msg)
+            raise RuntimeError(msg) from e
