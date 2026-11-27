@@ -74,7 +74,7 @@ def _call_concurrently(target: Callable, paused: threading.Event, resume: thread
 
 def test_get_session_builds_one_session_under_concurrent_first_use(monkeypatch) -> None:
     monkeypatch.setattr(session_module, "_session", None)
-    factory, paused, resume, calls = _pause_first_call(lambda config: Session(config, transport=Mock()))
+    factory, paused, resume, calls = _pause_first_call(lambda: Session(transport=Mock()))
     monkeypatch.setattr(session_module, "Session", factory)
 
     sessions = _call_concurrently(get_session, paused, resume)

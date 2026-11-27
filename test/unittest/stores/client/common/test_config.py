@@ -43,6 +43,17 @@ def test_set_client_config_reconfigures_the_session(monkeypatch) -> None:
     assert client._transport is transport
 
 
+def test_dh_config_set_after_import_applies_to_the_session(monkeypatch, tmp_path) -> None:
+    # The configuration was built when digitalhub was imported, so DH_CONFIG
+    # set afterwards, for example in a notebook, was ignored, while the other
+    # variables were read at use.
+    config_path = tmp_path / "custom.ini"
+    monkeypatch.setattr(session_module, "_session", None)
+    monkeypatch.setenv(ConfigurationVars.DH_CONFIG.value, str(config_path))
+
+    assert get_client_config().config_ini_path == config_path
+
+
 def test_client_config_rejects_non_positive_refresh_attempts() -> None:
     with pytest.raises(ValueError, match="max_refresh_attempts must be at least 1"):
         ClientConfig(max_refresh_attempts=0)

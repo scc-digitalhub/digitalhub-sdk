@@ -83,25 +83,27 @@ class ClientConfig:
         self.config_env_path = str(self.config_ini_path.parent / ".env")
 
 
-# Global default configuration instance
-_default_config = ClientConfig()
-
-
 def get_client_config() -> ClientConfig:
     """
-    Get the current global client configuration.
+    Get the client configuration of the session.
+
+    The session builds it on first use, so ``DH_CONFIG`` is read then, like
+    the other configuration variables, and not when ``digitalhub`` is imported.
 
     Returns
     -------
     ClientConfig
-        Current global configuration instance.
+        Configuration of the session.
     """
-    return _default_config
+    # Imported here: the session module imports this one.
+    from digitalhub.stores.session import get_session
+
+    return get_session().config
 
 
 def set_client_config(config: ClientConfig) -> None:
     """
-    Set the global client configuration.
+    Set the client configuration of the session.
 
     The session builds its next client with it; clients already built keep
     their own configuration.
@@ -116,12 +118,9 @@ def set_client_config(config: ClientConfig) -> None:
     >>> custom_config = ClientConfig(http_timeout=120, default_page_size=50)
     >>> set_client_config(custom_config)
     """
-    global _default_config
-    _default_config = config
+    from digitalhub.stores.session import get_session
 
-    from digitalhub.stores.session import configure_session
-
-    configure_session(config)
+    get_session().configure(config)
 
 
 def reset_client_config() -> None:

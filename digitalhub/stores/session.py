@@ -18,7 +18,7 @@ import typing
 
 from digitalhub.stores.client.auth.client_configurator import ClientConfigurator
 from digitalhub.stores.client.client import Client
-from digitalhub.stores.client.common.config import ClientConfig, get_client_config
+from digitalhub.stores.client.common.config import ClientConfig
 from digitalhub.stores.client.http.transport import HttpTransport
 from digitalhub.stores.data.builder import StoreBuilder
 
@@ -172,21 +172,14 @@ def get_session() -> Session:
     """
     Return the process session, creating it on first use.
 
-    It uses the global client configuration; see ``set_client_config()``.
+    Its client configuration is built then, from ``DH_CONFIG`` and the
+    defaults; ``set_client_config()`` replaces it.
     """
     global _session
     session = _session
     if session is None:
         with _session_lock:
             if _session is None:
-                _session = Session(get_client_config())
+                _session = Session()
             session = _session
     return session
-
-
-def configure_session(config: ClientConfig) -> None:
-    """Apply a new client configuration to the session, if it exists."""
-    with _session_lock:
-        session = _session
-    if session is not None:
-        session.configure(config)
