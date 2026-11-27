@@ -254,6 +254,8 @@ def test_save_credentials_does_not_write_dotenv_by_default() -> None:
     manager.export_to_ini.assert_called_once_with({"dhcore_access_token": "new"})
     manager.export_to_env.assert_not_called()
     manager.reload_credentials.assert_called_once_with()
+    # A .env the SDK did not write is not loaded into os.environ.
+    manager.load_to_env.assert_not_called()
 
 
 def test_save_credentials_updates_in_memory_without_persistence() -> None:

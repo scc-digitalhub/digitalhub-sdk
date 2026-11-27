@@ -137,8 +137,10 @@ class ConfigManager:
             logger.warning("Credential persistence failed; refreshed credentials will remain in memory only.")
             return
 
-        write_dotenv = str(self._configuration.get(ConfigurationVars.DOTENV_WRITE.value, "false")).strip().lower()
-        if write_dotenv == "true":
+        write_dotenv = (
+            str(self._configuration.get(ConfigurationVars.DOTENV_WRITE.value, "false")).strip().lower() == "true"
+        )
+        if write_dotenv:
             self.export_to_env(variables)
         if self.is_using_env():
             self._credential_session.update({key.upper(): value for key, value in variables.items()})
@@ -146,7 +148,10 @@ class ConfigManager:
         else:
             self.reload_credentials()
             logger.debug("Persisted refreshed credentials and reloaded the active file profile.")
-        self.load_to_env()
+        # Only a .env the SDK has just written goes into os.environ: any other
+        # .env (by default ~/.env) would override the application's variables.
+        if write_dotenv:
+            self.load_to_env()
 
     def save_refreshed_credentials(self, credentials: dict[str, Any]) -> None:
         """Normalize credentials returned by the auth server and persist them."""
