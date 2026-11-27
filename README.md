@@ -18,12 +18,15 @@ pip install digitalhub[full]
 To be able to create and execute functions or workflows, you need to install the runtime you want to use. The Digitalhub SDK supports multiple runtimes, each with its own installation instructions:
 
 - [Digitalhub SDK Runtime Python](https://github.com/scc-digitalhub/digitalhub-sdk-runtime-python)
-- [Digitalhub SDK Runtime Dbt](https://github.com/scc-digitalhub/digitalhub-sdk-runtime-dbt)
 - [Digitalhub SDK Runtime Container](https://github.com/scc-digitalhub/digitalhub-sdk-runtime-container)
-- [Digitalhub SDK Runtime Hera](https://github.com/scc-digitalhub/digitalhub-sdk-runtime-hera)
 - [Digitalhub SDK Runtime Modelserve](https://github.com/scc-digitalhub/digitalhub-sdk-runtime-modelserve)
-- [Digitalhub SDK Runtime Openinference](https://github.com/scc-digitalhub/digitalhub-sdk-runtime-openinference)
-- [Digitalhub SDK Runtime Guardrail](https://github.com/scc-digitalhub/digitalhub-sdk-runtime-guardrail)
+- [Digitalhub SDK Runtime Hera](https://github.com/scc-digitalhub/digitalhub-sdk-runtime-hera)
+- [Digitalhub SDK Runtime Dbt](https://github.com/scc-digitalhub/digitalhub-sdk-runtime-dbt)
+- [Digitalhub SDK Runtime Flower](https://github.com/scc-digitalhub/digitalhub-sdk-runtime-flower)
+- [Digitalhub SDK Runtime Hydra](https://github.com/scc-digitalhub/digitalhub-sdk-runtime-hydra)
+- [Digitalhub SDK Runtime Ray](https://github.com/scc-digitalhub/digitalhub-sdk-runtime-ray)
+- [Digitalhub SDK Runtime Servicegraph](https://github.com/scc-digitalhub/digitalhub-sdk-runtime-servicegraph)
+- [Digitalhub SDK Runtime TVM](https://github.com/scc-digitalhub/digitalhub-sdk-runtime-tvm)
 
 ## Development
 
