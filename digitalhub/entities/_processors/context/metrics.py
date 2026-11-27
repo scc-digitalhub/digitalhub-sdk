@@ -52,8 +52,34 @@ class ContextEntityMetricsProcessor:
         single_value: bool = False,
     ) -> None:
         """Validate, aggregate, and persist one metric for an entity."""
+        self._log_metric(obj, self.read_metrics_for_entity(obj), key, value, overwrite, single_value)
+
+    def log_metrics(
+        self,
+        obj: MetricsEntityProtocol,
+        metrics: dict[str, MetricType],
+        overwrite: bool = False,
+    ) -> None:
+        """Persist multiple metrics while preserving append and overwrite semantics."""
+        # Read once: each key is aggregated with its own stored value only.
+        stored_metrics = self.read_metrics_for_entity(obj)
+        has_metrics = bool(stored_metrics) or bool(obj.status.metrics)
+        obj._entity_has_metrics = obj._entity_has_metrics or has_metrics
+        for key, value in metrics.items():
+            single_value = not isinstance(value, list) and (overwrite or not has_metrics or key not in stored_metrics)
+            self._log_metric(obj, stored_metrics, key, value, overwrite, single_value)
+
+    def _log_metric(
+        self,
+        obj: MetricsEntityProtocol,
+        metrics: dict[str, MetricType],
+        key: str,
+        value: MetricType,
+        overwrite: bool,
+        single_value: bool,
+    ) -> None:
+        """Aggregate one metric with the stored ones and persist it."""
         validate_metric_value(value)
-        metrics = self.read_metrics_for_entity(obj)
         if not metrics and not obj.status.metrics and not obj._entity_has_metrics:
             obj.status.metrics = {}
             obj._update_attributes(
@@ -68,20 +94,6 @@ class ContextEntityMetricsProcessor:
             metrics[key],
         )
         obj._entity_has_metrics = True
-
-    def log_metrics(
-        self,
-        obj: MetricsEntityProtocol,
-        metrics: dict[str, MetricType],
-        overwrite: bool = False,
-    ) -> None:
-        """Persist multiple metrics while preserving append and overwrite semantics."""
-        stored_metrics = self.read_metrics_for_entity(obj)
-        has_metrics = bool(stored_metrics) or bool(obj.status.metrics)
-        obj._entity_has_metrics = obj._entity_has_metrics or has_metrics
-        for key, value in metrics.items():
-            single_value = not isinstance(value, list) and (overwrite or not has_metrics or key not in stored_metrics)
-            self.log_metric(obj, key, value, overwrite, single_value)
 
     def read_metrics(
         self,

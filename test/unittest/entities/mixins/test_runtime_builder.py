@@ -23,7 +23,6 @@ def test_runtime_builder_resolves_kinds_and_actions(runtime_builder: RuntimeEnti
     assert runtime_builder.get_run_kind_from_action("execute") == "run"
     assert runtime_builder.get_executable_kind() == "function"
     assert runtime_builder.get_all_kinds() == ["function", "run", "task"]
-    assert runtime_builder.get_all_actions() == ["execute"]
 
 
 @pytest.mark.parametrize(

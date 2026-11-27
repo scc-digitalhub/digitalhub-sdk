@@ -88,23 +88,6 @@ def load_dotenv_file(dotenv_file: Path) -> None:
         raise ClientError(f"Failed to load .env file: {e}")
 
 
-def ini_file_exists(ini_file: Path) -> bool:
-    """
-    Check if the .dhcore.ini file exists.
-
-    Parameters
-    ----------
-    ini_file : Path
-        The credentials file.
-
-    Returns
-    -------
-    bool
-        True if the file exists, False otherwise.
-    """
-    return ini_file.exists()
-
-
 def load_file(ini_file: Path) -> ConfigParser:
     """
     Load the credentials configuration from the .dhcore.ini file.

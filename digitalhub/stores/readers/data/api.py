@@ -60,18 +60,6 @@ def get_reader_by_object(obj: Dataframe) -> DataframeReader:  # type: ignore
         raise ReaderError(msg)
 
 
-def get_supported_engines() -> list[str]:
-    """
-    Get supported engines.
-
-    Returns
-    -------
-    list
-        List of supported engines.
-    """
-    return factory.list_supported_engines()
-
-
 def get_supported_dataframes() -> list[Dataframe]:  # type: ignore
     """
     Get supported dataframes.

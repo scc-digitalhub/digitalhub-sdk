@@ -141,14 +141,3 @@ class RuntimeEntityBuilder:
         task_kinds = [i.kind for i in self.TASKS_KINDS]
         run_kinds = [i.kind for i in self.RUN_KINDS]
         return [self.EXECUTABLE_KIND, *run_kinds, *task_kinds]
-
-    def get_all_actions(self) -> list[str]:
-        """
-        Get all actions.
-
-        Returns
-        -------
-        list[str]
-            All actions.
-        """
-        return [i.action for i in self.TASKS_KINDS]

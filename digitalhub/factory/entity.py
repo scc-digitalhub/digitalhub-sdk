@@ -15,7 +15,6 @@ if typing.TYPE_CHECKING:
     from digitalhub.entities._base.context.entity import ContextEntity
     from digitalhub.entities._base.entity.spec import Spec
     from digitalhub.entities._base.entity.status import Status
-    from digitalhub.entities._base.metadata.entity import Metadata
     from digitalhub.entities._mixin.executable.protocol import ExecutableProtocol
     from digitalhub.entities._mixin.material.protocol import MaterialProtocol
     from digitalhub.entities._mixin.metrics.protocol import MetricsEntityProtocol
@@ -151,24 +150,6 @@ class EntityFactory:
         """
         return self._call_builder_method(kind_to_build_from, BuilderMethodsEnum.BUILD_SPEC.value, **kwargs)
 
-    def build_metadata(self, kind_to_build_from: str, **kwargs) -> Metadata:
-        """
-        Build an entity metadata.
-
-        Parameters
-        ----------
-        kind_to_build_from : str
-            Entity type.
-        **kwargs
-            Additional metadata parameters.
-
-        Returns
-        -------
-        Metadata
-            Metadata object.
-        """
-        return self._call_builder_method(kind_to_build_from, BuilderMethodsEnum.BUILD_METADATA.value, **kwargs)
-
     def build_status(self, kind_to_build_from: str, **kwargs) -> Status:
         """
         Build an entity status.
@@ -286,22 +267,6 @@ class EntityFactory:
             BuilderMethodsEnum.GET_RUN_KIND_FROM_ACTION.value,
             action,
         )
-
-    def get_all_kinds(self, kind: str) -> list[str]:
-        """
-        Get all kinds.
-
-        Parameters
-        ----------
-        kind : str
-            Kind.
-
-        Returns
-        -------
-        list of str
-            All kinds.
-        """
-        return self._call_builder_method(kind, BuilderMethodsEnum.GET_ALL_KINDS.value)
 
     @staticmethod
     def _get_kind(**kwargs) -> str:

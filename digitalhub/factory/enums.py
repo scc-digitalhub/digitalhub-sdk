@@ -25,11 +25,9 @@ class BuilderMethodsEnum(Enum):
     """
 
     BUILD_SPEC = "build_spec"
-    BUILD_METADATA = "build_metadata"
     BUILD_STATUS = "build_status"
     GET_ENTITY_TYPE = "get_entity_type"
     GET_EXECUTABLE_KIND = "get_executable_kind"
     GET_ACTION_FROM_TASK_KIND = "get_action_from_task_kind"
     GET_TASK_KIND_FROM_ACTION = "get_task_kind_from_action"
     GET_RUN_KIND_FROM_ACTION = "get_run_kind_from_action"
-    GET_ALL_KINDS = "get_all_kinds"

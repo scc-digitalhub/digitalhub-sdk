@@ -143,9 +143,3 @@ class EntityBuilder(ABC):
         Get entity type.
         """
         return self.ENTITY_TYPE
-
-    def get_kind(self) -> str:
-        """
-        Get entity kind.
-        """
-        return self.ENTITY_KIND

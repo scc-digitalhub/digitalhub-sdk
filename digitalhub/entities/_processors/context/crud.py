@@ -130,9 +130,7 @@ class ContextEntityCRUDProcessor:
             entity_id=entity_id,
             **kwargs,
         )
-        entity = entity_factory.build_entity_from_dict(obj, entity_type=entity_type)
-        entity._post_read_hook()
-        return entity
+        return entity_factory.build_entity_from_dict(obj, entity_type=entity_type)
 
     def read_unversioned_entity(
         self,

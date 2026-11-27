@@ -78,14 +78,6 @@ class RemoteStore(Store):
     # Helper methods
     ##############################
 
-    @staticmethod
-    def _check_head(src) -> None:
-        """
-        Check if the source exists.
-        """
-        r = requests.head(src, timeout=get_client_config().http_timeout)
-        r.raise_for_status()
-
     def _download_file(self, url: str, dst: Path, overwrite: bool) -> str:
         """
         Method to download a file from a given url.

@@ -163,8 +163,8 @@ def test_exec_family_topology_matches_a_handwritten_one() -> None:
 
     assert generated.get_executable_kind() == expected.get_executable_kind()
     assert generated.get_all_kinds() == expected.get_all_kinds()
-    assert generated.get_all_actions() == expected.get_all_actions()
-    for action in expected.get_all_actions():
+    assert generated.TASKS_KINDS == expected.TASKS_KINDS
+    for action in (task.action for task in expected.TASKS_KINDS):
         assert generated.get_task_kind_from_action(action) == expected.get_task_kind_from_action(action)
         assert generated.get_run_kind_from_action(action) == expected.get_run_kind_from_action(action)
         task_kind = expected.get_task_kind_from_action(action)

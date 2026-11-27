@@ -81,10 +81,6 @@ class ConfigManager:
             configuration[ConfigurationVars.DOTENV_WRITE.value] = "false"
         return configuration
 
-    def reload_configuration(self) -> None:
-        """Reload configuration from environment and file."""
-        self._configuration = self.load_configuration()
-
     def get_endpoint(self) -> str:
         """Get the configured DHCore backend endpoint."""
         endpoint = self._configuration[ConfigurationVars.DHCORE_ENDPOINT.value]
@@ -182,10 +178,6 @@ class ConfigManager:
         for key in required_keys:
             if current_keys.get(key) is None:
                 raise ClientError(f"Required configuration key '{key}' is missing.")
-
-    @property
-    def in_memory(self) -> bool:
-        return self._in_memory
 
     @property
     def current_profile(self) -> str:

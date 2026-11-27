@@ -29,9 +29,3 @@ class ReaderBuilder:
         """
         Build reader object.
         """
-
-    @abstractmethod
-    def map_dataframe_name(self, dataframe: Dataframe) -> str:  # type: ignore
-        """
-        Map dataframe type to engine name.
-        """

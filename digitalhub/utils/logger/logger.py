@@ -72,17 +72,6 @@ def get_logger(name: str | None = None) -> logging.Logger:
     return _root_logger.getChild(name)
 
 
-def set_level(level: int | str) -> None:
-    """Change the log level for the entire digitalhub hierarchy.
-
-    Parameters
-    ----------
-    level : int | str
-        A standard logging level (e.g. logging.DEBUG or "DEBUG").
-    """
-    _root_logger.setLevel(_resolve_level(level))
-
-
 _environment_level = os.environ.get(LoggerVars.ENV_LOG_LEVEL.value)
 if _environment_level is not None:
     configure_logging(_environment_level)

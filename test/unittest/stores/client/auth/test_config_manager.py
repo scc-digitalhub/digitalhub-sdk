@@ -25,9 +25,7 @@ def _manager_for_profile_switch() -> ConfigManager:
     manager._current_profile = "current"
     manager._credential_store = Mock()
     manager._configuration = {ConfigurationVars.DHCORE_ENDPOINT.value: "https://current.example.test"}
-    manager._credential_session = CredentialSession(
-        {CredentialsVars.DHCORE_ACCESS_TOKEN.value: "current-token"}
-    )
+    manager._credential_session = CredentialSession({CredentialsVars.DHCORE_ACCESS_TOKEN.value: "current-token"})
     manager._in_memory = False
     return manager
 
@@ -118,9 +116,7 @@ def test_set_current_profile_validates_before_switching(monkeypatch) -> None:
 
     save_current_profile.assert_not_called()
     assert manager.current_profile == "current"
-    assert manager.configuration == {
-        ConfigurationVars.DHCORE_ENDPOINT.value: "https://current.example.test"
-    }
+    assert manager.configuration == {ConfigurationVars.DHCORE_ENDPOINT.value: "https://current.example.test"}
     assert manager.credentials == {CredentialsVars.DHCORE_ACCESS_TOKEN.value: "current-token"}
     assert manager.credential_source is CredentialSource.FILE
 
@@ -131,9 +127,7 @@ def test_set_current_profile_applies_validated_configuration_and_credentials(mon
     candidate_store.load_configuration.return_value = {
         ConfigurationVars.DHCORE_ENDPOINT.value: "https://new.example.test"
     }
-    candidate_store.load_credentials.return_value = {
-        CredentialsVars.DHCORE_ACCESS_TOKEN.value: "new-token"
-    }
+    candidate_store.load_credentials.return_value = {CredentialsVars.DHCORE_ACCESS_TOKEN.value: "new-token"}
     save_current_profile = Mock()
     monkeypatch.setattr(config_manager_module, "CredentialStore", Mock(return_value=candidate_store))
     monkeypatch.setattr(config_manager_module, "set_current_profile", save_current_profile)
@@ -221,7 +215,7 @@ def test_initialization_does_not_write_configuration(monkeypatch) -> None:
 
     manager = ConfigManager()
 
-    assert manager.in_memory is False
+    assert manager._in_memory is False
     export_to_ini.assert_not_called()
     export_to_env.assert_not_called()
 
@@ -285,6 +279,6 @@ def test_save_credentials_falls_back_to_memory_when_file_is_unwritable() -> None
 
     manager.save_credentials({"dhcore_access_token": "new"})
 
-    assert manager.in_memory is True
+    assert manager._in_memory is True
     assert manager.credentials == {"DHCORE_ACCESS_TOKEN": "new"}
     manager.export_to_env.assert_not_called()

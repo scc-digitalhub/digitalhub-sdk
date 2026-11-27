@@ -322,12 +322,6 @@ class SqlStore(Store):
                     raise
                 logger.debug("SQL connection setup failed, retrying with refreshed credentials.")
 
-    def _get_schema(self, uri: str) -> str:
-        """
-        Extract the schema name from a SQL URI.
-        """
-        return str(parse_sql_path(uri).get("schema"))
-
     def _get_table_name(self, uri: str) -> str:
         """
         Extract the table name from a SQL URI.

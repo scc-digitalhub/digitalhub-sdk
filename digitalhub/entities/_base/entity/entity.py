@@ -173,12 +173,6 @@ class BaseEntity(Base):
         Can be overridden in subclasses to implement custom behavior.
         """
 
-    def _post_read_hook(self) -> None:
-        """
-        Hook method called after reading the entity from Core.
-        Can be overridden in subclasses to implement custom behavior.
-        """
-
     def __repr__(self) -> str:
         """
         Return string representation of the entity object.

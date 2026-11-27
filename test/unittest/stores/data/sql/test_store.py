@@ -189,7 +189,6 @@ def test_read_df_keeps_cached_engine_when_reader_fails(monkeypatch) -> None:
     reader = Mock()
     reader.read_table.side_effect = RuntimeError("read failed")
     store._get_reader = Mock(return_value=reader)
-    store._get_schema = Mock(return_value="public")
     store._get_table_name = Mock(return_value="items")
     store._check_factory = Mock(return_value=engine)
     monkeypatch.setattr(store_module, "Table", Mock(return_value=Mock()))

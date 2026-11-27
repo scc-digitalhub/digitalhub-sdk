@@ -66,3 +66,22 @@ def test_update_metric_uses_backend_operation_request(monkeypatch) -> None:
             options=MetricsOptions(user="user"),
         )
     )
+
+
+def test_log_metrics_reads_the_stored_metrics_once(monkeypatch) -> None:
+    read_metrics = Mock(return_value={"loss": [0.5]})
+    update_metric = Mock()
+    monkeypatch.setattr(ContextEntityMetricsProcessor, "read_metrics", read_metrics)
+    monkeypatch.setattr(ContextEntityMetricsProcessor, "update_metric", update_metric)
+    model = SimpleNamespace(
+        project="project",
+        ENTITY_TYPE="model",
+        id="model-id",
+        status=SimpleNamespace(metrics=None),
+        _entity_has_metrics=False,
+    )
+
+    ContextEntityMetricsProcessor().log_metrics(model, {"loss": 0.4, "accuracy": 0.9})
+
+    read_metrics.assert_called_once()
+    assert [c.args[3:] for c in update_metric.call_args_list] == [("loss", [0.5, 0.4]), ("accuracy", 0.9)]
