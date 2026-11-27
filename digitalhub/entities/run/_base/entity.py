@@ -38,6 +38,24 @@ class LocalExecutionRunMixin:
         return self.spec.local_execution
 
 
+class BuildRunMixin:
+    """Entity mixin for build runs, whose status holds the image they built."""
+
+    @property
+    def image(self) -> str | None:
+        """
+        Get the image built by the run.
+
+        Returns
+        -------
+        str | None
+            The image, or None until the build publishes it.
+        """
+        # Declared by the status of the build runs.
+        outputs = getattr(typing.cast("Run", self).status, "outputs", None) or {}
+        return outputs.get("image")
+
+
 class ServeRunMixin:
     """Entity mixin for serve runs, whose service can be invoked."""
 

@@ -44,6 +44,7 @@ from digitalhub.entities.model._base.status import ModelStatus
 from digitalhub.entities.project._base.entity import Project
 from digitalhub.entities.run._base.builder import RunBuilder
 from digitalhub.entities.run._base.entity import (
+    BuildRunMixin,
     EntityIORunMixin,
     LocalExecutionRunMixin,
     ResultsRunMixin,
@@ -65,6 +66,7 @@ from digitalhub.runtimes.builder import RuntimeBuilder
 __all__ = [
     "Action",
     "Artifact",
+    "BuildRunMixin",
     "BuildSpecMixin",
     "BuilderDef",
     "ContextEntity",

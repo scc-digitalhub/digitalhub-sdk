@@ -4,7 +4,13 @@
 
 from unittest.mock import Mock
 
-from digitalhub.entities.run._base.entity import EntityIORunMixin, ResultsRunMixin, Run, ServeRunMixin
+from digitalhub.entities.run._base.entity import (
+    BuildRunMixin,
+    EntityIORunMixin,
+    ResultsRunMixin,
+    Run,
+    ServeRunMixin,
+)
 from digitalhub.entities.run._base.io_processor import RunIOProcessor
 from digitalhub.entities.run._base.processor import RunProcessor
 from digitalhub.entities.run._base.serve_processor import RunServeProcessor
@@ -80,6 +86,17 @@ def test_results_come_from_the_status() -> None:
 
     run.status = Mock(results=None)
     assert run.results() == {}
+
+
+def test_image_of_a_build_run_comes_from_the_status_outputs() -> None:
+    run = object.__new__(type("BuildRun", (BuildRunMixin, Run), {}))
+    run.status = Mock(outputs={"image": "registry/image:tag"})
+
+    assert run.image == "registry/image:tag"
+
+    # Until the build publishes it.
+    run.status = Mock(outputs=None)
+    assert run.image is None
 
 
 def test_logs_delegates_and_returns_selected_representation(monkeypatch) -> None:
