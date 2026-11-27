@@ -11,7 +11,7 @@ from digitalhub.entities._commons.enums import Relationship
 from digitalhub.entities.project._base.entity import Project
 from digitalhub.entities.project._base.processor import ProjectProcessor
 from digitalhub.runtimes.enums import RuntimeEnvVar
-from digitalhub.utils.exceptions import ContextError
+from digitalhub.utils.exceptions import BackendError, ContextError, EntityNotExistsError
 
 
 def _context() -> Context:
@@ -160,6 +160,46 @@ def test_context_run_id_fallback_is_restored_after_local_run(monkeypatch) -> Non
     assert context.is_running
     assert context.logged == {"fallback-entry": "value"}
     get_run.assert_called_once_with("backend-run")
+
+
+def _context_with_run_id(monkeypatch, *outcomes) -> tuple[Context, Mock]:
+    context = _context()
+    get_run = Mock(side_effect=list(outcomes))
+    monkeypatch.setattr(context, "_get_run", get_run)
+    monkeypatch.setenv(RuntimeEnvVar.RUN_ID.value, "backend-run")
+    return context, get_run
+
+
+def test_run_id_lookup_is_retried_after_a_backend_error(monkeypatch) -> None:
+    # Any error used to end the search: the run, and with it the produced_by
+    # relationship of every material logged later, was lost for the process.
+    backend_run = SimpleNamespace(key="run-key", id="backend-run")
+    context, get_run = _context_with_run_id(monkeypatch, BackendError("Backend error. Response: 503"), backend_run)
+
+    assert context.run is None
+    assert context.run is backend_run
+    assert get_run.call_count == 2
+
+
+def test_run_id_lookup_is_retried_after_a_connection_error(monkeypatch) -> None:
+    backend_run = SimpleNamespace(key="run-key", id="backend-run")
+    context, get_run = _context_with_run_id(monkeypatch, ConnectionError("unreachable"), backend_run)
+
+    with pytest.raises(ConnectionError):
+        context.run  # noqa: B018
+    assert context.run is backend_run
+    assert get_run.call_count == 2
+
+
+def test_run_id_lookup_ends_when_the_run_does_not_exist(monkeypatch) -> None:
+    context = _context()
+    get_run = Mock(side_effect=EntityNotExistsError("No such run."))
+    monkeypatch.setattr(context, "_get_run", get_run)
+    monkeypatch.setenv(RuntimeEnvVar.RUN_ID.value, "missing-run")
+
+    assert context.run is None
+    assert not context.is_running
+    get_run.assert_called_once_with("missing-run")
 
 
 def test_local_run_before_fallback_read_disables_late_run_id_lookup(monkeypatch) -> None:

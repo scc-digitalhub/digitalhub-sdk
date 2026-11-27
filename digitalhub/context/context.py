@@ -21,7 +21,7 @@ from digitalhub.stores.client.common.enums import ApiType, BackendOp
 from digitalhub.stores.client.compiler.operation import ClientOp
 from digitalhub.stores.client.compiler.targets import ContextEntityTarget
 from digitalhub.stores.client.factory import resolve_client
-from digitalhub.utils.exceptions import BackendError, ContextError
+from digitalhub.utils.exceptions import BackendError, ContextError, EntityNotExistsError
 from digitalhub.utils.logger.logger import get_logger
 
 if typing.TYPE_CHECKING:
@@ -176,25 +176,29 @@ class Context:
 
     def _search_run_ctx(self) -> None:
         """
-        Search for an existing run id in env.
+        Search for the run whose id is in the environment.
+
+        The search ends when the run is found or does not exist. After any
+        other error it is repeated at the next access, so a transient backend
+        error does not lose the run, and the produced_by relationships, for
+        the whole process.
         """
         with self._run_ctx_lock:
             if self._run_ctx_searched:
                 return
 
-            self._run_ctx_searched = True
             run_id = os.getenv(RuntimeEnvVar.RUN_ID.value)
             if run_id is not None:
                 try:
-                    self._fallback_state = self._fallback_state._replace(
-                        run=self._get_run(run_id),
-                        is_running=True,
-                    )
+                    run = self._get_run(run_id)
+                except EntityNotExistsError:
+                    logger.debug(f"Run '{run_id}' set in environment but not found in backend.")
                 except BackendError:
-                    logger.debug(
-                        f"Run '{run_id}' set in environment but not found in backend",
-                        exc_info=True,
-                    )
+                    logger.debug(f"Run '{run_id}' set in environment could not be read; retrying later.", exc_info=True)
+                    return
+                else:
+                    self._fallback_state = self._fallback_state._replace(run=run, is_running=True)
+            self._run_ctx_searched = True
 
     def set_run(self, run: Run) -> None:
         """
