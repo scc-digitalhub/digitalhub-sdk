@@ -27,11 +27,11 @@ from digitalhub.entities._constructors.uuid import build_uuid
 from digitalhub.entities._frameworks.k8s.models import CorePort, CorePullPolicy, CoreServiceType
 from digitalhub.entities._mixin.executable.build import ExecutableBuildMixin
 from digitalhub.entities._mixin.executable.enums import ExecutableActions
-from digitalhub.entities._mixin.source.requirements import parse_requirements
 from digitalhub.entities._mixin.execution.spec import BuildSpecMixin, ServeSpecMixin
 from digitalhub.entities._mixin.source.builder import SourceBuilderMixin
 from digitalhub.entities._mixin.source.entity import SourceEntityMixin
 from digitalhub.entities._mixin.source.models import HandlerSourceCode, SourceCode
+from digitalhub.entities._mixin.source.requirements import parse_requirements
 from digitalhub.entities._mixin.source.source import fetch_source
 from digitalhub.entities.artifact._base.entity import Artifact
 from digitalhub.entities.dataitem._base.crud import new_dataitem
@@ -46,11 +46,13 @@ from digitalhub.entities.model._base.status import ModelStatus
 from digitalhub.entities.project._base.entity import Project
 from digitalhub.entities.run._base.builder import RunBuilder
 from digitalhub.entities.run._base.entity import (
+    BuildRun,
     BuildRunMixin,
     EntityIORunMixin,
     LocalExecutionRunMixin,
     ResultsRunMixin,
     Run,
+    ServeRun,
     ServeRunMixin,
 )
 from digitalhub.entities.run._base.spec import LocalExecutionSpecMixin, RunSpecFunction, RunSpecWorkflow
@@ -68,6 +70,7 @@ from digitalhub.runtimes.builder import RuntimeBuilder
 __all__ = [
     "Action",
     "Artifact",
+    "BuildRun",
     "BuildRunMixin",
     "BuildSpecMixin",
     "BuilderDef",
@@ -105,6 +108,7 @@ __all__ = [
     "RunStatus",
     "Runtime",
     "RuntimeBuilder",
+    "ServeRun",
     "ServeRunMixin",
     "ServeSpecMixin",
     "SourceBuilderMixin",

@@ -43,24 +43,6 @@ def build_log_path_from_source(
 ) -> str:
     """
     Build log path.
-
-    Parameters
-    ----------
-    project : str
-        Project name.
-    entity_type : str
-        Entity type.
-    name : str
-        Object name.
-    uuid : str
-        Object UUID.
-    source : str | list[str]
-        Source(s).
-
-    Returns
-    -------
-    str
-        Log path.
     """
     path = _get_base_path(default_store, project, entity_type, name, uuid)
 
@@ -83,16 +65,6 @@ def build_log_path_from_source(
 def build_log_name_from_source(source: str | list[str]) -> str:
     """
     Build a log entity name from a source path.
-
-    Parameters
-    ----------
-    source : str or list[str]
-        Source path(s).
-
-    Returns
-    -------
-    str
-        Slugified source name.
     """
     if isinstance(source, list):
         if len(source) != 1:
@@ -122,22 +94,6 @@ def build_log_path_as_partition(
 ) -> str:
     """
     Build log path as partition.
-
-    Parameters
-    ----------
-    project : str
-        Project name.
-    entity_type : str
-        Entity type.
-    name : str
-        Object name.
-    uuid : str
-        Object UUID.
-
-    Returns
-    -------
-    str
-        Log path as partition.
     """
     return _get_base_path(default_store, project, entity_type, name, uuid) + "/"
 
@@ -153,24 +109,6 @@ def build_log_path_from_filename(
 ) -> str:
     """
     Build log path.
-
-    Parameters
-    ----------
-    project : str
-        Project name.
-    entity_type : str
-        Entity type.
-    name : str
-        Object name.
-    uuid : str
-        Object UUID.
-    filename : str
-        Filename.
-
-    Returns
-    -------
-    str
-        Log path.
     """
     return _get_base_path(default_store, project, entity_type, name, uuid) + f"/{filename}"
 
@@ -184,22 +122,6 @@ def _get_base_path(
 ) -> str:
     """
     Utils to get base path.
-
-    Parameters
-    ----------
-    project : str
-        Project name.
-    entity_type : str
-        Entity type.
-    name : str
-        Object name.
-    uuid : str
-        Object UUID.
-
-    Returns
-    -------
-    str
-        Base path.
     """
     return f"{default_store}/{project}/{entity_type}/{name}/{uuid}"
 
@@ -207,18 +129,6 @@ def _get_base_path(
 def build_zip_path(entity: VersionedEntityProtocol, filename: str, *, default_store: str) -> str:
     """
     Get destination path.
-
-    Parameters
-    ----------
-    entity : VersionedEntityProtocol
-        Entity.
-    filename : str
-        Filename.
-
-    Returns
-    -------
-    str
-        Destination path.
     """
     return f"zip+{default_store}/{entity.project}/{entity.ENTITY_TYPE}/{entity.name}/{entity.id}/{filename}"
 
@@ -228,16 +138,6 @@ def refresh_decorator(
 ) -> Callable[Concatenate[_RefreshableT, _P], _R]:
     """
     Refresh decorator.
-
-    Parameters
-    ----------
-    fn : Callable
-        Function to decorate.
-
-    Returns
-    -------
-    Callable
-        Decorated function.
     """
 
     @wraps(fn)

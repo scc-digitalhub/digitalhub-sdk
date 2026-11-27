@@ -5,11 +5,11 @@
 from unittest.mock import Mock
 
 from digitalhub.entities.run._base.entity import (
-    BuildRunMixin,
+    BuildRun,
     EntityIORunMixin,
     ResultsRunMixin,
     Run,
-    ServeRunMixin,
+    ServeRun,
 )
 from digitalhub.entities.run._base.io_processor import RunIOProcessor
 from digitalhub.entities.run._base.processor import RunProcessor
@@ -51,7 +51,7 @@ def test_wait_delegates_to_executable_processor(monkeypatch) -> None:
 
 
 def test_invoke_of_a_serve_run_delegates_to_serve_processor(monkeypatch) -> None:
-    run = object.__new__(type("ServeRun", (ServeRunMixin, Run), {}))
+    run = object.__new__(ServeRun)
     response = Mock()
     invoke = Mock(return_value=response)
     monkeypatch.setattr(RunServeProcessor, "invoke", invoke)
@@ -89,7 +89,7 @@ def test_results_come_from_the_status() -> None:
 
 
 def test_image_of_a_build_run_comes_from_the_status_outputs() -> None:
-    run = object.__new__(type("BuildRun", (BuildRunMixin, Run), {}))
+    run = object.__new__(BuildRun)
     run.status = Mock(outputs={"image": "registry/image:tag"})
 
     assert run.image == "registry/image:tag"

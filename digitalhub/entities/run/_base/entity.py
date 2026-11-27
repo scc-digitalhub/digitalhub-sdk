@@ -23,7 +23,7 @@ if typing.TYPE_CHECKING:
 
     from digitalhub.entities._base.metadata.entity import Metadata
     from digitalhub.entities.log._base.entity import Log
-    from digitalhub.entities.run._base.serve_processor import ServeRun
+    from digitalhub.entities.run._base.serve_processor import InvokableRun
     from digitalhub.entities.run._base.spec import LocalExecutionSpecMixin, RunSpec
     from digitalhub.entities.run._base.status import RunStatus
 
@@ -87,7 +87,7 @@ class ServeRunMixin:
         Response
             Response of the service.
         """
-        return RunServeProcessor().invoke(typing.cast("ServeRun", self), method, path, **kwargs)
+        return RunServeProcessor().invoke(typing.cast("InvokableRun", self), method, path, **kwargs)
 
 
 class EntityIORunMixin:
@@ -341,3 +341,15 @@ class Run(ContextEntity, UnversionedMixin, MetricsMixin, ExtensionsMixin):
             Status to set.
         """
         self.status = entity_factory.build_status(self.kind, **status)
+
+
+class BuildRun(BuildRunMixin, Run):
+    """
+    Build run, whose status holds the image it built.
+    """
+
+
+class ServeRun(ServeRunMixin, Run):
+    """
+    Serve run, whose service can be invoked.
+    """

@@ -28,7 +28,7 @@ if typing.TYPE_CHECKING:
 SERVICE_PROBE_TIMEOUT = 5
 
 
-class ServeRun(Protocol):
+class InvokableRun(Protocol):
     """What the serve processor needs from a run with ``ServeRunMixin``."""
 
     id: str
@@ -37,7 +37,7 @@ class ServeRun(Protocol):
     _direct_service: tuple[str, bool] | None
 
 
-def _service(run: Run | ServeRun) -> dict | None:
+def _service(run: Run | InvokableRun) -> dict | None:
     """Service that Core publishes in the status of a serve run."""
     # Declared by the status of most serve runs; the others keep it as an extra field.
     return getattr(run.status, "service", None)
@@ -85,7 +85,7 @@ class RunServeProcessor:
             poll_interval=poll_interval,
         )
 
-    def invoke(self, run: ServeRun, method: str | None = None, path: str | None = None, **kwargs) -> Response:
+    def invoke(self, run: InvokableRun, method: str | None = None, path: str | None = None, **kwargs) -> Response:
         """
         Call the service of a serve run.
 
@@ -107,7 +107,7 @@ class RunServeProcessor:
         return get_context(run.project).client.proxy_request(host, method, path, **kwargs)
 
     @staticmethod
-    def _answers_directly(run: ServeRun, host: str, url: str) -> bool:
+    def _answers_directly(run: InvokableRun, host: str, url: str) -> bool:
         """
         Whether the service answers without the proxy.
 
