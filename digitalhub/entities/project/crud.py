@@ -9,7 +9,7 @@ import typing
 from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
 from digitalhub.entities.project._base.processor import ProjectProcessor
 from digitalhub.entities.project.utils import setup_project
-from digitalhub.utils.exceptions import BackendError
+from digitalhub.utils.exceptions import EntityNotExistsError
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.context.entity import ContextEntity
@@ -243,11 +243,11 @@ def get_or_create_project(
     ```
     """
     try:
-        return get_project(
-            name,
-            setup_kwargs=setup_kwargs,
+        obj = ProjectProcessor().read_project_entity(
+            entity_type=ENTITY_TYPE,
+            entity_name=name,
         )
-    except BackendError:
+    except EntityNotExistsError:
         return new_project(
             name,
             description=description,
@@ -257,6 +257,7 @@ def get_or_create_project(
             source=context,
             extensions=extensions,
         )
+    return setup_project(obj, setup_kwargs)
 
 
 def update_project(entity: Project) -> Project:

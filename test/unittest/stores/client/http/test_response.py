@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import re
+
 import pytest
 from requests import Response
 
@@ -35,7 +37,9 @@ def _response(status_code: int, body: str) -> Response:
         (400, "Duplicated entity", EntityAlreadyExistsError),
         (401, "Unauthorized", UnauthorizedError),
         (403, "Forbidden", ForbiddenError),
-        (404, "No such EntityName", EntityNotExistsError),
+        # Core's NoSuchEntityException, as written since Core 0.16 and before.
+        (404, '{"status":404,"message":"No such project."}', EntityNotExistsError),
+        (404, "No such EntityName(value=project).", EntityNotExistsError),
         (404, "resource missing", BackendError),
         (500, "backend failure", BackendError),
     ],
@@ -45,7 +49,7 @@ def test_raise_for_response_error_maps_backend_status_and_body(
     body: str,
     expected_error: type[BackendError],
 ) -> None:
-    with pytest.raises(expected_error, match=body):
+    with pytest.raises(expected_error, match=re.escape(body)):
         raise_for_response_error(_response(status_code, body))
 
 

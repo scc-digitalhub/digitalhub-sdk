@@ -61,7 +61,7 @@ def _raise_backend_error(response: Response, error: HTTPError) -> NoReturn:
         raise ForbiddenError(f"Forbidden. {msg_suffix}") from error
 
     if response.status_code == 404:
-        if "No such EntityName" in text:
+        if "No such " in text:
             raise EntityNotExistsError(f"Entity does not exists. {msg_suffix}") from error
         raise BackendError(f"Not found. {msg_suffix}") from error
 

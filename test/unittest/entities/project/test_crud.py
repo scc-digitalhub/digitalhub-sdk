@@ -5,10 +5,12 @@
 from types import SimpleNamespace
 from unittest.mock import Mock
 
+import pytest
+
 import digitalhub.entities.project.crud as project_crud
 from digitalhub.entities._commons.enums import EntityKinds
 from digitalhub.entities.project._base.processor import ProjectProcessor
-from digitalhub.utils.exceptions import BackendError
+from digitalhub.utils.exceptions import BackendError, EntityNotExistsError, UnauthorizedError
 
 
 def test_new_project_passes_extensions_to_processor(monkeypatch) -> None:
@@ -90,25 +92,11 @@ def test_list_projects_returns_processor_result(monkeypatch) -> None:
     list_projects.assert_called_once_with(project_crud.ENTITY_TYPE)
 
 
-def test_get_or_create_project_returns_existing_project(monkeypatch) -> None:
-    get_project = Mock(return_value="existing-project")
-    new_project = Mock()
-    monkeypatch.setattr(project_crud, "get_project", get_project)
-    monkeypatch.setattr(project_crud, "new_project", new_project)
-
-    result = project_crud.get_or_create_project("my-project", setup_kwargs={"context": "./context"})
-
-    assert result == "existing-project"
-    get_project.assert_called_once_with("my-project", setup_kwargs={"context": "./context"})
-    new_project.assert_not_called()
-
-
-def test_get_or_create_project_creates_when_project_is_missing(monkeypatch) -> None:
-    get_project = Mock(side_effect=BackendError("project not found"))
+def _get_or_create(monkeypatch, read: Mock, setup: Mock | None = None) -> tuple[object, Mock]:
     new_project = Mock(return_value="created-project")
-    monkeypatch.setattr(project_crud, "get_project", get_project)
+    monkeypatch.setattr(ProjectProcessor, "read_project_entity", read)
+    monkeypatch.setattr(project_crud, "setup_project", setup or Mock(side_effect=lambda obj, kwargs: obj))
     monkeypatch.setattr(project_crud, "new_project", new_project)
-
     result = project_crud.get_or_create_project(
         "my-project",
         description="A project",
@@ -118,6 +106,21 @@ def test_get_or_create_project_creates_when_project_is_missing(monkeypatch) -> N
         setup_kwargs={"option": True},
         extensions=[{"key": "value"}],
     )
+    return result, new_project
+
+
+def test_get_or_create_project_returns_existing_project(monkeypatch) -> None:
+    setup = Mock(return_value="set-up-project")
+
+    result, new_project = _get_or_create(monkeypatch, Mock(return_value="existing-project"), setup)
+
+    assert result == "set-up-project"
+    setup.assert_called_once_with("existing-project", {"option": True})
+    new_project.assert_not_called()
+
+
+def test_get_or_create_project_creates_when_project_is_missing(monkeypatch) -> None:
+    result, new_project = _get_or_create(monkeypatch, Mock(side_effect=EntityNotExistsError("No such project.")))
 
     assert result == "created-project"
     new_project.assert_called_once_with(
@@ -129,6 +132,27 @@ def test_get_or_create_project_creates_when_project_is_missing(monkeypatch) -> N
         source="./context",
         extensions=[{"key": "value"}],
     )
+
+
+@pytest.mark.parametrize(
+    ("read", "setup"),
+    [
+        (Mock(side_effect=UnauthorizedError("Unauthorized")), None),
+        (Mock(side_effect=BackendError("Backend error")), None),
+        # An error of the setup hook is not a missing project.
+        (Mock(return_value="existing-project"), Mock(side_effect=EntityNotExistsError("hook"))),
+    ],
+)
+def test_get_or_create_project_does_not_create_on_other_errors(monkeypatch, read: Mock, setup: Mock | None) -> None:
+    # Every BackendError used to lead to a creation attempt, which hid the cause.
+    new_project = Mock()
+    monkeypatch.setattr(ProjectProcessor, "read_project_entity", read)
+    monkeypatch.setattr(project_crud, "setup_project", setup or Mock())
+    monkeypatch.setattr(project_crud, "new_project", new_project)
+
+    with pytest.raises(BackendError):
+        project_crud.get_or_create_project("my-project")
+    new_project.assert_not_called()
 
 
 def test_update_project_passes_entity_payload(monkeypatch) -> None:
