@@ -247,8 +247,7 @@ class Project(PersistedEntity, ProjectListShortcuts, ExtensionsMixin):
         Run
             Run instance.
         """
-        # run() of the workflow entity, not of a processor: runtimes override it
-        # (hera builds the workflow first when auto_build is set).
+        # run() of the workflow entity, not of a processor: runtimes can override it.
         return ProjectProcessor().get_project_workflow(self, workflow).run(**kwargs)
 
     def share(self, user: str) -> None:

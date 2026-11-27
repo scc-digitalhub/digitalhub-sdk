@@ -25,6 +25,8 @@ from digitalhub.entities._commons.keys import EntityKey, EntityRef
 from digitalhub.entities._constructors.spec import build_spec
 from digitalhub.entities._constructors.uuid import build_uuid
 from digitalhub.entities._frameworks.k8s.models import CorePort, CorePullPolicy, CoreServiceType
+from digitalhub.entities._mixin.executable.build import ExecutableBuildMixin
+from digitalhub.entities._mixin.executable.enums import ExecutableActions
 from digitalhub.entities._mixin.execution.spec import BuildSpecMixin, ServeSpecMixin
 from digitalhub.entities._mixin.source.builder import SourceBuilderMixin
 from digitalhub.entities._mixin.source.entity import SourceEntityMixin
@@ -71,6 +73,8 @@ __all__ = [
     "EntityRef",
     "EntityTypes",
     "ExecFamily",
+    "ExecutableActions",
+    "ExecutableBuildMixin",
     "Function",
     "FunctionBuilder",
     "HandlerSourceCode",
