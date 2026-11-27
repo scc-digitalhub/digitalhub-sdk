@@ -98,3 +98,41 @@ def test_get_context_from_identifier_resolves_project(
 def test_get_context_from_identifier_requires_project_for_simple_identifier() -> None:
     with pytest.raises(EntityError, match="Specify project if you do not specify entity key"):
         processor_utils.get_context_from_identifier("pipeline")
+
+
+@pytest.mark.parametrize(
+    ("project", "entity_type", "message"),
+    [
+        ("other-project", "function", "belongs to project 'key-project', not 'other-project'"),
+        ("key-project", "workflow", "is of type 'function', not 'workflow'"),
+    ],
+)
+def test_parse_identifier_rejects_a_key_that_contradicts_the_arguments(
+    project: str, entity_type: str, message: str
+) -> None:
+    # The key used to win silently: delete_workflow(<key of a function>) deleted the function.
+    with pytest.raises(ValueError, match=message):
+        processor_utils.parse_identifier(
+            "store://key-project/function/python/pipeline:function-id",
+            project=project,
+            entity_type=entity_type,
+        )
+
+
+def test_parse_identifier_accepts_arguments_that_match_the_key() -> None:
+    assert processor_utils.parse_identifier(
+        "store://key-project/function/python/pipeline:function-id",
+        project="key-project",
+        entity_type="function",
+    ) == ("key-project", "function", "python", "pipeline", "function-id")
+
+
+def test_get_context_from_identifier_rejects_a_key_of_another_project(monkeypatch) -> None:
+    get_context = Mock()
+    monkeypatch.setattr(processor_utils, "get_context", get_context)
+
+    with pytest.raises(ValueError, match="belongs to project 'key-project', not 'other-project'"):
+        processor_utils.get_context_from_identifier(
+            "store://key-project/function/python/pipeline:function-id", "other-project"
+        )
+    get_context.assert_not_called()

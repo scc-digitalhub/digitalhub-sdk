@@ -28,6 +28,7 @@ def parse_identifier(
             raise ValueError("Project and entity type must be specified.")
         return project, entity_type, entity_kind, identifier, entity_id
     key = EntityKey.parse(identifier)
+    _check_key(key, project, entity_type)
     return key.project, key.entity_type, key.kind, key.name, key.id
 
 
@@ -39,9 +40,25 @@ def get_context_from_identifier(
         if project is None:
             raise EntityError("Specify project if you do not specify entity key.")
     else:
-        project = EntityKey.parse(identifier).project
+        key = EntityKey.parse(identifier)
+        _check_key(key, project)
+        project = key.project
 
     return get_context(project)
+
+
+def _check_key(key: EntityKey, project: str | None, entity_type: str | None = None) -> None:
+    """
+    Reject a key that contradicts the project or entity type passed with it.
+
+    The key decides what is read or deleted: an argument it contradicts was
+    once ignored, so ``delete_artifact()`` with the key of a model deleted
+    the model, and a project-bound shortcut reached other projects.
+    """
+    if project is not None and project != key.project:
+        raise ValueError(f"Key '{key}' belongs to project '{key.project}', not '{project}'.")
+    if entity_type is not None and entity_type != key.entity_type:
+        raise ValueError(f"Key '{key}' is of type '{key.entity_type}', not '{entity_type}'.")
 
 
 def update_entity_identity(
