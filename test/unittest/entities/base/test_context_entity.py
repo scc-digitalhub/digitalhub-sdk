@@ -4,6 +4,8 @@
 
 from unittest.mock import Mock
 
+import pytest
+
 import digitalhub.entities._base.context.entity as context_entity_module
 from digitalhub.entities._base.context.entity import ContextEntity
 from digitalhub.entities._base.metadata.entity import Metadata
@@ -31,20 +33,22 @@ def _build_entity(name: str = "entity") -> StubContextEntity:
     return entity
 
 
-def test_save_creates_entity_and_updates_attributes(monkeypatch) -> None:
+@pytest.mark.parametrize(
+    ("method", "processor_method"),
+    [
+        ("save", "create_context_entity"),
+        ("update", "update_context_entity"),
+        ("refresh", "refresh_context_entity"),
+    ],
+)
+def test_persistence_goes_through_the_processor(method: str, processor_method: str, monkeypatch) -> None:
+    # The processor updates the entity with the stored state and returns it.
     entity = _build_entity()
-    saved = _build_entity("saved")
-    create_entity = Mock(return_value=saved)
-    monkeypatch.setattr(ContextEntityCRUDProcessor, "create_context_entity", create_entity)
+    processor = Mock(return_value=entity)
+    monkeypatch.setattr(ContextEntityCRUDProcessor, processor_method, processor)
 
-    result = entity.save()
-
-    assert result is entity
-    create_entity.assert_called_once_with(entity)
-    assert entity.metadata is saved.metadata
-    assert entity.spec is saved.spec
-    assert entity.status is saved.status
-    assert entity.user == saved.user
+    assert getattr(entity, method)() is entity
+    processor.assert_called_once_with(entity)
 
 
 def test_export_delegates_to_processor(monkeypatch) -> None:
@@ -54,46 +58,6 @@ def test_export_delegates_to_processor(monkeypatch) -> None:
 
     assert entity.export() == "entity.yaml"
     export_entity.assert_called_once_with(entity)
-
-
-def test_update_delegates_to_processor_and_updates_attributes(monkeypatch) -> None:
-    entity = _build_entity()
-    updated = _build_entity("updated")
-    payload = entity.to_dict()
-    update_entity = Mock(return_value=updated)
-    monkeypatch.setattr(ContextEntityCRUDProcessor, "update_context_entity", update_entity)
-
-    result = entity.update()
-
-    assert result is entity
-    update_entity.assert_called_once_with(
-        entity.project,
-        entity.ENTITY_TYPE,
-        entity.id,
-        payload,
-    )
-    assert entity.metadata is updated.metadata
-    assert entity.spec is updated.spec
-    assert entity.status is updated.status
-
-
-def test_refresh_delegates_to_processor_and_updates_attributes(monkeypatch) -> None:
-    entity = _build_entity()
-    refreshed = _build_entity("refreshed")
-    read_entity = Mock(return_value=refreshed)
-    monkeypatch.setattr(ContextEntityCRUDProcessor, "read_context_entity", read_entity)
-    key = entity.key
-
-    result = entity.refresh()
-
-    assert result is entity
-    read_entity.assert_called_once_with(
-        key,
-        entity_type=entity.ENTITY_TYPE,
-    )
-    assert entity.metadata is refreshed.metadata
-    assert entity.spec is refreshed.spec
-    assert entity.status is refreshed.status
 
 
 def test_context_resolves_project_context(monkeypatch) -> None:

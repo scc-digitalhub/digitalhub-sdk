@@ -146,21 +146,10 @@ def test_task_import_and_load_delegate_to_processor(
     processor.assert_called_once_with(*expected_args)
 
 
-def test_update_task_delegates_entity_fields(monkeypatch) -> None:
+def test_update_task_updates_the_passed_entity(monkeypatch) -> None:
     entity = Mock()
-    entity.project = "my-project"
-    entity.ENTITY_TYPE = EntityTypes.TASK.value
-    entity.id = "task-id"
-    entity.to_dict.return_value = {"metadata": {"name": "job"}}
-    update_entity = Mock(return_value="task")
+    update_entity = Mock(return_value=entity)
     monkeypatch.setattr(ContextEntityCRUDProcessor, "update_context_entity", update_entity)
 
-    result = task_crud.update_task(entity)
-
-    assert result == "task"
-    update_entity.assert_called_once_with(
-        project="my-project",
-        entity_type=EntityTypes.TASK.value,
-        entity_id="task-id",
-        entity_dict={"metadata": {"name": "job"}},
-    )
+    assert task_crud.update_task(entity) is entity
+    update_entity.assert_called_once_with(entity)

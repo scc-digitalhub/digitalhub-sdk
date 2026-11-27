@@ -200,21 +200,10 @@ def test_trigger_import_and_load_delegate_to_processor(
     processor.assert_called_once_with(*expected_args)
 
 
-def test_update_trigger_delegates_entity_fields(monkeypatch) -> None:
+def test_update_trigger_updates_the_passed_entity(monkeypatch) -> None:
     entity = Mock()
-    entity.project = "my-project"
-    entity.ENTITY_TYPE = EntityTypes.TRIGGER.value
-    entity.id = "trigger-id"
-    entity.to_dict.return_value = {"metadata": {"name": "on-demand"}}
-    update_entity = Mock(return_value="trigger")
+    update_entity = Mock(return_value=entity)
     monkeypatch.setattr(ContextEntityCRUDProcessor, "update_context_entity", update_entity)
 
-    result = trigger_crud.update_trigger(entity)
-
-    assert result == "trigger"
-    update_entity.assert_called_once_with(
-        project="my-project",
-        entity_type=EntityTypes.TRIGGER.value,
-        entity_id="trigger-id",
-        entity_dict={"metadata": {"name": "on-demand"}},
-    )
+    assert trigger_crud.update_trigger(entity) is entity
+    update_entity.assert_called_once_with(entity)

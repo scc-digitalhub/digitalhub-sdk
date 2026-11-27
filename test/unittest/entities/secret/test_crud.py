@@ -163,22 +163,10 @@ def test_secret_operations_delegate_to_processor(
         processor.assert_called_once_with(**expected_kwargs)
 
 
-def test_update_secret_delegates_entity_fields(monkeypatch) -> None:
-    entity = SimpleNamespace(
-        project="my-project",
-        ENTITY_TYPE=EntityTypes.SECRET.value,
-        id="secret-id",
-        to_dict=Mock(return_value={"metadata": {"name": "api-key"}}),
-    )
-    update_entity = Mock(return_value="secret")
+def test_update_secret_updates_the_passed_entity(monkeypatch) -> None:
+    entity = Mock()
+    update_entity = Mock(return_value=entity)
     monkeypatch.setattr(ContextEntityCRUDProcessor, "update_context_entity", update_entity)
 
-    result = secret_crud.update_secret(entity)
-
-    assert result == "secret"
-    update_entity.assert_called_once_with(
-        project="my-project",
-        entity_type=EntityTypes.SECRET.value,
-        entity_id="secret-id",
-        entity_dict={"metadata": {"name": "api-key"}},
-    )
+    assert secret_crud.update_secret(entity) is entity
+    update_entity.assert_called_once_with(entity)

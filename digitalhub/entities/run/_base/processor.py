@@ -66,30 +66,30 @@ class RunProcessor:
 
     def run(self, run: Run) -> Run:
         """Execute the run state machine and persist the resulting status."""
-        self._refresh(run)
+        self.crud_processor.refresh_context_entity(run)
         self.start_execution(run)
         try:
             try:
                 run._setup_execution()
                 status = runtime_factory.build_runtime(run.kind, run.project).run(run.to_dict())
             except Exception as error:
-                self._refresh(run)
+                self.crud_processor.refresh_context_entity(run)
                 run.status.message = str(error)
                 if run.local_execution():
                     self._transition(run, State.ERROR)
                 else:
-                    self._update(run)
+                    self.crud_processor.update_context_entity(run)
                 raise
         finally:
             self.end_execution(run)
 
-        self._refresh(run)
+        self.crud_processor.refresh_context_entity(run)
         if run.local_execution():
             self._check_transition(run, status.get("state"))
         else:
             status.pop("state", None)
         run.set_status({**run.status.to_dict(), **status})
-        self._update(run)
+        self.crud_processor.update_context_entity(run)
         return run
 
     def start_execution(self, run: Run) -> None:
@@ -133,7 +133,7 @@ class RunProcessor:
         while True:
             if log_info:
                 logger.info(f"Waiting for run {run.id} to finish...")
-            self._refresh(run)
+            self.crud_processor.refresh_context_entity(run)
             elapsed = time.monotonic() - start
             if run.status.state in terminal_states:
                 if log_info:
@@ -178,23 +178,13 @@ class RunProcessor:
         if run.local_execution():
             self._check_transition(run, state.value)
         run.status.state = state.value
-        self._update(run)
+        self.crud_processor.update_context_entity(run)
 
     @staticmethod
     def _check_transition(run: Run, state: str | None) -> None:
         """Raise if a local run cannot go from its state to ``state``."""
         if state not in LOCAL_RUN_TRANSITIONS.get(run.status.state, frozenset()):
             raise EntityError(f"Local run {run.id} cannot go from {run.status.state} to {state}.")
-
-    def _update(self, run: Run) -> None:
-        """Persist ``run`` and take back the backend state."""
-        run._update_attributes(
-            self.crud_processor.update_context_entity(run.project, run.ENTITY_TYPE, run.id, run.to_dict())
-        )
-
-    def _refresh(self, run: Run) -> None:
-        """Replace the attributes of ``run`` with the backend state."""
-        run._update_attributes(self.crud_processor.read_context_entity(run.key, entity_type=run.ENTITY_TYPE))
 
     def get_executable(self, run: Run) -> dict:
         """Read the executable related to a run."""

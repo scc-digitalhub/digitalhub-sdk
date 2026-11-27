@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
@@ -304,22 +303,10 @@ def test_model_read_operations_delegate_to_processor(
         processor.assert_called_once_with(**expected_kwargs)
 
 
-def test_update_model_delegates_entity_fields(monkeypatch) -> None:
-    entity = SimpleNamespace(
-        project="my-project",
-        ENTITY_TYPE=EntityTypes.MODEL.value,
-        id="model-id",
-        to_dict=Mock(return_value={"metadata": {"name": "model"}}),
-    )
-    update_entity = Mock(return_value="model")
+def test_update_model_updates_the_passed_entity(monkeypatch) -> None:
+    entity = Mock()
+    update_entity = Mock(return_value=entity)
     monkeypatch.setattr(ContextEntityCRUDProcessor, "update_context_entity", update_entity)
 
-    result = context_crud.update_model(entity)
-
-    assert result == "model"
-    update_entity.assert_called_once_with(
-        project="my-project",
-        entity_type=EntityTypes.MODEL.value,
-        entity_id="model-id",
-        entity_dict={"metadata": {"name": "model"}},
-    )
+    assert context_crud.update_model(entity) is entity
+    update_entity.assert_called_once_with(entity)

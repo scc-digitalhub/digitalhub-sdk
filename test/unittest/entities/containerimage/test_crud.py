@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
@@ -148,22 +147,10 @@ def test_containerimage_operations_delegate_to_processor(
         processor.assert_called_once_with(**expected_kwargs)
 
 
-def test_update_containerimage_delegates_entity_fields(monkeypatch) -> None:
-    entity = SimpleNamespace(
-        project="my-project",
-        ENTITY_TYPE=EntityTypes.CONTAINERIMAGE.value,
-        id="image-id",
-        to_dict=Mock(return_value={"spec": {"image": "api:latest"}}),
-    )
-    update_entity = Mock(return_value="containerimage")
+def test_update_containerimage_updates_the_passed_entity(monkeypatch) -> None:
+    entity = Mock()
+    update_entity = Mock(return_value=entity)
     monkeypatch.setattr(ContextEntityCRUDProcessor, "update_context_entity", update_entity)
 
-    result = containerimage_crud.update_containerimage(entity)
-
-    assert result == "containerimage"
-    update_entity.assert_called_once_with(
-        project="my-project",
-        entity_type=EntityTypes.CONTAINERIMAGE.value,
-        entity_id="image-id",
-        entity_dict={"spec": {"image": "api:latest"}},
-    )
+    assert containerimage_crud.update_containerimage(entity) is entity
+    update_entity.assert_called_once_with(entity)

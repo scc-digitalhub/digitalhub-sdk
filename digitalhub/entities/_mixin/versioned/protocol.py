@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import typing
-from typing import ClassVar, Protocol
+from typing import Any, ClassVar, Protocol
 
 if typing.TYPE_CHECKING:
     from digitalhub.entities._base.entity.spec import Spec
@@ -38,3 +38,5 @@ class VersionedEntityProtocol(Protocol):
     def _context(self): ...
 
     def _post_create_hook_before_save(self) -> None: ...
+
+    def _update_attributes(self, obj: Any) -> None: ...

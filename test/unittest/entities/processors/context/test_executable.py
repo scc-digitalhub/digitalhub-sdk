@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from types import SimpleNamespace
-from unittest.mock import Mock, call
+from unittest.mock import Mock
 
 import pytest
 
@@ -15,10 +15,6 @@ from digitalhub.entities._processors.context.executable import ContextEntityExec
 from digitalhub.entities.run._base.processor import RunProcessor
 from digitalhub.entities.task._base.processor import TaskProcessor
 from digitalhub.utils.exceptions import EntityAlreadyExistsError, EntityError, EntityNotExistsError
-
-
-def _context(name: str = "project") -> SimpleNamespace:
-    return SimpleNamespace(name=name)
 
 
 def _executable() -> Mock:
@@ -106,7 +102,6 @@ def test_update_task_replaces_the_task_through_the_crud_processor(monkeypatch) -
     executable._get_executable_string.return_value = "function-ref"
     processor.get_task = Mock(return_value=SimpleNamespace(id="task-id"))
     task = Mock(project="project", ENTITY_TYPE="task", id="task-id")
-    task.to_dict.return_value = {"id": "task-id"}
     build_entity = Mock(return_value=task)
     monkeypatch.setattr(executable_module.entity_factory, "get_task_kind_from_action", Mock(return_value="python+run"))
     monkeypatch.setattr(executable_module.entity_factory, "build_entity_from_params", build_entity)
@@ -114,11 +109,10 @@ def test_update_task_replaces_the_task_through_the_crud_processor(monkeypatch) -
     result = processor.update_task(executable, "run", labels=["x"])
 
     assert result is task
-    task._update_attributes.assert_called_once_with(crud_processor.update_context_entity.return_value)
     build_entity.assert_called_once_with(
         labels=["x"], project="project", kind="python+run", function="function-ref", uuid="task-id"
     )
-    crud_processor.update_context_entity.assert_called_once_with("project", "task", "task-id", {"id": "task-id"})
+    crud_processor.update_context_entity.assert_called_once_with(task)
     task.update.assert_not_called()
 
 
@@ -147,13 +141,13 @@ def test_import_tasks_moves_tasks_to_the_executable(monkeypatch, reset_id: bool,
     # The tasks used to be created in the project of the file, pointing to
     # the executable of the file.
     crud_processor = Mock()
-    monkeypatch.setattr(executable_module, "get_context", Mock(side_effect=_context))
     monkeypatch.setattr(executable_module, "build_uuid", Mock(return_value="new-task-id"))
 
     ContextEntityExecutableProcessor(crud_processor).import_tasks(_target_executable(), [_task_dict()], reset_id)
 
-    context, entity_type, saved = crud_processor._create_context_entity.call_args.args
-    assert (context, entity_type) == (_context("target-project"), "task")
+    (task,) = crud_processor.create_context_entity.call_args.args
+    saved = task.to_dict()
+    assert task.ENTITY_TYPE == "task"
     assert saved["project"] == saved["metadata"]["project"] == "target-project"
     assert saved["id"] == task_id
     assert saved["key"] == f"store://target-project/task/fake+job/{task_id}"
@@ -162,18 +156,17 @@ def test_import_tasks_moves_tasks_to_the_executable(monkeypatch, reset_id: bool,
 
 def test_load_tasks_updates_existing_tasks_and_creates_missing_ones(monkeypatch) -> None:
     crud_processor = Mock()
-    crud_processor._update_context_entity.side_effect = [None, EntityNotExistsError("missing")]
-    monkeypatch.setattr(executable_module, "get_context", Mock(side_effect=_context))
+    crud_processor.update_context_entity.side_effect = [None, EntityNotExistsError("missing")]
 
     ContextEntityExecutableProcessor(crud_processor).load_tasks(
         _target_executable(), [_task_dict("existing"), _task_dict("missing")]
     )
 
-    updated = crud_processor._update_context_entity.call_args_list
-    assert [c.args[2] for c in updated] == ["existing", "missing"]
-    context, entity_type, created = crud_processor._create_context_entity.call_args.args
-    assert (context, entity_type, created["id"]) == (_context("target-project"), "task", "missing")
-    assert created["spec"]["function"] == "fake://target-project/function:new-id"
+    updated = crud_processor.update_context_entity.call_args_list
+    assert [c.args[0].id for c in updated] == ["existing", "missing"]
+    (created,) = crud_processor.create_context_entity.call_args.args
+    assert (created.project, created.id) == ("target-project", "missing")
+    assert created.to_dict()["spec"]["function"] == "fake://target-project/function:new-id"
 
 
 def test_list_executable_runs_applies_relationship_filter() -> None:
@@ -239,7 +232,6 @@ def test_create_run_applies_relationship_and_extensions(monkeypatch) -> None:
     assert run.extensions == [{"name": "task-extension"}, {"name": "run-extension"}]
     run.add_relationship.assert_called_once_with(Relationship.RUN_OF.value, "function-key")
     crud_processor.create_context_entity.assert_called_once_with(run)
-    run._update_attributes.assert_called_once_with(crud_processor.create_context_entity.return_value)
     run.save.assert_not_called()
 
 
@@ -354,7 +346,6 @@ def test_create_trigger_builds_spec_without_mutating_template(monkeypatch) -> No
         template={"validated": True},
     )
     crud_processor.create_context_entity.assert_called_once_with(trigger)
-    trigger._update_attributes.assert_called_once_with(crud_processor.create_context_entity.return_value)
     trigger.save.assert_not_called()
 
 
@@ -396,10 +387,7 @@ def test_import_executable_reads_file_resets_id_and_imports_tasks(monkeypatch) -
     crud_processor = Mock()
     processor = ContextEntityExecutableProcessor(crud_processor)
     executable = _executable()
-    imported = _executable()
     processor.import_tasks = Mock()
-    build_entity = Mock(side_effect=[executable, imported])
-    create_entity = Mock(return_value={"kind": "function", "id": "new-id"})
     monkeypatch.setattr(
         executable_module,
         "read_yaml",
@@ -410,30 +398,23 @@ def test_import_executable_reads_file_resets_id_and_imports_tasks(monkeypatch) -
             ]
         ),
     )
-    monkeypatch.setattr(executable_module, "get_context", Mock(return_value=_context()))
-    monkeypatch.setattr(executable_module.entity_factory, "build_entity_from_dict", build_entity)
+    monkeypatch.setattr(executable_module.entity_factory, "build_entity_from_dict", Mock(return_value=executable))
     monkeypatch.setattr(executable_module, "build_uuid", Mock(return_value="new-id"))
-    crud_processor._create_context_entity = create_entity
 
     result = processor.import_executable_entity(file="entity.yaml", reset_id=True)
 
-    assert result is imported
+    assert result is executable
     assert executable.id == "new-id"
     assert executable.metadata.version == "new-id"
-    create_entity.assert_called_once_with(_context(), "function", executable.to_dict.return_value)
-    processor.import_tasks.assert_called_once_with(imported, [{"kind": "task", "status": {}}], reset_id=True)
+    crud_processor.create_context_entity.assert_called_once_with(executable)
+    processor.import_tasks.assert_called_once_with(executable, [{"kind": "task", "status": {}}], reset_id=True)
 
 
 def test_import_executable_updates_project_and_identity(monkeypatch) -> None:
     crud_processor = Mock()
     processor = ContextEntityExecutableProcessor(crud_processor)
     executable = VersionedExecutable()
-    imported = VersionedExecutable(project="target-project", entity_id="new-id")
     processor.import_tasks = Mock()
-    context = _context("target-project")
-    response = imported.to_dict()
-    crud_processor._create_context_entity.return_value = response
-    build_entity = Mock(side_effect=[executable, imported])
     monkeypatch.setattr(
         executable_module,
         "read_yaml",
@@ -444,20 +425,19 @@ def test_import_executable_updates_project_and_identity(monkeypatch) -> None:
             ]
         ),
     )
-    monkeypatch.setattr(executable_module, "get_context", Mock(return_value=context))
     monkeypatch.setattr(executable_module, "build_uuid", Mock(return_value="new-id"))
-    monkeypatch.setattr(executable_module.entity_factory, "build_entity_from_dict", build_entity)
+    monkeypatch.setattr(executable_module.entity_factory, "build_entity_from_dict", Mock(return_value=executable))
 
     result = processor.import_executable_entity(file="entity.yaml", reset_id=True, context="target-project")
 
-    assert result is imported
+    assert result is executable
     assert executable.project == "target-project"
     assert executable.id == "new-id"
     assert executable.metadata.project == "target-project"
     assert executable.metadata.version == "new-id"
     assert executable.key == "store://target-project/function/function/function:new-id"
-    crud_processor._create_context_entity.assert_called_once_with(context, "function", executable.to_dict())
-    processor.import_tasks.assert_called_once_with(imported, [{"kind": "task", "status": {}}], reset_id=True)
+    crud_processor.create_context_entity.assert_called_once_with(executable)
+    processor.import_tasks.assert_called_once_with(executable, [{"kind": "task", "status": {}}], reset_id=True)
 
 
 def test_import_executable_converts_duplicate_error(monkeypatch) -> None:
@@ -469,9 +449,8 @@ def test_import_executable_converts_duplicate_error(monkeypatch) -> None:
         "read_yaml",
         Mock(return_value={"project": "project", "key": "store://project/function/function/function:entity-id"}),
     )
-    monkeypatch.setattr(executable_module, "get_context", Mock(return_value=_context()))
     monkeypatch.setattr(executable_module.entity_factory, "build_entity_from_dict", Mock(return_value=executable))
-    crud_processor._create_context_entity.side_effect = EntityAlreadyExistsError("exists")
+    crud_processor.create_context_entity.side_effect = EntityAlreadyExistsError("exists")
 
     with pytest.raises(EntityError, match="already exists"):
         processor.import_executable_entity(file="entity.yaml")
@@ -481,11 +460,7 @@ def test_load_executable_updates_existing_entity_and_loads_tasks(monkeypatch) ->
     crud_processor = Mock()
     processor = ContextEntityExecutableProcessor(crud_processor)
     executable = _executable()
-    imported = _executable()
     processor.load_tasks = Mock()
-    backend_response = {"project": "project", "kind": "function", "id": "backend-id"}
-    crud_processor._update_context_entity.return_value = backend_response
-    build_entity = Mock(side_effect=[executable, imported])
     monkeypatch.setattr(
         executable_module,
         "read_yaml",
@@ -496,51 +471,34 @@ def test_load_executable_updates_existing_entity_and_loads_tasks(monkeypatch) ->
             ]
         ),
     )
-    monkeypatch.setattr(executable_module, "get_context", Mock(return_value=_context()))
-    monkeypatch.setattr(executable_module.entity_factory, "build_entity_from_dict", build_entity)
+    monkeypatch.setattr(executable_module.entity_factory, "build_entity_from_dict", Mock(return_value=executable))
 
     result = processor.load_executable_entity("entity.yaml")
 
-    assert result is imported
-    crud_processor._update_context_entity.assert_called_once_with(
-        _context(),
-        "function",
-        executable.id,
-        executable.to_dict.return_value,
-    )
-    crud_processor._create_context_entity.assert_not_called()
-    assert build_entity.call_args_list[1] == call(backend_response, entity_type="function")
-    processor.load_tasks.assert_called_once_with(imported, [{"kind": "task"}])
+    assert result is executable
+    crud_processor.update_context_entity.assert_called_once_with(executable)
+    crud_processor.create_context_entity.assert_not_called()
+    processor.load_tasks.assert_called_once_with(executable, [{"kind": "task"}])
 
 
 def test_load_executable_creates_missing_entity(monkeypatch) -> None:
     crud_processor = Mock()
-    crud_processor._update_context_entity.side_effect = EntityNotExistsError("missing")
+    crud_processor.update_context_entity.side_effect = EntityNotExistsError("missing")
     processor = ContextEntityExecutableProcessor(crud_processor)
     executable = _executable()
-    imported = _executable()
     processor.load_tasks = Mock()
-    backend_response = {"project": "project", "kind": "function", "id": "backend-id"}
-    crud_processor._create_context_entity.return_value = backend_response
-    build_entity = Mock(side_effect=[executable, imported])
     monkeypatch.setattr(
         executable_module,
         "read_yaml",
         Mock(return_value={"project": "project", "key": "store://project/function/function/function:entity-id"}),
     )
-    monkeypatch.setattr(executable_module, "get_context", Mock(return_value=_context()))
-    monkeypatch.setattr(executable_module.entity_factory, "build_entity_from_dict", build_entity)
+    monkeypatch.setattr(executable_module.entity_factory, "build_entity_from_dict", Mock(return_value=executable))
 
     result = processor.load_executable_entity("entity.yaml")
 
-    assert result is imported
-    crud_processor._create_context_entity.assert_called_once_with(
-        _context(),
-        "function",
-        executable.to_dict.return_value,
-    )
-    assert build_entity.call_args_list[1] == call(backend_response, entity_type="function")
-    processor.load_tasks.assert_called_once_with(imported, [])
+    assert result is executable
+    crud_processor.create_context_entity.assert_called_once_with(executable)
+    processor.load_tasks.assert_called_once_with(executable, [])
 
 
 class SourceExecutable(SourceEntityMixin, VersionedExecutable):
@@ -562,20 +520,14 @@ def test_import_executable_checks_local_source_in_the_target_project_before_savi
     crud_processor = Mock()
     processor = ContextEntityExecutableProcessor(crud_processor)
     executable = SourceExecutable(events)
-    imported = VersionedExecutable(project="target-project")
     processor.import_tasks = Mock()
-    crud_processor._create_context_entity.side_effect = lambda *args: events.append("saved") or imported.to_dict()
+    crud_processor.create_context_entity.side_effect = lambda obj: events.append("saved")
     monkeypatch.setattr(
         executable_module,
         "read_yaml",
         Mock(return_value={"project": "project", "key": "store://project/function/function/function:entity-id"}),
     )
-    monkeypatch.setattr(executable_module, "get_context", Mock(return_value=_context("target-project")))
-    monkeypatch.setattr(
-        executable_module.entity_factory,
-        "build_entity_from_dict",
-        Mock(side_effect=[executable, imported]),
-    )
+    monkeypatch.setattr(executable_module.entity_factory, "build_entity_from_dict", Mock(return_value=executable))
 
     processor.import_executable_entity(file="entity.yaml", context="target-project")
 
@@ -588,18 +540,13 @@ def test_load_executable_checks_local_source_before_saving(monkeypatch) -> None:
     processor = ContextEntityExecutableProcessor(crud_processor)
     executable = SourceExecutable(events)
     processor.load_tasks = Mock()
-    crud_processor._update_context_entity.side_effect = lambda *args: events.append("saved") or executable.to_dict()
+    crud_processor.update_context_entity.side_effect = lambda obj: events.append("saved")
     monkeypatch.setattr(
         executable_module,
         "read_yaml",
         Mock(return_value={"project": "project", "key": "store://project/function/function/function:entity-id"}),
     )
-    monkeypatch.setattr(executable_module, "get_context", Mock(return_value=_context()))
-    monkeypatch.setattr(
-        executable_module.entity_factory,
-        "build_entity_from_dict",
-        Mock(side_effect=[executable, VersionedExecutable()]),
-    )
+    monkeypatch.setattr(executable_module.entity_factory, "build_entity_from_dict", Mock(return_value=executable))
 
     processor.load_executable_entity("entity.yaml")
 

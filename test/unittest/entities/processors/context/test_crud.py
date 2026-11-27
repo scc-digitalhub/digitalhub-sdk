@@ -8,6 +8,7 @@ from digitalhub.entities._mixin.versioned.mixin import VersionedMixin
 from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
 from digitalhub.entities._processors.utils import update_entity_identity
 from digitalhub.entities.task._base.entity import Task
+from digitalhub.stores.client.common.enums import BackendOp
 from digitalhub.utils.exceptions import EntityNotExistsError
 
 
@@ -33,6 +34,9 @@ class VersionedEntity(VersionedMixin):
             },
         }
 
+    def _update_attributes(self, obj) -> None:
+        self.stored = obj
+
 
 def _entity_dict() -> dict:
     return {
@@ -49,9 +53,8 @@ def test_import_context_entity_updates_project_and_identity(monkeypatch, reset_i
     processor = ContextEntityCRUDProcessor()
     entity = VersionedEntity()
     saved_entity = VersionedEntity(project="target-project", entity_id=expected_id)
-    context = SimpleNamespace(name="target-project")
-    response = saved_entity.to_dict()
-    processor._create_context_entity = Mock(return_value=response)
+    context = _fake_context("target-project")
+    context.client.execute.return_value = saved_entity.to_dict()
     build_entity = Mock(side_effect=[entity, saved_entity])
     monkeypatch.setattr(crud_module, "read_yaml", Mock(return_value=_entity_dict()))
     monkeypatch.setattr(crud_module, "get_context", Mock(return_value=context))
@@ -64,13 +67,14 @@ def test_import_context_entity_updates_project_and_identity(monkeypatch, reset_i
         context="target-project",
     )
 
-    assert result is saved_entity
+    assert result is entity
+    assert entity.stored is saved_entity
     assert entity.project == "target-project"
     assert entity.id == expected_id
     assert entity.metadata.project == "target-project"
     assert entity.metadata.version == expected_id
     assert entity.key == f"store://target-project/artifact/artifact-kind/artifact-name:{expected_id}"
-    processor._create_context_entity.assert_called_once_with(context, "artifact", entity.to_dict())
+    assert _operations(context) == [(BackendOp.CREATE, entity.to_dict())]
 
 
 @pytest.mark.parametrize("missing", [False, True])
@@ -79,12 +83,14 @@ def test_load_context_entity_returns_backend_entity(monkeypatch, missing: bool) 
     source_entity = VersionedEntity()
     backend_entity = VersionedEntity(project="project", entity_id="backend-id")
     backend_response = backend_entity.to_dict()
-    context = SimpleNamespace(name="source-project")
-    processor._update_context_entity = Mock(
-        side_effect=EntityNotExistsError("missing") if missing else None,
-        return_value=backend_response,
-    )
-    processor._create_context_entity = Mock(return_value=backend_response)
+    context = _fake_context("source-project")
+
+    def execute(op):
+        if missing and op.operation == BackendOp.UPDATE:
+            raise EntityNotExistsError("missing")
+        return backend_response
+
+    context.client.execute.side_effect = execute
     build_entity = Mock(side_effect=[source_entity, backend_entity])
     monkeypatch.setattr(crud_module, "read_yaml", Mock(return_value=_entity_dict()))
     monkeypatch.setattr(crud_module, "get_context", Mock(return_value=context))
@@ -92,12 +98,11 @@ def test_load_context_entity_returns_backend_entity(monkeypatch, missing: bool) 
 
     result = processor.load_context_entity("entity.yaml")
 
-    assert result is backend_entity
+    assert result is source_entity
+    assert source_entity.stored is backend_entity
     assert build_entity.call_args_list[1] == call(backend_response, entity_type="artifact")
-    if missing:
-        processor._create_context_entity.assert_called_once_with(context, "artifact", source_entity.to_dict())
-    else:
-        processor._create_context_entity.assert_not_called()
+    expected = [BackendOp.UPDATE, BackendOp.CREATE] if missing else [BackendOp.UPDATE]
+    assert [operation for operation, _ in _operations(context)] == expected
 
 
 def test_update_entity_identity_rebuilds_unversioned_task_key() -> None:
@@ -117,19 +122,71 @@ def test_update_entity_identity_rebuilds_unversioned_task_key() -> None:
     assert task.key == "store://target-project/task/python+run/new-id"
 
 
-def test_create_context_entity_posts_the_entity_and_returns_the_stored_one(monkeypatch) -> None:
+def _fake_context(name: str = "project") -> Mock:
+    context = Mock()
+    context.name = name
+    return context
+
+
+def _operations(context: Mock) -> list[tuple]:
+    """Operations and payloads the processor sent through the context client."""
+    return [(c.args[0].operation, c.args[0].payload) for c in context.client.execute.call_args_list]
+
+
+def _stored_entity_double() -> SimpleNamespace:
+    return SimpleNamespace(
+        project="project",
+        ENTITY_TYPE="artifact",
+        id="entity-id",
+        key="store://project/artifact/artifact/entity:entity-id",
+        to_dict=Mock(return_value={"id": "local"}),
+        _update_attributes=Mock(),
+    )
+
+
+def test_create_context_entity_posts_the_entity_and_updates_it_with_the_stored_one(monkeypatch) -> None:
     processor = ContextEntityCRUDProcessor()
-    processor._create_context_entity = Mock(return_value={"id": "stored"})
-    monkeypatch.setattr(crud_module, "get_context", Mock(return_value="context"))
+    context = _fake_context()
+    context.client.execute.return_value = {"id": "stored"}
+    monkeypatch.setattr(crud_module, "get_context", Mock(return_value=context))
     build_from_dict = Mock(return_value="stored-entity")
     monkeypatch.setattr(crud_module.entity_factory, "build_entity_from_dict", build_from_dict)
-    entity = SimpleNamespace(project="project", ENTITY_TYPE="artifact", to_dict=Mock(return_value={"id": "local"}))
+    entity = _stored_entity_double()
 
-    assert processor.create_context_entity(entity) == "stored-entity"
+    assert processor.create_context_entity(entity) is entity
 
     crud_module.get_context.assert_called_once_with("project")
-    processor._create_context_entity.assert_called_once_with("context", "artifact", {"id": "local"})
+    assert _operations(context) == [(BackendOp.CREATE, {"id": "local"})]
     build_from_dict.assert_called_once_with({"id": "stored"}, entity_type="artifact")
+    entity._update_attributes.assert_called_once_with("stored-entity")
+
+
+def test_update_context_entity_puts_the_entity_and_updates_it_with_the_stored_one(monkeypatch) -> None:
+    processor = ContextEntityCRUDProcessor()
+    context = _fake_context()
+    context.client.execute.return_value = {"id": "stored"}
+    monkeypatch.setattr(crud_module, "get_context", Mock(return_value=context))
+    build_from_dict = Mock(return_value="stored-entity")
+    monkeypatch.setattr(crud_module.entity_factory, "build_entity_from_dict", build_from_dict)
+    entity = _stored_entity_double()
+
+    assert processor.update_context_entity(entity) is entity
+
+    crud_module.get_context.assert_called_once_with("project")
+    assert _operations(context) == [(BackendOp.UPDATE, {"id": "local"})]
+    build_from_dict.assert_called_once_with({"id": "stored"}, entity_type="artifact")
+    entity._update_attributes.assert_called_once_with("stored-entity")
+
+
+def test_refresh_context_entity_updates_the_entity_with_the_stored_one() -> None:
+    processor = ContextEntityCRUDProcessor()
+    processor.read_context_entity = Mock(return_value="stored-entity")
+    entity = _stored_entity_double()
+
+    assert processor.refresh_context_entity(entity) is entity
+
+    processor.read_context_entity.assert_called_once_with(entity.key, entity_type="artifact")
+    entity._update_attributes.assert_called_once_with("stored-entity")
 
 
 def test_create_context_entity_from_params_builds_runs_the_hook_and_creates(monkeypatch) -> None:

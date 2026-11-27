@@ -4,8 +4,9 @@
 
 from __future__ import annotations
 
+import typing
 from collections.abc import Callable
-from typing import Any, Generic, Protocol, TypeVar, cast
+from typing import Any, Generic, TypeVar, cast
 
 from digitalhub.entities._commons.utils import build_log_name_from_source
 from digitalhub.entities._mixin.material.utils import build_register_name, kind_warning
@@ -15,18 +16,11 @@ from digitalhub.entities._processors.context.material import ContextEntityMateri
 from digitalhub.utils.file_utils import eval_local_source
 from digitalhub.utils.types import SourcesOrListOfSources
 
-
-class CRUDContextEntity(Protocol):
-    """Structural contract needed by shared context entity operations."""
-
-    project: str
-    ENTITY_TYPE: str
-    id: str
-
-    def to_dict(self) -> dict: ...
+if typing.TYPE_CHECKING:
+    from digitalhub.entities._base.context.entity import ContextEntity
 
 
-EntityT = TypeVar("EntityT", bound=CRUDContextEntity)
+EntityT = TypeVar("EntityT", bound="ContextEntity")
 
 
 class ContextEntityCRUD(Generic[EntityT]):
@@ -107,15 +101,7 @@ class ContextEntityCRUD(Generic[EntityT]):
         return cast(EntityT, ContextEntityCRUDProcessor().load_context_entity(file))
 
     def update(self, entity: EntityT) -> EntityT:
-        return cast(
-            EntityT,
-            ContextEntityCRUDProcessor().update_context_entity(
-                project=entity.project,
-                entity_type=entity.ENTITY_TYPE,
-                entity_id=entity.id,
-                entity_dict=entity.to_dict(),
-            ),
-        )
+        return ContextEntityCRUDProcessor().update_context_entity(entity)
 
     def delete(
         self,

@@ -163,7 +163,7 @@ class ContextEntityMaterialProcessor:
             return
 
         obj.status.files = []
-        self._update_material_entity(obj)
+        self.crud_processor.update_context_entity(obj)
         self.update_files_info(
             obj.project,
             obj.ENTITY_TYPE,
@@ -242,12 +242,8 @@ class ContextEntityMaterialProcessor:
                 entity_type=obj.ENTITY_TYPE,
                 delete_all_versions=True,
             )
-        backend_obj = self.crud_processor._create_context_entity(
-            context,
-            obj.ENTITY_TYPE,
-            obj.to_dict(),
-        )
-        return entity_factory.build_entity_from_dict(backend_obj, entity_type=obj.ENTITY_TYPE)
+        self.crud_processor.create_context_entity(obj)
+        return obj
 
     def _upload_material_entity(
         self,
@@ -256,11 +252,12 @@ class ContextEntityMaterialProcessor:
     ) -> MaterialProtocol:
         try:
             obj.status.state = State.UPLOADING.value
-            obj = self._update_material_entity(obj)
+            self.crud_processor.update_context_entity(obj)
             upload_fn(obj)
             obj.status.message = None
             obj.status.state = State.READY.value
-            return self._update_material_entity(obj)
+            self.crud_processor.update_context_entity(obj)
+            return obj
         except Exception as error:
             if isinstance(error, (FileNotFoundError, EntityErrorFileNotFound)):
                 msg = f"Upload failed: {error}. Please verify that the specified source files are correct and exist."
@@ -272,7 +269,7 @@ class ContextEntityMaterialProcessor:
             obj.status.message = msg
             obj.status.state = State.ERROR.value
             try:
-                self._update_material_entity(obj)
+                self.crud_processor.update_context_entity(obj)
             except Exception as status_error:
                 msg = f"{msg}; failed to persist ERROR status: {status_error}"
                 obj.status.message = msg
@@ -294,16 +291,3 @@ class ContextEntityMaterialProcessor:
         )
         files_info = store.get_file_info(obj.spec.path, paths)
         self.update_material_files(obj, files_info)
-
-    def _update_material_entity(
-        self,
-        new_obj: MaterialProtocol,
-    ) -> MaterialProtocol:
-        updated_obj = self.crud_processor.update_context_entity(
-            new_obj.project,
-            new_obj.ENTITY_TYPE,
-            new_obj.id,
-            new_obj.to_dict(),
-        )
-        new_obj._update_attributes(updated_obj)
-        return new_obj

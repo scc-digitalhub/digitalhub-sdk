@@ -7,6 +7,7 @@ from unittest.mock import Mock
 import pytest
 
 import digitalhub.entities._mixin.material.utils as material_utils
+import digitalhub.entities._processors.context.crud as crud_processor_module
 import digitalhub.entities.artifact._base.crud as artifact_base_crud
 import digitalhub.entities.artifact.artifact.crud as artifact_crud
 import digitalhub.entities.artifact.crud as context_crud
@@ -14,6 +15,7 @@ from digitalhub.entities._commons.enums import EntityKinds, EntityTypes
 from digitalhub.entities._processors import crud_factory
 from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
 from digitalhub.entities._processors.context.material import ContextEntityMaterialProcessor
+from digitalhub.factory.entity import entity_factory
 
 
 def test_register_artifact_delegates_to_base_with_specific_kind(monkeypatch) -> None:
@@ -394,21 +396,24 @@ def test_artifact_operations_delegate_to_processor(
         processor.assert_called_once_with(**expected_kwargs)
 
 
-def test_update_artifact_delegates_entity_fields(monkeypatch) -> None:
-    entity = Mock()
-    entity.project = "my-project"
-    entity.ENTITY_TYPE = EntityTypes.ARTIFACT.value
-    entity.id = "artifact-id"
-    entity.to_dict.return_value = {"metadata": {"name": "artifact"}}
-    update_entity = Mock(return_value="artifact")
-    monkeypatch.setattr(ContextEntityCRUDProcessor, "update_context_entity", update_entity)
+def test_update_artifact_updates_the_passed_entity(monkeypatch) -> None:
+    # update_artifact(e) used to return a new object and leave e as it was,
+    # unlike e.update() and update_project(p).
+    obj = {
+        "project": "my-project",
+        "kind": "artifact",
+        "name": "artifact",
+        "id": "artifact-id",
+        "metadata": {"project": "my-project", "name": "artifact", "version": "artifact-id"},
+        "spec": {"path": "s3://bucket/artifact"},
+        "status": {"state": "READY"},
+    }
+    entity = entity_factory.build_entity_from_dict(obj)
+    payload = entity.to_dict()
+    context = Mock()
+    context.client.execute.return_value = {**obj, "metadata": {**obj["metadata"], "description": "stored"}}
+    monkeypatch.setattr(crud_processor_module, "get_context", Mock(return_value=context))
 
-    result = context_crud.update_artifact(entity)
-
-    assert result == "artifact"
-    update_entity.assert_called_once_with(
-        project="my-project",
-        entity_type=EntityTypes.ARTIFACT.value,
-        entity_id="artifact-id",
-        entity_dict={"metadata": {"name": "artifact"}},
-    )
+    assert context_crud.update_artifact(entity) is entity
+    assert entity.metadata.description == "stored"
+    assert context.client.execute.call_args.args[0].payload == payload

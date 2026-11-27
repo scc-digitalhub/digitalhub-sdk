@@ -126,7 +126,7 @@ def test_get_task_reads_unversioned_reference_through_crud() -> None:
 
 def test_build_preserves_fields_from_runtime_merge(monkeypatch) -> None:
     processor = RunProcessor(Mock())
-    processor._update = Mock()
+    processor.crud_processor.update_context_entity = Mock()
     run = SimpleNamespace(
         id="run-id",
         kind="python+run",
@@ -154,12 +154,14 @@ def test_build_preserves_fields_from_runtime_merge(monkeypatch) -> None:
 
     assert run.spec.future_backend_field == "preserved"
     assert run.status.state == State.BUILT.value
-    processor._update.assert_called_once_with(run)
+    processor.crud_processor.update_context_entity.assert_called_once_with(run)
 
 
 def test_wait_returns_without_sleep_for_terminal_state(monkeypatch) -> None:
     processor = RunProcessor(Mock())
-    processor._refresh = Mock(side_effect=lambda run: setattr(run.status, "state", State.COMPLETED.value))
+    processor.crud_processor.refresh_context_entity = Mock(
+        side_effect=lambda run: setattr(run.status, "state", State.COMPLETED.value)
+    )
     run = SimpleNamespace(
         id="run-id",
         status=SimpleNamespace(state=State.RUNNING.value),
@@ -174,13 +176,13 @@ def test_wait_returns_without_sleep_for_terminal_state(monkeypatch) -> None:
 
     assert processor.wait(run, log_info=False) is run
 
-    processor._refresh.assert_called_once_with(run)
+    processor.crud_processor.refresh_context_entity.assert_called_once_with(run)
     sleep.assert_not_called()
 
 
 def test_wait_sleeps_only_between_polls_and_times_out(monkeypatch) -> None:
     processor = RunProcessor(Mock())
-    processor._refresh = Mock()
+    processor.crud_processor.refresh_context_entity = Mock()
     run = SimpleNamespace(
         id="run-id",
         status=SimpleNamespace(state=State.RUNNING.value),
@@ -196,13 +198,13 @@ def test_wait_sleeps_only_between_polls_and_times_out(monkeypatch) -> None:
     with pytest.raises(TimeoutError, match="Run run-id did not finish within 2s"):
         processor.wait(run, log_info=False, timeout=2, poll_interval=1)
 
-    assert processor._refresh.call_count == 3
+    assert processor.crud_processor.refresh_context_entity.call_count == 3
     assert sleep.call_args_list == [call(1), call(1)]
 
 
 def test_wait_limits_sleep_to_remaining_timeout(monkeypatch) -> None:
     processor = RunProcessor(Mock())
-    processor._refresh = Mock()
+    processor.crud_processor.refresh_context_entity = Mock()
     run = SimpleNamespace(
         id="run-id",
         status=SimpleNamespace(state=State.RUNNING.value),
@@ -237,7 +239,7 @@ def test_wait_rejects_invalid_timing_values(timeout, poll_interval) -> None:
 
 def test_build_of_a_local_run_starts_only_from_created(monkeypatch) -> None:
     processor = RunProcessor(Mock())
-    processor._update = Mock()
+    processor.crud_processor.update_context_entity = Mock()
     build_runtime = Mock()
     monkeypatch.setattr(run_processor_module.runtime_factory, "build_runtime", build_runtime)
     run = SimpleNamespace(
@@ -250,13 +252,13 @@ def test_build_of_a_local_run_starts_only_from_created(monkeypatch) -> None:
         processor.build(run)
 
     build_runtime.assert_not_called()
-    processor._update.assert_not_called()
+    processor.crud_processor.update_context_entity.assert_not_called()
 
 
 def test_run_marks_a_local_run_as_error_when_setup_fails() -> None:
     processor = RunProcessor(Mock())
-    processor._refresh = Mock()
-    processor._update = Mock()
+    processor.crud_processor.refresh_context_entity = Mock()
+    processor.crud_processor.update_context_entity = Mock()
     processor.start_execution = Mock()
     processor.end_execution = Mock()
     run = SimpleNamespace(
@@ -272,13 +274,13 @@ def test_run_marks_a_local_run_as_error_when_setup_fails() -> None:
     processor.end_execution.assert_called_once_with(run)
     assert run.status.state == State.ERROR.value
     assert run.status.message == "setup failed"
-    processor._update.assert_called_once_with(run)
+    processor.crud_processor.update_context_entity.assert_called_once_with(run)
 
 
 def test_run_ends_execution_when_runtime_fails(monkeypatch) -> None:
     processor = RunProcessor(Mock())
-    processor._refresh = Mock()
-    processor._update = Mock()
+    processor.crud_processor.refresh_context_entity = Mock()
+    processor.crud_processor.update_context_entity = Mock()
     processor.start_execution = Mock()
     processor.end_execution = Mock()
     run = SimpleNamespace(
@@ -309,7 +311,7 @@ def test_run_ends_execution_when_runtime_fails(monkeypatch) -> None:
 @pytest.mark.parametrize("state", [State.CREATED.value, State.STOPPED.value, State.COMPLETED.value])
 def test_start_execution_validates_state_before_registration(state: str) -> None:
     processor = RunProcessor(Mock())
-    processor._update = Mock()
+    processor.crud_processor.update_context_entity = Mock()
     context = Mock()
     run = SimpleNamespace(
         id="run-id",
@@ -322,12 +324,12 @@ def test_start_execution_validates_state_before_registration(state: str) -> None
         processor.start_execution(run)
 
     context.set_run.assert_not_called()
-    processor._update.assert_not_called()
+    processor.crud_processor.update_context_entity.assert_not_called()
 
 
 def test_start_execution_rolls_back_registration() -> None:
     processor = RunProcessor(Mock())
-    processor._update = Mock(side_effect=RuntimeError("update failed"))
+    processor.crud_processor.update_context_entity = Mock(side_effect=RuntimeError("update failed"))
     context = Mock()
     run = SimpleNamespace(
         id="run-id",
@@ -352,8 +354,8 @@ def test_start_execution_rolls_back_registration() -> None:
 )
 def test_run_state_precedence(monkeypatch, local_execution: bool, expected_state: str) -> None:
     processor = RunProcessor(Mock())
-    processor._refresh = Mock()
-    processor._update = Mock()
+    processor.crud_processor.refresh_context_entity = Mock()
+    processor.crud_processor.update_context_entity = Mock()
     processor.start_execution = Mock()
     processor.end_execution = Mock()
     run = SimpleNamespace(
@@ -433,22 +435,3 @@ def test_read_logs_builds_logs_and_decodes_content(monkeypatch) -> None:
     ]
 
     assert processor.read_logs(run) == ["text output"]
-
-
-def test_update_and_refresh_go_through_the_crud_processor_and_keep_the_same_run() -> None:
-    crud_processor = Mock()
-    processor = RunProcessor(crud_processor)
-    run = Mock(project="project", ENTITY_TYPE="run", id="run-id", key="store://project/run/python+run/run-id")
-    run.to_dict.return_value = {"id": "run-id"}
-
-    processor._update(run)
-    processor._refresh(run)
-
-    crud_processor.update_context_entity.assert_called_once_with("project", "run", "run-id", {"id": "run-id"})
-    crud_processor.read_context_entity.assert_called_once_with(run.key, entity_type="run")
-    assert run._update_attributes.call_args_list == [
-        call(crud_processor.update_context_entity.return_value),
-        call(crud_processor.read_context_entity.return_value),
-    ]
-    run.update.assert_not_called()
-    run.refresh.assert_not_called()

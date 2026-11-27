@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+from types import SimpleNamespace
 from unittest.mock import Mock
 
 import digitalhub.entities._processors.context.crud as context_crud_module
@@ -18,29 +19,45 @@ from digitalhub.stores.client.compiler.options import (
 from digitalhub.stores.client.compiler.targets import ContextCollectionTarget, ContextEntityTarget
 
 
-def test_create_context_entity_uses_backend_operation_request() -> None:
+def _context(monkeypatch, function: str = "get_context") -> Mock:
+    """Fake project context returned by ``function`` of the processor module."""
     context = Mock(name="context")
     context.name = "demo"
+    monkeypatch.setattr(context_crud_module, function, Mock(return_value=context))
+    monkeypatch.setattr(context_crud_module.entity_factory, "build_entity_from_dict", Mock(return_value="entity"))
+    return context
+
+
+def _entity(entity_dict: dict) -> SimpleNamespace:
+    return SimpleNamespace(
+        project="demo",
+        ENTITY_TYPE="artifact",
+        id="artifact-id",
+        to_dict=Mock(return_value=entity_dict),
+        _update_attributes=Mock(),
+    )
+
+
+def test_create_context_entity_uses_backend_operation_request(monkeypatch) -> None:
+    context = _context(monkeypatch)
     context.client.execute.return_value = {"id": "artifact-id"}
-    entity = {"name": "artifact"}
+    entity_dict = {"name": "artifact"}
 
-    result = ContextEntityCRUDProcessor()._create_context_entity(context, "artifact", entity)
+    ContextEntityCRUDProcessor().create_context_entity(_entity(entity_dict))
 
-    assert result == {"id": "artifact-id"}
     context.client.execute.assert_called_once_with(
         ClientOp(
             category=ApiType.CONTEXT,
             operation=BackendOp.CREATE,
             target=ContextCollectionTarget("demo", "artifact"),
             options=NoOptions(),
-            payload=entity,
+            payload=entity_dict,
         )
     )
 
 
 def test_read_context_entity_by_name_uses_first_list_result(monkeypatch) -> None:
-    context = Mock(name="context")
-    context.name = "demo"
+    context = _context(monkeypatch, "get_context_from_identifier")
     context.client.execute_first.return_value = {"name": "artifact"}
     monkeypatch.setattr(
         context_crud_module,
@@ -48,9 +65,12 @@ def test_read_context_entity_by_name_uses_first_list_result(monkeypatch) -> None
         lambda *args, **kwargs: ("demo", "artifact", None, "artifact", None),
     )
 
-    result = ContextEntityCRUDProcessor()._read_context_entity(context, "artifact")
+    result = ContextEntityCRUDProcessor().read_context_entity("artifact", entity_type="artifact", project="demo")
 
-    assert result == {"name": "artifact"}
+    assert result == "entity"
+    context_crud_module.entity_factory.build_entity_from_dict.assert_called_once_with(
+        {"name": "artifact"}, entity_type="artifact"
+    )
     context.client.execute_first.assert_called_once_with(
         ClientOp(
             category=ApiType.CONTEXT,
@@ -62,8 +82,7 @@ def test_read_context_entity_by_name_uses_first_list_result(monkeypatch) -> None
 
 
 def test_read_context_entity_by_id_uses_read_operation(monkeypatch) -> None:
-    context = Mock(name="context")
-    context.name = "demo"
+    context = _context(monkeypatch, "get_context_from_identifier")
     context.client.execute.return_value = {"id": "artifact-id"}
     monkeypatch.setattr(
         context_crud_module,
@@ -71,9 +90,9 @@ def test_read_context_entity_by_id_uses_read_operation(monkeypatch) -> None:
         lambda *args, **kwargs: ("demo", "artifact", None, None, "artifact-id"),
     )
 
-    result = ContextEntityCRUDProcessor()._read_context_entity(context, "artifact-id")
+    result = ContextEntityCRUDProcessor().read_context_entity("artifact-id", entity_type="artifact", project="demo")
 
-    assert result == {"id": "artifact-id"}
+    assert result == "entity"
     context.client.execute.assert_called_once_with(
         ClientOp(
             category=ApiType.CONTEXT,
@@ -85,18 +104,17 @@ def test_read_context_entity_by_id_uses_read_operation(monkeypatch) -> None:
 
 
 def test_read_context_entity_versions_uses_list_operation(monkeypatch) -> None:
-    context = Mock(name="context")
-    context.name = "demo"
-    context.client.execute_list.return_value = [{"name": "artifact"}]
+    context = _context(monkeypatch, "get_context_from_identifier")
+    context.client.execute_list.return_value = [{"key": "store://demo/artifact/artifact/artifact:artifact-id"}]
     monkeypatch.setattr(
         context_crud_module,
         "parse_identifier",
         lambda *args, **kwargs: ("demo", "artifact", None, "artifact", None),
     )
 
-    result = ContextEntityCRUDProcessor()._read_context_entity_versions(context, "artifact")
+    result = ContextEntityCRUDProcessor().read_context_entity_versions("artifact", project="demo")
 
-    assert result == [{"name": "artifact"}]
+    assert result == ["entity"]
     context.client.execute_list.assert_called_once_with(
         ClientOp(
             category=ApiType.CONTEXT,
@@ -107,19 +125,18 @@ def test_read_context_entity_versions_uses_list_operation(monkeypatch) -> None:
     )
 
 
-def test_list_context_entities_uses_paginated_execution() -> None:
-    context = Mock(name="context")
-    context.name = "demo"
+def test_list_context_entities_uses_paginated_execution(monkeypatch) -> None:
+    context = _context(monkeypatch)
     context.client.execute_list.return_value = [{"name": "artifact"}]
 
-    result = ContextEntityCRUDProcessor()._list_context_entities(
-        context,
+    result = ContextEntityCRUDProcessor().list_context_entities(
+        "demo",
         "artifact",
         q="ready",
         labels=["production"],
     )
 
-    assert result == [{"name": "artifact"}]
+    assert result == ["entity"]
     context.client.execute_list.assert_called_once_with(
         ClientOp(
             category=ApiType.CONTEXT,
@@ -130,29 +147,26 @@ def test_list_context_entities_uses_paginated_execution() -> None:
     )
 
 
-def test_update_context_entity_uses_backend_operation_request() -> None:
-    context = Mock(name="context")
-    context.name = "demo"
+def test_update_context_entity_uses_backend_operation_request(monkeypatch) -> None:
+    context = _context(monkeypatch)
     context.client.execute.return_value = {"id": "artifact-id"}
-    entity = {"status": {"state": "READY"}}
+    entity_dict = {"status": {"state": "READY"}}
 
-    result = ContextEntityCRUDProcessor()._update_context_entity(context, "artifact", "artifact-id", entity)
+    ContextEntityCRUDProcessor().update_context_entity(_entity(entity_dict))
 
-    assert result == {"id": "artifact-id"}
     context.client.execute.assert_called_once_with(
         ClientOp(
             category=ApiType.CONTEXT,
             operation=BackendOp.UPDATE,
             target=ContextEntityTarget("demo", "artifact", "artifact-id"),
             options=NoOptions(),
-            payload=entity,
+            payload=entity_dict,
         )
     )
 
 
 def test_delete_context_entity_all_versions_uses_semantic_parameters(monkeypatch) -> None:
-    context = Mock(name="context")
-    context.name = "demo"
+    context = _context(monkeypatch, "get_context_from_identifier")
     context.client.execute.return_value = {"deleted": True}
     monkeypatch.setattr(
         context_crud_module,
@@ -160,8 +174,7 @@ def test_delete_context_entity_all_versions_uses_semantic_parameters(monkeypatch
         lambda *args, **kwargs: ("demo", "artifact", None, "artifact", None),
     )
 
-    result = ContextEntityCRUDProcessor()._delete_context_entity(
-        context,
+    result = ContextEntityCRUDProcessor().delete_context_entity(
         "artifact",
         delete_all_versions=True,
         cascade=True,
@@ -175,4 +188,18 @@ def test_delete_context_entity_all_versions_uses_semantic_parameters(monkeypatch
             target=ContextCollectionTarget("demo", "artifact"),
             options=DeleteAllVersionsOptions(name="artifact", cascade=True),
         )
+    )
+
+
+def test_read_context_entity_by_key_builds_with_the_type_of_the_key(monkeypatch) -> None:
+    # A kind whose runtime is not installed has no builder: without the type
+    # of the key, read_context_entity(key) failed, for example when exporting
+    # a project, and the import by key now relies on it.
+    context = _context(monkeypatch, "get_context_from_identifier")
+    context.client.execute.return_value = {"id": "function-id"}
+
+    ContextEntityCRUDProcessor().read_context_entity("store://demo/function/not-installed/f:function-id")
+
+    context_crud_module.entity_factory.build_entity_from_dict.assert_called_once_with(
+        {"id": "function-id"}, entity_type="function"
     )

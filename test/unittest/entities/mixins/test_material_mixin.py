@@ -11,6 +11,7 @@ import pytest
 import digitalhub.entities._mixin.material.files as material_files
 import digitalhub.entities._processors.context.material as context_material
 from digitalhub.entities._mixin.material.mixin import MaterialMixin
+from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
 from digitalhub.entities._processors.context.material import ContextEntityMaterialProcessor
 from digitalhub.utils.exceptions import BackendError, EntityError, EntityErrorFileNotFound
 
@@ -34,8 +35,8 @@ def _configure_material_upload(monkeypatch, store) -> None:
         return entity
 
     monkeypatch.setattr(
-        ContextEntityMaterialProcessor,
-        "_update_material_entity",
+        ContextEntityCRUDProcessor,
+        "update_context_entity",
         staticmethod(update_material_entity),
     )
 
@@ -205,8 +206,8 @@ def test_upload_surfaces_error_status_persistence_failure(monkeypatch) -> None:
         return upload_entity
 
     monkeypatch.setattr(
-        ContextEntityMaterialProcessor,
-        "_update_material_entity",
+        ContextEntityCRUDProcessor,
+        "update_context_entity",
         staticmethod(fail_error_status_update),
     )
 
@@ -258,7 +259,7 @@ def test_log_material_entity_uses_shared_upload_transaction(monkeypatch) -> None
         uploaded_states.append(upload_entity.status.state)
         return upload_entity
 
-    monkeypatch.setattr(processor, "_update_material_entity", update_material_entity)
+    monkeypatch.setattr(processor.crud_processor, "update_context_entity", update_material_entity)
 
     result = processor.log_material_entity(
         source="/source",
@@ -274,29 +275,6 @@ def test_log_material_entity_uses_shared_upload_transaction(monkeypatch) -> None
         keep_dir_structure=True,
     )
     assert entity.status.files == [{"path": "file.txt"}]
-
-
-def test_update_material_entity_mutates_original_entity() -> None:
-    crud_processor = Mock()
-    processor = context_material.ContextEntityMaterialProcessor(crud_processor)
-    entity = Mock()
-    entity.project = "my-project"
-    entity.ENTITY_TYPE = "artifact"
-    entity.id = "entity-id"
-    entity.to_dict.return_value = {"id": "entity-id"}
-    updated_entity = Mock()
-    crud_processor.update_context_entity.return_value = updated_entity
-
-    result = processor._update_material_entity(entity)
-
-    assert result is entity
-    crud_processor.update_context_entity.assert_called_once_with(
-        "my-project",
-        "artifact",
-        "entity-id",
-        {"id": "entity-id"},
-    )
-    entity._update_attributes.assert_called_once_with(updated_entity)
 
 
 def test_files_reads_backend_info_and_falls_back_to_status(monkeypatch) -> None:

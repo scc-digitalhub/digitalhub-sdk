@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import typing
+from typing import Any, Protocol, TypeVar
 
 from digitalhub.entities._commons.keys import EntityKey, is_valid_key
 from digitalhub.entities._constructors.uuid import build_uuid
@@ -29,31 +30,48 @@ from digitalhub.utils.exceptions import BuilderError, EntityAlreadyExistsError, 
 from digitalhub.utils.io_utils import read_yaml, write_yaml
 
 if typing.TYPE_CHECKING:
-    from digitalhub.context.context import Context
     from digitalhub.entities._base.context.entity import ContextEntity
     from digitalhub.entities._mixin.unversioned.protocol import UnversionedEntityProtocol
 
 
+class _StoredEntity(Protocol):
+    """What the processor needs to save an entity and update it with the stored state."""
+
+    # Read-only members: entity classes and the entity protocols both match.
+    @property
+    def ENTITY_TYPE(self) -> str: ...
+
+    @property
+    def project(self) -> str: ...
+
+    @property
+    def id(self) -> str: ...
+
+    @property
+    def key(self) -> str: ...
+
+    def to_dict(self) -> dict: ...
+
+    def _update_attributes(self, obj: Any) -> None: ...
+
+
+StoredEntityT = TypeVar("StoredEntityT", bound=_StoredEntity)
+
+
 class ContextEntityCRUDProcessor:
-    def _create_context_entity(
-        self,
-        context: Context,
-        entity_type: str,
-        entity_dict: dict,
-    ) -> dict:
-        return context.client.execute(
+    def create_context_entity(self, obj: StoredEntityT) -> StoredEntityT:
+        """Create ``obj`` in the backend and update it with the stored state."""
+        context = get_context(obj.project)
+        stored = context.client.execute(
             ClientOp(
                 category=ApiType.CONTEXT,
                 operation=BackendOp.CREATE,
-                target=ContextCollectionTarget(context.name, entity_type),
-                payload=entity_dict,
+                target=ContextCollectionTarget(context.name, obj.ENTITY_TYPE),
+                payload=obj.to_dict(),
             )
         )
-
-    def create_context_entity(self, obj: ContextEntity) -> ContextEntity:
-        """Create ``obj`` in the backend and return the entity the backend stored."""
-        new_obj = self._create_context_entity(get_context(obj.project), obj.ENTITY_TYPE, obj.to_dict())
-        return entity_factory.build_entity_from_dict(new_obj, entity_type=obj.ENTITY_TYPE)
+        obj._update_attributes(entity_factory.build_entity_from_dict(stored, entity_type=obj.ENTITY_TYPE))
+        return obj
 
     def create_context_entity_from_params(self, entity_type: str, **kwargs) -> ContextEntity:
         """Build an entity of ``entity_type`` from parameters, then create it."""
@@ -77,42 +95,6 @@ class ContextEntityCRUDProcessor:
         write_yaml(pth, obj)
         return str(pth)
 
-    def _read_context_entity(
-        self,
-        context: Context,
-        identifier: str,
-        entity_type: str | None = None,
-        project: str | None = None,
-        entity_id: str | None = None,
-        **kwargs,
-    ) -> dict:
-        project, entity_type, _, entity_name, entity_id = parse_identifier(
-            identifier,
-            project=project,
-            entity_type=entity_type,
-            entity_id=entity_id,
-        )
-
-        if entity_id is None:
-            kwargs["name"] = entity_name
-            return context.client.execute_first(
-                ClientOp(
-                    category=ApiType.CONTEXT,
-                    operation=BackendOp.LIST,
-                    target=ContextCollectionTarget(context.name, entity_type),
-                    options=ListOptions(**kwargs),
-                )
-            )
-
-        return context.client.execute(
-            ClientOp(
-                category=ApiType.CONTEXT,
-                operation=BackendOp.READ,
-                target=ContextEntityTarget(context.name, entity_type, entity_id),
-                options=ReadOptions(**kwargs),
-            )
-        )
-
     def read_context_entity(
         self,
         identifier: str,
@@ -122,14 +104,33 @@ class ContextEntityCRUDProcessor:
         **kwargs,
     ) -> ContextEntity:
         context = get_context_from_identifier(identifier, project)
-        obj = self._read_context_entity(
-            context,
+        # The type comes from the key when only the key is given, so that
+        # kinds of runtimes that are not installed still read as generic.
+        _, entity_type, _, entity_name, entity_id = parse_identifier(
             identifier,
-            entity_type=entity_type,
             project=project,
+            entity_type=entity_type,
             entity_id=entity_id,
-            **kwargs,
         )
+        if entity_id is None:
+            kwargs["name"] = entity_name
+            obj = context.client.execute_first(
+                ClientOp(
+                    category=ApiType.CONTEXT,
+                    operation=BackendOp.LIST,
+                    target=ContextCollectionTarget(context.name, entity_type),
+                    options=ListOptions(**kwargs),
+                )
+            )
+        else:
+            obj = context.client.execute(
+                ClientOp(
+                    category=ApiType.CONTEXT,
+                    operation=BackendOp.READ,
+                    target=ContextEntityTarget(context.name, entity_type, entity_id),
+                    options=ReadOptions(**kwargs),
+                )
+            )
         return entity_factory.build_entity_from_dict(obj, entity_type=entity_type)
 
     def read_unversioned_entity(
@@ -150,29 +151,6 @@ class ContextEntityCRUDProcessor:
             **kwargs,
         )
 
-    def _read_context_entity_versions(
-        self,
-        context: Context,
-        identifier: str,
-        entity_type: str | None = None,
-        project: str | None = None,
-        **kwargs,
-    ) -> list[dict]:
-        project, entity_type, _, entity_name, _ = parse_identifier(
-            identifier,
-            project=project,
-            entity_type=entity_type,
-        )
-
-        return context.client.execute_list(
-            ClientOp(
-                category=ApiType.CONTEXT,
-                operation=BackendOp.READ_ALL_VERSIONS,
-                target=ContextCollectionTarget(context.name, entity_type),
-                options=ReadAllVersionsOptions(name=entity_name),
-            )
-        )
-
     def read_context_entity_versions(
         self,
         identifier: str,
@@ -181,12 +159,18 @@ class ContextEntityCRUDProcessor:
         **kwargs,
     ) -> list[ContextEntity]:
         context = get_context_from_identifier(identifier, project)
-        objs = self._read_context_entity_versions(
-            context,
+        _, entity_type, _, entity_name, _ = parse_identifier(
             identifier,
-            entity_type=entity_type,
             project=project,
-            **kwargs,
+            entity_type=entity_type,
+        )
+        objs = context.client.execute_list(
+            ClientOp(
+                category=ApiType.CONTEXT,
+                operation=BackendOp.READ_ALL_VERSIONS,
+                target=ContextCollectionTarget(context.name, entity_type),
+                options=ReadAllVersionsOptions(name=entity_name),
+            )
         )
         objects = []
         for o in objs:
@@ -208,8 +192,7 @@ class ContextEntityCRUDProcessor:
         if file is not None:
             dict_obj: dict = read_yaml(file)
         else:
-            ctx = get_context_from_identifier(key)
-            dict_obj = self._read_context_entity(ctx, key)
+            dict_obj = self.read_context_entity(key).to_dict()
 
         dict_obj["status"] = {}
 
@@ -218,44 +201,24 @@ class ContextEntityCRUDProcessor:
 
         entity_type = EntityKey.parse(dict_obj["key"]).entity_type
 
-        ctx = get_context(context)
         obj = entity_factory.build_entity_from_dict(dict_obj, entity_type=entity_type)
         update_entity_identity(obj, context, build_uuid() if reset_id else None)
         try:
-            bck_obj = self._create_context_entity(ctx, obj.ENTITY_TYPE, obj.to_dict())
-            new_obj: ContextEntity = entity_factory.build_entity_from_dict(bck_obj, entity_type=entity_type)
+            return self.create_context_entity(obj)
         except EntityAlreadyExistsError:
             raise EntityError(f"Entity {obj.name} already exists. If you want to update it, use load instead.")
-        return new_obj
 
     def load_context_entity(
         self,
         file: str,
     ) -> ContextEntity:
         dict_obj: dict = read_yaml(file)
-        context = get_context(dict_obj["project"])
         entity_type = EntityKey.parse(dict_obj["key"]).entity_type
         obj: ContextEntity = entity_factory.build_entity_from_dict(dict_obj, entity_type=entity_type)
         try:
-            backend_obj = self._update_context_entity(context, obj.ENTITY_TYPE, obj.id, obj.to_dict())
+            return self.update_context_entity(obj)
         except EntityNotExistsError:
-            backend_obj = self._create_context_entity(context, obj.ENTITY_TYPE, obj.to_dict())
-        return entity_factory.build_entity_from_dict(backend_obj, entity_type=entity_type)
-
-    def _list_context_entities(
-        self,
-        context: Context,
-        entity_type: str,
-        **kwargs,
-    ) -> list[dict]:
-        return context.client.execute_list(
-            ClientOp(
-                category=ApiType.CONTEXT,
-                operation=BackendOp.LIST,
-                target=ContextCollectionTarget(context.name, entity_type),
-                options=ListOptions(**kwargs),
-            )
-        )
+            return self.create_context_entity(obj)
 
     def list_context_entities(
         self,
@@ -264,57 +227,51 @@ class ContextEntityCRUDProcessor:
         **kwargs,
     ) -> list[ContextEntity]:
         context = get_context(project)
-        objs = self._list_context_entities(context, entity_type, **kwargs)
+        objs = context.client.execute_list(
+            ClientOp(
+                category=ApiType.CONTEXT,
+                operation=BackendOp.LIST,
+                target=ContextCollectionTarget(context.name, entity_type),
+                options=ListOptions(**kwargs),
+            )
+        )
         objects = []
         for o in objs:
             entity: ContextEntity = entity_factory.build_entity_from_dict(o, entity_type=entity_type)
             objects.append(entity)
         return objects
 
-    def _update_context_entity(
-        self,
-        context: Context,
-        entity_type: str,
-        entity_id: str,
-        entity_dict: dict,
-    ) -> dict:
-        return context.client.execute(
+    def update_context_entity(self, obj: StoredEntityT) -> StoredEntityT:
+        """Update ``obj`` in the backend and update it with the stored state."""
+        context = get_context(obj.project)
+        stored = context.client.execute(
             ClientOp(
                 category=ApiType.CONTEXT,
                 operation=BackendOp.UPDATE,
-                target=ContextEntityTarget(context.name, entity_type, entity_id),
-                payload=entity_dict,
+                target=ContextEntityTarget(context.name, obj.ENTITY_TYPE, obj.id),
+                payload=obj.to_dict(),
             )
         )
+        obj._update_attributes(entity_factory.build_entity_from_dict(stored, entity_type=obj.ENTITY_TYPE))
+        return obj
 
-    def update_context_entity(
-        self,
-        project: str,
-        entity_type: str,
-        entity_id: str,
-        entity_dict: dict,
-    ) -> ContextEntity:
-        context = get_context(project)
-        obj = self._update_context_entity(
-            context,
-            entity_type,
-            entity_id,
-            entity_dict,
-        )
-        return entity_factory.build_entity_from_dict(obj, entity_type=entity_type)
+    def refresh_context_entity(self, obj: StoredEntityT) -> StoredEntityT:
+        """Update ``obj`` with the stored state."""
+        obj._update_attributes(self.read_context_entity(obj.key, entity_type=obj.ENTITY_TYPE))
+        return obj
 
-    def _delete_context_entity(
+    def delete_context_entity(
         self,
-        context: Context,
         identifier: str,
-        entity_type: str | None = None,
         project: str | None = None,
+        entity_type: str | None = None,
         entity_id: str | None = None,
         **kwargs,
     ) -> dict:
-        project, entity_type, _, entity_name, entity_id = parse_identifier(
+        context = get_context_from_identifier(identifier, project)
+        _, entity_type, _, entity_name, entity_id = parse_identifier(
             identifier,
-            project=project,
+            project=context.name,
             entity_type=entity_type,
             entity_id=entity_id,
         )
@@ -347,22 +304,4 @@ class ContextEntityCRUDProcessor:
                 target=target,
                 options=options,
             )
-        )
-
-    def delete_context_entity(
-        self,
-        identifier: str,
-        project: str | None = None,
-        entity_type: str | None = None,
-        entity_id: str | None = None,
-        **kwargs,
-    ) -> dict:
-        context = get_context_from_identifier(identifier, project)
-        return self._delete_context_entity(
-            context,
-            identifier,
-            entity_type,
-            context.name,
-            entity_id,
-            **kwargs,
         )

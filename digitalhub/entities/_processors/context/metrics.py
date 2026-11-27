@@ -82,9 +82,7 @@ class ContextEntityMetricsProcessor:
         validate_metric_value(value)
         if not metrics and not obj.status.metrics and not obj._entity_has_metrics:
             obj.status.metrics = {}
-            obj._update_attributes(
-                self.crud_processor.update_context_entity(obj.project, obj.ENTITY_TYPE, obj.id, obj.to_dict())
-            )
+            self.crud_processor.update_context_entity(obj)
         metrics = update_metrics(metrics, key, value, overwrite, single_value)
         self.update_metric(
             obj.project,

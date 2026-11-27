@@ -12,8 +12,6 @@ from digitalhub.entities._constructors.uuid import build_uuid
 from digitalhub.entities._mixin.source.entity import SourceEntityMixin
 from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
 from digitalhub.entities._processors.utils import (
-    get_context,
-    get_context_from_identifier,
     update_entity_identity,
 )
 from digitalhub.entities.run._base.processor import RunProcessor
@@ -63,7 +61,7 @@ class ContextEntityExecutableProcessor:
         kwargs["kind"] = kind
         task = entity_factory.build_entity_from_params(**kwargs)
         try:
-            task._update_attributes(self.crud_processor.create_context_entity(task))
+            self.crud_processor.create_context_entity(task)
         except EntityAlreadyExistsError:
             raise EntityError(f"Task '{action}' already exists.") from None
         return task
@@ -83,9 +81,7 @@ class ContextEntityExecutableProcessor:
         kwargs[executable.ENTITY_TYPE] = executable._get_executable_string()
         kwargs["uuid"] = existing_task.id
         task = entity_factory.build_entity_from_params(**kwargs)
-        task._update_attributes(
-            self.crud_processor.update_context_entity(task.project, task.ENTITY_TYPE, task.id, task.to_dict())
-        )
+        self.crud_processor.update_context_entity(task)
         return task
 
     def delete_task(self, executable: ExecutableProtocol, action: str, cascade: bool = True) -> dict:
@@ -110,18 +106,17 @@ class ContextEntityExecutableProcessor:
         """Create serialized tasks for an executable; tasks that already exist are left as they are."""
         for task in self._attach_tasks(executable, tasks, reset_id):
             try:
-                self.crud_processor._create_context_entity(get_context(task.project), task.ENTITY_TYPE, task.to_dict())
+                self.crud_processor.create_context_entity(task)
             except EntityAlreadyExistsError:
                 pass
 
     def load_tasks(self, executable: ExecutableProtocol, tasks: list[dict]) -> None:
         """Update serialized tasks of an executable, or create the missing ones."""
         for task in self._attach_tasks(executable, tasks):
-            context = get_context(task.project)
             try:
-                self.crud_processor._update_context_entity(context, task.ENTITY_TYPE, task.id, task.to_dict())
+                self.crud_processor.update_context_entity(task)
             except EntityNotExistsError:
-                self.crud_processor._create_context_entity(context, task.ENTITY_TYPE, task.to_dict())
+                self.crud_processor.create_context_entity(task)
 
     @staticmethod
     def _attach_tasks(executable: ExecutableProtocol, tasks: list[dict], reset_id: bool = False) -> list[Task]:
@@ -181,7 +176,7 @@ class ContextEntityExecutableProcessor:
         if extensions is not None:
             run.extensions.extend(extensions)
         run.add_relationship(Relationship.RUN_OF.value, executable.key)
-        run._update_attributes(self.crud_processor.create_context_entity(run))
+        self.crud_processor.create_context_entity(run)
         return run
 
     def execute_executable(
@@ -273,7 +268,7 @@ class ContextEntityExecutableProcessor:
                 "template": entity_factory.build_spec(run_kind, **template).to_dict(),
             },
         )
-        trigger._update_attributes(self.crud_processor.create_context_entity(trigger))
+        self.crud_processor.create_context_entity(trigger)
         return trigger
 
     def import_executable_entity(
@@ -289,8 +284,7 @@ class ContextEntityExecutableProcessor:
         if file is not None:
             dict_obj: dict | list[dict] = read_yaml(file)
         else:
-            ctx = get_context_from_identifier(key)
-            dict_obj: dict = self.crud_processor._read_context_entity(ctx, key)
+            dict_obj: dict = self.crud_processor.read_context_entity(key).to_dict()
 
         if isinstance(dict_obj, list):
             exec_dict = dict_obj[0]
@@ -307,7 +301,6 @@ class ContextEntityExecutableProcessor:
         if context is None:
             context = exec_dict["project"]
 
-        ctx = get_context(context)
         entity_type = EntityKey.parse(exec_dict["key"]).entity_type
         obj: ExecutableProtocol = entity_factory.build_entity_from_dict(exec_dict, entity_type=entity_type)
 
@@ -315,13 +308,12 @@ class ContextEntityExecutableProcessor:
         self._upload_local_source(obj)
 
         try:
-            bck_obj = self.crud_processor._create_context_entity(ctx, obj.ENTITY_TYPE, obj.to_dict())
-            new_obj: ExecutableProtocol = entity_factory.build_entity_from_dict(bck_obj, entity_type=entity_type)
+            self.crud_processor.create_context_entity(obj)
         except EntityAlreadyExistsError:
             raise EntityError(f"Entity {obj.name} already exists. If you want to update it, use load instead.")
 
-        self.import_tasks(new_obj, tsk_dicts, reset_id=reset_id)
-        return new_obj
+        self.import_tasks(obj, tsk_dicts, reset_id=reset_id)
+        return obj
 
     @staticmethod
     def _upload_local_source(obj: ExecutableProtocol) -> None:
@@ -346,16 +338,14 @@ class ContextEntityExecutableProcessor:
             exec_dict = dict_obj
             tsk_dicts = []
 
-        context = get_context(exec_dict["project"])
         entity_type = EntityKey.parse(exec_dict["key"]).entity_type
         obj: ExecutableProtocol = entity_factory.build_entity_from_dict(exec_dict, entity_type=entity_type)
         self._upload_local_source(obj)
 
         try:
-            backend_obj = self.crud_processor._update_context_entity(context, obj.ENTITY_TYPE, obj.id, obj.to_dict())
+            self.crud_processor.update_context_entity(obj)
         except EntityNotExistsError:
-            backend_obj = self.crud_processor._create_context_entity(context, obj.ENTITY_TYPE, obj.to_dict())
+            self.crud_processor.create_context_entity(obj)
 
-        new_obj: ExecutableProtocol = entity_factory.build_entity_from_dict(backend_obj, entity_type=entity_type)
-        self.load_tasks(new_obj, tsk_dicts)
-        return new_obj
+        self.load_tasks(obj, tsk_dicts)
+        return obj

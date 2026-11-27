@@ -55,9 +55,7 @@ class ContextEntity(PersistedEntity):
         """
         if update:
             return self.update()
-        new_obj = ContextEntityCRUDProcessor().create_context_entity(self)
-        self._update_attributes(new_obj)
-        return self
+        return ContextEntityCRUDProcessor().create_context_entity(self)
 
     def update(self) -> ContextEntity:
         """
@@ -68,14 +66,7 @@ class ContextEntity(PersistedEntity):
         ContextEntity
             Entity updated.
         """
-        new_obj = ContextEntityCRUDProcessor().update_context_entity(
-            self.project,
-            self.ENTITY_TYPE,
-            self.id,
-            self.to_dict(),
-        )
-        self._update_attributes(new_obj)
-        return self
+        return ContextEntityCRUDProcessor().update_context_entity(self)
 
     def export(self) -> str:
         """
@@ -97,12 +88,7 @@ class ContextEntity(PersistedEntity):
         ContextEntity
             Entity refreshed.
         """
-        new_obj = ContextEntityCRUDProcessor().read_context_entity(
-            self.key,
-            entity_type=self.ENTITY_TYPE,
-        )
-        self._update_attributes(new_obj)
-        return self
+        return ContextEntityCRUDProcessor().refresh_context_entity(self)
 
     ##############################
     #  Project context

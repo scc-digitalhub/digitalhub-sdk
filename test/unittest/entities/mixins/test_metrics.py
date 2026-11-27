@@ -73,8 +73,6 @@ def test_log_metric_initializes_status_and_updates_backend(monkeypatch) -> None:
     entity.id = "entity-id"
     entity.status = SimpleNamespace(metrics=None)
     entity.update = Mock()
-    entity.to_dict = Mock(return_value={"id": "entity-id"})
-    entity._update_attributes = Mock()
     update_entity = Mock()
     monkeypatch.setattr(ContextEntityCRUDProcessor, "update_context_entity", update_entity)
     entity._init_metrics_state()
@@ -93,8 +91,7 @@ def test_log_metric_initializes_status_and_updates_backend(monkeypatch) -> None:
 
     assert entity.status.metrics == {}
     assert entity.metrics == {"accuracy": [0.9]}
-    update_entity.assert_called_once_with("project", "artifact", "entity-id", {"id": "entity-id"})
-    entity._update_attributes.assert_called_once_with(update_entity.return_value)
+    update_entity.assert_called_once_with(entity)
     entity.update.assert_not_called()
 
 

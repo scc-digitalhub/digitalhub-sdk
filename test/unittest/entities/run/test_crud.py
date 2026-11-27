@@ -142,21 +142,10 @@ def test_run_import_and_load_delegate_to_processor(
     processor.assert_called_once_with(*expected_args)
 
 
-def test_update_run_delegates_entity_fields(monkeypatch) -> None:
+def test_update_run_updates_the_passed_entity(monkeypatch) -> None:
     entity = Mock()
-    entity.project = "my-project"
-    entity.ENTITY_TYPE = EntityTypes.RUN.value
-    entity.id = "run-id"
-    entity.to_dict.return_value = {"status": {"state": "RUNNING"}}
-    update_entity = Mock(return_value="run")
+    update_entity = Mock(return_value=entity)
     monkeypatch.setattr(ContextEntityCRUDProcessor, "update_context_entity", update_entity)
 
-    result = run_crud.update_run(entity)
-
-    assert result == "run"
-    update_entity.assert_called_once_with(
-        project="my-project",
-        entity_type=EntityTypes.RUN.value,
-        entity_id="run-id",
-        entity_dict={"status": {"state": "RUNNING"}},
-    )
+    assert run_crud.update_run(entity) is entity
+    update_entity.assert_called_once_with(entity)

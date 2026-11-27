@@ -159,21 +159,10 @@ def test_workflow_import_and_load_delegate_to_executable_processor(
     processor.assert_called_once_with(*expected_args)
 
 
-def test_update_workflow_delegates_entity_fields(monkeypatch) -> None:
+def test_update_workflow_updates_the_passed_entity(monkeypatch) -> None:
     entity = Mock()
-    entity.project = "my-project"
-    entity.ENTITY_TYPE = EntityTypes.WORKFLOW.value
-    entity.id = "workflow-id"
-    entity.to_dict.return_value = {"metadata": {"name": "pipeline"}}
-    update_entity = Mock(return_value="workflow")
+    update_entity = Mock(return_value=entity)
     monkeypatch.setattr(ContextEntityCRUDProcessor, "update_context_entity", update_entity)
 
-    result = workflow_crud.update_workflow(entity)
-
-    assert result == "workflow"
-    update_entity.assert_called_once_with(
-        project="my-project",
-        entity_type=EntityTypes.WORKFLOW.value,
-        entity_id="workflow-id",
-        entity_dict={"metadata": {"name": "pipeline"}},
-    )
+    assert workflow_crud.update_workflow(entity) is entity
+    update_entity.assert_called_once_with(entity)
