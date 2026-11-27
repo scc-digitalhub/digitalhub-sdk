@@ -62,6 +62,7 @@ from digitalhub.factory.builders import Action, BuilderDef, ExecFamily
 from digitalhub.factory.plugins import CrudPlugin, EntityPlugin
 from digitalhub.runtimes._base import Runtime
 from digitalhub.runtimes.builder import RuntimeBuilder
+from digitalhub.entities._mixin.source.source import fetch_source
 
 __all__ = [
     "Action",
@@ -119,6 +120,7 @@ __all__ = [
     "WorkflowBuilder",
     "build_spec",
     "build_uuid",
+    "fetch_source",
     "log_base_model",
     "new_dataitem",
     "register_base_model",

@@ -7,7 +7,7 @@ from __future__ import annotations
 import typing
 from typing import Any
 
-from digitalhub.entities._commons.metrics import MetricType, update_metrics, validate_metric_value
+from digitalhub.entities._mixin.metrics.metrics import MetricType, update_metrics, validate_metric_value
 from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
 from digitalhub.entities._processors.utils import get_context
 from digitalhub.stores.client.common.enums import ApiType, BackendOp

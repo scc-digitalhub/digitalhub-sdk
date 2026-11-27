@@ -7,7 +7,7 @@ from unittest.mock import Mock
 
 import pytest
 
-import digitalhub.entities._commons.metrics as metrics_utils
+import digitalhub.entities._mixin.metrics.metrics as metrics_utils
 from digitalhub.entities._mixin.metrics.mixin import MetricsMixin
 from digitalhub.entities._processors.context.crud import ContextEntityCRUDProcessor
 from digitalhub.entities._processors.context.metrics import ContextEntityMetricsProcessor

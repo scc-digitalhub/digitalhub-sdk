@@ -7,7 +7,7 @@ from __future__ import annotations
 import typing
 from typing import ClassVar
 
-from digitalhub.entities._commons.metrics import MetricType
+from digitalhub.entities._mixin.metrics.metrics import MetricType
 from digitalhub.entities._processors.context.metrics import ContextEntityMetricsProcessor
 
 if typing.TYPE_CHECKING:

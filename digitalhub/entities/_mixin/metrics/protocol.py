@@ -10,7 +10,7 @@ from typing import Protocol
 from digitalhub.entities._mixin.unversioned.protocol import UnversionedEntityProtocol
 
 if typing.TYPE_CHECKING:
-    from digitalhub.entities._commons.metrics import MetricType
+    from digitalhub.entities._mixin.metrics.metrics import MetricType
     from digitalhub.entities._mixin.metrics.status import MetricsStatus
 
 
